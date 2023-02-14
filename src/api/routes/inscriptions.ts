@@ -81,7 +81,7 @@ export const InscriptionsRoutes: FastifyPluginCallback<
           }),
         }),
         response: {
-          200: Type.String(),
+          200: Type.String({ contentEncoding: 'binary' }),
           404: NotFoundResponse,
         },
       },
