@@ -1,6 +1,5 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { ENV } from '../env';
-import { fetchJson } from './util';
 
 /**
  * A `Cache-Control` header used for re-validation based caching.
@@ -27,12 +26,13 @@ export async function handleChainTipCache(request: FastifyRequest, reply: Fastif
  * @returns Etag string
  */
 async function getNodeChainTipEtag(): Promise<string | undefined> {
-  const url = new URL(`/v2/info`, ENV.STACKS_API_ENDPOINT);
-  const result = await fetchJson({ url, init: { method: 'GET' } });
-  if (result.result === 'ok') {
-    const response = result.response as any;
-    return `${response.stacks_tip}:${response.unanchored_tip}`;
-  }
+  // const url = new URL(`/v2/info`, ENV.STACKS_API_ENDPOINT);
+  // const result = await fetchJson({ url, init: { method: 'GET' } });
+  // if (result.result === 'ok') {
+  //   const response = result.response as any;
+  //   return `${response.stacks_tip}:${response.unanchored_tip}`;
+  // }
+  return Promise.resolve('');
 }
 
 /**

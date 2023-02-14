@@ -1,5 +1,5 @@
-import { MempoolReturn } from '@mempool/mempool.js/lib/interfaces/index';
 import fastify from 'fastify';
+import { PgStore } from '../../../pg/pg-store';
 
 declare module 'fastify' {
   export interface FastifyInstance<
@@ -9,6 +9,6 @@ declare module 'fastify' {
     Logger = FastifyLoggerInstance,
     TypeProvider = FastifyTypeProviderDefault
   > {
-    mempoolJs: MempoolReturn;
+    db: PgStore;
   }
 }
