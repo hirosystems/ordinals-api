@@ -8,6 +8,7 @@
     "start": "node dist/src/index.js",
     "start-ts": "ts-node ./src/index.ts",
     "test": "jest",
+    "migrate": "ts-node node_modules/.bin/node-pg-migrate -j ts",
     "lint:eslint": "eslint . --ext .js,.jsx,.ts,.tsx -f unix",
     "lint:prettier": "prettier --check src/**/*.ts tests/**/*.ts",
     "generate:openapi": "node -r ts-node/register ./util/openapi-generator.ts",
@@ -55,8 +56,9 @@
     "env-schema": "^5.2.0",
     "evt": "^1.11.2",
     "fastify": "^4.3.0",
+    "node-pg-migrate": "^6.2.2",
     "pino": "^8.10.0",
-    "postgres": "^3.3.2",
+    "postgres": "^3.3.3",
     "undici": "^5.8.0"
   }
 }

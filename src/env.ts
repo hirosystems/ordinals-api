@@ -9,43 +9,69 @@ export const isProdEnv =
   (!isTestEnv && !isDevEnv);
 
 interface Env {
-  STACKS_API_ENDPOINT: string;
-  STACKS_EXPLORER_ENDPOINT: string;
-  MEMPOOL_JS_HOSTNAME: string;
-  BLOCKCHAIN_INFO_API_ENDPOINT: string;
-  BLOCKCHAIN_EXPLORER_ENDPOINT: string;
+  /** Hosname of the API server */
+  API_HOST: string;
+  /** Port in which to serve the API */
+  API_PORT: number;
+
+  PGHOST: string;
+  PGPORT: number;
+  PGUSER: string;
+  PGPASSWORD: string;
+  PGDATABASE: string;
+  /**
+   * Limit to how many concurrent connections can be created, defaults to 10.
+   */
+  PG_CONNECTION_POOL_MAX: number;
+  /** Idle connection timeout (seconds). */
+  PG_IDLE_TIMEOUT: number;
+  /** Max lifetime of a connection (seconds). */
+  PG_MAX_LIFETIME: number;
 }
 
 export function getEnvVars(): Env {
   const schema = {
     type: 'object',
-    required: [
-      'STACKS_API_ENDPOINT',
-      'STACKS_EXPLORER_ENDPOINT',
-      'MEMPOOL_JS_HOSTNAME',
-      'BLOCKCHAIN_INFO_API_ENDPOINT',
-      'BLOCKCHAIN_EXPLORER_ENDPOINT',
-    ],
+    required: ['API_HOST', 'API_PORT', 'PGHOST', 'PGPORT', 'PGUSER', 'PGPASSWORD', 'PGDATABASE'],
     properties: {
-      STACKS_API_ENDPOINT: {
+      API_HOST: {
         type: 'string',
-        default: 'https://stacks-node-api.mainnet.stacks.co',
       },
-      STACKS_EXPLORER_ENDPOINT: {
-        type: 'string',
-        default: 'https://explorer.stacks.co',
+      API_PORT: {
+        type: 'number',
+        default: 3000,
+        minimum: 0,
+        maximum: 65535,
       },
-      MEMPOOL_JS_HOSTNAME: {
+      PGHOST: {
         type: 'string',
-        default: 'mempool.space',
       },
-      BLOCKCHAIN_INFO_API_ENDPOINT: {
-        type: 'string',
-        default: 'https://blockchain.info',
+      PGPORT: {
+        type: 'number',
+        default: 5432,
+        minimum: 0,
+        maximum: 65535,
       },
-      BLOCKCHAIN_EXPLORER_ENDPOINT: {
+      PGUSER: {
         type: 'string',
-        default: 'https://www.blockchain.com',
+      },
+      PGPASSWORD: {
+        type: 'string',
+      },
+      PGDATABASE: {
+        type: 'string',
+      },
+      PG_CONNECTION_POOL_MAX: {
+        type: 'number',
+        default: 10,
+      },
+      PG_IDLE_TIMEOUT: {
+        type: 'number',
+        default: 30,
+      },
+      PG_MAX_LIFETIME: {
+        type: 'number',
+        default: 60,
       },
     },
   };
