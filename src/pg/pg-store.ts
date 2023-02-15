@@ -51,7 +51,7 @@ export class PgStore extends BasePgStore {
     inscription_id: string;
   }): Promise<DbInscriptionContent | undefined> {
     const result = await this.sql<DbInscriptionContent[]>`
-      SELECT content
+      SELECT content, content_type, content_length
       FROM inscriptions
       WHERE inscription_id = ${args.inscription_id}
       ORDER BY block_height DESC

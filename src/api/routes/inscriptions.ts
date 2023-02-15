@@ -3,7 +3,12 @@ import { Type } from '@sinclair/typebox';
 import { Value } from '@sinclair/typebox/value';
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
-import { DEFAULT_API_LIMIT, parseDbInscription, parseDbInscriptions } from '../helpers';
+import {
+  DEFAULT_API_LIMIT,
+  hexToBuffer,
+  parseDbInscription,
+  parseDbInscriptions,
+} from '../helpers';
 import {
   BitcoinAddressParam,
   BlockHeightParam,
@@ -91,7 +96,7 @@ export const InscriptionsRoutes: FastifyPluginCallback<
           inscription_id: InscriptionIdParam,
         }),
         response: {
-          200: Type.String({ contentEncoding: 'binary' }),
+          200: Type.Uint8Array(),
           404: NotFoundResponse,
         },
       },
@@ -101,12 +106,13 @@ export const InscriptionsRoutes: FastifyPluginCallback<
         inscription_id: request.params.inscription_id,
       });
       if (inscription) {
+        const bytes = hexToBuffer(inscription.content);
         await reply
           .headers({
-            'Content-Type': inscription.content_type,
-            'Content-Length': inscription.content_length,
+            'content-type': inscription.content_type,
+            'content-length': inscription.content_length,
           })
-          .send(inscription.content);
+          .send(bytes);
       } else {
         await reply.code(404).send(Value.Create(NotFoundResponse));
       }
