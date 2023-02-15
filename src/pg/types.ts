@@ -1,3 +1,8 @@
+export type DbPaginatedResult<T> = {
+  total: number;
+  results: T[];
+};
+
 export type DbInscription = {
   inscription_id: string;
   offset: number;

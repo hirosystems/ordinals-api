@@ -2,7 +2,12 @@ import { ENV } from '../env';
 import { runMigrations } from './migrations';
 import { connectPostgres } from './postgres-tools';
 import { BasePgStore } from './postgres-tools/base-pg-store';
-import { DbInscription, DbInscriptionContent, INSCRIPTIONS_COLUMNS } from './types';
+import {
+  DbInscription,
+  DbInscriptionContent,
+  DbPaginatedResult,
+  INSCRIPTIONS_COLUMNS,
+} from './types';
 
 export class PgStore extends BasePgStore {
   static async connect(opts?: { skipMigrations: boolean }): Promise<PgStore> {
@@ -56,5 +61,27 @@ export class PgStore extends BasePgStore {
       return undefined;
     }
     return result[0];
+  }
+
+  async getInscriptions(args: {
+    block_height?: number;
+    address?: string;
+    limit: number;
+    offset: number;
+  }): Promise<DbPaginatedResult<DbInscription>> {
+    const results = await this.sql<({ total: number } & DbInscription)[]>`
+      SELECT ${this.sql(INSCRIPTIONS_COLUMNS)}, COUNT(*) OVER() as total
+      FROM inscriptions
+      WHERE true
+        ${args.block_height ? this.sql`AND block_height = ${args.block_height}` : this.sql``}
+        ${args.address ? this.sql`AND address = ${args.address}` : this.sql``}
+      ORDER BY block_height DESC
+      LIMIT ${args.limit}
+      OFFSET ${args.offset}
+    `;
+    return {
+      total: results[0]?.total ?? 0,
+      results: results ?? [],
+    };
   }
 }
