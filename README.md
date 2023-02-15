@@ -1,3 +1,3 @@
-# Bitcoin Ordinal inscriptions API
+# Ordinals API
 
 Coming soon

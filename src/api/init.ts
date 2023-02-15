@@ -10,13 +10,13 @@ import { PgStore } from '../pg/pg-store';
 export const ApiSwaggerOptions: SwaggerOptions = {
   openapi: {
     info: {
-      title: 'Inscriptions API',
+      title: 'Ordinals API',
       description:
         'A microservice that indexes Bitcoin Ordinal inscription data and exposes it via REST API endpoints.',
       version: 'v0.0.1',
     },
     externalDocs: {
-      url: 'https://github.com/hirosystems/inscriptions-api',
+      url: 'https://github.com/hirosystems/ordinals-api',
       description: 'Source Repository',
     },
     tags: [

@@ -14,7 +14,7 @@ export class PgStore extends BasePgStore {
       database: ENV.PGDATABASE,
     };
     const sql = await connectPostgres({
-      usageName: 'inscriptions-pg-store',
+      usageName: 'ordinals-pg-store',
       connectionArgs: pgConfig,
       connectionConfig: {
         poolMax: ENV.PG_CONNECTION_POOL_MAX,
