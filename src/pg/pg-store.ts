@@ -33,11 +33,17 @@ export class PgStore extends BasePgStore {
     return new PgStore(sql);
   }
 
-  async getInscription(args: { inscription_id: string }): Promise<DbInscription | undefined> {
+  async getInscription(
+    args: { inscription_id: string } | { ordinal: number }
+  ): Promise<DbInscription | undefined> {
     const result = await this.sql<DbInscription[]>`
       SELECT ${this.sql(INSCRIPTIONS_COLUMNS)}
       FROM inscriptions
-      WHERE inscription_id = ${args.inscription_id}
+      WHERE ${
+        'ordinal' in args
+          ? this.sql`sat_ordinal = ${args.ordinal}`
+          : this.sql`inscription_id = ${args.inscription_id}`
+      }
       ORDER BY block_height DESC
       LIMIT 1
     `;

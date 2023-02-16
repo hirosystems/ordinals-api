@@ -4,8 +4,9 @@ import { Server } from 'http';
 import FastifyCors from '@fastify/cors';
 import { PINO_CONFIG } from '../logger';
 import { SwaggerOptions } from '@fastify/swagger';
-import { InscriptionsRoutes } from './routes/inscriptions';
+import { InscriptionRoutes } from './routes/inscriptions';
 import { PgStore } from '../pg/pg-store';
+import { SatRoutes } from './routes/sats';
 
 export const ApiSwaggerOptions: SwaggerOptions = {
   openapi: {
@@ -33,7 +34,8 @@ export const Api: FastifyPluginAsync<
   Server,
   TypeBoxTypeProvider
 > = async fastify => {
-  await fastify.register(InscriptionsRoutes);
+  await fastify.register(InscriptionRoutes);
+  await fastify.register(SatRoutes);
 };
 
 export async function buildApiServer(args: { db: PgStore }) {

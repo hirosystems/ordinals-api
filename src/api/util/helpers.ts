@@ -1,9 +1,9 @@
-import { DbInscription } from '../pg/types';
-import { InscriptionType } from './types';
+import { DbInscription } from '../../pg/types';
+import { InscriptionResponseType } from '../types';
 
 export const DEFAULT_API_LIMIT = 20;
 
-export function parseDbInscriptions(items: DbInscription[]): InscriptionType[] {
+export function parseDbInscriptions(items: DbInscription[]): InscriptionResponseType[] {
   return items.map(inscription => ({
     id: inscription.inscription_id,
     address: inscription.address,
@@ -19,7 +19,7 @@ export function parseDbInscriptions(items: DbInscription[]): InscriptionType[] {
     timestamp: inscription.timestamp,
   }));
 }
-export function parseDbInscription(item: DbInscription): InscriptionType {
+export function parseDbInscription(item: DbInscription): InscriptionResponseType {
   return parseDbInscriptions([item])[0];
 }
 

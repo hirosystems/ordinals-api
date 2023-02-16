@@ -4,23 +4,23 @@ import { Value } from '@sinclair/typebox/value';
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import {
-  DEFAULT_API_LIMIT,
-  hexToBuffer,
-  parseDbInscription,
-  parseDbInscriptions,
-} from '../helpers';
-import {
   BitcoinAddressParam,
   BlockHeightParam,
-  Inscription,
+  InscriptionResponse,
   InscriptionIdParam,
   LimitParam,
   NotFoundResponse,
   OffsetParam,
   PaginatedResponse,
 } from '../types';
+import {
+  DEFAULT_API_LIMIT,
+  parseDbInscriptions,
+  parseDbInscription,
+  hexToBuffer,
+} from '../util/helpers';
 
-export const InscriptionsRoutes: FastifyPluginCallback<
+export const InscriptionRoutes: FastifyPluginCallback<
   Record<never, never>,
   Server,
   TypeBoxTypeProvider
@@ -39,7 +39,7 @@ export const InscriptionsRoutes: FastifyPluginCallback<
           limit: Type.Optional(LimitParam),
         }),
         response: {
-          200: PaginatedResponse(Inscription),
+          200: PaginatedResponse(InscriptionResponse),
           404: NotFoundResponse,
         },
       },
@@ -68,7 +68,7 @@ export const InscriptionsRoutes: FastifyPluginCallback<
           inscription_id: InscriptionIdParam,
         }),
         response: {
-          200: Inscription,
+          200: InscriptionResponse,
           404: NotFoundResponse,
         },
       },

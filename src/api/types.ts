@@ -9,6 +9,8 @@ export const InscriptionIdParam = Type.RegEx(InscriptionIdRegEx, {
   examples: ['38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0'],
 });
 
+export const OrdinalParam = Type.Integer();
+
 export const BlockHeightParam = Type.Integer();
 
 export const OffsetParam = Type.Integer({ minimum: 0 });
@@ -23,7 +25,7 @@ export const PaginatedResponse = <T extends TSchema>(type: T) =>
     results: Type.Array(type),
   });
 
-export const Inscription = Type.Object({
+export const InscriptionResponse = Type.Object({
   id: Type.String(),
   address: Type.String(),
   block_height: Type.Integer(),
@@ -37,7 +39,22 @@ export const Inscription = Type.Object({
   content_length: Type.Integer(),
   timestamp: Type.Integer(),
 });
-export type InscriptionType = Static<typeof Inscription>;
+export type InscriptionResponseType = Static<typeof InscriptionResponse>;
+
+export const SatoshiResponse = Type.Object({
+  block_height: Type.Integer(),
+  cycle: Type.Integer(),
+  decimal: Type.String(),
+  degree: Type.String(),
+  inscription_id: Type.Optional(Type.String()),
+  // epoch: Type.Number(),
+  // name: Type.String(),
+  // offset: Type.String(),
+  // percentile: Type.String(),
+  // period: Type.Integer(),
+  // rarity: 'common',
+  // timestamp: Type.Integer(),
+});
 
 export const NotFoundResponse = Type.Object({
   error: Type.Literal('Not found'),
