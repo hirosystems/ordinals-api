@@ -71,6 +71,7 @@ export class PgStore extends BasePgStore {
 
   async getInscriptions(args: {
     block_height?: number;
+    block_hash?: string;
     address?: string;
     limit: number;
     offset: number;
@@ -80,6 +81,7 @@ export class PgStore extends BasePgStore {
       FROM inscriptions
       WHERE true
         ${args.block_height ? this.sql`AND block_height = ${args.block_height}` : this.sql``}
+        ${args.block_hash ? this.sql`AND block_hash = ${args.block_hash}` : this.sql``}
         ${args.address ? this.sql`AND address = ${args.address}` : this.sql``}
       ORDER BY block_height DESC
       LIMIT ${args.limit}

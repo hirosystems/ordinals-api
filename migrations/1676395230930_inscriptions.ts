@@ -22,11 +22,11 @@ export function up(pgm: MigrationBuilder): void {
       notNull: true,
     },
     block_hash: {
-      type: 'text',
+      type: 'bytea',
       notNull: true,
     },
     tx_id: {
-      type: 'text',
+      type: 'bytea',
       notNull: true,
     },
     address: {

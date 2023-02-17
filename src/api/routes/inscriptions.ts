@@ -1,5 +1,6 @@
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { Type } from '@sinclair/typebox';
+import { TypeCompiler } from '@sinclair/typebox/compiler';
 import { Value } from '@sinclair/typebox/value';
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
@@ -12,13 +13,18 @@ import {
   NotFoundResponse,
   OffsetParam,
   PaginatedResponse,
+  BlockHashParam,
 } from '../types';
 import {
   DEFAULT_API_LIMIT,
   parseDbInscriptions,
   parseDbInscription,
   hexToBuffer,
+  normalizeHashString,
 } from '../util/helpers';
+
+const BlockHashParamCType = TypeCompiler.Compile(BlockHashParam);
+const BlockHeightParamCType = TypeCompiler.Compile(BlockHeightParam);
 
 export const InscriptionRoutes: FastifyPluginCallback<
   Record<never, never>,
@@ -33,7 +39,7 @@ export const InscriptionRoutes: FastifyPluginCallback<
         description: 'Retrieves inscriptions',
         tags: ['Inscriptions'],
         querystring: Type.Object({
-          block_height: Type.Optional(BlockHeightParam),
+          block: Type.Optional(Type.Union([BlockHashParam, BlockHeightParam])),
           address: Type.Optional(BitcoinAddressParam),
           offset: Type.Optional(OffsetParam),
           limit: Type.Optional(LimitParam),
@@ -47,7 +53,17 @@ export const InscriptionRoutes: FastifyPluginCallback<
     async (request, reply) => {
       const limit = request.query.limit ?? DEFAULT_API_LIMIT;
       const offset = request.query.offset ?? 0;
-      const inscriptions = await fastify.db.getInscriptions({ ...request.query, limit, offset });
+      const blockArg = BlockHashParamCType.Check(request.query.block)
+        ? { block_hash: normalizeHashString(request.query.block) as string }
+        : BlockHeightParamCType.Check(request.query.block)
+        ? { block_height: request.query.block }
+        : {};
+      const inscriptions = await fastify.db.getInscriptions({
+        ...blockArg,
+        address: request.query.address,
+        limit,
+        offset,
+      });
       await reply.send({
         limit,
         offset,

@@ -39,3 +39,25 @@ export function hexToBuffer(hex: string): Buffer {
   }
   return Buffer.from(hex.substring(2), 'hex');
 }
+
+export const has0xPrefix = (id: string) => id.substr(0, 2).toLowerCase() === '0x';
+
+/**
+ * Check if the input is a valid 32-byte hex string. If valid, returns a
+ * lowercase and 0x-prefixed hex string. If invalid, returns false.
+ */
+export function normalizeHashString(input: string): string | false {
+  if (typeof input !== 'string') {
+    return false;
+  }
+  let hashBuffer: Buffer | undefined;
+  if (input.length === 66 && has0xPrefix(input)) {
+    hashBuffer = Buffer.from(input.slice(2), 'hex');
+  } else if (input.length === 64) {
+    hashBuffer = Buffer.from(input, 'hex');
+  }
+  if (hashBuffer === undefined || hashBuffer.length !== 32) {
+    return false;
+  }
+  return `0x${hashBuffer.toString('hex')}`;
+}

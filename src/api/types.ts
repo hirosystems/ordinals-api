@@ -1,18 +1,18 @@
 import { Static, TSchema, Type } from '@sinclair/typebox';
 import { SatoshiRarity } from './util/ordinal-satoshi';
 
-const BitcoinAddressRegEx = /(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}/;
-export const BitcoinAddressParam = Type.RegEx(BitcoinAddressRegEx);
+export const BitcoinAddressParam = Type.RegEx(/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$/);
 
-const InscriptionIdRegEx = /[a-fA-F0-9]{64}i[0-9]+/;
-export const InscriptionIdParam = Type.RegEx(InscriptionIdRegEx, {
+export const InscriptionIdParam = Type.RegEx(/^[a-fA-F0-9]{64}i[0-9]+$/, {
   description: 'Inscription ID',
   examples: ['38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0'],
 });
 
 export const OrdinalParam = Type.Integer();
 
-export const BlockHeightParam = Type.Integer();
+export const BlockHeightParam = Type.RegEx(/^[0-9]+$/);
+
+export const BlockHashParam = Type.RegEx(/^(0x)?[0]{8}[a-fA-F0-9]{56}$/);
 
 export const OffsetParam = Type.Integer({ minimum: 0 });
 
