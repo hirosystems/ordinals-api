@@ -1,4 +1,5 @@
 import { Static, TSchema, Type } from '@sinclair/typebox';
+import { SatoshiRarity } from './util/ordinal-satoshi';
 
 const BitcoinAddressRegEx = /(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}/;
 export const BitcoinAddressParam = Type.RegEx(BitcoinAddressRegEx);
@@ -42,17 +43,17 @@ export const InscriptionResponse = Type.Object({
 export type InscriptionResponseType = Static<typeof InscriptionResponse>;
 
 export const SatoshiResponse = Type.Object({
-  block_height: Type.Integer(),
+  coinbase_height: Type.Integer(),
   cycle: Type.Integer(),
   decimal: Type.String(),
   degree: Type.String(),
   inscription_id: Type.Optional(Type.String()),
-  // epoch: Type.Number(),
-  // name: Type.String(),
-  // offset: Type.String(),
-  // percentile: Type.String(),
-  // period: Type.Integer(),
-  // rarity: 'common',
+  epoch: Type.Number(),
+  name: Type.String(),
+  offset: Type.Number(),
+  percentile: Type.String(),
+  period: Type.Integer(),
+  rarity: Type.Enum(SatoshiRarity),
   // timestamp: Type.Integer(),
 });
 

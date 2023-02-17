@@ -3,7 +3,7 @@ import { Type } from '@sinclair/typebox';
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import { NotFoundResponse, OrdinalParam, SatoshiResponse } from '../types';
-import { getOrdinalSatoshi } from '../util/ordinal-sats';
+import { OrdinalSatoshi } from '../util/ordinal-satoshi';
 
 export const SatRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
   fastify,
@@ -27,13 +27,19 @@ export const SatRoutes: FastifyPluginCallback<Record<never, never>, Server, Type
       },
     },
     async (request, reply) => {
-      const sat = getOrdinalSatoshi(request.params.ordinal);
+      const sat = new OrdinalSatoshi(request.params.ordinal);
       const inscription = await fastify.db.getInscription({ ordinal: request.params.ordinal });
       await reply.send({
-        block_height: sat.block_height,
+        coinbase_height: sat.blockHeight,
         cycle: sat.cycle,
+        epoch: sat.epoch,
+        period: sat.period,
+        offset: sat.offset,
         decimal: sat.decimal,
         degree: sat.degree,
+        name: sat.name,
+        rarity: sat.rarity,
+        percentile: sat.percentile,
         inscription_id: inscription?.inscription_id,
       });
     }
