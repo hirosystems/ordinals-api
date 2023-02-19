@@ -39,12 +39,13 @@ export class OrdinalSatoshi {
       epoch++;
     }
     const halvingOffset = ordinal - satAccum;
-    const exactHeight = halvingOffset / (subsidy * SATS_PER_BTC) + epoch * HALVING_BLOCKS;
+    const epochBoundary = epoch * HALVING_BLOCKS;
+    const exactHeight = halvingOffset / (subsidy * SATS_PER_BTC) + epochBoundary;
 
     this.ordinal = ordinal;
     this.blockHeight = Math.floor(exactHeight);
     this.cycle = this.hour = Math.floor(epoch / 6);
-    this.minute = this.blockHeight % (epoch * HALVING_BLOCKS);
+    this.minute = epochBoundary === 0 ? this.blockHeight : this.blockHeight % epochBoundary;
     this.second = this.blockHeight % DIFFICULTY_ADJUST_BLOCKS;
     this.third = this.offset = Math.round(
       (exactHeight - this.blockHeight) * subsidy * Math.pow(10, 8)
