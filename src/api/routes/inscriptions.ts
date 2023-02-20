@@ -14,6 +14,7 @@ import {
   OffsetParam,
   PaginatedResponse,
   BlockHashParam,
+  MimeTypeParam,
 } from '../types';
 import {
   DEFAULT_API_LIMIT,
@@ -41,6 +42,7 @@ export const InscriptionRoutes: FastifyPluginCallback<
         querystring: Type.Object({
           block: Type.Optional(Type.Union([BlockHashParam, BlockHeightParam])),
           address: Type.Optional(BitcoinAddressParam),
+          mime_type: Type.Optional(Type.Array(MimeTypeParam)),
           offset: Type.Optional(OffsetParam),
           limit: Type.Optional(LimitParam),
         }),
@@ -61,6 +63,7 @@ export const InscriptionRoutes: FastifyPluginCallback<
       const inscriptions = await fastify.db.getInscriptions({
         ...blockArg,
         address: request.query.address,
+        mime_type: request.query.mime_type,
         limit,
         offset,
       });

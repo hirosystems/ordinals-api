@@ -14,6 +14,7 @@ export function parseDbInscriptions(items: DbInscription[]): InscriptionResponse
     sat_point: inscription.sat_point,
     offset: inscription.offset,
     fee: inscription.fee,
+    mime_type: inscription.mime_type,
     content_type: inscription.content_type,
     content_length: inscription.content_length,
     timestamp: inscription.timestamp,

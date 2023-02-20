@@ -15,6 +15,7 @@ export type DbInscriptionInsert = {
   sat_ordinal: number;
   sat_point: string;
   fee: number;
+  mime_type: string;
   content_type: string;
   content_length: number;
   content: PgBytea;
@@ -31,6 +32,7 @@ export type DbInscription = {
   sat_ordinal: bigint;
   sat_point: string;
   fee: number;
+  mime_type: string;
   content_type: string;
   content_length: number;
   timestamp: number;
@@ -52,6 +54,7 @@ export const INSCRIPTIONS_COLUMNS = [
   'sat_ordinal',
   'sat_point',
   'fee',
+  'mime_type',
   'content_type',
   'content_length',
   'timestamp',

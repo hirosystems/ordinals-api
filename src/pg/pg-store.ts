@@ -81,6 +81,7 @@ export class PgStore extends BasePgStore {
     block_height?: number;
     block_hash?: string;
     address?: string;
+    mime_type?: string[];
     limit: number;
     offset: number;
   }): Promise<DbPaginatedResult<DbInscription>> {
@@ -91,6 +92,11 @@ export class PgStore extends BasePgStore {
         ${args.block_height ? this.sql`AND block_height = ${args.block_height}` : this.sql``}
         ${args.block_hash ? this.sql`AND block_hash = ${args.block_hash}` : this.sql``}
         ${args.address ? this.sql`AND address = ${args.address}` : this.sql``}
+        ${
+          args.mime_type?.length
+            ? this.sql`AND mime_type IN ${this.sql(args.mime_type)}`
+            : this.sql``
+        }
       ORDER BY block_height DESC
       LIMIT ${args.limit}
       OFFSET ${args.offset}

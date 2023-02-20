@@ -45,6 +45,10 @@ export function up(pgm: MigrationBuilder): void {
       type: 'int',
       notNull: true,
     },
+    mime_type: {
+      type: 'text',
+      notNull: true,
+    },
     content_type: {
       type: 'text',
       notNull: true,
@@ -71,4 +75,5 @@ export function up(pgm: MigrationBuilder): void {
   pgm.createIndex('inscriptions', [{ name: 'block_height', sort: 'DESC' }]);
   pgm.createIndex('inscriptions', ['block_hash']);
   pgm.createIndex('inscriptions', ['address']);
+  pgm.createIndex('inscriptions', ['mime_type']);
 }
