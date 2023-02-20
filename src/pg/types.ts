@@ -1,6 +1,24 @@
+import { PgBytea } from './postgres-tools/types';
+
 export type DbPaginatedResult<T> = {
   total: number;
   results: T[];
+};
+
+export type DbInscriptionInsert = {
+  inscription_id: string;
+  offset: number;
+  block_height: number;
+  block_hash: PgBytea;
+  tx_id: PgBytea;
+  address: string;
+  sat_ordinal: number;
+  sat_point: string;
+  fee: number;
+  content_type: string;
+  content_length: number;
+  content: PgBytea;
+  timestamp: number;
 };
 
 export type DbInscription = {

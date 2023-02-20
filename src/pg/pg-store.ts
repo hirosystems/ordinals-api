@@ -5,6 +5,7 @@ import { BasePgStore } from './postgres-tools/base-pg-store';
 import {
   DbInscription,
   DbInscriptionContent,
+  DbInscriptionInsert,
   DbPaginatedResult,
   INSCRIPTIONS_COLUMNS,
 } from './types';
@@ -31,6 +32,13 @@ export class PgStore extends BasePgStore {
       await runMigrations('up');
     }
     return new PgStore(sql);
+  }
+
+  async insertInscription(args: { values: DbInscriptionInsert }): Promise<void> {
+    await this.sql`
+      INSERT INTO inscriptions ${this.sql(args.values)}
+      ON CONFLICT ON CONSTRAINT inscriptions_inscription_id_unique DO NOTHING
+    `;
   }
 
   async getInscription(

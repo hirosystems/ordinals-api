@@ -2,7 +2,7 @@ const HALVING_BLOCKS = 210_000;
 const DIFFICULTY_ADJUST_BLOCKS = 2016;
 const INITIAL_SUBSIDY = 50;
 const SATS_PER_BTC = 100_000_000;
-const SAT_SUPPLY = 2099999997690000;
+export const SAT_SUPPLY = 2099999997690000;
 
 export enum SatoshiRarity {
   common = 'common',

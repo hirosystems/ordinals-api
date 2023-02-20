@@ -62,7 +62,11 @@ export function up(pgm: MigrationBuilder): void {
       notNull: true,
     },
   });
-  pgm.createIndex('inscriptions', ['inscription_id']);
+  pgm.createConstraint(
+    'inscriptions',
+    'inscriptions_inscription_id_unique',
+    'UNIQUE(inscription_id)'
+  );
   pgm.createIndex('inscriptions', ['sat_ordinal']);
   pgm.createIndex('inscriptions', [{ name: 'block_height', sort: 'DESC' }]);
   pgm.createIndex('inscriptions', ['block_hash']);

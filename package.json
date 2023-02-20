@@ -14,7 +14,10 @@
     "generate:openapi": "rimraf ./tmp && node -r ts-node/register ./util/openapi-generator.ts",
     "generate:docs": "redoc-cli build --output ./tmp/index.html ./tmp/openapi.yaml",
     "generate:git-info": "rimraf .git-info && node ./git-info-generator.mjs",
-    "generate:vercel": "npm run generate:git-info && npm run generate:openapi && npm run generate:docs"
+    "generate:vercel": "npm run generate:git-info && npm run generate:openapi && npm run generate:docs",
+    "testenv:run": "docker-compose -f docker/docker-compose.dev.postgres.yml up",
+    "testenv:stop": "docker-compose -f docker/docker-compose.dev.postgres.yml down -v -t 0",
+    "testenv:logs": "docker-compose -f docker/docker-compose.dev.postgres.yml logs -t -f"
   },
   "author": "",
   "license": "ISC",
