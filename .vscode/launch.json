@@ -29,8 +29,6 @@
         "--testTimeout=3600000",
         "--runInBand",
         "--no-cache",
-        "-t",
-        "/inscriptions"
       ],
       "outputCapture": "std",
       "console": "integratedTerminal",
