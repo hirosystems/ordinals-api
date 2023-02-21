@@ -15,6 +15,7 @@ import {
   PaginatedResponse,
   BlockHashParam,
   MimeTypeParam,
+  SatoshiRarityParam,
 } from '../types';
 import {
   DEFAULT_API_LIMIT,
@@ -43,6 +44,7 @@ export const InscriptionRoutes: FastifyPluginCallback<
           block: Type.Optional(Type.Union([BlockHashParam, BlockHeightParam])),
           address: Type.Optional(BitcoinAddressParam),
           mime_type: Type.Optional(Type.Array(MimeTypeParam)),
+          rarity: Type.Optional(SatoshiRarityParam),
           offset: Type.Optional(OffsetParam),
           limit: Type.Optional(LimitParam),
         }),
@@ -64,6 +66,7 @@ export const InscriptionRoutes: FastifyPluginCallback<
         ...blockArg,
         address: request.query.address,
         mime_type: request.query.mime_type,
+        sat_rarity: request.query.rarity,
         limit,
         offset,
       });

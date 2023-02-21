@@ -14,6 +14,7 @@ export type DbInscriptionInsert = {
   address: string;
   sat_ordinal: number;
   sat_point: string;
+  sat_rarity: string;
   fee: number;
   mime_type: string;
   content_type: string;
@@ -31,6 +32,7 @@ export type DbInscription = {
   address: string;
   sat_ordinal: bigint;
   sat_point: string;
+  sat_rarity: string;
   fee: number;
   mime_type: string;
   content_type: string;
@@ -53,6 +55,7 @@ export const INSCRIPTIONS_COLUMNS = [
   'address',
   'sat_ordinal',
   'sat_point',
+  'sat_rarity',
   'fee',
   'mime_type',
   'content_type',

@@ -16,6 +16,8 @@ export const BlockHashParam = Type.RegEx(/^(0x)?[0]{8}[a-fA-F0-9]{56}$/);
 
 export const MimeTypeParam = Type.RegEx(/^\w+\/[-.\w]+(?:\+[-.\w]+)?$/);
 
+export const SatoshiRarityParam = Type.Enum(SatoshiRarity);
+
 export const OffsetParam = Type.Integer({ minimum: 0 });
 
 export const LimitParam = Type.Integer({ minimum: 1, maximum: 20 });
@@ -36,6 +38,7 @@ export const InscriptionResponse = Type.Object({
   tx_id: Type.String(),
   sat_ordinal: Type.String(),
   sat_point: Type.String(),
+  sat_rarity: Type.String(),
   offset: Type.Integer(),
   fee: Type.Integer(),
   mime_type: Type.String(),

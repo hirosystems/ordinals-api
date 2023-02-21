@@ -41,6 +41,10 @@ export function up(pgm: MigrationBuilder): void {
       type: 'text',
       notNull: true,
     },
+    sat_rarity: {
+      type: 'text',
+      notNull: true,
+    },
     fee: {
       type: 'int',
       notNull: true,
@@ -76,4 +80,5 @@ export function up(pgm: MigrationBuilder): void {
   pgm.createIndex('inscriptions', ['block_hash']);
   pgm.createIndex('inscriptions', ['address']);
   pgm.createIndex('inscriptions', ['mime_type']);
+  pgm.createIndex('inscriptions', ['sat_rarity']);
 }

@@ -12,6 +12,7 @@ export function parseDbInscriptions(items: DbInscription[]): InscriptionResponse
     tx_id: inscription.tx_id,
     sat_ordinal: inscription.sat_ordinal.toString(),
     sat_point: inscription.sat_point,
+    sat_rarity: inscription.sat_rarity,
     offset: inscription.offset,
     fee: inscription.fee,
     mime_type: inscription.mime_type,
