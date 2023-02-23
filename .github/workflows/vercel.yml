@@ -15,8 +15,8 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      VERCEL_ENV: ${{ github.ref_name == 'master' && 'production' || 'preview' }}
-      VERCEL_PROD: ${{ github.ref_name == 'master' && '--prod' || '' }}
+      - VERCEL_ENV: ${{ github.ref_name == 'master' && 'production' || 'preview' }}
+      - VERCEL_PROD: ${{ github.ref_name == 'master' && '--prod' || '' }}
 
     environment:
       name: ${{ github.ref_name == 'master' && 'Production' || 'Preview' }}
