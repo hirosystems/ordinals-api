@@ -7,13 +7,20 @@ env:
 on:
   push:
     branches:
-      - beta
+      - develop
   pull_request:
-  workflow_dispatch:
 
 jobs:
   vercel:
     runs-on: ubuntu-latest
+
+    environment:
+      name: ${{ github.ref_name == 'master' && 'Production' || 'Preview' }}
+      url: ${{ github.ref_name == 'master' && 'https://ordinals-api.vercel.app/' || 'https://ordinals-api-pbcblockstack-blockstack.vercel.app/' }}
+
+    env:
+      VERCEL_ENV: ${{ github.ref_name == 'master' && 'production' || 'preview' }}
+      VERCEL_PROD: ${{ github.ref_name == 'master' && '--prod' || '' }}
 
     steps:
       - uses: actions/checkout@v2
@@ -45,14 +52,14 @@ jobs:
         run: npm install --global vercel@latest
 
       - name: Pull Vercel environment information
-        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel pull --yes --environment=${{ VERCEL_ENV }} --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build project artifacts
-        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel build ${{ VERCEL_PROD }} --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy project artifacts to Vercel
         id: deploy
-        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} | awk '{print "deployment_url="$1}' >> $GITHUB_OUTPUT
+        run: vercel deploy ${{ VERCEL_PROD }} --prebuilt --token=${{ secrets.VERCEL_TOKEN }} | awk '{print "deployment_url="$1}' >> $GITHUB_OUTPUT
 
       - name: Add comment with Vercel deployment URL
         if: ${{ github.event_name == 'pull_request' }}
