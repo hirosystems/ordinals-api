@@ -14,13 +14,13 @@ jobs:
   vercel:
     runs-on: ubuntu-latest
 
-    environment:
-      name: ${{ github.ref_name == 'master' && 'Production' || 'Preview' }}
-      url: ${{ github.ref_name == 'master' && 'https://ordinals-api.vercel.app/' || 'https://ordinals-api-pbcblockstack-blockstack.vercel.app/' }}
-
     env:
       VERCEL_ENV: ${{ github.ref_name == 'master' && 'production' || 'preview' }}
       VERCEL_PROD: ${{ github.ref_name == 'master' && '--prod' || '' }}
+
+    environment:
+      name: ${{ github.ref_name == 'master' && 'Production' || 'Preview' }}
+      url: ${{ github.ref_name == 'master' && 'https://ordinals-api.vercel.app/' || 'https://ordinals-api-pbcblockstack-blockstack.vercel.app/' }}
 
     steps:
       - uses: actions/checkout@v2
