@@ -83,9 +83,20 @@ export class PgStore extends BasePgStore {
     address?: string;
     mime_type?: string[];
     sat_rarity?: string;
+    order_by: string;
+    order: string;
     limit: number;
     offset: number;
   }): Promise<DbPaginatedResult<DbInscription>> {
+    // Sanitize ordering args because we'll use `unsafe` to concatenate them into the query.
+    let orderBy = 'block_height';
+    if (args.order_by === 'ordinal') orderBy = 'sat_ordinal';
+    if (args.order_by === 'rarity') {
+      orderBy =
+        "ARRAY_POSITION(ARRAY['common','uncommon','rare','epic','legendary','mythic'], sat_rarity)";
+    }
+    const order = args.order === 'asc' ? 'ASC' : 'DESC';
+
     const results = await this.sql<({ total: number } & DbInscription)[]>`
       SELECT ${this.sql(INSCRIPTIONS_COLUMNS)}, COUNT(*) OVER() as total
       FROM inscriptions
@@ -99,7 +110,7 @@ export class PgStore extends BasePgStore {
             ? this.sql`AND mime_type IN ${this.sql(args.mime_type)}`
             : this.sql``
         }
-      ORDER BY block_height DESC
+      ORDER BY ${this.sql.unsafe(orderBy)} ${this.sql.unsafe(order)}
       LIMIT ${args.limit}
       OFFSET ${args.offset}
     `;

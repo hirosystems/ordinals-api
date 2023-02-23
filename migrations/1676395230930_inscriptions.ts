@@ -76,9 +76,9 @@ export function up(pgm: MigrationBuilder): void {
     'UNIQUE(inscription_id)'
   );
   pgm.createIndex('inscriptions', ['sat_ordinal']);
-  pgm.createIndex('inscriptions', [{ name: 'block_height', sort: 'DESC' }]);
+  pgm.createIndex('inscriptions', ['sat_rarity']);
+  pgm.createIndex('inscriptions', ['block_height']);
   pgm.createIndex('inscriptions', ['block_hash']);
   pgm.createIndex('inscriptions', ['address']);
   pgm.createIndex('inscriptions', ['mime_type']);
-  pgm.createIndex('inscriptions', ['sat_rarity']);
 }

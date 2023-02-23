@@ -16,6 +16,8 @@ import {
   BlockHashParam,
   MimeTypeParam,
   SatoshiRarityParam,
+  InscriptionsOrderByParam,
+  OrderParam,
 } from '../types';
 import {
   DEFAULT_API_LIMIT,
@@ -47,6 +49,8 @@ export const InscriptionRoutes: FastifyPluginCallback<
           rarity: Type.Optional(SatoshiRarityParam),
           offset: Type.Optional(OffsetParam),
           limit: Type.Optional(LimitParam),
+          order_by: Type.Optional(InscriptionsOrderByParam),
+          order: Type.Optional(OrderParam),
         }),
         response: {
           200: PaginatedResponse(InscriptionResponse),
@@ -69,6 +73,8 @@ export const InscriptionRoutes: FastifyPluginCallback<
         sat_rarity: request.query.rarity,
         limit,
         offset,
+        order_by: request.query.order_by ?? 'block_height',
+        order: request.query.order ?? 'desc',
       });
       await reply.send({
         limit,

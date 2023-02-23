@@ -22,6 +22,14 @@ export const OffsetParam = Type.Integer({ minimum: 0 });
 
 export const LimitParam = Type.Integer({ minimum: 1, maximum: 20 });
 
+export const InscriptionsOrderByParam = Type.Enum({
+  block_height: 'block_height',
+  ordinal: 'ordinal',
+  rarity: 'rarity',
+});
+
+export const OrderParam = Type.Enum({ asc: 'asc', desc: 'desc' });
+
 export const PaginatedResponse = <T extends TSchema>(type: T) =>
   Type.Object({
     limit: Type.Integer(),
