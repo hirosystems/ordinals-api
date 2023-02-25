@@ -7,7 +7,9 @@ import { registerShutdownConfig } from './shutdown-handler';
 
 async function initBackgroundServices(db: PgStore) {
   logger.info('Initializing background services...');
-  const importer = new InscriptionsImporter({ db });
+
+  const startingBlockHeight = (await db.getChainTipBlockHeight()) ?? 1;
+  const importer = new InscriptionsImporter({ db, startingBlockHeight });
   registerShutdownConfig({
     name: 'Inscriptions Importer',
     forceKillable: false,

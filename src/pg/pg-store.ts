@@ -6,6 +6,7 @@ import {
   DbInscription,
   DbInscriptionContent,
   DbInscriptionInsert,
+  DbLocatedInscription,
   DbLocation,
   DbLocationInsert,
   DbPaginatedResult,
@@ -37,32 +38,43 @@ export class PgStore extends BasePgStore {
     return new PgStore(sql);
   }
 
+  async updateChainTipBlockHeight(args: { blockHeight: number }): Promise<void> {
+    await this.sql`UPDATE chain_tip SET block_height = ${args.blockHeight}`;
+  }
+
+  async getChainTipBlockHeight(): Promise<number> {
+    const result = await this.sql<{ block_height: number }[]>`SELECT block_height FROM chain_tip`;
+    return result[0].block_height;
+  }
+
   async insertInscriptionGenesis(args: {
     inscription: DbInscriptionInsert;
     location: DbLocationInsert;
-  }): Promise<void> {
-    await this.sqlWriteTransaction(async sql => {
+  }): Promise<DbLocatedInscription> {
+    return await this.sqlWriteTransaction(async sql => {
       const prevNumber = await sql<{ max: number }[]>`
         SELECT MAX(number) as max FROM inscriptions
       `;
-      const values = {
+      const inscription = {
         ...args.inscription,
         number: prevNumber[0].max !== null ? prevNumber[0].max + 1 : 0,
       };
-      const inscription = await sql<{ id: number }[]>`
-        INSERT INTO inscriptions ${sql(values)}
+      const dbInscription = await sql<DbInscription[]>`
+        INSERT INTO inscriptions ${sql(inscription)}
         ON CONFLICT ON CONSTRAINT inscriptions_genesis_id_unique DO NOTHING
-        RETURNING id
+        RETURNING ${this.sql(INSCRIPTIONS_COLUMNS)}
       `;
       const location = {
         ...args.location,
         timestamp: sql`to_timestamp(${args.location.timestamp})`,
-        inscription_id: inscription[0].id,
+        inscription_id: dbInscription[0].id,
       };
-      await sql`
+      const dbLocation = await sql<DbLocation[]>`
         INSERT INTO locations ${sql(location)}
         ON CONFLICT ON CONSTRAINT locations_inscription_id_block_hash_unique DO NOTHING
+        RETURNING ${this.sql(LOCATIONS_COLUMNS)}
       `;
+      return { inscription: dbInscription[0], location: dbLocation[0] };
     });
   }
 

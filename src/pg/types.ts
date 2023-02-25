@@ -5,6 +5,11 @@ export type DbPaginatedResult<T> = {
   results: T[];
 };
 
+export type DbLocatedInscription = {
+  inscription: DbInscription;
+  location: DbLocation;
+};
+
 export type DbLocationInsert = {
   inscription_id: number;
   block_height: number;
@@ -77,6 +82,7 @@ export type DbInscriptionContent = {
 export const INSCRIPTIONS_COLUMNS = [
   'id',
   'genesis_id',
+  'number',
   'mime_type',
   'content_type',
   'content_length',

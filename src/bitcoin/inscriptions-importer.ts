@@ -5,29 +5,32 @@ import { btcToSats, findVinInscriptionGenesis } from './helpers';
 import { Block, Transaction } from './types';
 
 /** First mainnet block height with inscriptions (original 767430) */
-// const STARTING_BLOCK_HEIGHT = 767430;
-const STARTING_BLOCK_HEIGHT = 767753;
+const FIRST_INSCRIPTION_BLOCK_HEIGHT = 767430;
 
 /**
  * xc
  */
 export class InscriptionsImporter {
   private readonly db: PgStore;
+  private readonly startingBlockHeight: number;
   private readonly client: BitcoinRpcClient;
 
-  constructor(args: { db: PgStore }) {
+  constructor(args: { db: PgStore; startingBlockHeight: number }) {
     this.db = args.db;
+    this.startingBlockHeight = args.startingBlockHeight;
     this.client = new BitcoinRpcClient();
   }
 
   async import() {
-    logger.info(`InscriptionsImporter starting at height ${STARTING_BLOCK_HEIGHT}...`);
-    const startBlockHash = await this.client.getBlockHash({ height: STARTING_BLOCK_HEIGHT });
+    const startHeight = Math.max(this.startingBlockHeight, FIRST_INSCRIPTION_BLOCK_HEIGHT);
+    logger.info(`InscriptionsImporter starting at height ${startHeight}...`);
+    const startBlockHash = await this.client.getBlockHash({ height: startHeight });
 
     let nextBlockHash = startBlockHash;
     while (true) {
       const block = await this.client.getBlock({ hash: nextBlockHash });
       await this.scanBlock(block);
+      await this.db.updateChainTipBlockHeight({ blockHeight: block.height });
       if (!block.nextblockhash) break;
       nextBlockHash = block.nextblockhash;
     }
@@ -39,7 +42,7 @@ export class InscriptionsImporter {
 
   private async scanBlock(block: Block) {
     logger.info(`InscriptionsImporter scanning for inscriptions at block ${block.height}`);
-    // Skip coinbase tx, process all others to track inscription flow.
+    // Skip coinbase tx.
     for (const txId of block.tx.slice(1)) {
       const tx = await this.client.getTransaction({ txId, blockHash: block.hash });
       let txFee: number | undefined;
@@ -51,9 +54,10 @@ export class InscriptionsImporter {
         const genesis = findVinInscriptionGenesis(vin);
         if (genesis) {
           txFee = txFee ?? (await this.getTransactionFee(tx));
-          await this.db.insertInscriptionGenesis({
+          const genesisId = `${tx.txid}i${genesisIndex++}`;
+          const res = await this.db.insertInscriptionGenesis({
             inscription: {
-              genesis_id: `${tx.txid}i${genesisIndex++}`,
+              genesis_id: genesisId,
               mime_type: genesis.contentType.split(';')[0],
               content_type: genesis.contentType,
               content_length: genesis.content.byteLength,
@@ -74,6 +78,9 @@ export class InscriptionsImporter {
               current: true,
             },
           });
+          logger.info(
+            `InscriptionsImporter found genesis #${res.inscription.number}: ${genesisId}`
+          );
           continue;
         }
         // Is it a UTXO that previously held an inscription?
