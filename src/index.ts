@@ -36,10 +36,15 @@ async function initApiService(db: PgStore) {
 }
 
 async function initApp() {
+  logger.info(`Initializing in ${ENV.RUN_MODE} run mode...`);
   const db = await PgStore.connect({ skipMigrations: false });
 
-  await initBackgroundServices(db);
-  await initApiService(db);
+  if (['default', 'writeonly'].includes(ENV.RUN_MODE)) {
+    await initBackgroundServices(db);
+  }
+  if (['default', 'readonly'].includes(ENV.RUN_MODE)) {
+    await initApiService(db);
+  }
 
   registerShutdownConfig({
     name: 'DB',
