@@ -61,6 +61,20 @@ export class PgStore extends BasePgStore {
     return result[0];
   }
 
+  async getInscriptionByUtxo(utxo: string): Promise<DbInscription | undefined> {
+    const result = await this.sql<DbInscription[]>`
+      SELECT ${this.sql(INSCRIPTIONS_COLUMNS)}
+      FROM inscriptions
+      WHERE output = ${utxo}
+      ORDER BY block_height DESC
+      LIMIT 1
+    `;
+    if (result.count === 0) {
+      return undefined;
+    }
+    return result[0];
+  }
+
   async getInscriptionContent(args: {
     inscription_id: string;
   }): Promise<DbInscriptionContent | undefined> {
