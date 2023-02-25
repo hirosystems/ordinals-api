@@ -1,9 +1,8 @@
 import { logger } from '../logger';
 import { PgStore } from '../pg/pg-store';
 import { BitcoinRpcClient } from './bitcoin-rpc-client';
-import { findVinInscriptionGenesis, getTransactionFee } from './helpers';
-// import { getTransactionInscriptions } from './helpers';
-import { Block } from './types';
+import { findVinInscriptionGenesis } from './helpers';
+import { Block, Transaction } from './types';
 
 /** First mainnet block height with inscriptions */
 const STARTING_BLOCK_HEIGHT = 767430;
@@ -50,9 +49,7 @@ export class InscriptionsImporter {
         // Does this UTXO have a new inscription?
         const genesis = findVinInscriptionGenesis(vin);
         if (genesis) {
-          if (!txFee) {
-            txFee = await getTransactionFee(this.client, tx);
-          }
+          txFee = txFee ?? (await this.getTransactionFee(tx));
           await this.db.insertInscriptionGenesis({
             inscription: {
               genesis_id: `${tx.hash}i${genesisIndex++}`,
@@ -102,5 +99,19 @@ export class InscriptionsImporter {
         }
       }
     }
+  }
+
+  private async getTransactionFee(tx: Transaction): Promise<number> {
+    let totalIn = 0.0;
+    // TODO: Do these in parallel? How much can bitcoin RPC hold?
+    for (const vin of tx.vin) {
+      const inTx = await this.client.getTransaction({ txId: vin.txid });
+      totalIn += inTx.vout[vin.vout].value;
+    }
+    let totalOut = 0.0;
+    for (const vout of tx.vout) {
+      totalOut += vout.value;
+    }
+    return totalOut - totalIn;
   }
 }

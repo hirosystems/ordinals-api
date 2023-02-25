@@ -37,14 +37,6 @@ export class PgStore extends BasePgStore {
     return new PgStore(sql);
   }
 
-  // TODO: Deprecated
-  async insertInscription(args: { values: DbInscriptionInsert }): Promise<void> {
-    await this.sql`
-      INSERT INTO inscriptions ${this.sql(args.values)}
-      ON CONFLICT ON CONSTRAINT inscriptions_inscription_id_unique DO NOTHING
-    `;
-  }
-
   async insertInscriptionGenesis(args: {
     inscription: DbInscriptionInsert;
     location: DbLocationInsert;
