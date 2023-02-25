@@ -26,8 +26,10 @@ export class BitcoinRpcClient {
     return this.sendRpcCall('getblock', [args.hash]);
   }
 
-  async getTransaction(args: { txId: string; blockHash: string }): Promise<Transaction> {
-    return this.sendRpcCall('getrawtransaction', [args.txId, true, args.blockHash]);
+  async getTransaction(args: { txId: string; blockHash?: string }): Promise<Transaction> {
+    const params = [args.txId, true];
+    if (args.blockHash) params.push(args.blockHash);
+    return this.sendRpcCall('getrawtransaction', params);
   }
 
   private async sendRpcCall<T>(method: string, params: RpcParam[] = []): Promise<T> {

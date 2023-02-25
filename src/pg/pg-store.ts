@@ -6,8 +6,11 @@ import {
   DbInscription,
   DbInscriptionContent,
   DbInscriptionInsert,
+  DbLocation,
+  DbLocationInsert,
   DbPaginatedResult,
   INSCRIPTIONS_COLUMNS,
+  LOCATIONS_COLUMNS,
 } from './types';
 
 export class PgStore extends BasePgStore {
@@ -34,11 +37,43 @@ export class PgStore extends BasePgStore {
     return new PgStore(sql);
   }
 
+  // TODO: Deprecated
   async insertInscription(args: { values: DbInscriptionInsert }): Promise<void> {
     await this.sql`
       INSERT INTO inscriptions ${this.sql(args.values)}
       ON CONFLICT ON CONSTRAINT inscriptions_inscription_id_unique DO NOTHING
     `;
+  }
+
+  async insertInscriptionGenesis(args: {
+    inscription: DbInscriptionInsert;
+    location: DbLocationInsert;
+  }): Promise<void> {
+    await this.sqlWriteTransaction(async sql => {
+      const inscription = await sql<{ id: number }[]>`
+        INSERT INTO inscriptions ${sql(args.inscription)}
+        ON CONFLICT ON CONSTRAINT inscriptions_genesis_id_unique DO NOTHING
+        RETURNING id
+      `;
+      args.location.inscription_id = inscription[0].id;
+      await sql`
+        INSERT INTO locations ${args.location}
+        ON CONFLICT ON CONSTRAINT locations_inscription_id_block_hash_unique DO NOTHING
+      `;
+    });
+  }
+
+  async updateInscriptionLocation(args: { location: DbLocationInsert }): Promise<void> {
+    await this.sqlWriteTransaction(async sql => {
+      await sql`
+        UPDATE locations SET current = FALSE WHERE inscription_id = ${args.location.inscription_id}
+      `;
+      await sql`
+        INSERT INTO locations ${args.location}
+        ON CONFLICT ON CONSTRAINT locations_inscription_id_block_hash_unique DO
+          UPDATE SET current = TRUE
+      `;
+    });
   }
 
   async getInscription(
@@ -61,13 +96,12 @@ export class PgStore extends BasePgStore {
     return result[0];
   }
 
-  async getInscriptionByUtxo(utxo: string): Promise<DbInscription | undefined> {
-    const result = await this.sql<DbInscription[]>`
-      SELECT ${this.sql(INSCRIPTIONS_COLUMNS)}
-      FROM inscriptions
-      WHERE output = ${utxo}
-      ORDER BY block_height DESC
-      LIMIT 1
+  async getInscriptionLocation(args: { output: string }): Promise<DbLocation | undefined> {
+    const result = await this.sql<DbLocation[]>`
+      SELECT ${this.sql(LOCATIONS_COLUMNS)}
+      FROM locations
+      WHERE output = ${args.output}
+      AND current = TRUE
     `;
     if (result.count === 0) {
       return undefined;

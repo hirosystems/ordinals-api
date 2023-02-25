@@ -34,14 +34,7 @@ export function up(pgm: MigrationBuilder): void {
       notNull: true,
     },
   });
-  pgm.createConstraint(
-    'inscriptions',
-    'inscriptions_inscription_id_unique',
-    'UNIQUE(inscription_id)'
-  );
-  // pgm.createIndex('inscriptions', [{ name: 'block_height', sort: 'DESC' }]);
-  // pgm.createIndex('inscriptions', ['block_hash']);
-  // pgm.createIndex('inscriptions', ['address']);
+  pgm.createConstraint('inscriptions', 'inscriptions_genesis_id_unique', 'UNIQUE(genesis_id)');
   pgm.createIndex('inscriptions', ['genesis_id']);
   pgm.createIndex('inscriptions', ['mime_type']);
 }

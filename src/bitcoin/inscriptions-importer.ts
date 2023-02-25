@@ -1,7 +1,7 @@
 import { logger } from '../logger';
 import { PgStore } from '../pg/pg-store';
 import { BitcoinRpcClient } from './bitcoin-rpc-client';
-import { findVinGenesisInscription } from './helpers';
+import { findVinInscriptionGenesis, getTransactionFee } from './helpers';
 // import { getTransactionInscriptions } from './helpers';
 import { Block } from './types';
 
@@ -42,16 +42,64 @@ export class InscriptionsImporter {
     // Skip coinbase tx, process all others to track inscription flow.
     for (const txId of block.tx.slice(1)) {
       const tx = await this.client.getTransaction({ txId, blockHash: block.hash });
+      let txFee: number | undefined;
+
+      let genesisIndex = 0;
+      let offset = 0;
       for (const vin of tx.vin) {
         // Does this UTXO have a new inscription?
-        const genesis = findVinGenesisInscription(tx, vin);
+        const genesis = findVinInscriptionGenesis(vin);
         if (genesis) {
-          // insert
+          if (!txFee) {
+            txFee = await getTransactionFee(this.client, tx);
+          }
+          await this.db.insertInscriptionGenesis({
+            inscription: {
+              genesis_id: `${tx.hash}i${genesisIndex++}`,
+              mime_type: genesis.contentType.split(';')[0],
+              content_type: genesis.contentType,
+              content_length: genesis.content.byteLength,
+              content: genesis.content,
+              fee: txFee,
+            },
+            location: {
+              inscription_id: 0, // TBD once inscription insert is done
+              block_height: block.height,
+              block_hash: block.hash,
+              tx_id: tx.hash,
+              address: tx.vout[0].scriptPubKey.address,
+              output: `${tx.hash}:0`,
+              offset: 0,
+              value: tx.vout[0].value,
+              timestamp: block.time,
+              genesis: true,
+              current: true,
+            },
+          });
           continue;
         }
         // Is it a UTXO that previously held an inscription?
-        const prevInscription = await this.db.getInscriptionByUtxo(`${vin.txid}:${vin.vout}`);
-        // insert new record
+        const prevLocation = await this.db.getInscriptionLocation({
+          output: `${vin.txid}:${vin.vout}`,
+        });
+        if (prevLocation) {
+          await this.db.updateInscriptionLocation({
+            location: {
+              inscription_id: prevLocation.inscription_id,
+              block_height: block.height,
+              block_hash: block.hash,
+              tx_id: tx.hash,
+              address: tx.vout[0].scriptPubKey.address,
+              output: `${tx.hash}:0`,
+              offset: offset,
+              value: tx.vout[0].value,
+              timestamp: block.time,
+              genesis: false,
+              current: true,
+            },
+          });
+          offset += prevLocation.value;
+        }
       }
     }
   }

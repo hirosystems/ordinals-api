@@ -1,19 +1,15 @@
 import * as bitcoin from 'bitcoinjs-lib';
 import { hexToBuffer } from '../api/util/helpers';
 import { DbInscriptionInsert } from '../pg/types';
+import { BitcoinRpcClient } from './bitcoin-rpc-client';
 import { Block, Transaction, TransactionVin } from './types';
 
-type TransactionInscription = {
-  index: number;
+type VinInscription = {
   contentType: string;
   content: Buffer;
-  address: string;
 };
 
-export function findVinGenesisInscription(
-  tx: Transaction,
-  vin: TransactionVin
-): TransactionInscription | undefined {
+export function findVinInscriptionGenesis(vin: TransactionVin): VinInscription | undefined {
   for (const witness of vin.txinwitness) {
     const script = bitcoin.script.decompile(hexToBuffer(`0x${witness}`));
     if (!script) continue;
@@ -31,12 +27,27 @@ export function findVinGenesisInscription(
     if (payload[i++] !== bitcoin.opcodes.OP_ENDIF) continue;
 
     return {
-      index: 0,
       contentType,
       content,
-      address: tx.vout[0].scriptPubKey.address,
     };
   }
+}
+
+export async function getTransactionFee(
+  client: BitcoinRpcClient,
+  tx: Transaction
+): Promise<number> {
+  let totalIn = 0.0;
+  // TODO: Do these in parallel?
+  for (const vin of tx.vin) {
+    const inTx = await client.getTransaction({ txId: vin.txid });
+    totalIn += inTx.vout[vin.vout].value;
+  }
+  let totalOut = 0.0;
+  for (const vout of tx.vout) {
+    totalOut += vout.value;
+  }
+  return totalOut - totalIn;
 }
 
 // export function getInsertableInscriptions(tx: Transaction, block: Block): DbInscriptionInsert[] {

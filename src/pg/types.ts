@@ -20,6 +20,7 @@ export type DbLocationInsert = {
 };
 
 export type DbLocation = {
+  id: number;
   inscription_id: number;
   block_height: number;
   block_hash: string;
@@ -34,6 +35,7 @@ export type DbLocation = {
 };
 
 export const LOCATIONS_COLUMNS = [
+  'id',
   'inscription_id',
   'block_height',
   'block_hash',
@@ -57,6 +59,7 @@ export type DbInscriptionInsert = {
 };
 
 export type DbInscription = {
+  id: number;
   genesis_id: string;
   mime_type: string;
   content_type: string;
@@ -71,6 +74,7 @@ export type DbInscriptionContent = {
 };
 
 export const INSCRIPTIONS_COLUMNS = [
+  'id',
   'genesis_id',
   'mime_type',
   'content_type',
