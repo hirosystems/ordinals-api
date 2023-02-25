@@ -40,7 +40,7 @@ export const SatRoutes: FastifyPluginCallback<Record<never, never>, Server, Type
         name: sat.name,
         rarity: sat.rarity,
         percentile: sat.percentile,
-        inscription_id: inscription?.inscription_id,
+        inscription_id: inscription?.genesis_id,
       });
     }
   );

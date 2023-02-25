@@ -13,6 +13,10 @@ export function up(pgm: MigrationBuilder): void {
       type: 'text',
       notNull: true,
     },
+    number: {
+      type: 'int',
+      notNull: true,
+    },
     mime_type: {
       type: 'text',
       notNull: true,
@@ -36,5 +40,6 @@ export function up(pgm: MigrationBuilder): void {
   });
   pgm.createConstraint('inscriptions', 'inscriptions_genesis_id_unique', 'UNIQUE(genesis_id)');
   pgm.createIndex('inscriptions', ['genesis_id']);
+  pgm.createIndex('inscriptions', ['number']);
   pgm.createIndex('inscriptions', ['mime_type']);
 }

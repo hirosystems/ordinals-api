@@ -1,5 +1,4 @@
 import * as bitcoin from 'bitcoinjs-lib';
-import { hexToBuffer } from '../api/util/helpers';
 import { TransactionVin } from './types';
 
 type VinInscription = {
@@ -8,25 +7,37 @@ type VinInscription = {
 };
 
 export function findVinInscriptionGenesis(vin: TransactionVin): VinInscription | undefined {
+  if (!vin.txinwitness) return;
   for (const witness of vin.txinwitness) {
-    const script = bitcoin.script.decompile(hexToBuffer(`0x${witness}`));
+    const script = bitcoin.script.decompile(Buffer.from(witness, 'hex'));
     if (!script) continue;
-    const payload = script.slice(2);
-    if (!payload.length) continue;
 
-    let i = 0;
-    if (payload[i++] !== bitcoin.opcodes.OP_FALSE) continue;
-    if (payload[i++] !== bitcoin.opcodes.OP_IF) continue;
-    if (payload[i++].toString() !== 'ord') continue;
-    if (payload[i++] !== bitcoin.opcodes.OP_1) continue;
-    const contentType = payload[i++].toString();
-    if (payload[i++] !== bitcoin.opcodes.OP_0) continue;
-    const content = payload[i++] as Buffer;
-    if (payload[i++] !== bitcoin.opcodes.OP_ENDIF) continue;
+    while (script.length && script[0] !== bitcoin.opcodes.OP_FALSE) {
+      script.shift();
+    }
+    script.shift();
+    if (script.shift() !== bitcoin.opcodes.OP_IF) continue;
+    if (script.shift()?.toString() !== 'ord') continue;
+    if (script.shift() !== bitcoin.opcodes.OP_1) continue;
+    const contentType = script.shift()?.toString();
+    if (!contentType) continue;
+    if (script.shift() !== bitcoin.opcodes.OP_0) continue;
+
+    let content: Buffer | undefined;
+    do {
+      const next = script.shift();
+      if (!next || next === bitcoin.opcodes.OP_ENDIF) break;
+      content = !content ? (next as Buffer) : Buffer.concat([content, next as Buffer]);
+    } while (true);
+    if (!content) continue;
 
     return {
       contentType,
       content,
     };
   }
+}
+
+export function btcToSats(btc: number): number {
+  return Math.round(btc * Math.pow(10, 8));
 }

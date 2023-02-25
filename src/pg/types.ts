@@ -61,6 +61,7 @@ export type DbInscriptionInsert = {
 export type DbInscription = {
   id: number;
   genesis_id: string;
+  number: number;
   mime_type: string;
   content_type: string;
   content_length: number;

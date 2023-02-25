@@ -23,7 +23,7 @@ const TransactionVin = Type.Object({
     asm: Type.String(),
     hex: Type.String(),
   }),
-  txinwitness: Type.Array(Type.String()),
+  txinwitness: Type.Optional(Type.Array(Type.String())),
   sequence: Type.Integer(),
 });
 export type TransactionVin = Static<typeof TransactionVin>;

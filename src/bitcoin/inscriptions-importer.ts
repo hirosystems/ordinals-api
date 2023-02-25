@@ -1,11 +1,12 @@
 import { logger } from '../logger';
 import { PgStore } from '../pg/pg-store';
 import { BitcoinRpcClient } from './bitcoin-rpc-client';
-import { findVinInscriptionGenesis } from './helpers';
+import { btcToSats, findVinInscriptionGenesis } from './helpers';
 import { Block, Transaction } from './types';
 
-/** First mainnet block height with inscriptions */
-const STARTING_BLOCK_HEIGHT = 767430;
+/** First mainnet block height with inscriptions (original 767430) */
+// const STARTING_BLOCK_HEIGHT = 767430;
+const STARTING_BLOCK_HEIGHT = 767753;
 
 /**
  * xc
@@ -52,7 +53,7 @@ export class InscriptionsImporter {
           txFee = txFee ?? (await this.getTransactionFee(tx));
           await this.db.insertInscriptionGenesis({
             inscription: {
-              genesis_id: `${tx.hash}i${genesisIndex++}`,
+              genesis_id: `${tx.txid}i${genesisIndex++}`,
               mime_type: genesis.contentType.split(';')[0],
               content_type: genesis.contentType,
               content_length: genesis.content.byteLength,
@@ -63,11 +64,11 @@ export class InscriptionsImporter {
               inscription_id: 0, // TBD once inscription insert is done
               block_height: block.height,
               block_hash: block.hash,
-              tx_id: tx.hash,
+              tx_id: tx.txid,
               address: tx.vout[0].scriptPubKey.address,
-              output: `${tx.hash}:0`,
+              output: `${tx.txid}:0`,
               offset: 0,
-              value: tx.vout[0].value,
+              value: btcToSats(tx.vout[0].value),
               timestamp: block.time,
               genesis: true,
               current: true,
@@ -85,11 +86,11 @@ export class InscriptionsImporter {
               inscription_id: prevLocation.inscription_id,
               block_height: block.height,
               block_hash: block.hash,
-              tx_id: tx.hash,
+              tx_id: tx.txid,
               address: tx.vout[0].scriptPubKey.address,
-              output: `${tx.hash}:0`,
+              output: `${tx.txid}:0`,
               offset: offset,
-              value: tx.vout[0].value,
+              value: btcToSats(tx.vout[0].value),
               timestamp: block.time,
               genesis: false,
               current: true,
@@ -112,6 +113,6 @@ export class InscriptionsImporter {
     for (const vout of tx.vout) {
       totalOut += vout.value;
     }
-    return totalOut - totalIn;
+    return btcToSats(totalIn - totalOut);
   }
 }

@@ -42,14 +42,25 @@ export class PgStore extends BasePgStore {
     location: DbLocationInsert;
   }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
+      const prevNumber = await sql<{ max: number }[]>`
+        SELECT MAX(number) as max FROM inscriptions
+      `;
+      const values = {
+        ...args.inscription,
+        number: prevNumber[0].max !== null ? prevNumber[0].max + 1 : 0,
+      };
       const inscription = await sql<{ id: number }[]>`
-        INSERT INTO inscriptions ${sql(args.inscription)}
+        INSERT INTO inscriptions ${sql(values)}
         ON CONFLICT ON CONSTRAINT inscriptions_genesis_id_unique DO NOTHING
         RETURNING id
       `;
-      args.location.inscription_id = inscription[0].id;
+      const location = {
+        ...args.location,
+        timestamp: sql`to_timestamp(${args.location.timestamp})`,
+        inscription_id: inscription[0].id,
+      };
       await sql`
-        INSERT INTO locations ${args.location}
+        INSERT INTO locations ${sql(location)}
         ON CONFLICT ON CONSTRAINT locations_inscription_id_block_hash_unique DO NOTHING
       `;
     });
@@ -57,11 +68,15 @@ export class PgStore extends BasePgStore {
 
   async updateInscriptionLocation(args: { location: DbLocationInsert }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
+      const location = {
+        ...args.location,
+        timestamp: sql`to_timestamp(${args.location.timestamp})`,
+      };
       await sql`
-        UPDATE locations SET current = FALSE WHERE inscription_id = ${args.location.inscription_id}
+        UPDATE locations SET current = FALSE WHERE inscription_id = ${location.inscription_id}
       `;
       await sql`
-        INSERT INTO locations ${args.location}
+        INSERT INTO locations ${sql(location)}
         ON CONFLICT ON CONSTRAINT locations_inscription_id_block_hash_unique DO
           UPDATE SET current = TRUE
       `;

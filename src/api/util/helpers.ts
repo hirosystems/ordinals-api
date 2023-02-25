@@ -3,27 +3,27 @@ import { InscriptionResponseType } from '../types';
 
 export const DEFAULT_API_LIMIT = 20;
 
-export function parseDbInscriptions(items: DbInscription[]): InscriptionResponseType[] {
-  return items.map(inscription => ({
-    id: inscription.inscription_id,
-    address: inscription.address,
-    block_height: inscription.block_height,
-    block_hash: inscription.block_hash,
-    tx_id: inscription.tx_id,
-    sat_ordinal: inscription.sat_ordinal.toString(),
-    sat_point: inscription.sat_point,
-    sat_rarity: inscription.sat_rarity,
-    offset: inscription.offset,
-    fee: inscription.fee,
-    mime_type: inscription.mime_type,
-    content_type: inscription.content_type,
-    content_length: inscription.content_length,
-    timestamp: inscription.timestamp,
-  }));
-}
-export function parseDbInscription(item: DbInscription): InscriptionResponseType {
-  return parseDbInscriptions([item])[0];
-}
+// export function parseDbInscriptions(items: DbInscription[]): InscriptionResponseType[] {
+//   return items.map(inscription => ({
+//     id: inscription.inscription_id,
+//     address: inscription.address,
+//     block_height: inscription.block_height,
+//     block_hash: inscription.block_hash,
+//     tx_id: inscription.tx_id,
+//     sat_ordinal: inscription.sat_ordinal.toString(),
+//     sat_point: inscription.sat_point,
+//     sat_rarity: inscription.sat_rarity,
+//     offset: inscription.offset,
+//     fee: inscription.fee,
+//     mime_type: inscription.mime_type,
+//     content_type: inscription.content_type,
+//     content_length: inscription.content_length,
+//     timestamp: inscription.timestamp,
+//   }));
+// }
+// export function parseDbInscription(item: DbInscription): InscriptionResponseType {
+//   return parseDbInscriptions([item])[0];
+// }
 
 /**
  * Decodes a `0x` prefixed hex string to a buffer.
