@@ -19,8 +19,8 @@ import {
 } from '../types';
 import {
   DEFAULT_API_LIMIT,
-  // parseDbInscriptions,
-  // parseDbInscription,
+  parseDbInscriptions,
+  parseDbInscription,
   hexToBuffer,
   normalizeHashString,
 } from '../util/helpers';
@@ -100,8 +100,7 @@ export const InscriptionRoutes: FastifyPluginCallback<
         inscription_id: request.params.inscription_id,
       });
       if (inscription) {
-        // await reply.send(parseDbInscription(inscription));
-        await reply.send();
+        await reply.send(parseDbInscription(inscription));
       } else {
         await reply.code(404).send(Value.Create(NotFoundResponse));
       }

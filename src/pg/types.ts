@@ -10,6 +10,10 @@ export type DbLocatedInscription = {
   location: DbLocation;
 };
 
+export type DbFullyLocatedInscription = DbLocatedInscription & {
+  genesis: DbLocation;
+};
+
 export type DbLocationInsert = {
   inscription_id: number;
   block_height: number;
@@ -17,8 +21,8 @@ export type DbLocationInsert = {
   tx_id: string;
   address: string;
   output: string;
-  offset: number;
-  value: number;
+  offset: bigint;
+  value: bigint;
   timestamp: number;
   genesis: boolean;
   current: boolean;
@@ -32,8 +36,8 @@ export type DbLocation = {
   tx_id: string;
   address: string;
   output: string;
-  offset: number;
-  value: number;
+  offset: bigint;
+  value: bigint;
   timestamp: number;
   genesis: boolean;
   current: boolean;
@@ -60,7 +64,7 @@ export type DbInscriptionInsert = {
   content_type: string;
   content_length: number;
   content: PgBytea;
-  fee: number;
+  fee: bigint;
 };
 
 export type DbInscription = {
@@ -70,7 +74,7 @@ export type DbInscription = {
   mime_type: string;
   content_type: string;
   content_length: number;
-  fee: number;
+  fee: bigint;
 };
 
 export type DbInscriptionContent = {

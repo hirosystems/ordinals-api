@@ -1,29 +1,28 @@
-import { DbInscription } from '../../pg/types';
+import { DbFullyLocatedInscription } from '../../pg/types';
 import { InscriptionResponseType } from '../types';
 
 export const DEFAULT_API_LIMIT = 20;
 
-// export function parseDbInscriptions(items: DbInscription[]): InscriptionResponseType[] {
-//   return items.map(inscription => ({
-//     id: inscription.inscription_id,
-//     address: inscription.address,
-//     block_height: inscription.block_height,
-//     block_hash: inscription.block_hash,
-//     tx_id: inscription.tx_id,
-//     sat_ordinal: inscription.sat_ordinal.toString(),
-//     sat_point: inscription.sat_point,
-//     sat_rarity: inscription.sat_rarity,
-//     offset: inscription.offset,
-//     fee: inscription.fee,
-//     mime_type: inscription.mime_type,
-//     content_type: inscription.content_type,
-//     content_length: inscription.content_length,
-//     timestamp: inscription.timestamp,
-//   }));
-// }
-// export function parseDbInscription(item: DbInscription): InscriptionResponseType {
-//   return parseDbInscriptions([item])[0];
-// }
+export function parseDbInscriptions(items: DbFullyLocatedInscription[]): InscriptionResponseType[] {
+  return items.map(i => ({
+    id: i.inscription.genesis_id,
+    address: i.location.address,
+    genesis_block_height: i.genesis.block_height,
+    genesis_block_hash: i.genesis.block_hash,
+    genesis_tx_id: i.genesis.tx_id,
+    genesis_fee: i.inscription.fee.toString(),
+    location: `${i.location.output}:${i.location.offset}`,
+    output: i.location.output,
+    offset: i.location.offset.toString(),
+    mime_type: i.inscription.mime_type,
+    content_type: i.inscription.content_type,
+    content_length: i.inscription.content_length,
+    timestamp: i.location.timestamp,
+  }));
+}
+export function parseDbInscription(item: DbFullyLocatedInscription): InscriptionResponseType {
+  return parseDbInscriptions([item])[0];
+}
 
 /**
  * Decodes a `0x` prefixed hex string to a buffer.

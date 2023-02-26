@@ -30,7 +30,7 @@ export class InscriptionsImporter {
     while (true) {
       const block = await this.client.getBlock({ hash: nextBlockHash });
       await this.scanBlock(block);
-      await this.db.updateChainTipBlockHeight({ blockHeight: block.height });
+      await this.db.updateChainTipBlockHeight({ blockHeight: block.height + 1 });
       if (!block.nextblockhash) break;
       nextBlockHash = block.nextblockhash;
     }
@@ -45,10 +45,10 @@ export class InscriptionsImporter {
     // Skip coinbase tx.
     for (const txId of block.tx.slice(1)) {
       const tx = await this.client.getTransaction({ txId, blockHash: block.hash });
-      let txFee: number | undefined;
+      let txFee: bigint | undefined;
 
       let genesisIndex = 0;
-      let offset = 0;
+      let offset = 0n;
       for (const vin of tx.vin) {
         // Does this UTXO have a new inscription?
         const genesis = findVinInscriptionGenesis(vin);
@@ -71,7 +71,7 @@ export class InscriptionsImporter {
               tx_id: tx.txid,
               address: tx.vout[0].scriptPubKey.address,
               output: `${tx.txid}:0`,
-              offset: 0,
+              offset: 0n,
               value: btcToSats(tx.vout[0].value),
               timestamp: block.time,
               genesis: true,
@@ -84,32 +84,38 @@ export class InscriptionsImporter {
           continue;
         }
         // Is it a UTXO that previously held an inscription?
-        const prevLocation = await this.db.getInscriptionLocation({
+        const prevLocation = await this.db.getInscriptionCurrentLocation({
           output: `${vin.txid}:${vin.vout}`,
         });
         if (prevLocation) {
-          await this.db.updateInscriptionLocation({
-            location: {
-              inscription_id: prevLocation.inscription_id,
-              block_height: block.height,
-              block_hash: block.hash,
-              tx_id: tx.txid,
-              address: tx.vout[0].scriptPubKey.address,
-              output: `${tx.txid}:0`,
-              offset: offset,
-              value: btcToSats(tx.vout[0].value),
-              timestamp: block.time,
-              genesis: false,
-              current: true,
-            },
-          });
-          offset += prevLocation.value;
+          for (const vout of tx.vout) {
+            // TODO: Is this the right address to take?
+            if (vout.scriptPubKey.address) {
+              await this.db.updateInscriptionLocation({
+                location: {
+                  inscription_id: prevLocation.inscription_id,
+                  block_height: block.height,
+                  block_hash: block.hash,
+                  tx_id: tx.txid,
+                  address: vout.scriptPubKey.address,
+                  output: `${tx.txid}:0`,
+                  offset: offset,
+                  value: btcToSats(vout.value),
+                  timestamp: block.time,
+                  genesis: false,
+                  current: true,
+                },
+              });
+              offset += prevLocation.value;
+              break;
+            }
+          }
         }
       }
     }
   }
 
-  private async getTransactionFee(tx: Transaction): Promise<number> {
+  private async getTransactionFee(tx: Transaction): Promise<bigint> {
     let totalIn = 0.0;
     // TODO: Do these in parallel? How much can bitcoin RPC hold?
     for (const vin of tx.vin) {

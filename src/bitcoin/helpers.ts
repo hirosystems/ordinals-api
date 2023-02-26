@@ -38,6 +38,6 @@ export function findVinInscriptionGenesis(vin: TransactionVin): VinInscription |
   }
 }
 
-export function btcToSats(btc: number): number {
-  return Math.round(btc * Math.pow(10, 8));
+export function btcToSats(btc: number): bigint {
+  return BigInt(Math.round(btc * Math.pow(10, 8)));
 }

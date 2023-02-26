@@ -34,11 +34,11 @@ export function up(pgm: MigrationBuilder): void {
       notNull: true,
     },
     offset: {
-      type: 'int',
+      type: 'bigint',
       notNull: true,
     },
     value: {
-      type: 'int',
+      type: 'bigint',
       notNull: true,
     },
     timestamp: {

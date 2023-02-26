@@ -3,6 +3,7 @@ import { runMigrations } from './migrations';
 import { connectPostgres } from './postgres-tools';
 import { BasePgStore } from './postgres-tools/base-pg-store';
 import {
+  DbFullyLocatedInscription,
   DbInscription,
   DbInscriptionContent,
   DbInscriptionInsert,
@@ -52,28 +53,42 @@ export class PgStore extends BasePgStore {
     location: DbLocationInsert;
   }): Promise<DbLocatedInscription> {
     return await this.sqlWriteTransaction(async sql => {
-      const prevNumber = await sql<{ max: number }[]>`
-        SELECT MAX(number) as max FROM inscriptions
+      let dbInscription = await this.sql<DbInscription[]>`
+        SELECT ${sql(INSCRIPTIONS_COLUMNS)}
+        FROM inscriptions
+        WHERE genesis_id = ${args.inscription.genesis_id}
       `;
-      const inscription = {
-        ...args.inscription,
-        number: prevNumber[0].max !== null ? prevNumber[0].max + 1 : 0,
-      };
-      const dbInscription = await sql<DbInscription[]>`
-        INSERT INTO inscriptions ${sql(inscription)}
-        ON CONFLICT ON CONSTRAINT inscriptions_genesis_id_unique DO NOTHING
-        RETURNING ${this.sql(INSCRIPTIONS_COLUMNS)}
+      if (dbInscription.count === 0) {
+        const prevNumber = await sql<{ max: number }[]>`
+          SELECT MAX(number) as max FROM inscriptions
+        `;
+        const inscription = {
+          ...args.inscription,
+          number: prevNumber[0].max !== null ? prevNumber[0].max + 1 : 0,
+        };
+        dbInscription = await sql<DbInscription[]>`
+          INSERT INTO inscriptions ${sql(inscription)}
+          ON CONFLICT ON CONSTRAINT inscriptions_genesis_id_unique DO NOTHING
+          RETURNING ${this.sql(INSCRIPTIONS_COLUMNS)}
+        `;
+      }
+      let dbLocation = await this.sql<DbLocation[]>`
+        SELECT ${sql(LOCATIONS_COLUMNS)}
+        FROM locations
+        WHERE inscription_id = ${dbInscription[0].id} AND genesis = TRUE
       `;
-      const location = {
-        ...args.location,
-        timestamp: sql`to_timestamp(${args.location.timestamp})`,
-        inscription_id: dbInscription[0].id,
-      };
-      const dbLocation = await sql<DbLocation[]>`
-        INSERT INTO locations ${sql(location)}
-        ON CONFLICT ON CONSTRAINT locations_inscription_id_block_hash_unique DO NOTHING
-        RETURNING ${this.sql(LOCATIONS_COLUMNS)}
-      `;
+      if (dbLocation.count === 0) {
+        const location = {
+          ...args.location,
+          timestamp: sql`to_timestamp(${args.location.timestamp})`,
+          inscription_id: dbInscription[0].id,
+        };
+        dbLocation = await sql<DbLocation[]>`
+          INSERT INTO locations ${sql(location)}
+          ON CONFLICT ON CONSTRAINT locations_inscription_id_block_hash_unique DO NOTHING
+          RETURNING ${this.sql(LOCATIONS_COLUMNS)}
+        `;
+      }
       return { inscription: dbInscription[0], location: dbLocation[0] };
     });
   }
@@ -95,27 +110,37 @@ export class PgStore extends BasePgStore {
     });
   }
 
-  async getInscription(
-    args: { inscription_id: string } | { ordinal: number }
-  ): Promise<DbInscription | undefined> {
-    const result = await this.sql<DbInscription[]>`
-      SELECT ${this.sql(INSCRIPTIONS_COLUMNS)}
-      FROM inscriptions
-      WHERE ${
-        'ordinal' in args
-          ? this.sql`sat_ordinal = ${args.ordinal}`
-          : this.sql`inscription_id = ${args.inscription_id}`
+  async getInscription(args: {
+    inscription_id: string;
+  }): Promise<DbFullyLocatedInscription | undefined> {
+    return await this.sqlTransaction(async sql => {
+      const inscription = await this.sql<DbInscription[]>`
+        SELECT ${sql(INSCRIPTIONS_COLUMNS)}
+        FROM inscriptions
+        WHERE genesis_id = ${args.inscription_id}
+      `;
+      if (inscription.count === 0) {
+        return undefined;
       }
-      ORDER BY block_height DESC
-      LIMIT 1
-    `;
-    if (result.count === 0) {
-      return undefined;
-    }
-    return result[0];
+      const location = await this.sql<DbLocation[]>`
+        SELECT ${sql(LOCATIONS_COLUMNS)}
+        FROM locations
+        WHERE inscription_id = ${inscription[0].id} AND current = TRUE
+      `;
+      let genesis = location[0];
+      if (!location[0].genesis) {
+        const genesisLocation = await this.sql<DbLocation[]>`
+          SELECT ${sql(LOCATIONS_COLUMNS)}
+          FROM locations
+          WHERE inscription_id = ${inscription[0].id} AND genesis = TRUE
+        `;
+        genesis = genesisLocation[0];
+      }
+      return { inscription: inscription[0], location: location[0], genesis };
+    });
   }
 
-  async getInscriptionLocation(args: { output: string }): Promise<DbLocation | undefined> {
+  async getInscriptionCurrentLocation(args: { output: string }): Promise<DbLocation | undefined> {
     const result = await this.sql<DbLocation[]>`
       SELECT ${this.sql(LOCATIONS_COLUMNS)}
       FROM locations
@@ -134,9 +159,7 @@ export class PgStore extends BasePgStore {
     const result = await this.sql<DbInscriptionContent[]>`
       SELECT content, content_type, content_length
       FROM inscriptions
-      WHERE inscription_id = ${args.inscription_id}
-      ORDER BY block_height DESC
-      LIMIT 1
+      WHERE genesis_id = ${args.inscription_id}
     `;
     if (result.count === 0) {
       return undefined;
