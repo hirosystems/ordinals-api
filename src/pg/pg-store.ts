@@ -1,9 +1,11 @@
+import { Order, OrderBy } from '../api/types';
+import { SatoshiRarity } from '../api/util/ordinal-satoshi';
 import { ENV } from '../env';
 import { runMigrations } from './migrations';
 import { connectPostgres } from './postgres-tools';
 import { BasePgStore } from './postgres-tools/base-pg-store';
 import {
-  DbFullyLocatedInscription,
+  DbFullyLocatedInscriptionResult,
   DbInscription,
   DbInscriptionContent,
   DbInscriptionInsert,
@@ -110,36 +112,6 @@ export class PgStore extends BasePgStore {
     });
   }
 
-  async getInscription(args: {
-    inscription_id: string;
-  }): Promise<DbFullyLocatedInscription | undefined> {
-    return await this.sqlTransaction(async sql => {
-      const inscription = await this.sql<DbInscription[]>`
-        SELECT ${sql(INSCRIPTIONS_COLUMNS)}
-        FROM inscriptions
-        WHERE genesis_id = ${args.inscription_id}
-      `;
-      if (inscription.count === 0) {
-        return undefined;
-      }
-      const location = await this.sql<DbLocation[]>`
-        SELECT ${sql(LOCATIONS_COLUMNS)}
-        FROM locations
-        WHERE inscription_id = ${inscription[0].id} AND current = TRUE
-      `;
-      let genesis = location[0];
-      if (!location[0].genesis) {
-        const genesisLocation = await this.sql<DbLocation[]>`
-          SELECT ${sql(LOCATIONS_COLUMNS)}
-          FROM locations
-          WHERE inscription_id = ${inscription[0].id} AND genesis = TRUE
-        `;
-        genesis = genesisLocation[0];
-      }
-      return { inscription: inscription[0], location: location[0], genesis };
-    });
-  }
-
   async getInscriptionCurrentLocation(args: { output: string }): Promise<DbLocation | undefined> {
     const result = await this.sql<DbLocation[]>`
       SELECT ${this.sql(LOCATIONS_COLUMNS)}
@@ -168,28 +140,60 @@ export class PgStore extends BasePgStore {
   }
 
   async getInscriptions(args: {
-    block_height?: number;
-    block_hash?: string;
+    genesis_id?: string;
+    genesis_block_height?: number;
+    genesis_block_hash?: string;
     address?: string;
     mime_type?: string[];
-    sat_rarity?: string;
+    output?: string;
+    sat_rarity?: SatoshiRarity;
+    order_by?: OrderBy;
+    order?: Order;
     limit: number;
     offset: number;
-  }): Promise<DbPaginatedResult<DbInscription>> {
-    const results = await this.sql<({ total: number } & DbInscription)[]>`
-      SELECT ${this.sql(INSCRIPTIONS_COLUMNS)}, COUNT(*) OVER() as total
-      FROM inscriptions
-      WHERE true
-        ${args.block_height ? this.sql`AND block_height = ${args.block_height}` : this.sql``}
-        ${args.block_hash ? this.sql`AND block_hash = ${args.block_hash}` : this.sql``}
-        ${args.address ? this.sql`AND address = ${args.address}` : this.sql``}
-        ${args.sat_rarity ? this.sql`AND sat_rarity = ${args.sat_rarity}` : this.sql``}
+  }): Promise<DbPaginatedResult<DbFullyLocatedInscriptionResult>> {
+    // Sanitize ordering args because we'll use `unsafe` to concatenate them into the query.
+    let orderBy = 'gen.block_height';
+    switch (orderBy) {
+      case OrderBy.ordinal:
+        orderBy = 'loc.sat_ordinal';
+        break;
+      case OrderBy.rarity:
+        orderBy =
+          "ARRAY_POSITION(ARRAY['common','uncommon','rare','epic','legendary','mythic'], loc.sat_rarity)";
+        break;
+    }
+    const order = args.order === Order.asc ? 'ASC' : 'DESC';
+
+    const results = await this.sql<({ total: number } & DbFullyLocatedInscriptionResult)[]>`
+      SELECT
+        i.genesis_id, loc.address, gen.block_height AS genesis_block_height,
+        gen.block_hash AS genesis_block_hash, gen.tx_id AS genesis_tx_id, i.fee AS genesis_fee,
+        loc.output, loc.offset, i.mime_type, i.content_type, i.content_length, loc.sat_ordinal,
+        loc.sat_rarity, loc.timestamp, COUNT(*) OVER() as total
+      FROM inscriptions AS i
+      INNER JOIN locations AS loc ON loc.inscription_id = i.id
+      INNER JOIN locations AS gen ON gen.inscription_id = i.id
+      WHERE loc.current = TRUE AND gen.genesis = TRUE
+        ${args.genesis_id ? this.sql`AND i.genesis_id = ${args.genesis_id}` : this.sql``}
         ${
-          args.mime_type?.length
-            ? this.sql`AND mime_type IN ${this.sql(args.mime_type)}`
+          args.genesis_block_height
+            ? this.sql`AND gen.block_height = ${args.genesis_block_height}`
             : this.sql``
         }
-      ORDER BY block_height DESC
+        ${
+          args.genesis_block_hash
+            ? this.sql`AND gen.block_hash = ${args.genesis_block_hash}`
+            : this.sql``
+        }
+        ${args.address ? this.sql`AND loc.address = ${args.address}` : this.sql``}
+        ${
+          args.mime_type?.length
+            ? this.sql`AND i.mime_type IN ${this.sql(args.mime_type)}`
+            : this.sql``
+        }
+        ${args.output ? this.sql`AND loc.output = ${args.output}` : this.sql``}
+      ORDER BY ${this.sql.unsafe(orderBy)} ${this.sql.unsafe(order)}
       LIMIT ${args.limit}
       OFFSET ${args.offset}
     `;

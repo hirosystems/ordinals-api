@@ -1,5 +1,6 @@
 import { findVinInscriptionGenesis } from '../src/bitcoin/helpers';
 import { TransactionVin } from '../src/bitcoin/types';
+import * as bitcoin from 'bitcoinjs-lib';
 
 describe('Bitcoin helpers', () => {
   test('decodes inscriptions from witness data', () => {

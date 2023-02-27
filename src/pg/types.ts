@@ -10,8 +10,21 @@ export type DbLocatedInscription = {
   location: DbLocation;
 };
 
-export type DbFullyLocatedInscription = DbLocatedInscription & {
-  genesis: DbLocation;
+export type DbFullyLocatedInscriptionResult = {
+  genesis_id: string;
+  genesis_block_height: number;
+  genesis_block_hash: string;
+  genesis_tx_id: string;
+  genesis_fee: bigint;
+  address: string;
+  output: string;
+  offset: bigint;
+  sat_ordinal: bigint;
+  sat_rarity: string;
+  mime_type: string;
+  content_type: string;
+  content_length: number;
+  timestamp: number;
 };
 
 export type DbLocationInsert = {
@@ -23,6 +36,8 @@ export type DbLocationInsert = {
   output: string;
   offset: bigint;
   value: bigint;
+  sat_ordinal: bigint;
+  sat_rarity: string;
   timestamp: number;
   genesis: boolean;
   current: boolean;
@@ -38,6 +53,8 @@ export type DbLocation = {
   output: string;
   offset: bigint;
   value: bigint;
+  sat_ordinal: bigint;
+  sat_rarity: string;
   timestamp: number;
   genesis: boolean;
   current: boolean;
@@ -53,6 +70,8 @@ export const LOCATIONS_COLUMNS = [
   'output',
   'offset',
   'value',
+  'sat_ordinal',
+  'sat_rarity',
   'timestamp',
   'genesis',
   'current',

@@ -41,6 +41,14 @@ export function up(pgm: MigrationBuilder): void {
       type: 'bigint',
       notNull: true,
     },
+    sat_ordinal: {
+      type: 'bigint',
+      notNull: true,
+    },
+    sat_rarity: {
+      type: 'text',
+      notNull: true,
+    },
     timestamp: {
       type: 'timestamptz',
       notNull: true,

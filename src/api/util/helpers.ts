@@ -1,26 +1,28 @@
-import { DbFullyLocatedInscription } from '../../pg/types';
+import { DbFullyLocatedInscriptionResult } from '../../pg/types';
 import { InscriptionResponseType } from '../types';
 
 export const DEFAULT_API_LIMIT = 20;
 
-export function parseDbInscriptions(items: DbFullyLocatedInscription[]): InscriptionResponseType[] {
+export function parseDbInscriptions(
+  items: DbFullyLocatedInscriptionResult[]
+): InscriptionResponseType[] {
   return items.map(i => ({
-    id: i.inscription.genesis_id,
-    address: i.location.address,
-    genesis_block_height: i.genesis.block_height,
-    genesis_block_hash: i.genesis.block_hash,
-    genesis_tx_id: i.genesis.tx_id,
-    genesis_fee: i.inscription.fee.toString(),
-    location: `${i.location.output}:${i.location.offset}`,
-    output: i.location.output,
-    offset: i.location.offset.toString(),
-    mime_type: i.inscription.mime_type,
-    content_type: i.inscription.content_type,
-    content_length: i.inscription.content_length,
-    timestamp: i.location.timestamp,
+    id: i.genesis_id,
+    address: i.address,
+    genesis_block_height: i.genesis_block_height,
+    genesis_block_hash: i.genesis_block_hash,
+    genesis_tx_id: i.genesis_tx_id,
+    genesis_fee: i.genesis_fee.toString(),
+    location: `${i.output}:${i.offset}`,
+    output: i.output,
+    offset: i.offset.toString(),
+    mime_type: i.mime_type,
+    content_type: i.content_type,
+    content_length: i.content_length,
+    timestamp: i.timestamp,
   }));
 }
-export function parseDbInscription(item: DbFullyLocatedInscription): InscriptionResponseType {
+export function parseDbInscription(item: DbFullyLocatedInscriptionResult): InscriptionResponseType {
   return parseDbInscriptions([item])[0];
 }
 

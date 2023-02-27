@@ -18,9 +18,24 @@ export const MimeTypeParam = Type.RegEx(/^\w+\/[-.\w]+(?:\+[-.\w]+)?$/);
 
 export const SatoshiRarityParam = Type.Enum(SatoshiRarity);
 
+export const OutputParam = Type.String();
+
 export const OffsetParam = Type.Integer({ minimum: 0 });
 
 export const LimitParam = Type.Integer({ minimum: 1, maximum: 20 });
+
+export enum OrderBy {
+  genesis_block_height = 'genesis_block_height',
+  ordinal = 'ordinal',
+  rarity = 'rarity',
+}
+export const OrderByParam = Type.Enum(OrderBy);
+
+export enum Order {
+  asc = 'asc',
+  desc = 'desc',
+}
+export const OrderParam = Type.Enum(Order);
 
 export const PaginatedResponse = <T extends TSchema>(type: T) =>
   Type.Object({
