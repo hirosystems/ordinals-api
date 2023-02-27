@@ -28,7 +28,7 @@ export const SatRoutes: FastifyPluginCallback<Record<never, never>, Server, Type
     },
     async (request, reply) => {
       const sat = new OrdinalSatoshi(request.params.ordinal);
-      const inscription = await fastify.db.getInscription({ ordinal: request.params.ordinal });
+      // const inscription = await fastify.db.getInscription({ ordinal: request.params.ordinal });
       await reply.send({
         coinbase_height: sat.blockHeight,
         cycle: sat.cycle,
@@ -40,7 +40,7 @@ export const SatRoutes: FastifyPluginCallback<Record<never, never>, Server, Type
         name: sat.name,
         rarity: sat.rarity,
         percentile: sat.percentile,
-        inscription_id: inscription?.inscription_id,
+        // inscription_id: inscription?.genesis_id,
       });
     }
   );

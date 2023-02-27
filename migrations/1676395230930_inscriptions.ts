@@ -9,43 +9,11 @@ export function up(pgm: MigrationBuilder): void {
       type: 'serial',
       primaryKey: true,
     },
-    inscription_id: {
+    genesis_id: {
       type: 'text',
       notNull: true,
     },
-    offset: {
-      type: 'int',
-      notNull: true,
-    },
-    block_height: {
-      type: 'int',
-      notNull: true,
-    },
-    block_hash: {
-      type: 'bytea',
-      notNull: true,
-    },
-    tx_id: {
-      type: 'bytea',
-      notNull: true,
-    },
-    address: {
-      type: 'text',
-      notNull: true,
-    },
-    sat_ordinal: {
-      type: 'numeric',
-      notNull: true,
-    },
-    sat_point: {
-      type: 'text',
-      notNull: true,
-    },
-    sat_rarity: {
-      type: 'text',
-      notNull: true,
-    },
-    fee: {
+    number: {
       type: 'int',
       notNull: true,
     },
@@ -65,20 +33,13 @@ export function up(pgm: MigrationBuilder): void {
       type: 'bytea',
       notNull: true,
     },
-    timestamp: {
-      type: 'timestamptz',
+    fee: {
+      type: 'bigint',
       notNull: true,
     },
   });
-  pgm.createConstraint(
-    'inscriptions',
-    'inscriptions_inscription_id_unique',
-    'UNIQUE(inscription_id)'
-  );
-  pgm.createIndex('inscriptions', ['sat_ordinal']);
-  pgm.createIndex('inscriptions', ['sat_rarity']);
-  pgm.createIndex('inscriptions', ['block_height']);
-  pgm.createIndex('inscriptions', ['block_hash']);
-  pgm.createIndex('inscriptions', ['address']);
+  pgm.createConstraint('inscriptions', 'inscriptions_genesis_id_unique', 'UNIQUE(genesis_id)');
+  pgm.createIndex('inscriptions', ['genesis_id']);
+  pgm.createIndex('inscriptions', ['number']);
   pgm.createIndex('inscriptions', ['mime_type']);
 }

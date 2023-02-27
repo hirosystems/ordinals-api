@@ -1,13 +1,20 @@
+import { Order, OrderBy } from '../api/types';
+import { SatoshiRarity } from '../api/util/ordinal-satoshi';
 import { ENV } from '../env';
 import { runMigrations } from './migrations';
 import { connectPostgres } from './postgres-tools';
 import { BasePgStore } from './postgres-tools/base-pg-store';
 import {
+  DbFullyLocatedInscriptionResult,
   DbInscription,
   DbInscriptionContent,
   DbInscriptionInsert,
+  DbLocatedInscription,
+  DbLocation,
+  DbLocationInsert,
   DbPaginatedResult,
   INSCRIPTIONS_COLUMNS,
+  LOCATIONS_COLUMNS,
 } from './types';
 
 export class PgStore extends BasePgStore {
@@ -34,26 +41,83 @@ export class PgStore extends BasePgStore {
     return new PgStore(sql);
   }
 
-  async insertInscription(args: { values: DbInscriptionInsert }): Promise<void> {
-    await this.sql`
-      INSERT INTO inscriptions ${this.sql(args.values)}
-      ON CONFLICT ON CONSTRAINT inscriptions_inscription_id_unique DO NOTHING
-    `;
+  async updateChainTipBlockHeight(args: { blockHeight: number }): Promise<void> {
+    await this.sql`UPDATE chain_tip SET block_height = ${args.blockHeight}`;
   }
 
-  async getInscription(
-    args: { inscription_id: string } | { ordinal: number }
-  ): Promise<DbInscription | undefined> {
-    const result = await this.sql<DbInscription[]>`
-      SELECT ${this.sql(INSCRIPTIONS_COLUMNS)}
-      FROM inscriptions
-      WHERE ${
-        'ordinal' in args
-          ? this.sql`sat_ordinal = ${args.ordinal}`
-          : this.sql`inscription_id = ${args.inscription_id}`
+  async getChainTipBlockHeight(): Promise<number> {
+    const result = await this.sql<{ block_height: number }[]>`SELECT block_height FROM chain_tip`;
+    return result[0].block_height;
+  }
+
+  async insertInscriptionGenesis(args: {
+    inscription: DbInscriptionInsert;
+    location: DbLocationInsert;
+  }): Promise<DbLocatedInscription> {
+    return await this.sqlWriteTransaction(async sql => {
+      let dbInscription = await this.sql<DbInscription[]>`
+        SELECT ${sql(INSCRIPTIONS_COLUMNS)}
+        FROM inscriptions
+        WHERE genesis_id = ${args.inscription.genesis_id}
+      `;
+      if (dbInscription.count === 0) {
+        const prevNumber = await sql<{ max: number }[]>`
+          SELECT MAX(number) as max FROM inscriptions
+        `;
+        const inscription = {
+          ...args.inscription,
+          number: prevNumber[0].max !== null ? prevNumber[0].max + 1 : 0,
+        };
+        dbInscription = await sql<DbInscription[]>`
+          INSERT INTO inscriptions ${sql(inscription)}
+          ON CONFLICT ON CONSTRAINT inscriptions_genesis_id_unique DO NOTHING
+          RETURNING ${this.sql(INSCRIPTIONS_COLUMNS)}
+        `;
       }
-      ORDER BY block_height DESC
-      LIMIT 1
+      let dbLocation = await this.sql<DbLocation[]>`
+        SELECT ${sql(LOCATIONS_COLUMNS)}
+        FROM locations
+        WHERE inscription_id = ${dbInscription[0].id} AND genesis = TRUE
+      `;
+      if (dbLocation.count === 0) {
+        const location = {
+          ...args.location,
+          timestamp: sql`to_timestamp(${args.location.timestamp})`,
+          inscription_id: dbInscription[0].id,
+        };
+        dbLocation = await sql<DbLocation[]>`
+          INSERT INTO locations ${sql(location)}
+          ON CONFLICT ON CONSTRAINT locations_inscription_id_block_hash_unique DO NOTHING
+          RETURNING ${this.sql(LOCATIONS_COLUMNS)}
+        `;
+      }
+      return { inscription: dbInscription[0], location: dbLocation[0] };
+    });
+  }
+
+  async updateInscriptionLocation(args: { location: DbLocationInsert }): Promise<void> {
+    await this.sqlWriteTransaction(async sql => {
+      const location = {
+        ...args.location,
+        timestamp: sql`to_timestamp(${args.location.timestamp})`,
+      };
+      await sql`
+        UPDATE locations SET current = FALSE WHERE inscription_id = ${location.inscription_id}
+      `;
+      await sql`
+        INSERT INTO locations ${sql(location)}
+        ON CONFLICT ON CONSTRAINT locations_inscription_id_block_hash_unique DO
+          UPDATE SET current = TRUE
+      `;
+    });
+  }
+
+  async getInscriptionCurrentLocation(args: { output: string }): Promise<DbLocation | undefined> {
+    const result = await this.sql<DbLocation[]>`
+      SELECT ${this.sql(LOCATIONS_COLUMNS)}
+      FROM locations
+      WHERE output = ${args.output}
+      AND current = TRUE
     `;
     if (result.count === 0) {
       return undefined;
@@ -67,9 +131,7 @@ export class PgStore extends BasePgStore {
     const result = await this.sql<DbInscriptionContent[]>`
       SELECT content, content_type, content_length
       FROM inscriptions
-      WHERE inscription_id = ${args.inscription_id}
-      ORDER BY block_height DESC
-      LIMIT 1
+      WHERE genesis_id = ${args.inscription_id}
     `;
     if (result.count === 0) {
       return undefined;
@@ -78,38 +140,59 @@ export class PgStore extends BasePgStore {
   }
 
   async getInscriptions(args: {
-    block_height?: number;
-    block_hash?: string;
+    genesis_id?: string;
+    genesis_block_height?: number;
+    genesis_block_hash?: string;
     address?: string;
     mime_type?: string[];
-    sat_rarity?: string;
-    order_by: string;
-    order: string;
+    output?: string;
+    sat_rarity?: SatoshiRarity;
+    order_by?: OrderBy;
+    order?: Order;
     limit: number;
     offset: number;
-  }): Promise<DbPaginatedResult<DbInscription>> {
+  }): Promise<DbPaginatedResult<DbFullyLocatedInscriptionResult>> {
     // Sanitize ordering args because we'll use `unsafe` to concatenate them into the query.
-    let orderBy = 'block_height';
-    if (args.order_by === 'ordinal') orderBy = 'sat_ordinal';
-    if (args.order_by === 'rarity') {
-      orderBy =
-        "ARRAY_POSITION(ARRAY['common','uncommon','rare','epic','legendary','mythic'], sat_rarity)";
+    let orderBy = 'gen.block_height';
+    switch (orderBy) {
+      case OrderBy.ordinal:
+        orderBy = 'loc.sat_ordinal';
+        break;
+      case OrderBy.rarity:
+        orderBy =
+          "ARRAY_POSITION(ARRAY['common','uncommon','rare','epic','legendary','mythic'], loc.sat_rarity)";
+        break;
     }
-    const order = args.order === 'asc' ? 'ASC' : 'DESC';
+    const order = args.order === Order.asc ? 'ASC' : 'DESC';
 
-    const results = await this.sql<({ total: number } & DbInscription)[]>`
-      SELECT ${this.sql(INSCRIPTIONS_COLUMNS)}, COUNT(*) OVER() as total
-      FROM inscriptions
-      WHERE true
-        ${args.block_height ? this.sql`AND block_height = ${args.block_height}` : this.sql``}
-        ${args.block_hash ? this.sql`AND block_hash = ${args.block_hash}` : this.sql``}
-        ${args.address ? this.sql`AND address = ${args.address}` : this.sql``}
-        ${args.sat_rarity ? this.sql`AND sat_rarity = ${args.sat_rarity}` : this.sql``}
+    const results = await this.sql<({ total: number } & DbFullyLocatedInscriptionResult)[]>`
+      SELECT
+        i.genesis_id, loc.address, gen.block_height AS genesis_block_height,
+        gen.block_hash AS genesis_block_hash, gen.tx_id AS genesis_tx_id, i.fee AS genesis_fee,
+        loc.output, loc.offset, i.mime_type, i.content_type, i.content_length, loc.sat_ordinal,
+        loc.sat_rarity, loc.timestamp, COUNT(*) OVER() as total
+      FROM inscriptions AS i
+      INNER JOIN locations AS loc ON loc.inscription_id = i.id
+      INNER JOIN locations AS gen ON gen.inscription_id = i.id
+      WHERE loc.current = TRUE AND gen.genesis = TRUE
+        ${args.genesis_id ? this.sql`AND i.genesis_id = ${args.genesis_id}` : this.sql``}
         ${
-          args.mime_type?.length
-            ? this.sql`AND mime_type IN ${this.sql(args.mime_type)}`
+          args.genesis_block_height
+            ? this.sql`AND gen.block_height = ${args.genesis_block_height}`
             : this.sql``
         }
+        ${
+          args.genesis_block_hash
+            ? this.sql`AND gen.block_hash = ${args.genesis_block_hash}`
+            : this.sql``
+        }
+        ${args.address ? this.sql`AND loc.address = ${args.address}` : this.sql``}
+        ${
+          args.mime_type?.length
+            ? this.sql`AND i.mime_type IN ${this.sql(args.mime_type)}`
+            : this.sql``
+        }
+        ${args.output ? this.sql`AND loc.output = ${args.output}` : this.sql``}
       ORDER BY ${this.sql.unsafe(orderBy)} ${this.sql.unsafe(order)}
       LIMIT ${args.limit}
       OFFSET ${args.offset}

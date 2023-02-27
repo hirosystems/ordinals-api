@@ -5,39 +5,95 @@ export type DbPaginatedResult<T> = {
   results: T[];
 };
 
-export type DbInscriptionInsert = {
-  inscription_id: string;
-  offset: number;
-  block_height: number;
-  block_hash: PgBytea;
-  tx_id: PgBytea;
+export type DbLocatedInscription = {
+  inscription: DbInscription;
+  location: DbLocation;
+};
+
+export type DbFullyLocatedInscriptionResult = {
+  genesis_id: string;
+  genesis_block_height: number;
+  genesis_block_hash: string;
+  genesis_tx_id: string;
+  genesis_fee: bigint;
   address: string;
-  sat_ordinal: number;
-  sat_point: string;
+  output: string;
+  offset: bigint;
+  sat_ordinal: bigint;
   sat_rarity: string;
-  fee: number;
   mime_type: string;
   content_type: string;
   content_length: number;
-  content: PgBytea;
   timestamp: number;
 };
 
-export type DbInscription = {
-  inscription_id: string;
-  offset: number;
+export type DbLocationInsert = {
+  inscription_id: number;
   block_height: number;
   block_hash: string;
   tx_id: string;
   address: string;
+  output: string;
+  offset: bigint;
+  value: bigint;
   sat_ordinal: bigint;
-  sat_point: string;
   sat_rarity: string;
-  fee: number;
+  timestamp: number;
+  genesis: boolean;
+  current: boolean;
+};
+
+export type DbLocation = {
+  id: number;
+  inscription_id: number;
+  block_height: number;
+  block_hash: string;
+  tx_id: string;
+  address: string;
+  output: string;
+  offset: bigint;
+  value: bigint;
+  sat_ordinal: bigint;
+  sat_rarity: string;
+  timestamp: number;
+  genesis: boolean;
+  current: boolean;
+};
+
+export const LOCATIONS_COLUMNS = [
+  'id',
+  'inscription_id',
+  'block_height',
+  'block_hash',
+  'tx_id',
+  'address',
+  'output',
+  'offset',
+  'value',
+  'sat_ordinal',
+  'sat_rarity',
+  'timestamp',
+  'genesis',
+  'current',
+];
+
+export type DbInscriptionInsert = {
+  genesis_id: string;
   mime_type: string;
   content_type: string;
   content_length: number;
-  timestamp: number;
+  content: PgBytea;
+  fee: bigint;
+};
+
+export type DbInscription = {
+  id: number;
+  genesis_id: string;
+  number: number;
+  mime_type: string;
+  content_type: string;
+  content_length: number;
+  fee: bigint;
 };
 
 export type DbInscriptionContent = {
@@ -47,18 +103,11 @@ export type DbInscriptionContent = {
 };
 
 export const INSCRIPTIONS_COLUMNS = [
-  'inscription_id',
-  'offset',
-  'block_height',
-  'block_hash',
-  'tx_id',
-  'address',
-  'sat_ordinal',
-  'sat_point',
-  'sat_rarity',
-  'fee',
+  'id',
+  'genesis_id',
+  'number',
   'mime_type',
   'content_type',
   'content_length',
-  'timestamp',
+  'fee',
 ];

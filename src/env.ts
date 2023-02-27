@@ -1,3 +1,4 @@
+import { Static, Type } from '@sinclair/typebox';
 import envSchema from 'env-schema';
 
 export const isDevEnv = process.env.NODE_ENV === 'development';
@@ -8,78 +9,37 @@ export const isProdEnv =
   !process.env.NODE_ENV ||
   (!isTestEnv && !isDevEnv);
 
-interface Env {
-  /** Hosname of the API server */
-  API_HOST: string;
-  /** Port in which to serve the API */
-  API_PORT: number;
-
-  PGHOST: string;
-  PGPORT: number;
-  PGUSER: string;
-  PGPASSWORD: string;
-  PGDATABASE: string;
+const schema = Type.Object({
   /**
-   * Limit to how many concurrent connections can be created, defaults to 10.
+   * Run mode for this service. Allows you to control how the API runs, typically in an auto-scaled
+   * environment. Available values are:
+   * * `default`: Runs background jobs and the REST API server (this is the default)
+   * * `writeonly`: Runs only background jobs
+   * * `readonly`: Runs only the REST API server
    */
-  PG_CONNECTION_POOL_MAX: number;
-  /** Idle connection timeout (seconds). */
-  PG_IDLE_TIMEOUT: number;
-  /** Max lifetime of a connection (seconds). */
-  PG_MAX_LIFETIME: number;
-}
+  RUN_MODE: Type.Enum({ default: 'default', readonly: 'readonly', writeonly: 'writeonly' }),
 
-export function getEnvVars(): Env {
-  const schema = {
-    type: 'object',
-    required: ['API_HOST', 'API_PORT', 'PGHOST', 'PGPORT', 'PGUSER', 'PGPASSWORD', 'PGDATABASE'],
-    properties: {
-      API_HOST: {
-        type: 'string',
-      },
-      API_PORT: {
-        type: 'number',
-        default: 3000,
-        minimum: 0,
-        maximum: 65535,
-      },
-      PGHOST: {
-        type: 'string',
-      },
-      PGPORT: {
-        type: 'number',
-        default: 5432,
-        minimum: 0,
-        maximum: 65535,
-      },
-      PGUSER: {
-        type: 'string',
-      },
-      PGPASSWORD: {
-        type: 'string',
-      },
-      PGDATABASE: {
-        type: 'string',
-      },
-      PG_CONNECTION_POOL_MAX: {
-        type: 'number',
-        default: 10,
-      },
-      PG_IDLE_TIMEOUT: {
-        type: 'number',
-        default: 30,
-      },
-      PG_MAX_LIFETIME: {
-        type: 'number',
-        default: 60,
-      },
-    },
-  };
-  const config = envSchema<Env>({
-    schema: schema,
-    dotenv: true,
-  });
-  return config;
-}
+  /** Hostname of the API server */
+  API_HOST: Type.String(),
+  /** Port in which to serve the API */
+  API_PORT: Type.Number({ default: 3000, minimum: 0, maximum: 65535 }),
 
-export const ENV = getEnvVars();
+  PGHOST: Type.String(),
+  PGPORT: Type.Number({ default: 5432, minimum: 0, maximum: 65535 }),
+  PGUSER: Type.String(),
+  PGPASSWORD: Type.String(),
+  PGDATABASE: Type.String(),
+  /** Limit to how many concurrent connections can be created */
+  PG_CONNECTION_POOL_MAX: Type.Number({ default: 10 }),
+  PG_IDLE_TIMEOUT: Type.Number({ default: 30 }),
+  PG_MAX_LIFETIME: Type.Number({ default: 60 }),
+
+  BITCOIN_RPC_HOST: Type.String(),
+  BITCOIN_RPC_PORT: Type.Number(),
+});
+type Env = Static<typeof schema>;
+
+export const ENV = envSchema<Env>({
+  schema: schema,
+  dotenv: true,
+});

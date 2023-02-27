@@ -16,8 +16,11 @@ import {
   BlockHashParam,
   MimeTypeParam,
   SatoshiRarityParam,
-  InscriptionsOrderByParam,
+  OutputParam,
+  OrderByParam,
   OrderParam,
+  OrderBy,
+  Order,
 } from '../types';
 import {
   DEFAULT_API_LIMIT,
@@ -43,13 +46,16 @@ export const InscriptionRoutes: FastifyPluginCallback<
         description: 'Retrieves inscriptions',
         tags: ['Inscriptions'],
         querystring: Type.Object({
-          block: Type.Optional(Type.Union([BlockHashParam, BlockHeightParam])),
+          genesis_block: Type.Optional(Type.Union([BlockHashParam, BlockHeightParam])),
+          output: Type.Optional(OutputParam),
           address: Type.Optional(BitcoinAddressParam),
           mime_type: Type.Optional(Type.Array(MimeTypeParam)),
           rarity: Type.Optional(SatoshiRarityParam),
+          // Pagination
           offset: Type.Optional(OffsetParam),
           limit: Type.Optional(LimitParam),
-          order_by: Type.Optional(InscriptionsOrderByParam),
+          // Ordering
+          order_by: Type.Optional(OrderByParam),
           order: Type.Optional(OrderParam),
         }),
         response: {
@@ -61,20 +67,21 @@ export const InscriptionRoutes: FastifyPluginCallback<
     async (request, reply) => {
       const limit = request.query.limit ?? DEFAULT_API_LIMIT;
       const offset = request.query.offset ?? 0;
-      const blockArg = BlockHashParamCType.Check(request.query.block)
-        ? { block_hash: normalizeHashString(request.query.block) as string }
-        : BlockHeightParamCType.Check(request.query.block)
-        ? { block_height: request.query.block }
+      const genBlockArg = BlockHashParamCType.Check(request.query.genesis_block)
+        ? { genesis_block_hash: normalizeHashString(request.query.genesis_block) as string }
+        : BlockHeightParamCType.Check(request.query.genesis_block)
+        ? { genesis_block_height: request.query.genesis_block }
         : {};
       const inscriptions = await fastify.db.getInscriptions({
-        ...blockArg,
+        ...genBlockArg,
+        output: request.query.output,
         address: request.query.address,
         mime_type: request.query.mime_type,
         sat_rarity: request.query.rarity,
+        order_by: request.query.order_by ?? OrderBy.genesis_block_height,
+        order: request.query.order ?? Order.desc,
         limit,
         offset,
-        order_by: request.query.order_by ?? 'block_height',
-        order: request.query.order ?? 'desc',
       });
       await reply.send({
         limit,
@@ -102,11 +109,13 @@ export const InscriptionRoutes: FastifyPluginCallback<
       },
     },
     async (request, reply) => {
-      const inscription = await fastify.db.getInscription({
-        inscription_id: request.params.inscription_id,
+      const inscription = await fastify.db.getInscriptions({
+        genesis_id: request.params.inscription_id,
+        limit: 1,
+        offset: 0,
       });
       if (inscription) {
-        await reply.send(parseDbInscription(inscription));
+        await reply.send(parseDbInscription(inscription.results[0]));
       } else {
         await reply.code(404).send(Value.Create(NotFoundResponse));
       }
