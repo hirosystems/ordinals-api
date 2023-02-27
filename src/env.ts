@@ -17,10 +17,13 @@ const schema = Type.Object({
    * * `writeonly`: Runs only background jobs
    * * `readonly`: Runs only the REST API server
    */
-  RUN_MODE: Type.Enum({ default: 'default', readonly: 'readonly', writeonly: 'writeonly' }),
+  RUN_MODE: Type.Enum(
+    { default: 'default', readonly: 'readonly', writeonly: 'writeonly' },
+    { default: 'default' }
+  ),
 
   /** Hostname of the API server */
-  API_HOST: Type.String(),
+  API_HOST: Type.String({ default: '0.0.0.0' }),
   /** Port in which to serve the API */
   API_PORT: Type.Number({ default: 3000, minimum: 0, maximum: 65535 }),
 
@@ -34,8 +37,8 @@ const schema = Type.Object({
   PG_IDLE_TIMEOUT: Type.Number({ default: 30 }),
   PG_MAX_LIFETIME: Type.Number({ default: 60 }),
 
-  BITCOIN_RPC_HOST: Type.String(),
-  BITCOIN_RPC_PORT: Type.Number(),
+  BITCOIN_RPC_HOST: Type.String({ default: '0.0.0.0' }),
+  BITCOIN_RPC_PORT: Type.Number({ default: 8332 }),
 });
 type Env = Static<typeof schema>;
 
