@@ -154,7 +154,7 @@ export class PgStore extends BasePgStore {
   }): Promise<DbPaginatedResult<DbFullyLocatedInscriptionResult>> {
     // Sanitize ordering args because we'll use `unsafe` to concatenate them into the query.
     let orderBy = 'gen.block_height';
-    switch (orderBy) {
+    switch (args.order_by) {
       case OrderBy.ordinal:
         orderBy = 'loc.sat_ordinal';
         break;
@@ -193,6 +193,7 @@ export class PgStore extends BasePgStore {
             : this.sql``
         }
         ${args.output ? this.sql`AND loc.output = ${args.output}` : this.sql``}
+        ${args.sat_rarity ? this.sql`AND loc.sat_rarity = ${args.sat_rarity}` : this.sql``}
       ORDER BY ${this.sql.unsafe(orderBy)} ${this.sql.unsafe(order)}
       LIMIT ${args.limit}
       OFFSET ${args.offset}

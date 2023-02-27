@@ -5,7 +5,7 @@ import { Value } from '@sinclair/typebox/value';
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import {
-  BitcoinAddressParam,
+  AddressParam,
   BlockHeightParam,
   InscriptionResponse,
   InscriptionIdParam,
@@ -27,7 +27,6 @@ import {
   parseDbInscriptions,
   parseDbInscription,
   hexToBuffer,
-  normalizeHashString,
 } from '../util/helpers';
 
 const BlockHashParamCType = TypeCompiler.Compile(BlockHashParam);
@@ -48,7 +47,7 @@ export const InscriptionRoutes: FastifyPluginCallback<
         querystring: Type.Object({
           genesis_block: Type.Optional(Type.Union([BlockHashParam, BlockHeightParam])),
           output: Type.Optional(OutputParam),
-          address: Type.Optional(BitcoinAddressParam),
+          address: Type.Optional(AddressParam),
           mime_type: Type.Optional(Type.Array(MimeTypeParam)),
           rarity: Type.Optional(SatoshiRarityParam),
           // Pagination
@@ -68,7 +67,7 @@ export const InscriptionRoutes: FastifyPluginCallback<
       const limit = request.query.limit ?? DEFAULT_API_LIMIT;
       const offset = request.query.offset ?? 0;
       const genBlockArg = BlockHashParamCType.Check(request.query.genesis_block)
-        ? { genesis_block_hash: normalizeHashString(request.query.genesis_block) as string }
+        ? { genesis_block_hash: request.query.genesis_block }
         : BlockHeightParamCType.Check(request.query.genesis_block)
         ? { genesis_block_height: request.query.genesis_block }
         : {};
@@ -114,7 +113,7 @@ export const InscriptionRoutes: FastifyPluginCallback<
         limit: 1,
         offset: 0,
       });
-      if (inscription) {
+      if (inscription.total > 0) {
         await reply.send(parseDbInscription(inscription.results[0]));
       } else {
         await reply.code(404).send(Value.Create(NotFoundResponse));

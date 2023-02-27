@@ -16,6 +16,8 @@ export function parseDbInscriptions(
     location: `${i.output}:${i.offset}`,
     output: i.output,
     offset: i.offset.toString(),
+    sat_ordinal: i.sat_ordinal.toString(),
+    sat_rarity: i.sat_rarity,
     mime_type: i.mime_type,
     content_type: i.content_type,
     content_length: i.content_length,
@@ -44,23 +46,3 @@ export function hexToBuffer(hex: string): Buffer {
 }
 
 export const has0xPrefix = (id: string) => id.substr(0, 2).toLowerCase() === '0x';
-
-/**
- * Check if the input is a valid 32-byte hex string. If valid, returns a
- * lowercase and 0x-prefixed hex string. If invalid, returns false.
- */
-export function normalizeHashString(input: string): string | false {
-  if (typeof input !== 'string') {
-    return false;
-  }
-  let hashBuffer: Buffer | undefined;
-  if (input.length === 66 && has0xPrefix(input)) {
-    hashBuffer = Buffer.from(input.slice(2), 'hex');
-  } else if (input.length === 64) {
-    hashBuffer = Buffer.from(input, 'hex');
-  }
-  if (hashBuffer === undefined || hashBuffer.length !== 32) {
-    return false;
-  }
-  return `0x${hashBuffer.toString('hex')}`;
-}
