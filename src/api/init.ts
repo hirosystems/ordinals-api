@@ -23,7 +23,11 @@ export const ApiSwaggerOptions: SwaggerOptions = {
     tags: [
       {
         name: 'Inscriptions',
-        description: 'Ordinal inscriptions',
+        description: 'Endpoints to query ordinal inscriptions',
+      },
+      {
+        name: 'Satoshis',
+        description: 'Endpoints to query Satoshi ordinal and rarity information',
       },
     ],
   },

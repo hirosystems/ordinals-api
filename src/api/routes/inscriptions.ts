@@ -43,7 +43,7 @@ export const InscriptionRoutes: FastifyPluginCallback<
     {
       schema: {
         summary: 'Inscriptions',
-        description: 'Retrieves inscriptions',
+        description: 'Retrieves a list of inscriptions with options to filter and sort results',
         tags: ['Inscriptions'],
         querystring: Type.Object({
           genesis_block: Type.Optional(Type.Union([BlockHashParam, BlockHeightParam])),
@@ -97,7 +97,7 @@ export const InscriptionRoutes: FastifyPluginCallback<
     {
       schema: {
         summary: 'Inscription',
-        description: 'Retrieves inscription',
+        description: 'Retrieves a single inscription',
         tags: ['Inscriptions'],
         params: Type.Object({
           inscription_id: InscriptionIdParam,
@@ -127,7 +127,7 @@ export const InscriptionRoutes: FastifyPluginCallback<
     {
       schema: {
         summary: 'Inscription content',
-        description: 'Retrieves inscription content',
+        description: 'Retrieves the contents of a single inscription',
         tags: ['Inscriptions'],
         params: Type.Object({
           inscription_id: InscriptionIdParam,
