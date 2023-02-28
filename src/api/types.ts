@@ -124,7 +124,6 @@ export const SatoshiResponse = Type.Object({
   percentile: Type.String(),
   period: Type.Integer(),
   rarity: Type.Enum(SatoshiRarity),
-  // timestamp: Type.Integer(),
 });
 
 export const NotFoundResponse = Type.Object({

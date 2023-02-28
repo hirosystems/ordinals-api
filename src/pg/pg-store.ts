@@ -152,6 +152,7 @@ export class PgStore extends BasePgStore {
     mime_type?: string[];
     output?: string;
     sat_rarity?: SatoshiRarity;
+    sat_ordinal?: bigint;
     order_by?: OrderBy;
     order?: Order;
     limit: number;
@@ -199,6 +200,7 @@ export class PgStore extends BasePgStore {
         }
         ${args.output ? this.sql`AND loc.output = ${args.output}` : this.sql``}
         ${args.sat_rarity ? this.sql`AND loc.sat_rarity = ${args.sat_rarity}` : this.sql``}
+        ${args.sat_ordinal ? this.sql`AND loc.sat_ordinal = ${args.sat_ordinal}` : this.sql``}
       ORDER BY ${this.sql.unsafe(orderBy)} ${this.sql.unsafe(order)}
       LIMIT ${args.limit}
       OFFSET ${args.offset}
