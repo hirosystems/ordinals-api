@@ -14,7 +14,7 @@ export const ApiGenerator: FastifyPluginAsync<
   TypeBoxTypeProvider
 > = async (fastify, options) => {
   await fastify.register(FastifySwagger, ApiSwaggerOptions);
-  await fastify.register(Api);
+  await fastify.register(Api, { prefix: '/ordinals/v1' });
   if (!existsSync('./tmp')) {
     mkdirSync('./tmp');
   }

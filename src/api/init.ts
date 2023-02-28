@@ -50,7 +50,8 @@ export async function buildApiServer(args: { db: PgStore }) {
 
   fastify.decorate('db', args.db);
   await fastify.register(FastifyCors);
-  await fastify.register(Api);
+  await fastify.register(Api, { prefix: '/ordinals/v1' });
+  await fastify.register(Api, { prefix: '/ordinals' });
 
   return fastify;
 }

@@ -23,7 +23,7 @@ describe('/sats', () => {
   test('returns valid sat', async () => {
     const response = await fastify.inject({
       method: 'GET',
-      url: '/sats/10080000000001',
+      url: '/ordinals/v1/sats/10080000000001',
     });
     expect(response.statusCode).toBe(200);
     expect(response.json()).toStrictEqual({
@@ -69,7 +69,7 @@ describe('/sats', () => {
     });
     const response = await fastify.inject({
       method: 'GET',
-      url: '/sats/257418248345364',
+      url: '/ordinals/v1/sats/257418248345364',
     });
     expect(response.statusCode).toBe(200);
     expect(response.json().inscription_id).toBe(
@@ -80,13 +80,13 @@ describe('/sats', () => {
   test('returns not found on invalid sats', async () => {
     const response1 = await fastify.inject({
       method: 'GET',
-      url: '/sats/2099999997690000',
+      url: '/ordinals/v1/sats/2099999997690000',
     });
     expect(response1.statusCode).toBe(400);
 
     const response2 = await fastify.inject({
       method: 'GET',
-      url: '/sats/-1',
+      url: '/ordinals/v1/sats/-1',
     });
     expect(response2.statusCode).toBe(400);
   });

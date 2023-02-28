@@ -49,7 +49,7 @@ describe('ETag cache', () => {
     });
     const response = await fastify.inject({
       method: 'GET',
-      url: '/inscriptions/38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+      url: '/ordinals/v1/inscriptions/38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
     });
     expect(response.statusCode).toBe(200);
     expect(response.headers.etag).not.toBeUndefined();
@@ -58,7 +58,7 @@ describe('ETag cache', () => {
     // Cached response
     const cached = await fastify.inject({
       method: 'GET',
-      url: '/inscriptions/38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+      url: '/ordinals/v1/inscriptions/38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
       headers: { 'if-none-match': etag },
     });
     expect(cached.statusCode).toBe(304);
@@ -67,7 +67,7 @@ describe('ETag cache', () => {
     await db.sql`UPDATE locations SET timestamp = NOW() WHERE true`;
     const cached2 = await fastify.inject({
       method: 'GET',
-      url: '/inscriptions/38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+      url: '/ordinals/v1/inscriptions/38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
       headers: { 'if-none-match': etag },
     });
     expect(cached2.statusCode).toBe(200);
@@ -130,7 +130,7 @@ describe('ETag cache', () => {
     // ETag response
     const response = await fastify.inject({
       method: 'GET',
-      url: '/inscriptions',
+      url: '/ordinals/v1/inscriptions',
     });
     expect(response.statusCode).toBe(200);
     expect(response.headers.etag).not.toBeUndefined();
@@ -139,7 +139,7 @@ describe('ETag cache', () => {
     // Cached
     const cached = await fastify.inject({
       method: 'GET',
-      url: '/inscriptions',
+      url: '/ordinals/v1/inscriptions',
       headers: { 'if-none-match': etag },
     });
     expect(cached.statusCode).toBe(304);
@@ -148,7 +148,7 @@ describe('ETag cache', () => {
     await db.updateChainTipBlockHeight({ blockHeight: 5 });
     const cached2 = await fastify.inject({
       method: 'GET',
-      url: '/inscriptions',
+      url: '/ordinals/v1/inscriptions',
       headers: { 'if-none-match': etag },
     });
     expect(cached2.statusCode).toBe(200);

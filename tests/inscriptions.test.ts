@@ -49,7 +49,7 @@ describe('/inscriptions', () => {
     });
     const response = await fastify.inject({
       method: 'GET',
-      url: '/inscriptions/38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+      url: '/ordinals/v1/inscriptions/38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
     });
     expect(response.statusCode).toBe(200);
     expect(response.json()).toStrictEqual({
@@ -128,7 +128,7 @@ describe('/inscriptions', () => {
 
     const response1 = await fastify.inject({
       method: 'GET',
-      url: '/inscriptions?mime_type=text/plain',
+      url: '/ordinals/v1/inscriptions?mime_type=text/plain',
     });
     expect(response1.statusCode).toBe(200);
     const responseJson1 = response1.json();
@@ -155,7 +155,7 @@ describe('/inscriptions', () => {
 
     const response2 = await fastify.inject({
       method: 'GET',
-      url: '/inscriptions?mime_type=image/png',
+      url: '/ordinals/v1/inscriptions?mime_type=image/png',
     });
     expect(response2.statusCode).toBe(200);
     const responseJson2 = response2.json();
@@ -182,7 +182,7 @@ describe('/inscriptions', () => {
 
     const response3 = await fastify.inject({
       method: 'GET',
-      url: '/inscriptions?mime_type=image/png&mime_type=text/plain',
+      url: '/ordinals/v1/inscriptions?mime_type=image/png&mime_type=text/plain',
     });
     expect(response3.statusCode).toBe(200);
     const responseJson3 = response3.json();
@@ -247,7 +247,7 @@ describe('/inscriptions', () => {
 
     const response1 = await fastify.inject({
       method: 'GET',
-      url: '/inscriptions?rarity=common',
+      url: '/ordinals/v1/inscriptions?rarity=common',
     });
     expect(response1.statusCode).toBe(200);
     const responseJson1 = response1.json();
@@ -256,7 +256,7 @@ describe('/inscriptions', () => {
 
     const response2 = await fastify.inject({
       method: 'GET',
-      url: '/inscriptions?rarity=epic',
+      url: '/ordinals/v1/inscriptions?rarity=epic',
     });
     expect(response2.statusCode).toBe(200);
     const responseJson2 = response2.json();
@@ -320,7 +320,7 @@ describe('/inscriptions', () => {
 
     const response1 = await fastify.inject({
       method: 'GET',
-      url: '/inscriptions?genesis_block=775617',
+      url: '/ordinals/v1/inscriptions?genesis_block=775617',
     });
     expect(response1.statusCode).toBe(200);
     const responseJson1 = response1.json();
@@ -384,7 +384,7 @@ describe('/inscriptions', () => {
 
     const response1 = await fastify.inject({
       method: 'GET',
-      url: '/inscriptions?genesis_block=000000000000000000039b3051705a16fcf310a70dee55742339e6da70181bf7',
+      url: '/ordinals/v1/inscriptions?genesis_block=000000000000000000039b3051705a16fcf310a70dee55742339e6da70181bf7',
     });
     expect(response1.statusCode).toBe(200);
     const responseJson1 = response1.json();
@@ -450,7 +450,7 @@ describe('/inscriptions', () => {
 
     const response1 = await fastify.inject({
       method: 'GET',
-      url: '/inscriptions?output=9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0',
+      url: '/ordinals/v1/inscriptions?output=9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0',
     });
     expect(response1.statusCode).toBe(200);
     const responseJson1 = response1.json();
@@ -516,7 +516,7 @@ describe('/inscriptions', () => {
 
     const response1 = await fastify.inject({
       method: 'GET',
-      url: '/inscriptions?address=bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+      url: '/ordinals/v1/inscriptions?address=bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
     });
     expect(response1.statusCode).toBe(200);
     const responseJson1 = response1.json();
@@ -608,7 +608,7 @@ describe('/inscriptions', () => {
 
     const response1 = await fastify.inject({
       method: 'GET',
-      url: '/inscriptions?order_by=rarity&order=asc',
+      url: '/ordinals/v1/inscriptions?order_by=rarity&order=asc',
     });
     expect(response1.statusCode).toBe(200);
     const responseJson1 = response1.json();
@@ -619,7 +619,7 @@ describe('/inscriptions', () => {
 
     const response2 = await fastify.inject({
       method: 'GET',
-      url: '/inscriptions?order_by=rarity&order=desc',
+      url: '/ordinals/v1/inscriptions?order_by=rarity&order=desc',
     });
     expect(response2.statusCode).toBe(200);
     const responseJson2 = response2.json();
@@ -711,7 +711,7 @@ describe('/inscriptions', () => {
 
     const response1 = await fastify.inject({
       method: 'GET',
-      url: '/inscriptions?order_by=ordinal&order=asc',
+      url: '/ordinals/v1/inscriptions?order_by=ordinal&order=asc',
     });
     expect(response1.statusCode).toBe(200);
     const responseJson1 = response1.json();
@@ -722,7 +722,7 @@ describe('/inscriptions', () => {
 
     const response2 = await fastify.inject({
       method: 'GET',
-      url: '/inscriptions?order_by=ordinal&order=desc',
+      url: '/ordinals/v1/inscriptions?order_by=ordinal&order=desc',
     });
     expect(response2.statusCode).toBe(200);
     const responseJson2 = response2.json();
@@ -814,7 +814,7 @@ describe('/inscriptions', () => {
 
     const response1 = await fastify.inject({
       method: 'GET',
-      url: '/inscriptions?order_by=genesis_block_height&order=asc',
+      url: '/ordinals/v1/inscriptions?order_by=genesis_block_height&order=asc',
     });
     expect(response1.statusCode).toBe(200);
     const responseJson1 = response1.json();
@@ -825,7 +825,7 @@ describe('/inscriptions', () => {
 
     const response2 = await fastify.inject({
       method: 'GET',
-      url: '/inscriptions?order_by=genesis_block_height&order=desc',
+      url: '/ordinals/v1/inscriptions?order_by=genesis_block_height&order=desc',
     });
     expect(response2.statusCode).toBe(200);
     const responseJson2 = response2.json();
@@ -838,7 +838,7 @@ describe('/inscriptions', () => {
   test('returns not found for invalid inscriptions', async () => {
     const response = await fastify.inject({
       method: 'GET',
-      url: '/inscriptions/ff4503ab9048d6d0ff4e23def81b614d5270d341ce993992e93902ceb0d4ed79i0',
+      url: '/ordinals/v1/inscriptions/ff4503ab9048d6d0ff4e23def81b614d5270d341ce993992e93902ceb0d4ed79i0',
     });
     expect(response.statusCode).toBe(404);
   });
