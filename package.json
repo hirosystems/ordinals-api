@@ -1,8 +1,10 @@
 {
-  "name": "ordinals-api",
+  "name": "@hirosystems/ordinals-api",
+  "description": "A microservice that indexes Bitcoin Ordinal inscription data and exposes it via REST API endpoints.",
   "version": "1.0.0",
-  "description": "",
   "main": "index.js",
+  "author": "Hiro Systems PBC <engineering@hiro.so> (https://hiro.so)",
+  "license": "GPL-3.0",
   "scripts": {
     "build": "rimraf ./dist && tsc --project tsconfig.build.json",
     "start": "node dist/src/index.js",
@@ -19,8 +21,6 @@
     "testenv:stop": "docker-compose -f docker/docker-compose.dev.postgres.yml down -v -t 0",
     "testenv:logs": "docker-compose -f docker/docker-compose.dev.postgres.yml logs -t -f"
   },
-  "author": "",
-  "license": "ISC",
   "prettier": "@stacks/prettier-config",
   "devDependencies": {
     "@commitlint/cli": "^17.4.3",
