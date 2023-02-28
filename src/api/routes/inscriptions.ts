@@ -2,13 +2,12 @@ import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { Type } from '@sinclair/typebox';
 import { TypeCompiler } from '@sinclair/typebox/compiler';
 import { Value } from '@sinclair/typebox/value';
-import { FastifyPluginCallback } from 'fastify';
+import { FastifyPluginAsync, FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import {
   AddressParam,
   BlockHeightParam,
   InscriptionResponse,
-  InscriptionIdParam,
   LimitParam,
   NotFoundResponse,
   OffsetParam,
@@ -21,22 +20,24 @@ import {
   OrderParam,
   OrderBy,
   Order,
+  InscriptionIdParam,
 } from '../types';
+import { handleInscriptionCache } from '../util/cache';
 import {
   DEFAULT_API_LIMIT,
-  parseDbInscriptions,
-  parseDbInscription,
   hexToBuffer,
+  parseDbInscription,
+  parseDbInscriptions,
 } from '../util/helpers';
 
 const BlockHashParamCType = TypeCompiler.Compile(BlockHashParam);
 const BlockHeightParamCType = TypeCompiler.Compile(BlockHeightParam);
 
-export const InscriptionRoutes: FastifyPluginCallback<
-  Record<never, never>,
-  Server,
-  TypeBoxTypeProvider
-> = (fastify, options, done) => {
+const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
+  fastify,
+  options,
+  done
+) => {
   fastify.get(
     '/inscriptions',
     {
@@ -91,6 +92,15 @@ export const InscriptionRoutes: FastifyPluginCallback<
     }
   );
 
+  done();
+};
+
+const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
+  fastify,
+  options,
+  done
+) => {
+  fastify.addHook('preHandler', handleInscriptionCache);
   fastify.get(
     '/inscriptions/:inscription_id',
     {
@@ -156,4 +166,13 @@ export const InscriptionRoutes: FastifyPluginCallback<
   );
 
   done();
+};
+
+export const InscriptionsRoutes: FastifyPluginAsync<
+  Record<never, never>,
+  Server,
+  TypeBoxTypeProvider
+> = async fastify => {
+  await fastify.register(IndexRoutes);
+  await fastify.register(ShowRoutes);
 };

@@ -7,7 +7,8 @@ export const AddressParam = Type.String({
   examples: ['bc1p8aq8s3z9xl87e74twfk93mljxq6alv4a79yheadx33t9np4g2wkqqt8kc5'],
 });
 
-export const InscriptionIdParam = Type.RegEx(/^[a-fA-F0-9]{64}i[0-9]+$/, {
+export const InscriptionIdRegEx = /^[a-fA-F0-9]{64}i[0-9]+$/;
+export const InscriptionIdParam = Type.RegEx(InscriptionIdRegEx, {
   title: 'Inscription ID',
   description: 'Inscription unique identifier',
   examples: ['38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0'],

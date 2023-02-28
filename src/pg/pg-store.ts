@@ -133,10 +133,22 @@ export class PgStore extends BasePgStore {
       FROM inscriptions
       WHERE genesis_id = ${args.inscription_id}
     `;
-    if (result.count === 0) {
-      return undefined;
+    if (result.count > 0) {
+      return result[0];
     }
-    return result[0];
+  }
+
+  async getInscriptionETag(args: { inscription_id: string }): Promise<string | undefined> {
+    const result = await this.sql<{ etag: string }[]>`
+      SELECT date_part('epoch', l.timestamp)::text AS etag
+      FROM locations AS l
+      INNER JOIN inscriptions AS i ON l.inscription_id = i.id
+      WHERE i.genesis_id = ${args.inscription_id}
+      AND l.current = TRUE
+    `;
+    if (result.count > 0) {
+      return result[0].etag;
+    }
   }
 
   async getInscriptions(args: {

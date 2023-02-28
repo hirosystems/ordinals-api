@@ -4,7 +4,7 @@ import { Server } from 'http';
 import FastifyCors from '@fastify/cors';
 import { PINO_CONFIG } from '../logger';
 import { SwaggerOptions } from '@fastify/swagger';
-import { InscriptionRoutes } from './routes/inscriptions';
+import { InscriptionsRoutes } from './routes/inscriptions';
 import { PgStore } from '../pg/pg-store';
 import { SatRoutes } from './routes/sats';
 
@@ -38,7 +38,7 @@ export const Api: FastifyPluginAsync<
   Server,
   TypeBoxTypeProvider
 > = async fastify => {
-  await fastify.register(InscriptionRoutes);
+  await fastify.register(InscriptionsRoutes);
   await fastify.register(SatRoutes);
 };
 
