@@ -58,6 +58,7 @@ export class InscriptionsImporter {
           const res = await this.db.insertInscriptionGenesis({
             inscription: {
               genesis_id: genesisId,
+              number: 1,
               mime_type: genesis.contentType.split(';')[0],
               content_type: genesis.contentType,
               content_length: genesis.content.byteLength,

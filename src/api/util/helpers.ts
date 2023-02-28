@@ -8,6 +8,7 @@ export function parseDbInscriptions(
 ): InscriptionResponseType[] {
   return items.map(i => ({
     id: i.genesis_id,
+    number: i.number,
     address: i.address,
     genesis_block_height: i.genesis_block_height,
     genesis_block_hash: i.genesis_block_hash,

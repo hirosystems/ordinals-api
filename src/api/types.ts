@@ -94,6 +94,7 @@ export const PaginatedResponse = <T extends TSchema>(type: T) =>
 
 export const InscriptionResponse = Type.Object({
   id: Type.String(),
+  number: Type.Integer(),
   address: Type.String(),
   genesis_block_height: Type.Integer(),
   genesis_block_hash: Type.String(),

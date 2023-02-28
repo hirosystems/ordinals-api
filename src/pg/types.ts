@@ -16,6 +16,7 @@ export type DbFullyLocatedInscriptionResult = {
   genesis_block_hash: string;
   genesis_tx_id: string;
   genesis_fee: bigint;
+  number: number;
   address: string;
   output: string;
   offset: bigint;
@@ -79,6 +80,7 @@ export const LOCATIONS_COLUMNS = [
 
 export type DbInscriptionInsert = {
   genesis_id: string;
+  number: number;
   mime_type: string;
   content_type: string;
   content_length: number;

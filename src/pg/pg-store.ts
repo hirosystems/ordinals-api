@@ -61,15 +61,8 @@ export class PgStore extends BasePgStore {
         WHERE genesis_id = ${args.inscription.genesis_id}
       `;
       if (dbInscription.count === 0) {
-        const prevNumber = await sql<{ max: number }[]>`
-          SELECT MAX(number) as max FROM inscriptions
-        `;
-        const inscription = {
-          ...args.inscription,
-          number: prevNumber[0].max !== null ? prevNumber[0].max + 1 : 0,
-        };
         dbInscription = await sql<DbInscription[]>`
-          INSERT INTO inscriptions ${sql(inscription)}
+          INSERT INTO inscriptions ${sql(args.inscription)}
           ON CONFLICT ON CONSTRAINT inscriptions_genesis_id_unique DO NOTHING
           RETURNING ${this.sql(INSCRIPTIONS_COLUMNS)}
         `;
@@ -179,7 +172,7 @@ export class PgStore extends BasePgStore {
 
     const results = await this.sql<({ total: number } & DbFullyLocatedInscriptionResult)[]>`
       SELECT
-        i.genesis_id, loc.address, gen.block_height AS genesis_block_height,
+        i.genesis_id, loc.address, gen.block_height AS genesis_block_height, i.number,
         gen.block_hash AS genesis_block_hash, gen.tx_id AS genesis_tx_id, i.fee AS genesis_fee,
         loc.output, loc.offset, i.mime_type, i.content_type, i.content_length, loc.sat_ordinal,
         loc.sat_rarity, loc.timestamp, COUNT(*) OVER() as total
