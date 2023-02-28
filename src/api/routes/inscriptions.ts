@@ -22,7 +22,7 @@ import {
   Order,
   InscriptionIdParam,
 } from '../types';
-import { handleInscriptionCache } from '../util/cache';
+import { handleChainTipCache, handleInscriptionCache } from '../util/cache';
 import {
   DEFAULT_API_LIMIT,
   hexToBuffer,
@@ -38,6 +38,7 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
   options,
   done
 ) => {
+  fastify.addHook('preHandler', handleChainTipCache);
   fastify.get(
     '/inscriptions',
     {

@@ -19,12 +19,19 @@ export async function handleInscriptionCache(request: FastifyRequest, reply: Fas
   return handleCache(ETagType.inscription, request, reply);
 }
 
+export async function handleChainTipCache(request: FastifyRequest, reply: FastifyReply) {
+  return handleCache(ETagType.chainTip, request, reply);
+}
+
 async function handleCache(type: ETagType, request: FastifyRequest, reply: FastifyReply) {
   const ifNoneMatch = parseIfNoneMatchHeader(request.headers['if-none-match']);
   let etag: string | undefined;
   switch (type) {
     case ETagType.inscription:
       etag = await getInscriptionLocationEtag(request);
+      break;
+    case ETagType.chainTip:
+      etag = await getChainTipEtag(request);
       break;
   }
   if (etag) {
@@ -44,6 +51,7 @@ export function setReplyNonCacheable(reply: FastifyReply) {
 /**
  * Retrieve the inscriptions's location timestamp as a UNIX epoch so we can use it as the response
  * ETag.
+ * @param request - Fastify request
  * @returns Etag string
  */
 async function getInscriptionLocationEtag(request: FastifyRequest): Promise<string | undefined> {
@@ -62,7 +70,23 @@ async function getInscriptionLocationEtag(request: FastifyRequest): Promise<stri
     if (!inscription_id) return;
     return await request.server.db.getInscriptionETag({ inscription_id });
   } catch (error) {
-    return undefined;
+    return;
+  }
+}
+
+/**
+ * Get an ETag based on the last observed chain tip.
+ * @param request - Fastify request
+ * @returns ETag string
+ */
+async function getChainTipEtag(request: FastifyRequest): Promise<string | undefined> {
+  try {
+    const blockHeight = await request.server.db.getChainTipBlockHeight();
+    if (blockHeight) {
+      return blockHeight.toString();
+    }
+  } catch (error) {
+    return;
   }
 }
 
