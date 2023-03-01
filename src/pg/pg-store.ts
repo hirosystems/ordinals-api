@@ -17,6 +17,8 @@ import {
   LOCATIONS_COLUMNS,
 } from './types';
 
+type InscriptionIdentifier = { genesis_id: string } | { number: number };
+
 export class PgStore extends BasePgStore {
   static async connect(opts?: { skipMigrations: boolean }): Promise<PgStore> {
     const pgConfig = {
@@ -118,25 +120,33 @@ export class PgStore extends BasePgStore {
     return result[0];
   }
 
-  async getInscriptionContent(args: {
-    inscription_id: string;
-  }): Promise<DbInscriptionContent | undefined> {
+  async getInscriptionContent(
+    args: InscriptionIdentifier
+  ): Promise<DbInscriptionContent | undefined> {
     const result = await this.sql<DbInscriptionContent[]>`
       SELECT content, content_type, content_length
       FROM inscriptions
-      WHERE genesis_id = ${args.inscription_id}
+      WHERE ${
+        'genesis_id' in args
+          ? this.sql`genesis_id = ${args.genesis_id}`
+          : this.sql`number = ${args.number}`
+      }
     `;
     if (result.count > 0) {
       return result[0];
     }
   }
 
-  async getInscriptionETag(args: { inscription_id: string }): Promise<string | undefined> {
+  async getInscriptionETag(args: InscriptionIdentifier): Promise<string | undefined> {
     const result = await this.sql<{ etag: string }[]>`
       SELECT date_part('epoch', l.timestamp)::text AS etag
       FROM locations AS l
       INNER JOIN inscriptions AS i ON l.inscription_id = i.id
-      WHERE i.genesis_id = ${args.inscription_id}
+      WHERE ${
+        'genesis_id' in args
+          ? this.sql`i.genesis_id = ${args.genesis_id}`
+          : this.sql`i.number = ${args.number}`
+      }
       AND l.current = TRUE
     `;
     if (result.count > 0) {
@@ -148,10 +158,11 @@ export class PgStore extends BasePgStore {
     genesis_id?: string;
     genesis_block_height?: number;
     genesis_block_hash?: string;
+    number?: number;
     address?: string;
     mime_type?: string[];
     output?: string;
-    sat_rarity?: SatoshiRarity;
+    sat_rarity?: SatoshiRarity[];
     sat_ordinal?: bigint;
     order_by?: OrderBy;
     order?: Order;
@@ -176,7 +187,9 @@ export class PgStore extends BasePgStore {
         i.genesis_id, loc.address, gen.block_height AS genesis_block_height, i.number,
         gen.block_hash AS genesis_block_hash, gen.tx_id AS genesis_tx_id, i.fee AS genesis_fee,
         loc.output, loc.offset, i.mime_type, i.content_type, i.content_length, loc.sat_ordinal,
-        loc.sat_rarity, loc.timestamp, COUNT(*) OVER() as total
+        loc.sat_rarity, loc.timestamp, gen.timestamp AS genesis_timestamp,
+        gen.address AS genesis_address,
+        COUNT(*) OVER() as total
       FROM inscriptions AS i
       INNER JOIN locations AS loc ON loc.inscription_id = i.id
       INNER JOIN locations AS gen ON gen.inscription_id = i.id
@@ -199,7 +212,11 @@ export class PgStore extends BasePgStore {
             : this.sql``
         }
         ${args.output ? this.sql`AND loc.output = ${args.output}` : this.sql``}
-        ${args.sat_rarity ? this.sql`AND loc.sat_rarity = ${args.sat_rarity}` : this.sql``}
+        ${
+          args.sat_rarity?.length
+            ? this.sql`AND loc.sat_rarity IN ${this.sql(args.sat_rarity)}`
+            : this.sql``
+        }
         ${args.sat_ordinal ? this.sql`AND loc.sat_ordinal = ${args.sat_ordinal}` : this.sql``}
       ORDER BY ${this.sql.unsafe(orderBy)} ${this.sql.unsafe(order)}
       LIMIT ${args.limit}

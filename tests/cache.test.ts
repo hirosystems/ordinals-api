@@ -55,6 +55,16 @@ describe('ETag cache', () => {
     expect(response.headers.etag).not.toBeUndefined();
     const etag = response.headers.etag;
 
+    // Check on numbered id too
+    const nResponse = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions/7',
+    });
+    expect(nResponse.statusCode).toBe(200);
+    expect(nResponse.headers.etag).not.toBeUndefined();
+    const nEtag = nResponse.headers.etag;
+    expect(nEtag).toBe(etag);
+
     // Cached response
     const cached = await fastify.inject({
       method: 'GET',
@@ -62,6 +72,12 @@ describe('ETag cache', () => {
       headers: { 'if-none-match': etag },
     });
     expect(cached.statusCode).toBe(304);
+    const nCached = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions/7',
+      headers: { 'if-none-match': etag },
+    });
+    expect(nCached.statusCode).toBe(304);
 
     // Simulate modified location and check status code
     await db.sql`UPDATE locations SET timestamp = NOW() WHERE true`;
@@ -71,6 +87,12 @@ describe('ETag cache', () => {
       headers: { 'if-none-match': etag },
     });
     expect(cached2.statusCode).toBe(200);
+    const nCached2 = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions/7',
+      headers: { 'if-none-match': etag },
+    });
+    expect(nCached2.statusCode).toBe(200);
   });
 
   test('inscriptions index cache control', async () => {

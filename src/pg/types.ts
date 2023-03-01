@@ -16,6 +16,8 @@ export type DbFullyLocatedInscriptionResult = {
   genesis_block_hash: string;
   genesis_tx_id: string;
   genesis_fee: bigint;
+  genesis_timestamp: number;
+  genesis_address: string;
   number: number;
   address: string;
   output: string;
