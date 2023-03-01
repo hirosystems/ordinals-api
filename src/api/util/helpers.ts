@@ -10,6 +10,7 @@ export function parseDbInscriptions(
     id: i.genesis_id,
     number: i.number,
     address: i.address,
+    genesis_address: i.genesis_address,
     genesis_block_height: i.genesis_block_height,
     genesis_block_hash: i.genesis_block_hash,
     genesis_tx_id: i.genesis_tx_id,

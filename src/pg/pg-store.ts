@@ -188,6 +188,7 @@ export class PgStore extends BasePgStore {
         gen.block_hash AS genesis_block_hash, gen.tx_id AS genesis_tx_id, i.fee AS genesis_fee,
         loc.output, loc.offset, i.mime_type, i.content_type, i.content_length, loc.sat_ordinal,
         loc.sat_rarity, loc.timestamp, gen.timestamp AS genesis_timestamp,
+        gen.address AS genesis_address,
         COUNT(*) OVER() as total
       FROM inscriptions AS i
       INNER JOIN locations AS loc ON loc.inscription_id = i.id

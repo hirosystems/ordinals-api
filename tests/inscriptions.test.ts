@@ -49,6 +49,7 @@ describe('/inscriptions', () => {
     });
     const expected = {
       address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+      genesis_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
       genesis_block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
       genesis_block_height: 775617,
       content_length: 5,
@@ -147,6 +148,7 @@ describe('/inscriptions', () => {
     expect(responseJson1.total).toBe(1);
     const result1 = {
       address: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+      genesis_address: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
       genesis_block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
       genesis_block_height: 778575,
       content_length: 5,
@@ -175,6 +177,7 @@ describe('/inscriptions', () => {
     expect(responseJson2.total).toBe(1);
     const result2 = {
       address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+      genesis_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
       genesis_block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
       genesis_block_height: 775617,
       content_length: 5,
