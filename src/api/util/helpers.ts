@@ -14,6 +14,7 @@ export function parseDbInscriptions(
     genesis_block_hash: i.genesis_block_hash,
     genesis_tx_id: i.genesis_tx_id,
     genesis_fee: i.genesis_fee.toString(),
+    genesis_timestamp: i.genesis_timestamp,
     location: `${i.output}:${i.offset}`,
     output: i.output,
     offset: i.offset.toString(),

@@ -2,6 +2,10 @@ import { Static, TSchema, Type } from '@sinclair/typebox';
 import { TypeCompiler } from '@sinclair/typebox/compiler';
 import { SatoshiRarity, SAT_SUPPLY } from './util/ordinal-satoshi';
 
+// ==========================
+// Parameters
+// ==========================
+
 export const AddressParam = Type.String({
   title: 'Address',
   description: 'Bitcoin address',
@@ -97,6 +101,10 @@ export const OrderParam = Type.Enum(Order, {
   description: 'Results order',
 });
 
+// ==========================
+// Responses
+// ==========================
+
 export const PaginatedResponse = <T extends TSchema>(type: T) =>
   Type.Object({
     limit: Type.Integer(),
@@ -113,6 +121,7 @@ export const InscriptionResponse = Type.Object({
   genesis_block_hash: Type.String(),
   genesis_tx_id: Type.String(),
   genesis_fee: Type.String(),
+  genesis_timestamp: Type.Integer(),
   location: Type.String(),
   output: Type.String(),
   offset: Type.String(),
