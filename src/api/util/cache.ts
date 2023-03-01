@@ -3,7 +3,7 @@ import { logger } from '../../logger';
 import { InscriptionIdRegEx } from '../types';
 
 export enum ETagType {
-  chainTip,
+  inscriptionTransfers,
   inscription,
 }
 
@@ -19,8 +19,11 @@ export async function handleInscriptionCache(request: FastifyRequest, reply: Fas
   return handleCache(ETagType.inscription, request, reply);
 }
 
-export async function handleChainTipCache(request: FastifyRequest, reply: FastifyReply) {
-  return handleCache(ETagType.chainTip, request, reply);
+export async function handleInscriptionTransfersCache(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  return handleCache(ETagType.inscriptionTransfers, request, reply);
 }
 
 async function handleCache(type: ETagType, request: FastifyRequest, reply: FastifyReply) {
@@ -30,8 +33,8 @@ async function handleCache(type: ETagType, request: FastifyRequest, reply: Fasti
     case ETagType.inscription:
       etag = await getInscriptionLocationEtag(request);
       break;
-    case ETagType.chainTip:
-      etag = await getChainTipEtag(request);
+    case ETagType.inscriptionTransfers:
+      etag = await getInscriptionTransfersEtag(request);
       break;
   }
   if (etag) {
@@ -75,16 +78,13 @@ async function getInscriptionLocationEtag(request: FastifyRequest): Promise<stri
 }
 
 /**
- * Get an ETag based on the last observed chain tip.
+ * Get an ETag based on the last state of inscription transfers.
  * @param request - Fastify request
  * @returns ETag string
  */
-async function getChainTipEtag(request: FastifyRequest): Promise<string | undefined> {
+async function getInscriptionTransfersEtag(request: FastifyRequest): Promise<string | undefined> {
   try {
-    const blockHeight = await request.server.db.getChainTipBlockHeight();
-    if (blockHeight) {
-      return blockHeight.toString();
-    }
+    return await request.server.db.getInscriptionTransfersETag();
   } catch (error) {
     return;
   }
