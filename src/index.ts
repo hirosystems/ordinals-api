@@ -16,7 +16,7 @@ async function initBackgroundServices(db: PgStore) {
     },
   });
 
-  await server.listen({ host: ENV.CHAINHOOK_SERVER_HOST, port: ENV.CHAINHOOK_SERVER_PORT });
+  await server.listen({ host: ENV.API_HOST, port: ENV.EVENT_PORT });
 }
 
 async function initApiService(db: PgStore) {

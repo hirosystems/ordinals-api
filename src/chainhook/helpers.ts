@@ -2,6 +2,11 @@ import { OrdinalSatoshi } from '../api/util/ordinal-satoshi';
 import { PgStore } from '../pg/pg-store';
 import { ChainhookPayloadCType } from './types';
 
+/**
+ * Process an `inscription_revealed` event from chainhooks and saves inscriptions to the DB.
+ * @param payload - Event payload
+ * @param db - DB
+ */
 export async function processInscriptionRevealed(payload: unknown, db: PgStore): Promise<void> {
   if (!ChainhookPayloadCType.Check(payload)) return;
   for (const event of payload.apply) {
@@ -36,4 +41,13 @@ export async function processInscriptionRevealed(payload: unknown, db: PgStore):
       });
     }
   }
+}
+
+/**
+ * Process an `inscription_transfer` event from chainhooks and saves new locations to the DB.
+ * @param payload - Event payload
+ * @param db - DB
+ */
+export async function processInscriptionTransferred(payload: unknown, db: PgStore): Promise<void> {
+  //
 }
