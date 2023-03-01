@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { logger } from '../../logger';
-import { InscriptionIdRegEx } from '../types';
+import { InscriptionIdParamCType, InscriptionNumberParamCType } from '../types';
 
 export enum ETagType {
   chainTip,
@@ -57,18 +57,16 @@ export function setReplyNonCacheable(reply: FastifyReply) {
 async function getInscriptionLocationEtag(request: FastifyRequest): Promise<string | undefined> {
   try {
     const components = request.url.split('/');
-    let inscription_id: string | undefined;
     do {
       const lastElement = components.pop();
       if (lastElement && lastElement.length) {
-        if (InscriptionIdRegEx.test(lastElement)) {
-          inscription_id = lastElement;
-          break;
+        if (InscriptionIdParamCType.Check(lastElement)) {
+          return await request.server.db.getInscriptionETag({ genesis_id: lastElement });
+        } else if (InscriptionNumberParamCType.Check(parseInt(lastElement))) {
+          return await request.server.db.getInscriptionETag({ number: lastElement });
         }
       }
     } while (components.length);
-    if (!inscription_id) return;
-    return await request.server.db.getInscriptionETag({ inscription_id });
   } catch (error) {
     return;
   }

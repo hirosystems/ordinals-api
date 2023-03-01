@@ -1,4 +1,5 @@
 import { Static, TSchema, Type } from '@sinclair/typebox';
+import { TypeCompiler } from '@sinclair/typebox/compiler';
 import { SatoshiRarity, SAT_SUPPLY } from './util/ordinal-satoshi';
 
 export const AddressParam = Type.String({
@@ -7,12 +8,22 @@ export const AddressParam = Type.String({
   examples: ['bc1p8aq8s3z9xl87e74twfk93mljxq6alv4a79yheadx33t9np4g2wkqqt8kc5'],
 });
 
-export const InscriptionIdRegEx = /^[a-fA-F0-9]{64}i[0-9]+$/;
-export const InscriptionIdParam = Type.RegEx(InscriptionIdRegEx, {
+export const InscriptionIdParam = Type.RegEx(/^[a-fA-F0-9]{64}i[0-9]+$/, {
   title: 'Inscription ID',
   description: 'Inscription unique identifier',
   examples: ['38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0'],
 });
+export const InscriptionIdParamCType = TypeCompiler.Compile(InscriptionIdParam);
+
+export const InscriptionNumberParam = Type.Integer({
+  minimum: 0,
+  title: 'Inscription Number',
+  description: 'Number of the inscription',
+  examples: ['10500'],
+});
+export const InscriptionNumberParamCType = TypeCompiler.Compile(InscriptionNumberParam);
+
+export const InscriptionIdentifierParam = Type.Union([InscriptionIdParam, InscriptionNumberParam]);
 
 export const OrdinalParam = Type.Integer({
   title: 'Ordinal Number',
@@ -27,12 +38,14 @@ export const BlockHeightParam = Type.RegEx(/^[0-9]+$/, {
   description: 'Bitcoin block height',
   examples: [777678],
 });
+export const BlockHeightParamCType = TypeCompiler.Compile(BlockHeightParam);
 
 export const BlockHashParam = Type.RegEx(/^[0]{8}[a-fA-F0-9]{56}$/, {
   title: 'Block Hash',
   description: 'Bitcoin block hash',
   examples: ['0000000000000000000452773967cdd62297137cdaf79950c5e8bb0c62075133'],
 });
+export const BlockHashParamCType = TypeCompiler.Compile(BlockHashParam);
 
 export const MimeTypeParam = Type.RegEx(/^\w+\/[-.\w]+(?:\+[-.\w]+)?$/, {
   title: 'MIME Type',

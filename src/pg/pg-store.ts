@@ -17,6 +17,8 @@ import {
   LOCATIONS_COLUMNS,
 } from './types';
 
+type InscriptionIdentifier = { genesis_id: string } | { number: number };
+
 export class PgStore extends BasePgStore {
   static async connect(opts?: { skipMigrations: boolean }): Promise<PgStore> {
     const pgConfig = {
@@ -118,25 +120,33 @@ export class PgStore extends BasePgStore {
     return result[0];
   }
 
-  async getInscriptionContent(args: {
-    inscription_id: string;
-  }): Promise<DbInscriptionContent | undefined> {
+  async getInscriptionContent(
+    args: InscriptionIdentifier
+  ): Promise<DbInscriptionContent | undefined> {
     const result = await this.sql<DbInscriptionContent[]>`
       SELECT content, content_type, content_length
       FROM inscriptions
-      WHERE genesis_id = ${args.inscription_id}
+      WHERE ${
+        'genesis_id' in args
+          ? this.sql`genesis_id = ${args.genesis_id}`
+          : this.sql`number = ${args.number}`
+      }
     `;
     if (result.count > 0) {
       return result[0];
     }
   }
 
-  async getInscriptionETag(args: { inscription_id: string }): Promise<string | undefined> {
+  async getInscriptionETag(args: InscriptionIdentifier): Promise<string | undefined> {
     const result = await this.sql<{ etag: string }[]>`
       SELECT date_part('epoch', l.timestamp)::text AS etag
       FROM locations AS l
       INNER JOIN inscriptions AS i ON l.inscription_id = i.id
-      WHERE i.genesis_id = ${args.inscription_id}
+      WHERE ${
+        'genesis_id' in args
+          ? this.sql`i.genesis_id = ${args.genesis_id}`
+          : this.sql`i.number = ${args.number}`
+      }
       AND l.current = TRUE
     `;
     if (result.count > 0) {
@@ -148,6 +158,7 @@ export class PgStore extends BasePgStore {
     genesis_id?: string;
     genesis_block_height?: number;
     genesis_block_hash?: string;
+    number?: number;
     address?: string;
     mime_type?: string[];
     output?: string;

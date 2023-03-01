@@ -1,6 +1,5 @@
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { Type } from '@sinclair/typebox';
-import { TypeCompiler } from '@sinclair/typebox/compiler';
 import { Value } from '@sinclair/typebox/value';
 import { FastifyPluginAsync, FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
@@ -20,7 +19,10 @@ import {
   OrderParam,
   OrderBy,
   Order,
-  InscriptionIdParam,
+  InscriptionIdentifierParam,
+  BlockHashParamCType,
+  BlockHeightParamCType,
+  InscriptionIdParamCType,
 } from '../types';
 import { handleChainTipCache, handleInscriptionCache } from '../util/cache';
 import {
@@ -29,9 +31,6 @@ import {
   parseDbInscription,
   parseDbInscriptions,
 } from '../util/helpers';
-
-const BlockHashParamCType = TypeCompiler.Compile(BlockHashParam);
-const BlockHeightParamCType = TypeCompiler.Compile(BlockHeightParam);
 
 const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
   fastify,
@@ -103,14 +102,14 @@ const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTyp
 ) => {
   fastify.addHook('preHandler', handleInscriptionCache);
   fastify.get(
-    '/inscriptions/:inscription_id',
+    '/inscriptions/:id',
     {
       schema: {
         summary: 'Inscription',
         description: 'Retrieves a single inscription',
         tags: ['Inscriptions'],
         params: Type.Object({
-          inscription_id: InscriptionIdParam,
+          id: InscriptionIdentifierParam,
         }),
         response: {
           200: InscriptionResponse,
@@ -119,8 +118,11 @@ const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTyp
       },
     },
     async (request, reply) => {
+      const idArg = InscriptionIdParamCType.Check(request.params.id)
+        ? { genesis_id: request.params.id }
+        : { number: request.params.id };
       const inscription = await fastify.db.getInscriptions({
-        genesis_id: request.params.inscription_id,
+        ...idArg,
         limit: 1,
         offset: 0,
       });
@@ -133,14 +135,14 @@ const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTyp
   );
 
   fastify.get(
-    '/inscriptions/:inscription_id/content',
+    '/inscriptions/:id/content',
     {
       schema: {
         summary: 'Inscription content',
         description: 'Retrieves the contents of a single inscription',
         tags: ['Inscriptions'],
         params: Type.Object({
-          inscription_id: InscriptionIdParam,
+          id: InscriptionIdentifierParam,
         }),
         response: {
           200: Type.Uint8Array(),
@@ -149,9 +151,10 @@ const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTyp
       },
     },
     async (request, reply) => {
-      const inscription = await fastify.db.getInscriptionContent({
-        inscription_id: request.params.inscription_id,
-      });
+      const idArg = InscriptionIdParamCType.Check(request.params.id)
+        ? { genesis_id: request.params.id }
+        : { number: request.params.id };
+      const inscription = await fastify.db.getInscriptionContent(idArg);
       if (inscription) {
         const bytes = hexToBuffer(inscription.content);
         await reply

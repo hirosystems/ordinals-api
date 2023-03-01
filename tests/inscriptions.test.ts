@@ -47,12 +47,7 @@ describe('/inscriptions', () => {
         current: true,
       },
     });
-    const response = await fastify.inject({
-      method: 'GET',
-      url: '/ordinals/v1/inscriptions/38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-    });
-    expect(response.statusCode).toBe(200);
-    expect(response.json()).toStrictEqual({
+    const expected = {
       address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
       genesis_block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
       genesis_block_height: 775617,
@@ -69,7 +64,23 @@ describe('/inscriptions', () => {
       sat_rarity: 'common',
       timestamp: 1676913207000,
       genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+    };
+
+    // By inscription id
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions/38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
     });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toStrictEqual(expected);
+
+    // By inscription number
+    const response2 = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions/7',
+    });
+    expect(response2.statusCode).toBe(200);
+    expect(response2.json()).toStrictEqual(expected);
   });
 
   test('index filtered by mime type', async () => {
