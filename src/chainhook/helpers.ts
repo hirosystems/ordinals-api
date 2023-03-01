@@ -21,15 +21,15 @@ export async function processInscriptionRevealed(payload: unknown, db: PgStore):
           content_length: reveal.inscription.content_length,
           number: reveal.inscription.inscription_number,
           content: reveal.inscription.content_bytes,
-          fee: 0n,
+          fee: BigInt(tx.fee),
         },
         location: {
           inscription_id: 0, // To be set when inserting.
           block_height: event.block_identifier.index,
           block_hash: event.block_identifier.hash.substring(2),
           tx_id: tx.transaction_identifier.hash.substring(2),
-          address: '',
-          output: '',
+          address: reveal.inscription.address,
+          output: utxo.output,
           offset: BigInt(reveal.ordinal.ordinal_offset),
           value: BigInt(utxo.value),
           timestamp: event.timestamp,

@@ -13,6 +13,7 @@ const InscriptionRevealed = Type.Object({
     content_type: Type.String(),
     inscription_id: Type.String(),
     inscription_number: Type.Integer(),
+    address: Type.String(),
   }),
   ordinal: Type.Object({
     ordinal_number: Type.Integer(),
@@ -27,12 +28,14 @@ const OrdinalOperation = Type.Object({
 
 const Output = Type.Object({
   script_pubkey: Type.String(),
+  output: Type.String(),
   value: Type.Integer(),
 });
 
 const Transaction = Type.Object({
   transaction_identifier: Type.Object({ hash: Type.String() }),
   operations: Type.Array(Type.Any()),
+  fee: Type.Integer(),
   metadata: Type.Object({
     ordinal_operations: Type.Array(OrdinalOperation),
     outputs: Type.Array(Output),
