@@ -279,6 +279,14 @@ describe('/inscriptions', () => {
     const responseJson2 = response2.json();
     expect(responseJson2.total).toBe(1);
     expect(responseJson2.results[0].sat_rarity).toBe('epic');
+
+    const response3 = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions?rarity=epic&rarity=common',
+    });
+    expect(response3.statusCode).toBe(200);
+    const responseJson3 = response3.json();
+    expect(responseJson3.total).toBe(2);
   });
 
   test('index filtered by block height', async () => {

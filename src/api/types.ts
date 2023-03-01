@@ -51,17 +51,31 @@ export const BlockHashParam = Type.RegEx(/^[0]{8}[a-fA-F0-9]{56}$/, {
 });
 export const BlockHashParamCType = TypeCompiler.Compile(BlockHashParam);
 
-export const MimeTypeParam = Type.RegEx(/^\w+\/[-.\w]+(?:\+[-.\w]+)?$/, {
-  title: 'MIME Type',
-  description: 'MIME type for an inscription content',
-  examples: ['image/png'],
-});
+export const MimeTypesParam = Type.Array(
+  Type.RegEx(/^\w+\/[-.\w]+(?:\+[-.\w]+)?$/, {
+    title: 'MIME Type',
+    description: 'MIME type for an inscription content',
+    examples: ['image/png'],
+  }),
+  {
+    title: 'MIME Types',
+    description: 'Array of inscription MIME types',
+    examples: [['image/png', 'image/jpeg']],
+  }
+);
 
-export const SatoshiRarityParam = Type.Enum(SatoshiRarity, {
-  title: 'Rarity',
-  description: 'Rarity of a single satoshi according to Ordinal Theory',
-  examples: ['uncommon'],
-});
+export const SatoshiRaritiesParam = Type.Array(
+  Type.Enum(SatoshiRarity, {
+    title: 'Rarity',
+    description: 'Rarity of a single satoshi according to Ordinal Theory',
+    examples: ['uncommon'],
+  }),
+  {
+    title: 'Rarity',
+    description: 'Array of satoshi rarity values',
+    examples: [['common', 'uncommon']],
+  }
+);
 
 export const OutputParam = Type.RegEx(/^[a-fA-F0-9]{64}:[0-9]+$/, {
   title: 'Transaction Output',
