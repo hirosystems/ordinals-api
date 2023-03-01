@@ -27,16 +27,16 @@ const schema = Type.Object({
   /** Port in which to serve the API */
   API_PORT: Type.Number({ default: 3000, minimum: 0, maximum: 65535 }),
   /** Hostname that will be reported to the chainhook node so it can call us back with events */
-  API_EXTERNAL_HOSTNAME: Type.String(),
+  API_EXTERNAL_HOSTNAME: Type.String({ default: '127.0.0.1' }),
 
   /** Hostname of the chainhook server we'll host to receive events from the chainhook node */
   CHAINHOOK_SERVER_HOST: Type.String({ default: '0.0.0.0' }),
   /** Port in which to serve the chainhook server */
   CHAINHOOK_SERVER_PORT: Type.Number({ default: 3099, minimum: 0, maximum: 65535 }),
   /** Hostname of the chainhook node we'll use to register predicates */
-  CHAINHOOK_NODE_RPC_HOST: Type.String(),
+  CHAINHOOK_NODE_RPC_HOST: Type.String({ default: '127.0.0.1' }),
   /** Port of the chainhook node */
-  CHAINHOOK_NODE_RPC_PORT: Type.Number({ minimum: 0, maximum: 65535 }),
+  CHAINHOOK_NODE_RPC_PORT: Type.Number({ default: 8080, minimum: 0, maximum: 65535 }),
 
   PGHOST: Type.String(),
   PGPORT: Type.Number({ default: 5432, minimum: 0, maximum: 65535 }),

@@ -6,15 +6,16 @@ import { request } from 'undici';
 import { ENV } from '../env';
 import { logger, PINO_CONFIG } from '../logger';
 import { PgStore } from '../pg/pg-store';
+import { processInscriptionRevealed } from './helpers';
 
-const CHAINHOOK_BASE_PATH = `http://${ENV.CHAINHOOK_NODE_RPC_HOST}:${ENV.CHAINHOOK_NODE_RPC_PORT}`;
-const PREDICATE_UUID = randomUUID();
+export const CHAINHOOK_BASE_PATH = `http://${ENV.CHAINHOOK_NODE_RPC_HOST}:${ENV.CHAINHOOK_NODE_RPC_PORT}`;
+export const REVEAL__PREDICATE_UUID = randomUUID();
 
 async function registerChainhookPredicates() {
   logger.info(`Chainhook server registering predicates`);
   const predicates = {
     chain: 'bitcoin',
-    uuid: PREDICATE_UUID,
+    uuid: REVEAL__PREDICATE_UUID,
     name: 'inscription_revealed',
     version: 1,
     networks: {
@@ -40,7 +41,7 @@ async function registerChainhookPredicates() {
 
 async function removeChainhookPredicates() {
   logger.info(`Chainhook server closing predicates`);
-  await request(`${CHAINHOOK_BASE_PATH}/v1/chainhooks/bitcoin/${PREDICATE_UUID}`, {
+  await request(`${CHAINHOOK_BASE_PATH}/v1/chainhooks/bitcoin/${REVEAL__PREDICATE_UUID}`, {
     method: 'DELETE',
     throwOnError: true,
   });
@@ -52,10 +53,12 @@ const Chainhook: FastifyPluginCallback<Record<never, never>, Server, TypeBoxType
   done
 ) => {
   fastify.post('/chainhook/inscription_revealed', async (request, reply) => {
+    await processInscriptionRevealed(request.body, fastify.db);
     await reply.code(200).send();
   });
 
   fastify.post('/chainhook/inscription_transfered', async (request, reply) => {
+    // TODO:
     await reply.code(200).send();
   });
 
