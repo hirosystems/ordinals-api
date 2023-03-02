@@ -160,6 +160,8 @@ export class PgStore extends BasePgStore {
     genesis_block_hash?: string;
     from_genesis_block_height?: number;
     to_genesis_block_height?: number;
+    from_genesis_timestamp?: number;
+    to_genesis_timestamp?: number;
     number?: number;
     address?: string;
     mime_type?: string[];
@@ -215,6 +217,16 @@ export class PgStore extends BasePgStore {
         ${
           args.to_genesis_block_height
             ? this.sql`AND gen.block_height <= ${args.to_genesis_block_height}`
+            : this.sql``
+        }
+        ${
+          args.from_genesis_timestamp
+            ? this.sql`AND gen.timestamp >= to_timestamp(${args.from_genesis_timestamp})`
+            : this.sql``
+        }
+        ${
+          args.to_genesis_timestamp
+            ? this.sql`AND gen.timestamp <= to_timestamp(${args.to_genesis_timestamp})`
             : this.sql``
         }
         ${args.address ? this.sql`AND loc.address = ${args.address}` : this.sql``}

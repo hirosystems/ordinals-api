@@ -23,6 +23,7 @@ import {
   InscriptionIdParamCType,
   BlockParam,
   BlockHeightParam,
+  TimestampParam,
 } from '../types';
 import { handleChainTipCache, handleInscriptionCache } from '../util/cache';
 import {
@@ -63,6 +64,8 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
           genesis_block: Type.Optional(BlockParam),
           from_genesis_block_height: Type.Optional(BlockHeightParam),
           to_genesis_block_height: Type.Optional(BlockHeightParam),
+          from_genesis_timestamp: Type.Optional(TimestampParam),
+          to_genesis_timestamp: Type.Optional(TimestampParam),
           output: Type.Optional(OutputParam),
           address: Type.Optional(AddressParam),
           mime_type: Type.Optional(MimeTypesParam),
@@ -87,6 +90,8 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
         ...blockParam(request.query.genesis_block, 'genesis_block'),
         ...blockParam(request.query.from_genesis_block_height, 'from_genesis_block'),
         ...blockParam(request.query.to_genesis_block_height, 'to_genesis_block'),
+        from_genesis_timestamp: request.query.from_genesis_timestamp,
+        to_genesis_timestamp: request.query.to_genesis_timestamp,
         output: request.query.output,
         address: request.query.address,
         mime_type: request.query.mime_type,

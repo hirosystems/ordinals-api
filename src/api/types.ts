@@ -79,6 +79,12 @@ export const SatoshiRaritiesParam = Type.Array(
   }
 );
 
+export const TimestampParam = Type.Integer({
+  title: 'Timestamp',
+  description: 'Block UNIX epoch timestamp (milliseconds)',
+  examples: [1677731361],
+});
+
 export const OutputParam = Type.RegEx(/^[a-fA-F0-9]{64}:[0-9]+$/, {
   title: 'Transaction Output',
   description: 'An UTXO for a Bitcoin transaction',
