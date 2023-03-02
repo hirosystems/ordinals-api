@@ -25,6 +25,7 @@ import {
   BlockHeightParam,
   TimestampParam,
   OrdinalParam,
+  InscriptionNumberParam,
 } from '../schemas';
 import { handleChainTipCache, handleInscriptionCache } from '../util/cache';
 import {
@@ -75,6 +76,8 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
           to_sat_ordinal: Type.Optional(OrdinalParam),
           from_sat_coinbase_height: Type.Optional(BlockHeightParam),
           to_sat_coinbase_height: Type.Optional(BlockHeightParam),
+          from_number: Type.Optional(InscriptionNumberParam),
+          to_number: Type.Optional(InscriptionNumberParam),
           output: Type.Optional(OutputParam),
           address: Type.Optional(AddressParam),
           mime_type: Type.Optional(MimeTypesParam),
@@ -105,6 +108,8 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
         to_genesis_timestamp: request.query.to_genesis_timestamp,
         from_sat_ordinal: bigIntParam(request.query.from_sat_ordinal),
         to_sat_ordinal: bigIntParam(request.query.to_sat_ordinal),
+        from_number: request.query.from_number,
+        to_number: request.query.to_number,
         output: request.query.output,
         address: request.query.address,
         mime_type: request.query.mime_type,

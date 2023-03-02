@@ -165,6 +165,8 @@ export class PgStore extends BasePgStore {
     from_sat_coinbase_height?: number;
     to_sat_coinbase_height?: number;
     number?: number;
+    from_number?: number;
+    to_number?: number;
     address?: string;
     mime_type?: string[];
     output?: string;
@@ -252,6 +254,8 @@ export class PgStore extends BasePgStore {
           args.to_sat_ordinal ? this.sql`AND loc.sat_ordinal <= ${args.to_sat_ordinal}` : this.sql``
         }
         ${args.number ? this.sql`AND i.number = ${args.number}` : this.sql``}
+        ${args.from_number ? this.sql`AND i.number >= ${args.from_number}` : this.sql``}
+        ${args.to_number ? this.sql`AND i.number <= ${args.to_number}` : this.sql``}
         ${args.address ? this.sql`AND loc.address = ${args.address}` : this.sql``}
         ${
           args.mime_type?.length
