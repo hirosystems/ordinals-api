@@ -59,6 +59,7 @@ describe('/inscriptions', () => {
       id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
       offset: '0',
       number: 7,
+      value: '10000',
       sat_ordinal: '257418248345364',
       output: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0',
       location: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
@@ -158,6 +159,7 @@ describe('/inscriptions', () => {
       id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
       offset: '0',
       number: 7,
+      value: '10000',
       sat_ordinal: '257418248345364',
       output: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0',
       location: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
@@ -187,6 +189,7 @@ describe('/inscriptions', () => {
       id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
       offset: '0',
       number: 1,
+      value: '10000',
       sat_ordinal: '257418248345364',
       output: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0',
       location: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
@@ -351,6 +354,24 @@ describe('/inscriptions', () => {
     const responseJson1 = response1.json();
     expect(responseJson1.total).toBe(1);
     expect(responseJson1.results[0].genesis_block_height).toBe(775617);
+
+    const response2 = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions?from_genesis_block_height=778000',
+    });
+    expect(response2.statusCode).toBe(200);
+    const responseJson2 = response2.json();
+    expect(responseJson2.total).toBe(1);
+    expect(responseJson2.results[0].genesis_block_height).toBe(778575);
+
+    const response3 = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions?to_genesis_block_height=778000',
+    });
+    expect(response3.statusCode).toBe(200);
+    const responseJson3 = response3.json();
+    expect(responseJson3.total).toBe(1);
+    expect(responseJson3.results[0].genesis_block_height).toBe(775617);
   });
 
   test('index filtered by block hash', async () => {

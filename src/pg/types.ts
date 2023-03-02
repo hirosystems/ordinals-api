@@ -22,6 +22,7 @@ export type DbFullyLocatedInscriptionResult = {
   address: string;
   output: string;
   offset: bigint;
+  value: bigint;
   sat_ordinal: bigint;
   sat_rarity: string;
   mime_type: string;

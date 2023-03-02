@@ -18,6 +18,7 @@ export function parseDbInscriptions(
     genesis_timestamp: i.genesis_timestamp,
     location: `${i.output}:${i.offset}`,
     output: i.output,
+    value: i.value.toString(),
     offset: i.offset.toString(),
     sat_ordinal: i.sat_ordinal.toString(),
     sat_rarity: i.sat_rarity,

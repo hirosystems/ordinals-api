@@ -158,6 +158,8 @@ export class PgStore extends BasePgStore {
     genesis_id?: string;
     genesis_block_height?: number;
     genesis_block_hash?: string;
+    from_genesis_block_height?: number;
+    to_genesis_block_height?: number;
     number?: number;
     address?: string;
     mime_type?: string[];
@@ -187,7 +189,7 @@ export class PgStore extends BasePgStore {
         i.genesis_id, loc.address, gen.block_height AS genesis_block_height, i.number,
         gen.block_hash AS genesis_block_hash, gen.tx_id AS genesis_tx_id, i.fee AS genesis_fee,
         loc.output, loc.offset, i.mime_type, i.content_type, i.content_length, loc.sat_ordinal,
-        loc.sat_rarity, loc.timestamp, gen.timestamp AS genesis_timestamp,
+        loc.sat_rarity, loc.timestamp, gen.timestamp AS genesis_timestamp, loc.value,
         gen.address AS genesis_address,
         COUNT(*) OVER() as total
       FROM inscriptions AS i
@@ -203,6 +205,16 @@ export class PgStore extends BasePgStore {
         ${
           args.genesis_block_hash
             ? this.sql`AND gen.block_hash = ${args.genesis_block_hash}`
+            : this.sql``
+        }
+        ${
+          args.from_genesis_block_height
+            ? this.sql`AND gen.block_height >= ${args.from_genesis_block_height}`
+            : this.sql``
+        }
+        ${
+          args.to_genesis_block_height
+            ? this.sql`AND gen.block_height <= ${args.to_genesis_block_height}`
             : this.sql``
         }
         ${args.address ? this.sql`AND loc.address = ${args.address}` : this.sql``}

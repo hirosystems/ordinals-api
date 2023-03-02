@@ -51,6 +51,8 @@ export const BlockHashParam = Type.RegEx(/^[0]{8}[a-fA-F0-9]{56}$/, {
 });
 export const BlockHashParamCType = TypeCompiler.Compile(BlockHashParam);
 
+export const BlockParam = Type.Union([BlockHashParam, BlockHeightParam]);
+
 export const MimeTypesParam = Type.Array(
   Type.RegEx(/^\w+\/[-.\w]+(?:\+[-.\w]+)?$/, {
     title: 'MIME Type',
@@ -139,6 +141,7 @@ export const InscriptionResponse = Type.Object({
   genesis_timestamp: Type.Integer(),
   location: Type.String(),
   output: Type.String(),
+  value: Type.String(),
   offset: Type.String(),
   sat_ordinal: Type.String(),
   sat_rarity: Type.String(),
