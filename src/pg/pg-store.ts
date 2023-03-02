@@ -251,6 +251,7 @@ export class PgStore extends BasePgStore {
         ${
           args.to_sat_ordinal ? this.sql`AND loc.sat_ordinal <= ${args.to_sat_ordinal}` : this.sql``
         }
+        ${args.number ? this.sql`AND i.number = ${args.number}` : this.sql``}
         ${args.address ? this.sql`AND loc.address = ${args.address}` : this.sql``}
         ${
           args.mime_type?.length

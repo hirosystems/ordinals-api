@@ -23,6 +23,33 @@ describe('/inscriptions', () => {
   test('shows inscription', async () => {
     await db.insertInscriptionGenesis({
       inscription: {
+        genesis_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
+        mime_type: 'text/plain',
+        content_type: 'text/plain;charset=utf-8',
+        content_length: 5,
+        number: 188,
+        content: '0x48656C6C6F',
+        fee: 705n,
+      },
+      location: {
+        inscription_id: 0,
+        block_height: 778575,
+        block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+        tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
+        address: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+        output: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0',
+        offset: 0n,
+        value: 10000n,
+        timestamp: 1676913207,
+        sat_ordinal: 257418248345364n,
+        sat_rarity: 'common',
+        sat_coinbase_height: 650000,
+        genesis: true,
+        current: true,
+      },
+    });
+    await db.insertInscriptionGenesis({
+      inscription: {
         genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
         mime_type: 'image/png',
         content_type: 'image/png',
