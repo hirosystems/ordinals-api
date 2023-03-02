@@ -205,6 +205,7 @@ export const InscriptionResponse = Type.Object({
   offset: Type.String({ examples: ['0'] }),
   sat_ordinal: Type.String({ examples: ['1232735286933201'] }),
   sat_rarity: Type.String({ examples: ['common'] }),
+  sat_coinbase_height: Type.Integer({ examples: [430521] }),
   mime_type: Type.String({ examples: ['text/plain'] }),
   content_type: Type.String({ examples: ['text/plain;charset=utf-8'] }),
   content_length: Type.Integer({ examples: [59] }),

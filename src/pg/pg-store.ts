@@ -162,6 +162,8 @@ export class PgStore extends BasePgStore {
     to_genesis_block_height?: number;
     from_genesis_timestamp?: number;
     to_genesis_timestamp?: number;
+    from_sat_coinbase_height?: number;
+    to_sat_coinbase_height?: number;
     number?: number;
     address?: string;
     mime_type?: string[];
@@ -194,7 +196,7 @@ export class PgStore extends BasePgStore {
         gen.block_hash AS genesis_block_hash, gen.tx_id AS genesis_tx_id, i.fee AS genesis_fee,
         loc.output, loc.offset, i.mime_type, i.content_type, i.content_length, loc.sat_ordinal,
         loc.sat_rarity, loc.timestamp, gen.timestamp AS genesis_timestamp, loc.value,
-        gen.address AS genesis_address,
+        gen.address AS genesis_address, loc.sat_coinbase_height,
         COUNT(*) OVER() as total
       FROM inscriptions AS i
       INNER JOIN locations AS loc ON loc.inscription_id = i.id
@@ -219,6 +221,16 @@ export class PgStore extends BasePgStore {
         ${
           args.to_genesis_block_height
             ? this.sql`AND gen.block_height <= ${args.to_genesis_block_height}`
+            : this.sql``
+        }
+        ${
+          args.from_sat_coinbase_height
+            ? this.sql`AND loc.sat_coinbase_height >= ${args.from_sat_coinbase_height}`
+            : this.sql``
+        }
+        ${
+          args.to_sat_coinbase_height
+            ? this.sql`AND loc.sat_coinbase_height <= ${args.to_sat_coinbase_height}`
             : this.sql``
         }
         ${

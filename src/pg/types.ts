@@ -25,6 +25,7 @@ export type DbFullyLocatedInscriptionResult = {
   value: bigint;
   sat_ordinal: bigint;
   sat_rarity: string;
+  sat_coinbase_height: number;
   mime_type: string;
   content_type: string;
   content_length: number;
@@ -42,6 +43,7 @@ export type DbLocationInsert = {
   value: bigint;
   sat_ordinal: bigint;
   sat_rarity: string;
+  sat_coinbase_height: number;
   timestamp: number;
   genesis: boolean;
   current: boolean;
@@ -59,6 +61,7 @@ export type DbLocation = {
   value: bigint;
   sat_ordinal: bigint;
   sat_rarity: string;
+  sat_coinbase_height: number;
   timestamp: number;
   genesis: boolean;
   current: boolean;
@@ -76,6 +79,7 @@ export const LOCATIONS_COLUMNS = [
   'value',
   'sat_ordinal',
   'sat_rarity',
+  'sat_coinbase_height',
   'timestamp',
   'genesis',
   'current',

@@ -22,6 +22,7 @@ export function parseDbInscriptions(
     offset: i.offset.toString(),
     sat_ordinal: i.sat_ordinal.toString(),
     sat_rarity: i.sat_rarity,
+    sat_coinbase_height: i.sat_coinbase_height,
     mime_type: i.mime_type,
     content_type: i.content_type,
     content_length: i.content_length,
