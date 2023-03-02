@@ -14,7 +14,7 @@ export const AddressParam = Type.String({
 
 export const InscriptionIdParam = Type.RegEx(/^[a-fA-F0-9]{64}i[0-9]+$/, {
   title: 'Inscription ID',
-  description: 'Inscription unique identifier',
+  description: 'Inscription ID',
   examples: ['38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0'],
 });
 export const InscriptionIdParamCType = TypeCompiler.Compile(InscriptionIdParam);
@@ -22,12 +22,16 @@ export const InscriptionIdParamCType = TypeCompiler.Compile(InscriptionIdParam);
 export const InscriptionNumberParam = Type.Integer({
   minimum: 0,
   title: 'Inscription Number',
-  description: 'Number of the inscription',
+  description: 'Inscription number',
   examples: ['10500'],
 });
 export const InscriptionNumberParamCType = TypeCompiler.Compile(InscriptionNumberParam);
 
-export const InscriptionIdentifierParam = Type.Union([InscriptionIdParam, InscriptionNumberParam]);
+export const InscriptionIdentifierParam = Type.Union([InscriptionIdParam, InscriptionNumberParam], {
+  title: 'Inscription Identifier',
+  description: 'Inscription unique identifier (number or ID)',
+  examples: ['145000', '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0'],
+});
 
 export const OrdinalParam = Type.Integer({
   title: 'Ordinal Number',
@@ -51,7 +55,11 @@ export const BlockHashParam = Type.RegEx(/^[0]{8}[a-fA-F0-9]{56}$/, {
 });
 export const BlockHashParamCType = TypeCompiler.Compile(BlockHashParam);
 
-export const BlockParam = Type.Union([BlockHashParam, BlockHeightParam]);
+export const BlockParam = Type.Union([BlockHashParam, BlockHeightParam], {
+  title: 'Block Identifier',
+  description: 'Bitcoin block identifier (height or hash)',
+  examples: [777654, '0000000000000000000452773967cdd62297137cdaf79950c5e8bb0c62075133'],
+});
 
 export const MimeTypesParam = Type.Array(
   Type.RegEx(/^\w+\/[-.\w]+(?:\+[-.\w]+)?$/, {
@@ -129,47 +137,65 @@ export const OrderParam = Type.Enum(Order, {
 
 export const PaginatedResponse = <T extends TSchema>(type: T) =>
   Type.Object({
-    limit: Type.Integer(),
-    offset: Type.Integer(),
-    total: Type.Integer(),
+    limit: Type.Integer({ examples: [20] }),
+    offset: Type.Integer({ examples: [0] }),
+    total: Type.Integer({ examples: [1] }),
     results: Type.Array(type),
   });
 
 export const InscriptionResponse = Type.Object({
-  id: Type.String(),
-  number: Type.Integer(),
-  address: Type.String(),
-  genesis_address: Type.String(),
-  genesis_block_height: Type.Integer(),
-  genesis_block_hash: Type.String(),
-  genesis_tx_id: Type.String(),
-  genesis_fee: Type.String(),
-  genesis_timestamp: Type.Integer(),
-  location: Type.String(),
-  output: Type.String(),
-  value: Type.String(),
-  offset: Type.String(),
-  sat_ordinal: Type.String(),
-  sat_rarity: Type.String(),
-  mime_type: Type.String(),
-  content_type: Type.String(),
-  content_length: Type.Integer(),
-  timestamp: Type.Integer(),
+  id: Type.String({
+    examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218i0'],
+  }),
+  number: Type.Integer({ examples: [248751] }),
+  address: Type.String({
+    examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
+  }),
+  genesis_address: Type.String({
+    examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
+  }),
+  genesis_block_height: Type.Integer({ examples: [778921] }),
+  genesis_block_hash: Type.String({
+    examples: ['0000000000000000000452773967cdd62297137cdaf79950c5e8bb0c62075133'],
+  }),
+  genesis_tx_id: Type.String({
+    examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218'],
+  }),
+  genesis_fee: Type.String({ examples: ['3179'] }),
+  genesis_timestamp: Type.Integer({ exmaples: [1677733170000] }),
+  location: Type.String({
+    examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218:0:0'],
+  }),
+  output: Type.String({
+    examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218:0'],
+  }),
+  value: Type.String({ examples: ['546'] }),
+  offset: Type.String({ examples: ['0'] }),
+  sat_ordinal: Type.String({ examples: ['1232735286933201'] }),
+  sat_rarity: Type.String({ examples: ['common'] }),
+  mime_type: Type.String({ examples: ['text/plain'] }),
+  content_type: Type.String({ examples: ['text/plain;charset=utf-8'] }),
+  content_length: Type.Integer({ examples: [59] }),
+  timestamp: Type.Integer({ examples: [1677733170000] }),
 });
 export type InscriptionResponseType = Static<typeof InscriptionResponse>;
 
 export const SatoshiResponse = Type.Object({
-  coinbase_height: Type.Integer(),
-  cycle: Type.Integer(),
-  decimal: Type.String(),
-  degree: Type.String(),
-  inscription_id: Type.Optional(Type.String()),
-  epoch: Type.Number(),
-  name: Type.String(),
-  offset: Type.Number(),
-  percentile: Type.String(),
-  period: Type.Integer(),
-  rarity: Type.Enum(SatoshiRarity),
+  coinbase_height: Type.Integer({ examples: [752860] }),
+  cycle: Type.Integer({ examples: [0] }),
+  decimal: Type.String({ examples: ['752860.20444193'] }),
+  degree: Type.String({ examples: ['0°122860′892″20444193‴'] }),
+  inscription_id: Type.Optional(
+    Type.String({
+      examples: ['ff4503ab9048d6d0ff4e23def81b614d5270d341ce993992e93902ceb0d4ed79i0'],
+    })
+  ),
+  epoch: Type.Number({ examples: [3] }),
+  name: Type.String({ examples: ['ahehcbywzae'] }),
+  offset: Type.Number({ examples: [20444193] }),
+  percentile: Type.String({ examples: ['91.15654869285287%'] }),
+  period: Type.Integer({ examples: [373] }),
+  rarity: Type.Enum(SatoshiRarity, { examples: ['common'] }),
 });
 
 export const NotFoundResponse = Type.Object({
