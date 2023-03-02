@@ -183,6 +183,7 @@ describe('ETag cache', () => {
         timestamp: 1676913207,
         sat_ordinal: 257418248345364n,
         sat_rarity: 'common',
+        sat_coinbase_height: 20000,
         genesis: false,
         current: true,
       },

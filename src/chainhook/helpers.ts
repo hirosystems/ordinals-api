@@ -13,6 +13,7 @@ export async function processInscriptionRevealed(payload: unknown, db: PgStore):
     for (const tx of event.transactions) {
       const reveal = tx.metadata.ordinal_operations[0].inscription_revealed;
       const utxo = tx.metadata.outputs[0];
+      const satoshi = new OrdinalSatoshi(reveal.ordinal.ordinal_number);
       await db.insertInscriptionGenesis({
         inscription: {
           genesis_id: reveal.inscription.inscription_id,
@@ -34,7 +35,8 @@ export async function processInscriptionRevealed(payload: unknown, db: PgStore):
           value: BigInt(utxo.value),
           timestamp: event.timestamp,
           sat_ordinal: BigInt(reveal.ordinal.ordinal_number),
-          sat_rarity: new OrdinalSatoshi(reveal.ordinal.ordinal_number).rarity,
+          sat_rarity: satoshi.rarity,
+          sat_coinbase_height: satoshi.blockHeight,
           genesis: true,
           current: true,
         },
