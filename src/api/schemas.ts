@@ -1,6 +1,38 @@
+import { SwaggerOptions } from '@fastify/swagger';
 import { Static, TSchema, Type } from '@sinclair/typebox';
 import { TypeCompiler } from '@sinclair/typebox/compiler';
 import { SatoshiRarity, SAT_SUPPLY } from './util/ordinal-satoshi';
+
+export const OpenApiSchemaOptions: SwaggerOptions = {
+  openapi: {
+    info: {
+      title: 'Ordinals API',
+      description:
+        'A microservice that indexes Bitcoin Ordinal inscription data and exposes it via REST API endpoints.',
+      version: 'v0.0.1',
+    },
+    externalDocs: {
+      url: 'https://github.com/hirosystems/ordinals-api',
+      description: 'Source Repository',
+    },
+    servers: [
+      {
+        url: 'https://api.hiro.so/',
+        description: 'mainnet',
+      },
+    ],
+    tags: [
+      {
+        name: 'Inscriptions',
+        description: 'Endpoints to query ordinal inscriptions',
+      },
+      {
+        name: 'Satoshis',
+        description: 'Endpoints to query Satoshi ordinal and rarity information',
+      },
+    ],
+  },
+};
 
 // ==========================
 // Parameters

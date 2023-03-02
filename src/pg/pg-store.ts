@@ -1,4 +1,4 @@
-import { Order, OrderBy } from '../api/types';
+import { Order, OrderBy } from '../api/schemas';
 import { SatoshiRarity } from '../api/util/ordinal-satoshi';
 import { ENV } from '../env';
 import { runMigrations } from './migrations';

@@ -1,9 +1,10 @@
 import Fastify, { FastifyPluginAsync } from 'fastify';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
-import { Api, ApiSwaggerOptions } from '../src/api/init';
+import { Api } from '../src/api/init';
 import FastifySwagger from '@fastify/swagger';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { Server } from 'http';
+import { OpenApiSchemaOptions } from '../src/api/schemas';
 
 /**
  * Generates `openapi.yaml` based on current Swagger definitions.
@@ -13,7 +14,7 @@ export const ApiGenerator: FastifyPluginAsync<
   Server,
   TypeBoxTypeProvider
 > = async (fastify, options) => {
-  await fastify.register(FastifySwagger, ApiSwaggerOptions);
+  await fastify.register(FastifySwagger, OpenApiSchemaOptions);
   await fastify.register(Api, { prefix: '/ordinals/v1' });
   if (!existsSync('./tmp')) {
     mkdirSync('./tmp');

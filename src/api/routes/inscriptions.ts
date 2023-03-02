@@ -25,7 +25,7 @@ import {
   BlockHeightParam,
   TimestampParam,
   OrdinalParam,
-} from '../types';
+} from '../schemas';
 import { handleChainTipCache, handleInscriptionCache } from '../util/cache';
 import {
   DEFAULT_API_LIMIT,

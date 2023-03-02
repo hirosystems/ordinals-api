@@ -1,5 +1,5 @@
 import { DbFullyLocatedInscriptionResult } from '../../pg/types';
-import { InscriptionResponseType } from '../types';
+import { InscriptionResponseType } from '../schemas';
 
 export const DEFAULT_API_LIMIT = 20;
 

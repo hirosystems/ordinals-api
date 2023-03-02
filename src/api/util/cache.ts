@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { logger } from '../../logger';
-import { InscriptionIdParamCType, InscriptionNumberParamCType } from '../types';
+import { InscriptionIdParamCType, InscriptionNumberParamCType } from '../schemas';
 
 export enum ETagType {
   chainTip,
