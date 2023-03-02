@@ -49,6 +49,10 @@ export function up(pgm: MigrationBuilder): void {
       type: 'text',
       notNull: true,
     },
+    sat_coinbase_height: {
+      type: 'int',
+      notNull: true,
+    },
     timestamp: {
       type: 'timestamptz',
       notNull: true,

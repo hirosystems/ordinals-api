@@ -1,5 +1,5 @@
 import { DbFullyLocatedInscriptionResult } from '../../pg/types';
-import { InscriptionResponseType } from '../types';
+import { InscriptionResponseType } from '../schemas';
 
 export const DEFAULT_API_LIMIT = 20;
 
@@ -18,9 +18,11 @@ export function parseDbInscriptions(
     genesis_timestamp: i.genesis_timestamp,
     location: `${i.output}:${i.offset}`,
     output: i.output,
+    value: i.value.toString(),
     offset: i.offset.toString(),
     sat_ordinal: i.sat_ordinal.toString(),
     sat_rarity: i.sat_rarity,
+    sat_coinbase_height: i.sat_coinbase_height,
     mime_type: i.mime_type,
     content_type: i.content_type,
     content_length: i.content_length,

@@ -43,6 +43,7 @@ describe('/inscriptions', () => {
         timestamp: 1676913207,
         sat_ordinal: 257418248345364n,
         sat_rarity: 'common',
+        sat_coinbase_height: 650000,
         genesis: true,
         current: true,
       },
@@ -59,7 +60,9 @@ describe('/inscriptions', () => {
       id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
       offset: '0',
       number: 7,
+      value: '10000',
       sat_ordinal: '257418248345364',
+      sat_coinbase_height: 650000,
       output: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0',
       location: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
       sat_rarity: 'common',
@@ -108,6 +111,7 @@ describe('/inscriptions', () => {
         timestamp: 1676913207,
         sat_ordinal: 257418248345364n,
         sat_rarity: 'common',
+        sat_coinbase_height: 650000,
         genesis: true,
         current: true,
       },
@@ -134,6 +138,7 @@ describe('/inscriptions', () => {
         timestamp: 1676913207,
         sat_ordinal: 257418248345364n,
         sat_rarity: 'common',
+        sat_coinbase_height: 650000,
         genesis: true,
         current: true,
       },
@@ -158,7 +163,9 @@ describe('/inscriptions', () => {
       id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
       offset: '0',
       number: 7,
+      value: '10000',
       sat_ordinal: '257418248345364',
+      sat_coinbase_height: 650000,
       output: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0',
       location: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
       sat_rarity: 'common',
@@ -187,7 +194,9 @@ describe('/inscriptions', () => {
       id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
       offset: '0',
       number: 1,
+      value: '10000',
       sat_ordinal: '257418248345364',
+      sat_coinbase_height: 650000,
       output: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0',
       location: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
       sat_rarity: 'common',
@@ -231,6 +240,7 @@ describe('/inscriptions', () => {
         timestamp: 1676913207,
         sat_ordinal: 257418248345364n,
         sat_rarity: 'common',
+        sat_coinbase_height: 650000,
         genesis: true,
         current: true,
       },
@@ -257,6 +267,7 @@ describe('/inscriptions', () => {
         timestamp: 1676913207,
         sat_ordinal: 257418248345364n,
         sat_rarity: 'epic',
+        sat_coinbase_height: 650000,
         genesis: true,
         current: true,
       },
@@ -312,6 +323,7 @@ describe('/inscriptions', () => {
         timestamp: 1676913207,
         sat_ordinal: 257418248345364n,
         sat_rarity: 'common',
+        sat_coinbase_height: 650000,
         genesis: true,
         current: true,
       },
@@ -338,6 +350,7 @@ describe('/inscriptions', () => {
         timestamp: 1676913207,
         sat_ordinal: 257418248345364n,
         sat_rarity: 'epic',
+        sat_coinbase_height: 650000,
         genesis: true,
         current: true,
       },
@@ -351,6 +364,24 @@ describe('/inscriptions', () => {
     const responseJson1 = response1.json();
     expect(responseJson1.total).toBe(1);
     expect(responseJson1.results[0].genesis_block_height).toBe(775617);
+
+    const response2 = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions?from_genesis_block_height=778000',
+    });
+    expect(response2.statusCode).toBe(200);
+    const responseJson2 = response2.json();
+    expect(responseJson2.total).toBe(1);
+    expect(responseJson2.results[0].genesis_block_height).toBe(778575);
+
+    const response3 = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions?to_genesis_block_height=778000',
+    });
+    expect(response3.statusCode).toBe(200);
+    const responseJson3 = response3.json();
+    expect(responseJson3.total).toBe(1);
+    expect(responseJson3.results[0].genesis_block_height).toBe(775617);
   });
 
   test('index filtered by block hash', async () => {
@@ -376,6 +407,7 @@ describe('/inscriptions', () => {
         timestamp: 1676913207,
         sat_ordinal: 257418248345364n,
         sat_rarity: 'common',
+        sat_coinbase_height: 650000,
         genesis: true,
         current: true,
       },
@@ -402,6 +434,7 @@ describe('/inscriptions', () => {
         timestamp: 1676913207,
         sat_ordinal: 257418248345364n,
         sat_rarity: 'epic',
+        sat_coinbase_height: 650000,
         genesis: true,
         current: true,
       },
@@ -417,6 +450,231 @@ describe('/inscriptions', () => {
     expect(responseJson1.results[0].genesis_block_hash).toBe(
       '000000000000000000039b3051705a16fcf310a70dee55742339e6da70181bf7'
     );
+  });
+
+  test('index filtered by timestamp range', async () => {
+    await db.insertInscriptionGenesis({
+      inscription: {
+        genesis_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
+        mime_type: 'text/plain',
+        content_type: 'text/plain;charset=utf-8',
+        content_length: 5,
+        number: 7,
+        content: '0x48656C6C6F',
+        fee: 705n,
+      },
+      location: {
+        inscription_id: 0,
+        block_height: 778575,
+        block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+        tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
+        address: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+        output: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0',
+        offset: 0n,
+        value: 10000n,
+        timestamp: 1677731361,
+        sat_ordinal: 257418248345364n,
+        sat_rarity: 'common',
+        sat_coinbase_height: 650000,
+        genesis: true,
+        current: true,
+      },
+    });
+    await db.insertInscriptionGenesis({
+      inscription: {
+        genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+        mime_type: 'image/png',
+        content_type: 'image/png',
+        content_length: 5,
+        number: 7,
+        content: '0x48656C6C6F',
+        fee: 2805n,
+      },
+      location: {
+        inscription_id: 0,
+        block_height: 775617,
+        block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+        tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+        address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+        output: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0',
+        offset: 0n,
+        value: 10000n,
+        timestamp: 1675312161,
+        sat_ordinal: 257418248345364n,
+        sat_rarity: 'epic',
+        sat_coinbase_height: 650000,
+        genesis: true,
+        current: true,
+      },
+    });
+
+    const response2 = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions?from_genesis_timestamp=1675571361',
+    });
+    expect(response2.statusCode).toBe(200);
+    const responseJson2 = response2.json();
+    expect(responseJson2.total).toBe(1);
+    expect(responseJson2.results[0].genesis_timestamp).toBe(1677731361000);
+
+    const response3 = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions?to_genesis_timestamp=1675571361',
+    });
+    expect(response3.statusCode).toBe(200);
+    const responseJson3 = response3.json();
+    expect(responseJson3.total).toBe(1);
+    expect(responseJson3.results[0].genesis_timestamp).toBe(1675312161000);
+  });
+
+  test('index filtered by sat ordinal range', async () => {
+    await db.insertInscriptionGenesis({
+      inscription: {
+        genesis_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
+        mime_type: 'text/plain',
+        content_type: 'text/plain;charset=utf-8',
+        content_length: 5,
+        number: 7,
+        content: '0x48656C6C6F',
+        fee: 705n,
+      },
+      location: {
+        inscription_id: 0,
+        block_height: 778575,
+        block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+        tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
+        address: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+        output: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0',
+        offset: 0n,
+        value: 10000n,
+        timestamp: 1677731361,
+        sat_ordinal: 257418248345364n,
+        sat_rarity: 'common',
+        sat_coinbase_height: 650000,
+        genesis: true,
+        current: true,
+      },
+    });
+    await db.insertInscriptionGenesis({
+      inscription: {
+        genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+        mime_type: 'image/png',
+        content_type: 'image/png',
+        content_length: 5,
+        number: 7,
+        content: '0x48656C6C6F',
+        fee: 2805n,
+      },
+      location: {
+        inscription_id: 0,
+        block_height: 775617,
+        block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+        tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+        address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+        output: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0',
+        offset: 0n,
+        value: 10000n,
+        timestamp: 1675312161,
+        sat_ordinal: 1000000000000n,
+        sat_rarity: 'epic',
+        sat_coinbase_height: 650000,
+        genesis: true,
+        current: true,
+      },
+    });
+
+    const response2 = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions?from_sat_ordinal=1000400000000',
+    });
+    expect(response2.statusCode).toBe(200);
+    const responseJson2 = response2.json();
+    expect(responseJson2.total).toBe(1);
+    expect(responseJson2.results[0].sat_ordinal).toBe('257418248345364');
+
+    const response3 = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions?to_sat_ordinal=1000400000000',
+    });
+    expect(response3.statusCode).toBe(200);
+    const responseJson3 = response3.json();
+    expect(responseJson3.total).toBe(1);
+    expect(responseJson3.results[0].sat_ordinal).toBe('1000000000000');
+  });
+
+  test('index filtered by sat coinbase height range', async () => {
+    await db.insertInscriptionGenesis({
+      inscription: {
+        genesis_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
+        mime_type: 'text/plain',
+        content_type: 'text/plain;charset=utf-8',
+        content_length: 5,
+        number: 7,
+        content: '0x48656C6C6F',
+        fee: 705n,
+      },
+      location: {
+        inscription_id: 0,
+        block_height: 778575,
+        block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+        tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
+        address: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+        output: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0',
+        offset: 0n,
+        value: 10000n,
+        timestamp: 1677731361,
+        sat_ordinal: 257418248345364n,
+        sat_rarity: 'common',
+        sat_coinbase_height: 650000,
+        genesis: true,
+        current: true,
+      },
+    });
+    await db.insertInscriptionGenesis({
+      inscription: {
+        genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+        mime_type: 'image/png',
+        content_type: 'image/png',
+        content_length: 5,
+        number: 7,
+        content: '0x48656C6C6F',
+        fee: 2805n,
+      },
+      location: {
+        inscription_id: 0,
+        block_height: 775617,
+        block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+        tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+        address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+        output: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0',
+        offset: 0n,
+        value: 10000n,
+        timestamp: 1675312161,
+        sat_ordinal: 1000000000000n,
+        sat_rarity: 'epic',
+        sat_coinbase_height: 750000,
+        genesis: true,
+        current: true,
+      },
+    });
+
+    const response2 = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions?from_sat_coinbase_height=655000',
+    });
+    expect(response2.statusCode).toBe(200);
+    const responseJson2 = response2.json();
+    expect(responseJson2.total).toBe(1);
+    expect(responseJson2.results[0].sat_coinbase_height).toBe(750000);
+
+    const response3 = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions?to_sat_coinbase_height=655000',
+    });
+    expect(response3.statusCode).toBe(200);
+    const responseJson3 = response3.json();
+    expect(responseJson3.total).toBe(1);
+    expect(responseJson3.results[0].sat_coinbase_height).toBe(650000);
   });
 
   test('index filtered by output', async () => {
@@ -442,6 +700,7 @@ describe('/inscriptions', () => {
         timestamp: 1676913207,
         sat_ordinal: 257418248345364n,
         sat_rarity: 'common',
+        sat_coinbase_height: 650000,
         genesis: true,
         current: true,
       },
@@ -468,6 +727,7 @@ describe('/inscriptions', () => {
         timestamp: 1676913207,
         sat_ordinal: 257418248345364n,
         sat_rarity: 'epic',
+        sat_coinbase_height: 650000,
         genesis: true,
         current: true,
       },
@@ -508,6 +768,7 @@ describe('/inscriptions', () => {
         timestamp: 1676913207,
         sat_ordinal: 257418248345364n,
         sat_rarity: 'common',
+        sat_coinbase_height: 650000,
         genesis: true,
         current: true,
       },
@@ -534,6 +795,7 @@ describe('/inscriptions', () => {
         timestamp: 1676913207,
         sat_ordinal: 257418248345364n,
         sat_rarity: 'epic',
+        sat_coinbase_height: 650000,
         genesis: true,
         current: true,
       },
@@ -574,6 +836,7 @@ describe('/inscriptions', () => {
         timestamp: 1676913207,
         sat_ordinal: 257418248345364n,
         sat_rarity: 'common',
+        sat_coinbase_height: 650000,
         genesis: true,
         current: true,
       },
@@ -600,6 +863,7 @@ describe('/inscriptions', () => {
         timestamp: 1676913207,
         sat_ordinal: 257418248345364n,
         sat_rarity: 'epic',
+        sat_coinbase_height: 650000,
         genesis: true,
         current: true,
       },
@@ -626,6 +890,7 @@ describe('/inscriptions', () => {
         timestamp: 1676913207,
         sat_ordinal: 0n,
         sat_rarity: 'mythic',
+        sat_coinbase_height: 650000,
         genesis: true,
         current: true,
       },
@@ -677,6 +942,7 @@ describe('/inscriptions', () => {
         timestamp: 1676913207,
         sat_ordinal: 3n,
         sat_rarity: 'common',
+        sat_coinbase_height: 650000,
         genesis: true,
         current: true,
       },
@@ -703,6 +969,7 @@ describe('/inscriptions', () => {
         timestamp: 1676913207,
         sat_ordinal: 5n,
         sat_rarity: 'epic',
+        sat_coinbase_height: 650000,
         genesis: true,
         current: true,
       },
@@ -729,6 +996,7 @@ describe('/inscriptions', () => {
         timestamp: 1676913207,
         sat_ordinal: 0n,
         sat_rarity: 'mythic',
+        sat_coinbase_height: 650000,
         genesis: true,
         current: true,
       },
@@ -780,6 +1048,7 @@ describe('/inscriptions', () => {
         timestamp: 1676913207,
         sat_ordinal: 3n,
         sat_rarity: 'common',
+        sat_coinbase_height: 650000,
         genesis: true,
         current: true,
       },
@@ -806,6 +1075,7 @@ describe('/inscriptions', () => {
         timestamp: 1676913207,
         sat_ordinal: 5n,
         sat_rarity: 'epic',
+        sat_coinbase_height: 650000,
         genesis: true,
         current: true,
       },
@@ -832,6 +1102,7 @@ describe('/inscriptions', () => {
         timestamp: 1676913207,
         sat_ordinal: 0n,
         sat_rarity: 'mythic',
+        sat_coinbase_height: 650000,
         genesis: true,
         current: true,
       },

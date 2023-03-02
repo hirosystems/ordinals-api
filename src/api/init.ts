@@ -3,35 +3,9 @@ import Fastify, { FastifyPluginAsync } from 'fastify';
 import { Server } from 'http';
 import FastifyCors from '@fastify/cors';
 import { PINO_CONFIG } from '../logger';
-import { SwaggerOptions } from '@fastify/swagger';
 import { InscriptionsRoutes } from './routes/inscriptions';
 import { PgStore } from '../pg/pg-store';
 import { SatRoutes } from './routes/sats';
-
-export const ApiSwaggerOptions: SwaggerOptions = {
-  openapi: {
-    info: {
-      title: 'Ordinals API',
-      description:
-        'A microservice that indexes Bitcoin Ordinal inscription data and exposes it via REST API endpoints.',
-      version: 'v0.0.1',
-    },
-    externalDocs: {
-      url: 'https://github.com/hirosystems/ordinals-api',
-      description: 'Source Repository',
-    },
-    tags: [
-      {
-        name: 'Inscriptions',
-        description: 'Endpoints to query ordinal inscriptions',
-      },
-      {
-        name: 'Satoshis',
-        description: 'Endpoints to query Satoshi ordinal and rarity information',
-      },
-    ],
-  },
-};
 
 export const Api: FastifyPluginAsync<
   Record<never, never>,

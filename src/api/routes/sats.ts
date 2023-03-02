@@ -2,7 +2,7 @@ import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { Type } from '@sinclair/typebox';
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
-import { NotFoundResponse, OrdinalParam, SatoshiResponse } from '../types';
+import { NotFoundResponse, OrdinalParam, SatoshiResponse } from '../schemas';
 import { OrdinalSatoshi } from '../util/ordinal-satoshi';
 
 export const SatRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (

@@ -5,13 +5,11 @@ import { FastifyPluginAsync, FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import {
   AddressParam,
-  BlockHeightParam,
   InscriptionResponse,
   LimitParam,
   NotFoundResponse,
   OffsetParam,
   PaginatedResponse,
-  BlockHashParam,
   MimeTypesParam,
   SatoshiRaritiesParam,
   OutputParam,
@@ -23,14 +21,36 @@ import {
   BlockHashParamCType,
   BlockHeightParamCType,
   InscriptionIdParamCType,
-} from '../types';
-import { handleInscriptionTransfersCache, handleInscriptionCache } from '../util/cache';
+  BlockHeightParam,
+  BlockParam,
+  OrdinalParam,
+  TimestampParam,
+} from '../schemas';
+import { handleInscriptionCache, handleInscriptionTransfersCache } from '../util/cache';
 import {
   DEFAULT_API_LIMIT,
   hexToBuffer,
   parseDbInscription,
   parseDbInscriptions,
 } from '../util/helpers';
+
+function blockParam(param: string | undefined, name: string) {
+  const out: { [k: string]: string } = {};
+  if (BlockHashParamCType.Check(param)) {
+    out[`${name}_hash`] = param;
+  } else if (BlockHeightParamCType.Check(param)) {
+    out[`${name}_height`] = param;
+  }
+  return out;
+}
+
+function inscriptionIdParam(param: string | number) {
+  return InscriptionIdParamCType.Check(param) ? { genesis_id: param } : { number: param };
+}
+
+function bigIntParam(param: number | undefined) {
+  return param ? BigInt(param) : undefined;
+}
 
 const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
   fastify,
@@ -46,7 +66,15 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
         description: 'Retrieves a list of inscriptions with options to filter and sort results',
         tags: ['Inscriptions'],
         querystring: Type.Object({
-          genesis_block: Type.Optional(Type.Union([BlockHashParam, BlockHeightParam])),
+          genesis_block: Type.Optional(BlockParam),
+          from_genesis_block_height: Type.Optional(BlockHeightParam),
+          to_genesis_block_height: Type.Optional(BlockHeightParam),
+          from_genesis_timestamp: Type.Optional(TimestampParam),
+          to_genesis_timestamp: Type.Optional(TimestampParam),
+          from_sat_ordinal: Type.Optional(OrdinalParam),
+          to_sat_ordinal: Type.Optional(OrdinalParam),
+          from_sat_coinbase_height: Type.Optional(BlockHeightParam),
+          to_sat_coinbase_height: Type.Optional(BlockHeightParam),
           output: Type.Optional(OutputParam),
           address: Type.Optional(AddressParam),
           mime_type: Type.Optional(MimeTypesParam),
@@ -67,13 +95,16 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
     async (request, reply) => {
       const limit = request.query.limit ?? DEFAULT_API_LIMIT;
       const offset = request.query.offset ?? 0;
-      const genBlockArg = BlockHashParamCType.Check(request.query.genesis_block)
-        ? { genesis_block_hash: request.query.genesis_block }
-        : BlockHeightParamCType.Check(request.query.genesis_block)
-        ? { genesis_block_height: request.query.genesis_block }
-        : {};
       const inscriptions = await fastify.db.getInscriptions({
-        ...genBlockArg,
+        ...blockParam(request.query.genesis_block, 'genesis_block'),
+        ...blockParam(request.query.from_genesis_block_height, 'from_genesis_block'),
+        ...blockParam(request.query.to_genesis_block_height, 'to_genesis_block'),
+        ...blockParam(request.query.from_sat_coinbase_height, 'from_sat_coinbase'),
+        ...blockParam(request.query.to_sat_coinbase_height, 'to_sat_coinbase'),
+        from_genesis_timestamp: request.query.from_genesis_timestamp,
+        to_genesis_timestamp: request.query.to_genesis_timestamp,
+        from_sat_ordinal: bigIntParam(request.query.from_sat_ordinal),
+        to_sat_ordinal: bigIntParam(request.query.to_sat_ordinal),
         output: request.query.output,
         address: request.query.address,
         mime_type: request.query.mime_type,
@@ -118,11 +149,8 @@ const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTyp
       },
     },
     async (request, reply) => {
-      const idArg = InscriptionIdParamCType.Check(request.params.id)
-        ? { genesis_id: request.params.id }
-        : { number: request.params.id };
       const inscription = await fastify.db.getInscriptions({
-        ...idArg,
+        ...inscriptionIdParam(request.params.id),
         limit: 1,
         offset: 0,
       });
@@ -151,10 +179,9 @@ const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTyp
       },
     },
     async (request, reply) => {
-      const idArg = InscriptionIdParamCType.Check(request.params.id)
-        ? { genesis_id: request.params.id }
-        : { number: request.params.id };
-      const inscription = await fastify.db.getInscriptionContent(idArg);
+      const inscription = await fastify.db.getInscriptionContent(
+        inscriptionIdParam(request.params.id)
+      );
       if (inscription) {
         const bytes = hexToBuffer(inscription.content);
         await reply

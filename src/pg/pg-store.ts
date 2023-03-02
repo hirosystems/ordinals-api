@@ -1,4 +1,4 @@
-import { Order, OrderBy } from '../api/types';
+import { Order, OrderBy } from '../api/schemas';
 import { SatoshiRarity } from '../api/util/ordinal-satoshi';
 import { ENV } from '../env';
 import { runMigrations } from './migrations';
@@ -158,12 +158,20 @@ export class PgStore extends BasePgStore {
     genesis_id?: string;
     genesis_block_height?: number;
     genesis_block_hash?: string;
+    from_genesis_block_height?: number;
+    to_genesis_block_height?: number;
+    from_genesis_timestamp?: number;
+    to_genesis_timestamp?: number;
+    from_sat_coinbase_height?: number;
+    to_sat_coinbase_height?: number;
     number?: number;
     address?: string;
     mime_type?: string[];
     output?: string;
     sat_rarity?: SatoshiRarity[];
     sat_ordinal?: bigint;
+    from_sat_ordinal?: bigint;
+    to_sat_ordinal?: bigint;
     order_by?: OrderBy;
     order?: Order;
     limit: number;
@@ -187,8 +195,8 @@ export class PgStore extends BasePgStore {
         i.genesis_id, loc.address, gen.block_height AS genesis_block_height, i.number,
         gen.block_hash AS genesis_block_hash, gen.tx_id AS genesis_tx_id, i.fee AS genesis_fee,
         loc.output, loc.offset, i.mime_type, i.content_type, i.content_length, loc.sat_ordinal,
-        loc.sat_rarity, loc.timestamp, gen.timestamp AS genesis_timestamp,
-        gen.address AS genesis_address,
+        loc.sat_rarity, loc.timestamp, gen.timestamp AS genesis_timestamp, loc.value,
+        gen.address AS genesis_address, loc.sat_coinbase_height,
         COUNT(*) OVER() as total
       FROM inscriptions AS i
       INNER JOIN locations AS loc ON loc.inscription_id = i.id
@@ -204,6 +212,44 @@ export class PgStore extends BasePgStore {
           args.genesis_block_hash
             ? this.sql`AND gen.block_hash = ${args.genesis_block_hash}`
             : this.sql``
+        }
+        ${
+          args.from_genesis_block_height
+            ? this.sql`AND gen.block_height >= ${args.from_genesis_block_height}`
+            : this.sql``
+        }
+        ${
+          args.to_genesis_block_height
+            ? this.sql`AND gen.block_height <= ${args.to_genesis_block_height}`
+            : this.sql``
+        }
+        ${
+          args.from_sat_coinbase_height
+            ? this.sql`AND loc.sat_coinbase_height >= ${args.from_sat_coinbase_height}`
+            : this.sql``
+        }
+        ${
+          args.to_sat_coinbase_height
+            ? this.sql`AND loc.sat_coinbase_height <= ${args.to_sat_coinbase_height}`
+            : this.sql``
+        }
+        ${
+          args.from_genesis_timestamp
+            ? this.sql`AND gen.timestamp >= to_timestamp(${args.from_genesis_timestamp})`
+            : this.sql``
+        }
+        ${
+          args.to_genesis_timestamp
+            ? this.sql`AND gen.timestamp <= to_timestamp(${args.to_genesis_timestamp})`
+            : this.sql``
+        }
+        ${
+          args.from_sat_ordinal
+            ? this.sql`AND loc.sat_ordinal >= ${args.from_sat_ordinal}`
+            : this.sql``
+        }
+        ${
+          args.to_sat_ordinal ? this.sql`AND loc.sat_ordinal <= ${args.to_sat_ordinal}` : this.sql``
         }
         ${args.address ? this.sql`AND loc.address = ${args.address}` : this.sql``}
         ${
