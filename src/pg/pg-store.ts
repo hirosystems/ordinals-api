@@ -168,6 +168,8 @@ export class PgStore extends BasePgStore {
     output?: string;
     sat_rarity?: SatoshiRarity[];
     sat_ordinal?: bigint;
+    from_sat_ordinal?: bigint;
+    to_sat_ordinal?: bigint;
     order_by?: OrderBy;
     order?: Order;
     limit: number;
@@ -228,6 +230,14 @@ export class PgStore extends BasePgStore {
           args.to_genesis_timestamp
             ? this.sql`AND gen.timestamp <= to_timestamp(${args.to_genesis_timestamp})`
             : this.sql``
+        }
+        ${
+          args.from_sat_ordinal
+            ? this.sql`AND loc.sat_ordinal >= ${args.from_sat_ordinal}`
+            : this.sql``
+        }
+        ${
+          args.to_sat_ordinal ? this.sql`AND loc.sat_ordinal <= ${args.to_sat_ordinal}` : this.sql``
         }
         ${args.address ? this.sql`AND loc.address = ${args.address}` : this.sql``}
         ${

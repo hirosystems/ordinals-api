@@ -24,6 +24,7 @@ import {
   BlockParam,
   BlockHeightParam,
   TimestampParam,
+  OrdinalParam,
 } from '../types';
 import { handleChainTipCache, handleInscriptionCache } from '../util/cache';
 import {
@@ -47,6 +48,10 @@ function inscriptionIdParam(param: string | number) {
   return InscriptionIdParamCType.Check(param) ? { genesis_id: param } : { number: param };
 }
 
+function bigIntParam(param: number | undefined) {
+  return param ? BigInt(param) : undefined;
+}
+
 const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
   fastify,
   options,
@@ -66,6 +71,8 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
           to_genesis_block_height: Type.Optional(BlockHeightParam),
           from_genesis_timestamp: Type.Optional(TimestampParam),
           to_genesis_timestamp: Type.Optional(TimestampParam),
+          from_sat_ordinal: Type.Optional(OrdinalParam),
+          to_sat_ordinal: Type.Optional(OrdinalParam),
           output: Type.Optional(OutputParam),
           address: Type.Optional(AddressParam),
           mime_type: Type.Optional(MimeTypesParam),
@@ -92,6 +99,8 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
         ...blockParam(request.query.to_genesis_block_height, 'to_genesis_block'),
         from_genesis_timestamp: request.query.from_genesis_timestamp,
         to_genesis_timestamp: request.query.to_genesis_timestamp,
+        from_sat_ordinal: bigIntParam(request.query.from_sat_ordinal),
+        to_sat_ordinal: bigIntParam(request.query.to_sat_ordinal),
         output: request.query.output,
         address: request.query.address,
         mime_type: request.query.mime_type,
