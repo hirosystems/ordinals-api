@@ -1,3 +1,11 @@
+## [0.1.0-beta.2](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.1...v0.1.0-beta.2) (2023-03-03)
+
+
+### Features
+
+* add status endpoint ([e42b351](https://github.com/hirosystems/ordinals-api/commit/e42b351ce69b953c0aabec8ac29b773f3d7ae761))
+* support authorized chainhook events ([a2ff106](https://github.com/hirosystems/ordinals-api/commit/a2ff1065aa4a64ab15d1d74209361707c82e704e))
+
 ## [0.1.0-beta.1](https://github.com/hirosystems/ordinals-api/compare/v0.0.1...v0.1.0-beta.1) (2023-03-03)
 
 
