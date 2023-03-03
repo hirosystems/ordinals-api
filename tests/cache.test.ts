@@ -9,7 +9,6 @@ describe('ETag cache', () => {
   let fastify: TestFastifyServer;
 
   beforeEach(async () => {
-    ENV.PGDATABASE = 'postgres';
     db = await PgStore.connect({ skipMigrations: true });
     fastify = await buildApiServer({ db });
     await cycleMigrations();
