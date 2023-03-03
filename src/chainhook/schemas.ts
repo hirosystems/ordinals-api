@@ -7,19 +7,15 @@ const Block = Type.Object({
 });
 
 const InscriptionRevealed = Type.Object({
-  inscription: Type.Object({
-    content_bytes: Type.String(),
-    content_length: Type.Integer(),
-    content_type: Type.String(),
-    inscription_id: Type.String(),
-    inscription_number: Type.Integer(),
-    address: Type.String(),
-  }),
-  ordinal: Type.Object({
-    ordinal_number: Type.Integer(),
-    ordinal_block_height: Type.Integer(),
-    ordinal_offset: Type.Integer(),
-  }),
+  content_bytes: Type.String(),
+  content_type: Type.String(),
+  content_length: Type.Integer(),
+  inscription_number: Type.Integer(),
+  inscription_fee: Type.Integer(),
+  inscription_id: Type.String(),
+  inscription_authors: Type.Array(Type.String()),
+  ordinal_number: Type.Integer(),
+  ordinal_block_height: Type.Integer(),
 });
 
 const OrdinalOperation = Type.Object({
@@ -28,14 +24,12 @@ const OrdinalOperation = Type.Object({
 
 const Output = Type.Object({
   script_pubkey: Type.String(),
-  output: Type.String(),
   value: Type.Integer(),
 });
 
 const Transaction = Type.Object({
   transaction_identifier: Type.Object({ hash: Type.String() }),
   operations: Type.Array(Type.Any()),
-  fee: Type.Integer(),
   metadata: Type.Object({
     ordinal_operations: Type.Array(OrdinalOperation),
     outputs: Type.Array(Output),
@@ -48,7 +42,7 @@ const Event = Type.Object({
   parent_block_identifier: Block,
   timestamp: Type.Integer(),
   transactions: Type.Array(Transaction),
-  metadata: Type.Array(Type.Any()),
+  metadata: Type.Any(),
 });
 
 const ChainhookPayload = Type.Object({
@@ -57,9 +51,8 @@ const ChainhookPayload = Type.Object({
   chainhook: Type.Object({
     uuid: Type.String(),
     predicate: Type.Object({
-      protocol: Type.Object({
-        ordinal: Type.String(),
-      }),
+      scope: Type.String(),
+      ordinal: Type.String(),
     }),
   }),
 });

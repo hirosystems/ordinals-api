@@ -9,7 +9,6 @@ import {
   DbInscription,
   DbInscriptionContent,
   DbInscriptionInsert,
-  DbLocatedInscription,
   DbLocation,
   DbLocationInsert,
   DbPaginatedResult,
@@ -55,8 +54,8 @@ export class PgStore extends BasePgStore {
   async insertInscriptionGenesis(args: {
     inscription: DbInscriptionInsert;
     location: DbLocationInsert;
-  }): Promise<DbLocatedInscription> {
-    return await this.sqlWriteTransaction(async sql => {
+  }): Promise<void> {
+    await this.sqlWriteTransaction(async sql => {
       let dbInscription = await this.sql<DbInscription[]>`
         SELECT ${sql(INSCRIPTIONS_COLUMNS)}
         FROM inscriptions
@@ -86,7 +85,6 @@ export class PgStore extends BasePgStore {
           RETURNING ${this.sql(LOCATIONS_COLUMNS)}
         `;
       }
-      return { inscription: dbInscription[0], location: dbLocation[0] };
     });
   }
 

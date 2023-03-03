@@ -84,65 +84,61 @@ describe('EventServer', () => {
         apply: [
           {
             block_identifier: {
-              hash: '0x00000000000000000004af71ba45e864d949f086ba4824d6812a1b957811015d',
-              index: 778750,
+              index: 107,
+              hash: '0x163de66dc9c0949905bfe8e148bde04600223cf88d19f26fdbeba1d6e6fa0f88',
             },
-            metadata: {},
             parent_block_identifier: {
-              hash: '0x00000000000000000002761eed740819dbcb0179850bcb7e8ae5222286f707af',
-              index: 778749,
+              index: 106,
+              hash: '0x117374e7078440835a744b6b1b13dd2c48c4eff8c58dde07162241a8f15d1e03',
             },
-            timestamp: 1677645277,
+            timestamp: 1677803510,
             transactions: [
               {
+                transaction_identifier: {
+                  hash: '0x0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8',
+                },
+                operations: [],
                 metadata: {
+                  outputs: [
+                    {
+                      value: 10000,
+                      script_pubkey:
+                        '0x512069cb384754a2ba3fde965ce4e27c60488abe6963181f5f08385dc89615d53520',
+                    },
+                  ],
                   ordinal_operations: [
                     {
                       inscription_revealed: {
-                        content:
-                          '0x7b200a20202270223a2022736e73222c0a2020226f70223a2022726567222c0a2020226e616d65223a2022787469702e73617473220a7d',
+                        content_bytes: '0x303030303030303030303030',
                         content_type: 'text/plain;charset=utf-8',
-                        satoshi_point: null,
+                        content_length: 12,
+                        inscription_number: 100,
+                        inscription_fee: 3425,
+                        inscription_id:
+                          '0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8i0',
+                        inscription_authors: [
+                          'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+                        ],
+                        ordinal_number: 125348773618236,
+                        ordinal_block_height: 566462,
                       },
                     },
                   ],
-                  proof: null,
-                },
-                operations: [],
-                transaction_identifier: {
-                  hash: '0xe7523bec9e0778fcd4cca52c00a6beb65644be42247f8d21a26d55414d47fc61',
-                },
-              },
-              {
-                metadata: {
-                  ordinal_operations: [
-                    {
-                      inscription_revealed: {
-                        content:
-                          '0x7b200a20202270223a2022736e73222c0a2020226f70223a2022726567222c0a2020226e616d65223a202267617573656c6d616e6e2e73617473220a7d',
-                        content_type: 'text/plain;charset=utf-8',
-                        satoshi_point: null,
-                      },
-                    },
-                  ],
-                  proof: null,
-                },
-                operations: [],
-                transaction_identifier: {
-                  hash: '0x568032b2616aa265d50e0d23018691cb38a90fc38ffc226d3487a9ca220b36bb',
+                  proof: '0x12341234',
                 },
               },
             ],
+            metadata: {},
           },
         ],
-        chainhook: {
-          predicate: {
-            ordinal: 'inscription_revealed',
-            scope: 'protocol',
-          },
-          uuid: '1',
-        },
         rollback: [],
+        chainhook: {
+          uuid: '1',
+          predicate: {
+            scope: 'protocol',
+            ordinal: 'inscription_revealed',
+          },
+        },
       };
       const response = await fastify.inject({
         method: 'POST',
@@ -150,6 +146,43 @@ describe('EventServer', () => {
         payload,
       });
       expect(response.statusCode).toBe(200);
+
+      const query = await db.getInscriptions({
+        genesis_id: '0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8i0',
+        limit: 1,
+        offset: 0,
+      });
+      const inscr = query.results[0];
+      expect(inscr).not.toBeUndefined();
+      expect(inscr.address).toBe('bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td');
+      expect(inscr.content_length).toBe(12);
+      expect(inscr.content_type).toBe('text/plain;charset=utf-8');
+      expect(inscr.genesis_address).toBe(
+        'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td'
+      );
+      expect(inscr.genesis_block_hash).toBe(
+        '163de66dc9c0949905bfe8e148bde04600223cf88d19f26fdbeba1d6e6fa0f88'
+      );
+      expect(inscr.genesis_block_height).toBe(107);
+      expect(inscr.genesis_fee).toBe('3425');
+      expect(inscr.genesis_id).toBe(
+        '0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8i0'
+      );
+      expect(inscr.genesis_timestamp.toISOString()).toBe('2023-03-03T00:31:50.000Z');
+      expect(inscr.genesis_tx_id).toBe(
+        '0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8'
+      );
+      expect(inscr.mime_type).toBe('text/plain');
+      expect(inscr.number).toBe(100);
+      expect(inscr.offset).toBe('0');
+      expect(inscr.output).toBe(
+        '0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8:0'
+      );
+      expect(inscr.sat_coinbase_height).toBe(25069);
+      expect(inscr.sat_ordinal).toBe('125348773618236');
+      expect(inscr.sat_rarity).toBe('common');
+      expect(inscr.timestamp.toISOString()).toBe('2023-03-03T00:31:50.000Z');
+      expect(inscr.value).toBe('10000');
     });
   });
 });
