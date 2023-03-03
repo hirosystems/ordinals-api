@@ -197,11 +197,25 @@ export class PgStore extends BasePgStore {
 
     const results = await this.sql<({ total: number } & DbFullyLocatedInscriptionResult)[]>`
       SELECT
-        i.genesis_id, loc.address, gen.block_height AS genesis_block_height, i.number,
-        gen.block_hash AS genesis_block_hash, gen.tx_id AS genesis_tx_id, i.fee AS genesis_fee,
-        loc.output, loc.offset, i.mime_type, i.content_type, i.content_length, loc.sat_ordinal,
-        loc.sat_rarity, loc.timestamp, gen.timestamp AS genesis_timestamp, loc.value,
-        gen.address AS genesis_address, loc.sat_coinbase_height,
+        i.genesis_id,
+        i.number,
+        i.mime_type,
+        i.content_type,
+        i.content_length,
+        i.fee AS genesis_fee,
+        gen.block_height AS genesis_block_height,
+        gen.block_hash AS genesis_block_hash,
+        gen.tx_id AS genesis_tx_id,
+        gen.timestamp AS genesis_timestamp,
+        gen.address AS genesis_address,
+        loc.address,
+        loc.output,
+        loc.offset,
+        loc.sat_ordinal,
+        loc.sat_rarity,
+        loc.timestamp,
+        loc.value,
+        loc.sat_coinbase_height,
         COUNT(*) OVER() as total
       FROM inscriptions AS i
       INNER JOIN locations AS loc ON loc.inscription_id = i.id
