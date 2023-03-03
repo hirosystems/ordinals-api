@@ -169,8 +169,25 @@ describe('ETag cache', () => {
     });
     expect(cached.statusCode).toBe(304);
 
-    // Simulate new chain tip
-    await db.updateChainTipBlockHeight({ blockHeight: 5 });
+    // Simulate new location
+    await db.updateInscriptionLocation({
+      location: {
+        inscription_id: 2,
+        block_height: 775618,
+        block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a9ff',
+        tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+        address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+        output: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0',
+        offset: 0n,
+        value: 102n,
+        timestamp: 1676913207,
+        sat_ordinal: 257418248345364n,
+        sat_rarity: 'common',
+        sat_coinbase_height: 20000,
+        genesis: false,
+        current: true,
+      },
+    });
     const cached2 = await fastify.inject({
       method: 'GET',
       url: '/ordinals/v1/inscriptions',

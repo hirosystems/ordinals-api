@@ -15,7 +15,7 @@ export function parseDbInscriptions(
     genesis_block_hash: i.genesis_block_hash,
     genesis_tx_id: i.genesis_tx_id,
     genesis_fee: i.genesis_fee.toString(),
-    genesis_timestamp: i.genesis_timestamp,
+    genesis_timestamp: i.genesis_timestamp.valueOf(),
     location: `${i.output}:${i.offset}`,
     output: i.output,
     value: i.value.toString(),
@@ -26,7 +26,7 @@ export function parseDbInscriptions(
     mime_type: i.mime_type,
     content_type: i.content_type,
     content_length: i.content_length,
-    timestamp: i.timestamp,
+    timestamp: i.timestamp.valueOf(),
   }));
 }
 export function parseDbInscription(item: DbFullyLocatedInscriptionResult): InscriptionResponseType {

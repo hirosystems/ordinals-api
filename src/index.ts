@@ -1,5 +1,5 @@
 import { buildApiServer } from './api/init';
-import { InscriptionsImporter } from './bitcoin/inscriptions-importer';
+import { buildChainhookServer } from './chainhook/server';
 import { ENV } from './env';
 import { logger } from './logger';
 import { PgStore } from './pg/pg-store';
@@ -7,18 +7,16 @@ import { registerShutdownConfig } from './shutdown-handler';
 
 async function initBackgroundServices(db: PgStore) {
   logger.info('Initializing background services...');
-
-  const startingBlockHeight = (await db.getChainTipBlockHeight()) ?? 1;
-  const importer = new InscriptionsImporter({ db, startingBlockHeight });
+  const server = await buildChainhookServer({ db });
   registerShutdownConfig({
-    name: 'Inscriptions Importer',
+    name: 'Chainhook Server',
     forceKillable: false,
     handler: async () => {
-      await importer.close();
+      await server.close();
     },
   });
 
-  await importer.import();
+  await server.listen({ host: ENV.API_HOST, port: ENV.EVENT_PORT });
 }
 
 async function initApiService(db: PgStore) {

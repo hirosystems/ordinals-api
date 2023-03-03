@@ -9,7 +9,6 @@ import {
   DbInscription,
   DbInscriptionContent,
   DbInscriptionInsert,
-  DbLocatedInscription,
   DbLocation,
   DbLocationInsert,
   DbPaginatedResult,
@@ -47,16 +46,16 @@ export class PgStore extends BasePgStore {
     await this.sql`UPDATE chain_tip SET block_height = ${args.blockHeight}`;
   }
 
-  async getChainTipBlockHeight(): Promise<number> {
-    const result = await this.sql<{ block_height: number }[]>`SELECT block_height FROM chain_tip`;
-    return result[0].block_height;
+  async getInscriptionTransfersETag(): Promise<string> {
+    const result = await this.sql<{ max: number }[]>`SELECT MAX(id) FROM locations`;
+    return result[0].max.toString();
   }
 
   async insertInscriptionGenesis(args: {
     inscription: DbInscriptionInsert;
     location: DbLocationInsert;
-  }): Promise<DbLocatedInscription> {
-    return await this.sqlWriteTransaction(async sql => {
+  }): Promise<void> {
+    await this.sqlWriteTransaction(async sql => {
       let dbInscription = await this.sql<DbInscription[]>`
         SELECT ${sql(INSCRIPTIONS_COLUMNS)}
         FROM inscriptions
@@ -86,7 +85,6 @@ export class PgStore extends BasePgStore {
           RETURNING ${this.sql(LOCATIONS_COLUMNS)}
         `;
       }
-      return { inscription: dbInscription[0], location: dbLocation[0] };
     });
   }
 
@@ -105,6 +103,11 @@ export class PgStore extends BasePgStore {
           UPDATE SET current = TRUE
       `;
     });
+  }
+
+  async rollBackInscriptionGenesis(args: { genesis_id: string }): Promise<void> {
+    // This will cascade into the `locations` table.
+    await this.sql`DELETE FROM inscriptions WHERE genesis_id = ${args.genesis_id}`;
   }
 
   async getInscriptionCurrentLocation(args: { output: string }): Promise<DbLocation | undefined> {

@@ -21,13 +21,13 @@ import {
   BlockHashParamCType,
   BlockHeightParamCType,
   InscriptionIdParamCType,
-  BlockParam,
   BlockHeightParam,
-  TimestampParam,
+  BlockParam,
   OrdinalParam,
   InscriptionNumberParam,
+  TimestampParam,
 } from '../schemas';
-import { handleChainTipCache, handleInscriptionCache } from '../util/cache';
+import { handleInscriptionCache, handleInscriptionTransfersCache } from '../util/cache';
 import {
   DEFAULT_API_LIMIT,
   hexToBuffer,
@@ -58,7 +58,7 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
   options,
   done
 ) => {
-  fastify.addHook('preHandler', handleChainTipCache);
+  fastify.addHook('preHandler', handleInscriptionTransfersCache);
   fastify.get(
     '/inscriptions',
     {

@@ -5,18 +5,13 @@ export type DbPaginatedResult<T> = {
   results: T[];
 };
 
-export type DbLocatedInscription = {
-  inscription: DbInscription;
-  location: DbLocation;
-};
-
 export type DbFullyLocatedInscriptionResult = {
   genesis_id: string;
   genesis_block_height: number;
   genesis_block_hash: string;
   genesis_tx_id: string;
   genesis_fee: bigint;
-  genesis_timestamp: number;
+  genesis_timestamp: Date;
   genesis_address: string;
   number: number;
   address: string;
@@ -29,7 +24,7 @@ export type DbFullyLocatedInscriptionResult = {
   mime_type: string;
   content_type: string;
   content_length: number;
-  timestamp: number;
+  timestamp: Date;
 };
 
 export type DbLocationInsert = {
@@ -62,7 +57,7 @@ export type DbLocation = {
   sat_ordinal: bigint;
   sat_rarity: string;
   sat_coinbase_height: number;
-  timestamp: number;
+  timestamp: Date;
   genesis: boolean;
   current: boolean;
 };
