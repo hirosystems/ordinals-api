@@ -54,6 +54,9 @@ async function registerChainhookPredicates() {
     }),
     throwOnError: true,
   });
+  logger.info(
+    `EventServer registered "inscription_revealed" predicate (${REVEAL__PREDICATE_UUID})`
+  );
 }
 
 /**
@@ -65,6 +68,7 @@ async function removeChainhookPredicates() {
     method: 'DELETE',
     throwOnError: true,
   });
+  logger.info(`EventServer removed "inscription_revealed" predicate (${REVEAL__PREDICATE_UUID})`);
 }
 
 const Chainhook: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (

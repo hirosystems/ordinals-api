@@ -1,4 +1,5 @@
 import { OrdinalSatoshi } from '../api/util/ordinal-satoshi';
+import { logger } from '../logger';
 import { PgStore } from '../pg/pg-store';
 import { ChainhookPayloadCType } from './schemas';
 
@@ -13,6 +14,7 @@ export async function processInscriptionRevealed(payload: unknown, db: PgStore):
     for (const tx of event.transactions) {
       const genesis_id = tx.metadata.ordinal_operations[0].inscription_revealed.inscription_id;
       await db.rollBackInscriptionGenesis({ genesis_id });
+      logger.info(`[inscription_revealed] rollback inscription ${genesis_id}`);
     }
   }
   for (const event of payload.apply) {
@@ -48,6 +50,9 @@ export async function processInscriptionRevealed(payload: unknown, db: PgStore):
           current: true,
         },
       });
+      logger.info(
+        `[inscription_revealed] apply inscription #${reveal.inscription_number} (${reveal.inscription_id}) at block ${event.block_identifier.index}`
+      );
     }
   }
 }
