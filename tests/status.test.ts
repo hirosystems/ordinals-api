@@ -3,7 +3,7 @@ import { cycleMigrations } from '../src/pg/migrations';
 import { PgStore } from '../src/pg/pg-store';
 import { TestFastifyServer } from './helpers';
 
-describe('/sats', () => {
+describe('Status', () => {
   let db: PgStore;
   let fastify: TestFastifyServer;
 
@@ -18,27 +18,20 @@ describe('/sats', () => {
     await db.close();
   });
 
-  test('returns valid sat', async () => {
-    const response = await fastify.inject({
-      method: 'GET',
-      url: '/ordinals/v1/sats/10080000000001',
+  test('returns status when db is empty', async () => {
+    const response = await fastify.inject({ method: 'GET', url: '/ordinals/v1/' });
+    const json = response.json();
+    expect(json).toStrictEqual({
+      server_version: 'ordinals-api v0.0.1 (test:123456)',
+      status: 'ready',
+      block_height: 0,
     });
-    expect(response.statusCode).toBe(200);
-    expect(response.json()).toStrictEqual({
-      coinbase_height: 2016,
-      cycle: 0,
-      decimal: '2016.1',
-      degree: '0°2016′0″1‴',
-      epoch: 0,
-      name: 'ntwwidfrzxg',
-      offset: 1,
-      percentile: '0.48000000052804787%',
-      period: 1,
-      rarity: 'common',
-    });
+    const noVersionResponse = await fastify.inject({ method: 'GET', url: '/ordinals/' });
+    expect(response.statusCode).toEqual(noVersionResponse.statusCode);
+    expect(json).toStrictEqual(noVersionResponse.json());
   });
 
-  test('returns sat with inscription', async () => {
+  test('returns inscriptions total', async () => {
     await db.insertInscriptionGenesis({
       inscription: {
         genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
@@ -66,27 +59,14 @@ describe('/sats', () => {
         current: true,
       },
     });
-    const response = await fastify.inject({
-      method: 'GET',
-      url: '/ordinals/v1/sats/257418248345364',
-    });
-    expect(response.statusCode).toBe(200);
-    expect(response.json().inscription_id).toBe(
-      '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0'
-    );
-  });
 
-  test('returns not found on invalid sats', async () => {
-    const response1 = await fastify.inject({
-      method: 'GET',
-      url: '/ordinals/v1/sats/2099999997690000',
+    const response = await fastify.inject({ method: 'GET', url: '/ordinals/v1/' });
+    const json = response.json();
+    expect(json).toStrictEqual({
+      server_version: 'ordinals-api v0.0.1 (test:123456)',
+      status: 'ready',
+      block_height: 775617,
+      max_inscription_number: 7,
     });
-    expect(response1.statusCode).toBe(400);
-
-    const response2 = await fastify.inject({
-      method: 'GET',
-      url: '/ordinals/v1/sats/-1',
-    });
-    expect(response2.statusCode).toBe(400);
   });
 });

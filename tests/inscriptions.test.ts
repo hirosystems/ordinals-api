@@ -1,5 +1,4 @@
 import { buildApiServer } from '../src/api/init';
-import { ENV } from '../src/env';
 import { cycleMigrations } from '../src/pg/migrations';
 import { PgStore } from '../src/pg/pg-store';
 import { TestFastifyServer } from './helpers';

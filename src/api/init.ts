@@ -6,12 +6,14 @@ import { PINO_CONFIG } from '../logger';
 import { InscriptionsRoutes } from './routes/inscriptions';
 import { PgStore } from '../pg/pg-store';
 import { SatRoutes } from './routes/sats';
+import { StatusRoutes } from './routes/status';
 
 export const Api: FastifyPluginAsync<
   Record<never, never>,
   Server,
   TypeBoxTypeProvider
 > = async fastify => {
+  await fastify.register(StatusRoutes);
   await fastify.register(InscriptionsRoutes);
   await fastify.register(SatRoutes);
 };

@@ -43,7 +43,21 @@ export class PgStore extends BasePgStore {
   }
 
   async updateChainTipBlockHeight(args: { blockHeight: number }): Promise<void> {
-    await this.sql`UPDATE chain_tip SET block_height = ${args.blockHeight}`;
+    await this.sql`
+      UPDATE chain_tip SET block_height = GREATEST(${args.blockHeight}, block_height)
+    `;
+  }
+
+  async getChainTipBlockHeight(): Promise<number> {
+    const result = await this.sql<{ block_height: number }[]>`SELECT block_height FROM chain_tip`;
+    return result[0].block_height;
+  }
+
+  async getMaxInscriptionNumber(): Promise<number | undefined> {
+    const result = await this.sql<{ max: number }[]>`SELECT MAX(number) FROM inscriptions`;
+    if (result[0].max) {
+      return result[0].max;
+    }
   }
 
   async getInscriptionTransfersETag(): Promise<string> {
@@ -85,6 +99,7 @@ export class PgStore extends BasePgStore {
           RETURNING ${this.sql(LOCATIONS_COLUMNS)}
         `;
       }
+      await this.updateChainTipBlockHeight({ blockHeight: args.location.block_height });
     });
   }
 
