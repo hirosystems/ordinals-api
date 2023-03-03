@@ -105,6 +105,11 @@ export class PgStore extends BasePgStore {
     });
   }
 
+  async rollBackInscriptionGenesis(args: { genesis_id: string }): Promise<void> {
+    // This will cascade into the `locations` table.
+    await this.sql`DELETE FROM inscriptions WHERE genesis_id = ${args.genesis_id}`;
+  }
+
   async getInscriptionCurrentLocation(args: { output: string }): Promise<DbLocation | undefined> {
     const result = await this.sql<DbLocation[]>`
       SELECT ${this.sql(LOCATIONS_COLUMNS)}

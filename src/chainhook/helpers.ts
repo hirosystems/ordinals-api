@@ -8,9 +8,12 @@ import { ChainhookPayloadCType } from './schemas';
  * @param db - DB
  */
 export async function processInscriptionRevealed(payload: unknown, db: PgStore): Promise<void> {
-  if (!ChainhookPayloadCType.Check(payload)) {
-    const errors = [...ChainhookPayloadCType.Errors(payload)];
-    return;
+  if (!ChainhookPayloadCType.Check(payload)) return;
+  for (const event of payload.rollback) {
+    for (const tx of event.transactions) {
+      const genesis_id = tx.metadata.ordinal_operations[0].inscription_revealed.inscription_id;
+      await db.rollBackInscriptionGenesis({ genesis_id });
+    }
   }
   for (const event of payload.apply) {
     for (const tx of event.transactions) {
