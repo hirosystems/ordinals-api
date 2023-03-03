@@ -33,8 +33,13 @@ const schema = Type.Object({
 
   /** Hostname of the chainhook node we'll use to register predicates */
   CHAINHOOK_NODE_RPC_HOST: Type.String({ default: '127.0.0.1' }),
-  /** Port of the chainhook node */
+  /** Control port of the chainhook node */
   CHAINHOOK_NODE_RPC_PORT: Type.Number({ default: 20456, minimum: 0, maximum: 65535 }),
+  /**
+   * Authorization token that the chainhook node must send with every event to make sure it's
+   * coming from the valid instance
+   */
+  CHAINHOOK_NODE_AUTH_TOKEN: Type.String(),
 
   PGHOST: Type.String(),
   PGPORT: Type.Number({ default: 5432, minimum: 0, maximum: 65535 }),

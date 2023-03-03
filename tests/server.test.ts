@@ -13,7 +13,6 @@ describe('EventServer', () => {
   let db: PgStore;
 
   beforeEach(async () => {
-    ENV.PGDATABASE = 'postgres';
     db = await PgStore.connect({ skipMigrations: true });
     await cycleMigrations();
   });
@@ -45,12 +44,40 @@ describe('EventServer', () => {
       await fastify.inject({
         method: 'POST',
         url: '/chainhook/inscription_revealed',
+        headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
         payload,
       });
 
       await fastify.close();
       await agent.close();
       agent.assertNoPendingInterceptors();
+    });
+
+    test('ignores unauthorized events', async () => {
+      const agent = new MockAgent();
+      agent.disableNetConnect();
+      const interceptor = agent.get(CHAINHOOK_BASE_PATH);
+      interceptor.intercept({ path: '/ping', method: 'GET' }).reply(200);
+      interceptor.intercept({ path: '/v1/chainhooks', method: 'POST' }).reply(200);
+      interceptor
+        .intercept({
+          path: `/v1/chainhooks/bitcoin/${REVEAL__PREDICATE_UUID}`,
+          method: 'DELETE',
+        })
+        .reply(200);
+      setGlobalDispatcher(agent);
+
+      const fastify = await buildChainhookServer({ db });
+      const payload = { test: 'value' };
+      const response = await fastify.inject({
+        method: 'POST',
+        url: '/chainhook/inscription_revealed',
+        payload,
+      });
+      expect(response.statusCode).toBe(403);
+
+      await fastify.close();
+      await agent.close();
     });
   });
 
@@ -144,6 +171,7 @@ describe('EventServer', () => {
       const response = await fastify.inject({
         method: 'POST',
         url: '/chainhook/inscription_revealed',
+        headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
         payload: payload1,
       });
       expect(response.statusCode).toBe(200);
@@ -200,6 +228,7 @@ describe('EventServer', () => {
       const response2 = await fastify.inject({
         method: 'POST',
         url: '/chainhook/inscription_revealed',
+        headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
         payload: payload2,
       });
       expect(response2.statusCode).toBe(200);

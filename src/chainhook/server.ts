@@ -1,6 +1,6 @@
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { randomUUID } from 'crypto';
-import Fastify, { FastifyPluginCallback } from 'fastify';
+import Fastify, { FastifyPluginCallback, FastifyReply, FastifyRequest } from 'fastify';
 import { Server } from 'http';
 import { request } from 'undici';
 import { ENV } from '../env';
@@ -47,6 +47,7 @@ async function registerChainhookPredicates() {
           then_that: {
             http_post: {
               url: `http://${ENV.EXTERNAL_HOSTNAME}/chainhook/inscription_revealed`,
+              authorization_header: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}`,
             },
           },
         },
@@ -71,11 +72,25 @@ async function removeChainhookPredicates() {
   logger.info(`EventServer removed "inscription_revealed" predicate (${REVEAL__PREDICATE_UUID})`);
 }
 
+/**
+ * Check that incoming chainhook requests are properly authorized.
+ * @param request - Fastify request
+ * @param reply - Fastify reply
+ */
+async function isAuthorizedChainhookEvent(request: FastifyRequest, reply: FastifyReply) {
+  const authHeader = request.headers.authorization;
+  if (authHeader && authHeader === `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}`) {
+    return;
+  }
+  await reply.code(403).send();
+}
+
 const Chainhook: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
   fastify,
   options,
   done
 ) => {
+  fastify.addHook('preHandler', isAuthorizedChainhookEvent);
   fastify.post('/chainhook/inscription_revealed', async (request, reply) => {
     await processInscriptionRevealed(request.body, fastify.db);
     await reply.code(200).send();

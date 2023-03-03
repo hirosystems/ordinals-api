@@ -1,5 +1,4 @@
 import { buildApiServer } from '../src/api/init';
-import { ENV } from '../src/env';
 import { cycleMigrations } from '../src/pg/migrations';
 import { PgStore } from '../src/pg/pg-store';
 import { TestFastifyServer } from './helpers';
@@ -9,7 +8,6 @@ describe('ETag cache', () => {
   let fastify: TestFastifyServer;
 
   beforeEach(async () => {
-    ENV.PGDATABASE = 'postgres';
     db = await PgStore.connect({ skipMigrations: true });
     fastify = await buildApiServer({ db });
     await cycleMigrations();

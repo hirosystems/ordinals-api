@@ -231,6 +231,13 @@ export const SatoshiResponse = Type.Object({
   rarity: Type.Enum(SatoshiRarity, { examples: ['common'] }),
 });
 
+export const ApiStatusResponse = Type.Object({
+  server_version: Type.String({ examples: [''] }),
+  status: Type.String(),
+  block_height: Type.Optional(Type.Integer()),
+  max_inscription_number: Type.Optional(Type.Integer()),
+});
+
 export const NotFoundResponse = Type.Object({
   error: Type.Literal('Not found'),
 });
