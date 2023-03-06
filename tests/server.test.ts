@@ -177,7 +177,7 @@ describe('EventServer', () => {
       expect(response.statusCode).toBe(200);
 
       const query = await db.getInscriptions({
-        genesis_id: '0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8i0',
+        genesis_id: ['0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8i0'],
         limit: 1,
         offset: 0,
       });

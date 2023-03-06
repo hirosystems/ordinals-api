@@ -44,12 +44,34 @@ export const AddressParam = Type.String({
   examples: ['bc1p8aq8s3z9xl87e74twfk93mljxq6alv4a79yheadx33t9np4g2wkqqt8kc5'],
 });
 
+export const AddressesParam = Type.Array(AddressParam, {
+  title: 'Addresses',
+  description: 'Array of Bitcoin addresses',
+  examples: [
+    [
+      'bc1p8aq8s3z9xl87e74twfk93mljxq6alv4a79yheadx33t9np4g2wkqqt8kc5',
+      'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+    ],
+  ],
+});
+
 export const InscriptionIdParam = Type.RegEx(/^[a-fA-F0-9]{64}i[0-9]+$/, {
   title: 'Inscription ID',
   description: 'Inscription ID',
   examples: ['38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0'],
 });
 export const InscriptionIdParamCType = TypeCompiler.Compile(InscriptionIdParam);
+
+export const InscriptionIdsParam = Type.Array(InscriptionIdParam, {
+  title: 'Inscription IDs',
+  description: 'Array of inscription IDs',
+  examples: [
+    [
+      '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+      'e3af144354367de58c675e987febcb49f17d6c19e645728b833fe95408feab85i0',
+    ],
+  ],
+});
 
 export const InscriptionNumberParam = Type.Integer({
   minimum: 0,
@@ -58,6 +80,12 @@ export const InscriptionNumberParam = Type.Integer({
   examples: ['10500'],
 });
 export const InscriptionNumberParamCType = TypeCompiler.Compile(InscriptionNumberParam);
+
+export const InscriptionNumbersParam = Type.Array(InscriptionNumberParam, {
+  title: 'Inscription Numbers',
+  description: 'Array of inscription numbers',
+  examples: [['10500', '65']],
+});
 
 export const InscriptionIdentifierParam = Type.Union([InscriptionIdParam, InscriptionNumberParam], {
   title: 'Inscription Identifier',
@@ -195,6 +223,9 @@ export const InscriptionResponse = Type.Object({
   }),
   genesis_fee: Type.String({ examples: ['3179'] }),
   genesis_timestamp: Type.Integer({ exmaples: [1677733170000] }),
+  tx_id: Type.String({
+    examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218'],
+  }),
   location: Type.String({
     examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218:0:0'],
   }),

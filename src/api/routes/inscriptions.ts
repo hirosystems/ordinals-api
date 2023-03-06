@@ -4,7 +4,6 @@ import { Value } from '@sinclair/typebox/value';
 import { FastifyPluginAsync, FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import {
-  AddressParam,
   InscriptionResponse,
   LimitParam,
   NotFoundResponse,
@@ -26,6 +25,9 @@ import {
   OrdinalParam,
   InscriptionNumberParam,
   TimestampParam,
+  AddressesParam,
+  InscriptionIdsParam,
+  InscriptionNumbersParam,
 } from '../schemas';
 import { handleInscriptionCache, handleInscriptionTransfersCache } from '../util/cache';
 import {
@@ -43,6 +45,10 @@ function blockParam(param: string | undefined, name: string) {
     out[`${name}_height`] = param;
   }
   return out;
+}
+
+function inscriptionIdArrayParam(param: string | number) {
+  return InscriptionIdParamCType.Check(param) ? { genesis_id: [param] } : { number: [param] };
 }
 
 function inscriptionIdParam(param: string | number) {
@@ -78,8 +84,10 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
           to_sat_coinbase_height: Type.Optional(BlockHeightParam),
           from_number: Type.Optional(InscriptionNumberParam),
           to_number: Type.Optional(InscriptionNumberParam),
+          id: Type.Optional(InscriptionIdsParam),
+          number: Type.Optional(InscriptionNumbersParam),
           output: Type.Optional(OutputParam),
-          address: Type.Optional(AddressParam),
+          address: Type.Optional(AddressesParam),
           mime_type: Type.Optional(MimeTypesParam),
           rarity: Type.Optional(SatoshiRaritiesParam),
           // Pagination
@@ -110,6 +118,8 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
         to_sat_ordinal: bigIntParam(request.query.to_sat_ordinal),
         from_number: request.query.from_number,
         to_number: request.query.to_number,
+        genesis_id: request.query.id,
+        number: request.query.number,
         output: request.query.output,
         address: request.query.address,
         mime_type: request.query.mime_type,
@@ -155,7 +165,7 @@ const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTyp
     },
     async (request, reply) => {
       const inscription = await fastify.db.getInscriptions({
-        ...inscriptionIdParam(request.params.id),
+        ...inscriptionIdArrayParam(request.params.id),
         limit: 1,
         offset: 0,
       });

@@ -15,6 +15,7 @@ export type DbFullyLocatedInscriptionResult = {
   genesis_address: string;
   number: number;
   address: string;
+  tx_id: string;
   output: string;
   offset: bigint;
   value: bigint;
