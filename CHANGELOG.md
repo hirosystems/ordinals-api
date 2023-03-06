@@ -1,3 +1,13 @@
+## [0.1.0-beta.3](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.2...v0.1.0-beta.3) (2023-03-06)
+
+
+### Features
+
+* address array param ([5d3bc4b](https://github.com/hirosystems/ordinals-api/commit/5d3bc4bdcb3958e4f7a52bd32b0aaceae5d26b36))
+* filter by array of ids or numbers ([34721b0](https://github.com/hirosystems/ordinals-api/commit/34721b00df1e44e43b0366cd026c4da00bddcd51))
+* resume indexing from last observed block height ([fc4a549](https://github.com/hirosystems/ordinals-api/commit/fc4a549041131467cad0f3544a7371a3beafa517))
+* return current tx_id ([a503f73](https://github.com/hirosystems/ordinals-api/commit/a503f7308414d99dbb4b7cbc64cd7f3d5bb10f86))
+
 ## [0.1.0-beta.2](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.1...v0.1.0-beta.2) (2023-03-03)
 
 
