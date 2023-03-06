@@ -1,6 +1,11 @@
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { randomUUID } from 'crypto';
-import Fastify, { FastifyPluginCallback, FastifyReply, FastifyRequest } from 'fastify';
+import Fastify, {
+  FastifyInstance,
+  FastifyPluginCallback,
+  FastifyReply,
+  FastifyRequest,
+} from 'fastify';
 import { Server } from 'http';
 import { request } from 'undici';
 import { ENV } from '../env';
@@ -12,7 +17,10 @@ import { processInscriptionRevealed, processInscriptionTransferred } from './hel
 export const CHAINHOOK_BASE_PATH = `http://${ENV.CHAINHOOK_NODE_RPC_HOST}:${ENV.CHAINHOOK_NODE_RPC_PORT}`;
 export const REVEAL__PREDICATE_UUID = randomUUID();
 
-async function waitForChainhookNode() {
+/**
+ * Ping the chainhooks node indefinitely until it's ready.
+ */
+async function waitForChainhookNode(this: FastifyInstance) {
   logger.info(`EventServer connecting to chainhook node...`);
   while (true) {
     try {
@@ -29,8 +37,11 @@ async function waitForChainhookNode() {
  * Register required ordinals predicates in the chainhooks node. This is executed before starting
  * the events server.
  */
-async function registerChainhookPredicates() {
-  logger.info(`EventServer registering predicates...`);
+async function registerChainhookPredicates(this: FastifyInstance) {
+  const lastObservedBlockHeight = await this.db.getChainTipBlockHeight();
+  logger.info(
+    `EventServer registering predicates starting from block ${lastObservedBlockHeight}...`
+  );
   await request(`${CHAINHOOK_BASE_PATH}/v1/chainhooks`, {
     method: 'POST',
     body: JSON.stringify({
@@ -38,6 +49,7 @@ async function registerChainhookPredicates() {
       uuid: REVEAL__PREDICATE_UUID,
       name: 'inscription_revealed',
       version: 1,
+      start_block: lastObservedBlockHeight,
       networks: {
         mainnet: {
           if_this: {
@@ -63,7 +75,7 @@ async function registerChainhookPredicates() {
 /**
  * Remove previously registered predicates. This is executed before closing the events server.
  */
-async function removeChainhookPredicates() {
+async function removeChainhookPredicates(this: FastifyInstance) {
   logger.info(`EventServer closing predicates...`);
   await request(`${CHAINHOOK_BASE_PATH}/v1/chainhooks/bitcoin/${REVEAL__PREDICATE_UUID}`, {
     method: 'DELETE',
