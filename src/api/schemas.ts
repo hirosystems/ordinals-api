@@ -44,6 +44,17 @@ export const AddressParam = Type.String({
   examples: ['bc1p8aq8s3z9xl87e74twfk93mljxq6alv4a79yheadx33t9np4g2wkqqt8kc5'],
 });
 
+export const AddressesParam = Type.Array(AddressParam, {
+  title: 'Addresses',
+  description: 'Array of Bitcoin addresses',
+  examples: [
+    [
+      'bc1p8aq8s3z9xl87e74twfk93mljxq6alv4a79yheadx33t9np4g2wkqqt8kc5',
+      'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+    ],
+  ],
+});
+
 export const InscriptionIdParam = Type.RegEx(/^[a-fA-F0-9]{64}i[0-9]+$/, {
   title: 'Inscription ID',
   description: 'Inscription ID',

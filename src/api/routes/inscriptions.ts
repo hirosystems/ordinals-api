@@ -4,7 +4,6 @@ import { Value } from '@sinclair/typebox/value';
 import { FastifyPluginAsync, FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import {
-  AddressParam,
   InscriptionResponse,
   LimitParam,
   NotFoundResponse,
@@ -26,6 +25,7 @@ import {
   OrdinalParam,
   InscriptionNumberParam,
   TimestampParam,
+  AddressesParam,
 } from '../schemas';
 import { handleInscriptionCache, handleInscriptionTransfersCache } from '../util/cache';
 import {
@@ -79,7 +79,7 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
           from_number: Type.Optional(InscriptionNumberParam),
           to_number: Type.Optional(InscriptionNumberParam),
           output: Type.Optional(OutputParam),
-          address: Type.Optional(AddressParam),
+          address: Type.Optional(AddressesParam),
           mime_type: Type.Optional(MimeTypesParam),
           rarity: Type.Optional(SatoshiRaritiesParam),
           // Pagination
