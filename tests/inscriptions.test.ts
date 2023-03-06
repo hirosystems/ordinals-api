@@ -458,6 +458,176 @@ describe('/inscriptions', () => {
         expect(responseJson3.total).toBe(2);
       });
 
+      test('index filtered by inscription id', async () => {
+        await db.insertInscriptionGenesis({
+          inscription: {
+            genesis_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
+            mime_type: 'text/plain',
+            content_type: 'text/plain;charset=utf-8',
+            content_length: 5,
+            number: 7,
+            content: '0x48656C6C6F',
+            fee: 705n,
+          },
+          location: {
+            inscription_id: 0,
+            block_height: 778575,
+            block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+            tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
+            address: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+            output: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0',
+            offset: 0n,
+            value: 10000n,
+            timestamp: 1676913207,
+            sat_ordinal: 257418248345364n,
+            sat_rarity: 'common',
+            sat_coinbase_height: 650000,
+            genesis: true,
+            current: true,
+          },
+        });
+        await db.insertInscriptionGenesis({
+          inscription: {
+            genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+            mime_type: 'image/png',
+            content_type: 'image/png',
+            content_length: 5,
+            number: 7,
+            content: '0x48656C6C6F',
+            fee: 2805n,
+          },
+          location: {
+            inscription_id: 0,
+            block_height: 775617,
+            block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+            tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+            address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+            output: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0',
+            offset: 0n,
+            value: 10000n,
+            timestamp: 1676913207,
+            sat_ordinal: 257418248345364n,
+            sat_rarity: 'epic',
+            sat_coinbase_height: 650000,
+            genesis: true,
+            current: true,
+          },
+        });
+
+        const response1 = await fastify.inject({
+          method: 'GET',
+          url: '/ordinals/v1/inscriptions?id=9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
+        });
+        expect(response1.statusCode).toBe(200);
+        const responseJson1 = response1.json();
+        expect(responseJson1.total).toBe(1);
+        expect(responseJson1.results[0].id).toBe(
+          '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0'
+        );
+
+        const response2 = await fastify.inject({
+          method: 'GET',
+          url: '/ordinals/v1/inscriptions?id=38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+        });
+        expect(response2.statusCode).toBe(200);
+        const responseJson2 = response2.json();
+        expect(responseJson2.total).toBe(1);
+        expect(responseJson2.results[0].id).toBe(
+          '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0'
+        );
+
+        const response3 = await fastify.inject({
+          method: 'GET',
+          url: '/ordinals/v1/inscriptions?id=9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0&id=38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+        });
+        expect(response3.statusCode).toBe(200);
+        const responseJson3 = response3.json();
+        expect(responseJson3.total).toBe(2);
+      });
+
+      test('index filtered by inscription number', async () => {
+        await db.insertInscriptionGenesis({
+          inscription: {
+            genesis_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
+            mime_type: 'text/plain',
+            content_type: 'text/plain;charset=utf-8',
+            content_length: 5,
+            number: 7,
+            content: '0x48656C6C6F',
+            fee: 705n,
+          },
+          location: {
+            inscription_id: 0,
+            block_height: 778575,
+            block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+            tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
+            address: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+            output: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0',
+            offset: 0n,
+            value: 10000n,
+            timestamp: 1676913207,
+            sat_ordinal: 257418248345364n,
+            sat_rarity: 'common',
+            sat_coinbase_height: 650000,
+            genesis: true,
+            current: true,
+          },
+        });
+        await db.insertInscriptionGenesis({
+          inscription: {
+            genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+            mime_type: 'image/png',
+            content_type: 'image/png',
+            content_length: 5,
+            number: 50,
+            content: '0x48656C6C6F',
+            fee: 2805n,
+          },
+          location: {
+            inscription_id: 0,
+            block_height: 775617,
+            block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+            tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+            address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+            output: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0',
+            offset: 0n,
+            value: 10000n,
+            timestamp: 1676913207,
+            sat_ordinal: 257418248345364n,
+            sat_rarity: 'epic',
+            sat_coinbase_height: 650000,
+            genesis: true,
+            current: true,
+          },
+        });
+
+        const response1 = await fastify.inject({
+          method: 'GET',
+          url: '/ordinals/v1/inscriptions?number=7',
+        });
+        expect(response1.statusCode).toBe(200);
+        const responseJson1 = response1.json();
+        expect(responseJson1.total).toBe(1);
+        expect(responseJson1.results[0].number).toBe(7);
+
+        const response2 = await fastify.inject({
+          method: 'GET',
+          url: '/ordinals/v1/inscriptions?number=50',
+        });
+        expect(response2.statusCode).toBe(200);
+        const responseJson2 = response2.json();
+        expect(responseJson2.total).toBe(1);
+        expect(responseJson2.results[0].number).toBe(50);
+
+        const response3 = await fastify.inject({
+          method: 'GET',
+          url: '/ordinals/v1/inscriptions?number=7&number=50',
+        });
+        expect(response3.statusCode).toBe(200);
+        const responseJson3 = response3.json();
+        expect(responseJson3.total).toBe(2);
+      });
+
       test('index filtered by block height', async () => {
         await db.insertInscriptionGenesis({
           inscription: {

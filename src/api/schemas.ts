@@ -62,6 +62,17 @@ export const InscriptionIdParam = Type.RegEx(/^[a-fA-F0-9]{64}i[0-9]+$/, {
 });
 export const InscriptionIdParamCType = TypeCompiler.Compile(InscriptionIdParam);
 
+export const InscriptionIdsParam = Type.Array(InscriptionIdParam, {
+  title: 'Inscription IDs',
+  description: 'Array of inscription IDs',
+  examples: [
+    [
+      '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+      'e3af144354367de58c675e987febcb49f17d6c19e645728b833fe95408feab85i0',
+    ],
+  ],
+});
+
 export const InscriptionNumberParam = Type.Integer({
   minimum: 0,
   title: 'Inscription Number',
@@ -69,6 +80,12 @@ export const InscriptionNumberParam = Type.Integer({
   examples: ['10500'],
 });
 export const InscriptionNumberParamCType = TypeCompiler.Compile(InscriptionNumberParam);
+
+export const InscriptionNumbersParam = Type.Array(InscriptionNumberParam, {
+  title: 'Inscription Numbers',
+  description: 'Array of inscription numbers',
+  examples: [['10500', '65']],
+});
 
 export const InscriptionIdentifierParam = Type.Union([InscriptionIdParam, InscriptionNumberParam], {
   title: 'Inscription Identifier',

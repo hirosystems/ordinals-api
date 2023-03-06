@@ -173,7 +173,7 @@ export class PgStore extends BasePgStore {
   }
 
   async getInscriptions(args: {
-    genesis_id?: string;
+    genesis_id?: string[];
     genesis_block_height?: number;
     genesis_block_hash?: string;
     from_genesis_block_height?: number;
@@ -182,7 +182,7 @@ export class PgStore extends BasePgStore {
     to_genesis_timestamp?: number;
     from_sat_coinbase_height?: number;
     to_sat_coinbase_height?: number;
-    number?: number;
+    number?: number[];
     from_number?: number;
     to_number?: number;
     address?: string[];
@@ -237,7 +237,11 @@ export class PgStore extends BasePgStore {
       INNER JOIN locations AS loc ON loc.inscription_id = i.id
       INNER JOIN locations AS gen ON gen.inscription_id = i.id
       WHERE loc.current = TRUE AND gen.genesis = TRUE
-        ${args.genesis_id ? this.sql`AND i.genesis_id = ${args.genesis_id}` : this.sql``}
+        ${
+          args.genesis_id?.length
+            ? this.sql`AND i.genesis_id IN ${this.sql(args.genesis_id)}`
+            : this.sql``
+        }
         ${
           args.genesis_block_height
             ? this.sql`AND gen.block_height = ${args.genesis_block_height}`
@@ -286,7 +290,7 @@ export class PgStore extends BasePgStore {
         ${
           args.to_sat_ordinal ? this.sql`AND loc.sat_ordinal <= ${args.to_sat_ordinal}` : this.sql``
         }
-        ${args.number ? this.sql`AND i.number = ${args.number}` : this.sql``}
+        ${args.number?.length ? this.sql`AND i.number IN ${this.sql(args.number)}` : this.sql``}
         ${args.from_number ? this.sql`AND i.number >= ${args.from_number}` : this.sql``}
         ${args.to_number ? this.sql`AND i.number <= ${args.to_number}` : this.sql``}
         ${
