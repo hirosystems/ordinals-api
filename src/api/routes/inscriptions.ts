@@ -126,7 +126,7 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
         mime_type: request.query.mime_type,
         sat_rarity: request.query.rarity,
         order_by: request.query.order_by ?? OrderBy.genesis_block_height,
-        order: request.query.order ?? Order.desc,
+        order: request.query.order ? Order[request.query.order] : Order.desc,
         limit,
         offset,
       });

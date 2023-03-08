@@ -190,7 +190,7 @@ export enum Order {
   asc = 'asc',
   desc = 'desc',
 }
-export const OrderParam = Type.Enum(Order, {
+export const OrderParam = Type.Union([Type.Literal('asc'), Type.Literal('desc')], {
   title: 'Order',
   description: 'Results order',
 });
@@ -277,10 +277,10 @@ export const SatoshiResponse = Type.Object(
 
 export const ApiStatusResponse = Type.Object(
   {
-    server_version: Type.String({ examples: [''] }),
-    status: Type.String(),
-    block_height: Type.Optional(Type.Integer()),
-    max_inscription_number: Type.Optional(Type.Integer()),
+    server_version: Type.String({ examples: ['ordinals-api v0.0.1 (master:a1b2c3)'] }),
+    status: Type.String({ examples: ['ready'] }),
+    block_height: Type.Optional(Type.Integer({ examples: [750640] })),
+    max_inscription_number: Type.Optional(Type.Integer({ examples: [130876] })),
   },
   { title: 'Status Response' }
 );
