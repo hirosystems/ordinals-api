@@ -1,3 +1,10 @@
+## [0.1.0-beta.4](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.3...v0.1.0-beta.4) (2023-03-08)
+
+
+### Bug Fixes
+
+* adjust payloads ([#21](https://github.com/hirosystems/ordinals-api/issues/21)) ([d6d91e9](https://github.com/hirosystems/ordinals-api/commit/d6d91e9259f5086565dca4a2f9883698b110947b))
+
 ## [0.1.0-beta.3](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.2...v0.1.0-beta.3) (2023-03-06)
 
 
