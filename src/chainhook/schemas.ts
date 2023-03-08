@@ -1,5 +1,7 @@
-import { Static, Type } from '@sinclair/typebox';
+import { Static, TSchema, Type } from '@sinclair/typebox';
 import { TypeCompiler } from '@sinclair/typebox/compiler';
+
+const Nullable = <T extends TSchema>(type: T) => Type.Union([type, Type.Null()]);
 
 const Block = Type.Object({
   index: Type.Integer(),
@@ -33,7 +35,7 @@ const Transaction = Type.Object({
   metadata: Type.Object({
     ordinal_operations: Type.Array(OrdinalOperation),
     outputs: Type.Array(Output),
-    proof: Type.String(),
+    proof: Nullable(Type.String()),
   }),
 });
 
