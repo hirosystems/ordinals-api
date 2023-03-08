@@ -38,38 +38,42 @@ async function waitForChainhookNode(this: FastifyInstance) {
  * the events server.
  */
 async function registerChainhookPredicates(this: FastifyInstance) {
-  const lastObservedBlockHeight = await this.db.getChainTipBlockHeight();
-  logger.info(
-    `EventServer registering predicates starting from block ${lastObservedBlockHeight}...`
-  );
-  await request(`${CHAINHOOK_BASE_PATH}/v1/chainhooks`, {
-    method: 'POST',
-    body: JSON.stringify({
-      chain: 'bitcoin',
-      uuid: REVEAL__PREDICATE_UUID,
-      name: 'inscription_revealed',
-      version: 1,
-      start_block: lastObservedBlockHeight,
-      networks: {
-        mainnet: {
-          if_this: {
-            scope: 'ordinals',
-            operation: 'inscription_revealed',
+  const blockHeight = 779924; //await this.db.getChainTipBlockHeight();
+  logger.info(`EventServer registering predicates starting from block ${blockHeight}...`);
+
+  const register = async (name: string, uuid: string, blockHeight: number) => {
+    await request(`${CHAINHOOK_BASE_PATH}/v1/chainhooks`, {
+      method: 'POST',
+      body: JSON.stringify({
+        bitcoin: {
+          uuid: uuid,
+          name: name,
+          network: 'mainnet',
+          version: 1,
+          start_block: blockHeight,
+          predicate: {
+            scope: 'protocol',
+            ordinal: name,
           },
-          then_that: {
+          action: {
             http_post: {
               url: `http://${ENV.EXTERNAL_HOSTNAME}/chainhook/inscription_revealed`,
               authorization_header: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}`,
             },
           },
         },
-      },
-    }),
-    throwOnError: true,
-  });
-  logger.info(
-    `EventServer registered "inscription_revealed" predicate (${REVEAL__PREDICATE_UUID})`
-  );
+      }),
+      headers: { 'content-type': 'application/json' },
+      throwOnError: true,
+    });
+    logger.info(`EventServer registered '${name}' predicate (${uuid})`);
+  };
+
+  try {
+    await register('inscription_revealed', REVEAL__PREDICATE_UUID, blockHeight);
+  } catch (error) {
+    logger.error(error, `EventServer unable to register predicate`);
+  }
 }
 
 /**
@@ -77,11 +81,21 @@ async function registerChainhookPredicates(this: FastifyInstance) {
  */
 async function removeChainhookPredicates(this: FastifyInstance) {
   logger.info(`EventServer closing predicates...`);
-  await request(`${CHAINHOOK_BASE_PATH}/v1/chainhooks/bitcoin/${REVEAL__PREDICATE_UUID}`, {
-    method: 'DELETE',
-    throwOnError: true,
-  });
-  logger.info(`EventServer removed "inscription_revealed" predicate (${REVEAL__PREDICATE_UUID})`);
+
+  const deregister = async (name: string, uuid: string) => {
+    await request(`${CHAINHOOK_BASE_PATH}/v1/chainhooks/bitcoin/${uuid}`, {
+      method: 'DELETE',
+      headers: { 'content-type': 'application/json' },
+      throwOnError: true,
+    });
+    logger.info(`EventServer removed '${name}' predicate (${uuid})`);
+  };
+
+  try {
+    await deregister('inscription_revealed', REVEAL__PREDICATE_UUID);
+  } catch (error) {
+    logger.error(error, `EventServer unable to deregister predicate`);
+  }
 }
 
 /**
