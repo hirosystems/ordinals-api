@@ -13,6 +13,7 @@ export const StatusRoutes: FastifyPluginCallback<
     '/',
     {
       schema: {
+        operationId: 'getApiStatus',
         summary: 'API Status',
         description: 'Displays the status of the API',
         tags: ['Status'],

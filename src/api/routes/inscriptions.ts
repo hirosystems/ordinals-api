@@ -69,6 +69,7 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
     '/inscriptions',
     {
       schema: {
+        operationId: 'getInscriptions',
         summary: 'Inscriptions',
         description: 'Retrieves a list of inscriptions with options to filter and sort results',
         tags: ['Inscriptions'],
@@ -151,6 +152,7 @@ const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTyp
     '/inscriptions/:id',
     {
       schema: {
+        operationId: 'getInscription',
         summary: 'Inscription',
         description: 'Retrieves a single inscription',
         tags: ['Inscriptions'],
@@ -181,6 +183,7 @@ const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTyp
     '/inscriptions/:id/content',
     {
       schema: {
+        operationId: 'getInscriptionContent',
         summary: 'Inscription content',
         description: 'Retrieves the contents of a single inscription',
         tags: ['Inscriptions'],
