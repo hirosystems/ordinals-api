@@ -38,7 +38,7 @@ async function waitForChainhookNode(this: FastifyInstance) {
  * the events server.
  */
 async function registerChainhookPredicates(this: FastifyInstance) {
-  const blockHeight = 779924; //await this.db.getChainTipBlockHeight();
+  const blockHeight = await this.db.getChainTipBlockHeight();
   logger.info(`EventServer registering predicates starting from block ${blockHeight}...`);
 
   const register = async (name: string, uuid: string, blockHeight: number) => {
