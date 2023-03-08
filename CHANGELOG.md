@@ -1,3 +1,10 @@
+## [0.1.0-beta.5](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.4...v0.1.0-beta.5) (2023-03-08)
+
+
+### Bug Fixes
+
+* set starting block height to 767430 ([84ce95e](https://github.com/hirosystems/ordinals-api/commit/84ce95ede9b6905c69eaff354a7ac331a5a4605a))
+
 ## [0.1.0-beta.4](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.3...v0.1.0-beta.4) (2023-03-08)
 
 
