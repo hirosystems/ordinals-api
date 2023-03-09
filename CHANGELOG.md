@@ -1,3 +1,10 @@
+## [0.1.0-beta.6](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.5...v0.1.0-beta.6) (2023-03-09)
+
+
+### Features
+
+* configurable event server body limit ([1a37769](https://github.com/hirosystems/ordinals-api/commit/1a37769cdb4500e1141224fba953a9133f95a88e))
+
 ## [0.1.0-beta.5](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.4...v0.1.0-beta.5) (2023-03-08)
 
 
