@@ -28,6 +28,8 @@ const schema = Type.Object({
   API_PORT: Type.Number({ default: 3000, minimum: 0, maximum: 65535 }),
   /** Port in which to receive chainhook events */
   EVENT_PORT: Type.Number({ default: 3099, minimum: 0, maximum: 65535 }),
+  /** Event server body limit (bytes) */
+  EVENT_SERVER_BODY_LIMIT: Type.Integer({ default: 20971520 }),
   /** Hostname that will be reported to the chainhook node so it can call us back with events */
   EXTERNAL_HOSTNAME: Type.String({ default: '127.0.0.1' }),
 

@@ -138,6 +138,7 @@ export async function buildChainhookServer(args: { db: PgStore }) {
     trustProxy: true,
     logger: PINO_CONFIG,
     pluginTimeout: 0, // Disable.
+    bodyLimit: ENV.EVENT_SERVER_BODY_LIMIT,
   }).withTypeProvider<TypeBoxTypeProvider>();
 
   fastify.decorate('db', args.db);
