@@ -82,4 +82,8 @@ export function up(pgm: MigrationBuilder): void {
   pgm.createIndex('locations', ['block_hash']);
   pgm.createIndex('locations', ['address']);
   pgm.createIndex('locations', ['output']);
+  pgm.createIndex('locations', ['sat_ordinal']);
+  pgm.createIndex('locations', ['sat_rarity']);
+  pgm.createIndex('locations', ['sat_coinbase_height']);
+  pgm.createIndex('locations', ['timestamp']);
 }
