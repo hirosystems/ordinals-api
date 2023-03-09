@@ -38,7 +38,7 @@ async function waitForChainhookNode(this: FastifyInstance) {
  * the events server.
  */
 async function registerChainhookPredicates(this: FastifyInstance) {
-  const blockHeight = 779924; //await this.db.getChainTipBlockHeight();
+  const blockHeight = await this.db.getChainTipBlockHeight();
   logger.info(`EventServer registering predicates starting from block ${blockHeight}...`);
 
   const register = async (name: string, uuid: string, blockHeight: number) => {
@@ -138,6 +138,7 @@ export async function buildChainhookServer(args: { db: PgStore }) {
     trustProxy: true,
     logger: PINO_CONFIG,
     pluginTimeout: 0, // Disable.
+    bodyLimit: ENV.EVENT_SERVER_BODY_LIMIT,
   }).withTypeProvider<TypeBoxTypeProvider>();
 
   fastify.decorate('db', args.db);

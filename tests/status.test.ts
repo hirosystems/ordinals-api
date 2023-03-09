@@ -24,7 +24,7 @@ describe('Status', () => {
     expect(json).toStrictEqual({
       server_version: 'ordinals-api v0.0.1 (test:123456)',
       status: 'ready',
-      block_height: 0,
+      block_height: 767430,
     });
     const noVersionResponse = await fastify.inject({ method: 'GET', url: '/ordinals/' });
     expect(response.statusCode).toEqual(noVersionResponse.statusCode);
