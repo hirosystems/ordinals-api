@@ -8,7 +8,7 @@ export const OpenApiSchemaOptions: SwaggerOptions = {
     info: {
       title: 'Ordinals API',
       description:
-        'A microservice that indexes Bitcoin Ordinal inscription data and exposes it via REST API endpoints.',
+        'A service that indexes Bitcoin Ordinals data and exposes it via REST API endpoints.',
       version: 'v0.0.1',
     },
     externalDocs: {
