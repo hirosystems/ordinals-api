@@ -116,3 +116,9 @@ export const INSCRIPTIONS_COLUMNS = [
   'content_length',
   'fee',
 ];
+
+export type DbInscriptionCountPerBlock = {
+  block_height: number;
+  count: string; // COUNT() = bigint
+  scan_count: string; // COUNT() = bigint
+};
