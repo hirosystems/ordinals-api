@@ -1,3 +1,4 @@
+import { ValuesRowList } from 'postgres';
 import { Order, OrderBy } from '../api/schemas';
 import { SatoshiRarity } from '../api/util/ordinal-satoshi';
 import { ENV } from '../env';
@@ -8,6 +9,7 @@ import {
   DbFullyLocatedInscriptionResult,
   DbInscription,
   DbInscriptionContent,
+  DbInscriptionCountPerBlock,
   DbInscriptionInsert,
   DbLocation,
   DbLocationInsert,
@@ -316,5 +318,21 @@ export class PgStore extends BasePgStore {
       total: results[0]?.total ?? 0,
       results: results ?? [],
     };
+  }
+
+  async getInscriptionCountPerBlock(): Promise<ValuesRowList<DbInscriptionCountPerBlock[]>> {
+    return await this.sql<DbInscriptionCountPerBlock[]>`
+      SELECT t1.block_height,
+        COUNT(*) FILTER (WHERE t2.genesis = true) AS count,
+        SUM(COUNT(*) FILTER (WHERE t2.genesis = true)) OVER (ORDER BY t1.block_height) AS scan_count
+      FROM (
+        SELECT DISTINCT block_height
+        FROM locations
+      ) AS t1
+      LEFT JOIN locations AS t2
+      ON t1.block_height = t2.block_height
+      GROUP BY t1.block_height
+      ORDER BY t1.block_height ASC;
+    `.values();
   }
 }
