@@ -130,4 +130,10 @@ export type DbJsonContentInsert = {
   content: PgJsonb;
 };
 
+export type DbInscriptionCountPerBlock = {
+  block_height: number;
+  count: string; // COUNT() = bigint
+  scan_count: string; // COUNT() = bigint
+};
+
 export const JSON_CONTENTS_COLUMNS = ['id', 'inscription_id', 'p', 'op', 'content'];
