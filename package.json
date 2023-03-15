@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "author": "Hiro Systems PBC <engineering@hiro.so> (https://hiro.so)",
-  "license": "GPL-3.0",
+  "license": "Apache 2.0",
   "scripts": {
     "build": "rimraf ./dist && tsc --project tsconfig.build.json",
     "start": "node dist/src/index.js",
