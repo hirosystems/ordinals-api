@@ -29,7 +29,7 @@ export type DbFullyLocatedInscriptionResult = {
 };
 
 export type DbLocationInsert = {
-  inscription_id: number;
+  genesis_id: string;
   block_height: number;
   block_hash: string;
   tx_id: string;

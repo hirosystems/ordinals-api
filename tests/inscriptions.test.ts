@@ -31,7 +31,7 @@ describe('/inscriptions', () => {
           fee: 705n,
         },
         location: {
-          inscription_id: 0,
+          genesis_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
           block_height: 778575,
           block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
           tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
@@ -58,7 +58,7 @@ describe('/inscriptions', () => {
           fee: 2805n,
         },
         location: {
-          inscription_id: 0,
+          genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
           block_height: 775617,
           block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
@@ -127,7 +127,7 @@ describe('/inscriptions', () => {
           fee: 2805n,
         },
         location: {
-          inscription_id: 0,
+          genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
           block_height: 775617,
           block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
@@ -145,9 +145,9 @@ describe('/inscriptions', () => {
       });
 
       // Transfer 1
-      await db.updateInscriptionLocation({
+      await db.insertInscriptionTransfer({
         location: {
-          inscription_id: 1,
+          genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
           block_height: 775700,
           block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7bbbb',
           tx_id: 'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444',
@@ -193,9 +193,9 @@ describe('/inscriptions', () => {
       });
 
       // Transfer 2
-      await db.updateInscriptionLocation({
+      await db.insertInscriptionTransfer({
         location: {
-          inscription_id: 1,
+          genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
           block_height: 775701,
           block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7cccc',
           tx_id: 'e3af144354367de58c675e987febcb49f17d6c19e645728b833fe95408feab85',
@@ -256,7 +256,7 @@ describe('/inscriptions', () => {
             fee: 705n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
             block_height: 778575,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
@@ -283,7 +283,7 @@ describe('/inscriptions', () => {
             fee: 2805n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
             block_height: 775617,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
@@ -387,7 +387,7 @@ describe('/inscriptions', () => {
             fee: 705n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
             block_height: 778575,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
@@ -414,7 +414,7 @@ describe('/inscriptions', () => {
             fee: 2805n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
             block_height: 775617,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
@@ -470,7 +470,7 @@ describe('/inscriptions', () => {
             fee: 705n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
             block_height: 778575,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
@@ -497,7 +497,7 @@ describe('/inscriptions', () => {
             fee: 2805n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
             block_height: 775617,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
@@ -557,7 +557,7 @@ describe('/inscriptions', () => {
             fee: 705n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
             block_height: 778575,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
@@ -584,7 +584,7 @@ describe('/inscriptions', () => {
             fee: 2805n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
             block_height: 775617,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
@@ -640,7 +640,7 @@ describe('/inscriptions', () => {
             fee: 705n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
             block_height: 778575,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
@@ -667,7 +667,7 @@ describe('/inscriptions', () => {
             fee: 2805n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
             block_height: 775617,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
@@ -724,7 +724,7 @@ describe('/inscriptions', () => {
             fee: 705n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
             block_height: 778575,
             block_hash: '000000000000000000039b3051705a16fcf310a70dee55742339e6da70181bf7',
             tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
@@ -751,7 +751,7 @@ describe('/inscriptions', () => {
             fee: 2805n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
             block_height: 775617,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
@@ -792,7 +792,7 @@ describe('/inscriptions', () => {
             fee: 705n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
             block_height: 778575,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
@@ -819,7 +819,7 @@ describe('/inscriptions', () => {
             fee: 2805n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
             block_height: 775617,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
@@ -867,7 +867,7 @@ describe('/inscriptions', () => {
             fee: 705n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
             block_height: 778575,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
@@ -894,7 +894,7 @@ describe('/inscriptions', () => {
             fee: 2805n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
             block_height: 775617,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
@@ -942,7 +942,7 @@ describe('/inscriptions', () => {
             fee: 705n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
             block_height: 778575,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
@@ -969,7 +969,7 @@ describe('/inscriptions', () => {
             fee: 2805n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
             block_height: 775617,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
@@ -1017,7 +1017,7 @@ describe('/inscriptions', () => {
             fee: 705n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
             block_height: 778575,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
@@ -1044,7 +1044,7 @@ describe('/inscriptions', () => {
             fee: 2805n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
             block_height: 775617,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
@@ -1092,7 +1092,7 @@ describe('/inscriptions', () => {
             fee: 705n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
             block_height: 778575,
             block_hash: '000000000000000000039b3051705a16fcf310a70dee55742339e6da70181bf7',
             tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
@@ -1119,7 +1119,7 @@ describe('/inscriptions', () => {
             fee: 2805n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
             block_height: 775617,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
@@ -1160,7 +1160,7 @@ describe('/inscriptions', () => {
             fee: 705n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
             block_height: 778575,
             block_hash: '000000000000000000039b3051705a16fcf310a70dee55742339e6da70181bf7',
             tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
@@ -1187,7 +1187,7 @@ describe('/inscriptions', () => {
             fee: 2805n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
             block_height: 775617,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
@@ -1238,7 +1238,7 @@ describe('/inscriptions', () => {
             fee: 705n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
             block_height: 778575,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
@@ -1265,7 +1265,7 @@ describe('/inscriptions', () => {
             fee: 2805n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
             block_height: 775617,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
@@ -1292,7 +1292,7 @@ describe('/inscriptions', () => {
             fee: 2805n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '567c7605439dfdc3a289d13fd2132237852f4a56e784b9364ba94499d5f9baf1i0',
             block_height: 778583,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '567c7605439dfdc3a289d13fd2132237852f4a56e784b9364ba94499d5f9baf1',
@@ -1344,7 +1344,7 @@ describe('/inscriptions', () => {
             fee: 705n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
             block_height: 778575,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
@@ -1371,7 +1371,7 @@ describe('/inscriptions', () => {
             fee: 2805n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
             block_height: 775617,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
@@ -1398,7 +1398,7 @@ describe('/inscriptions', () => {
             fee: 2805n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '567c7605439dfdc3a289d13fd2132237852f4a56e784b9364ba94499d5f9baf1i0',
             block_height: 778583,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '567c7605439dfdc3a289d13fd2132237852f4a56e784b9364ba94499d5f9baf1',
@@ -1450,7 +1450,7 @@ describe('/inscriptions', () => {
             fee: 705n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
             block_height: 778575,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
@@ -1477,7 +1477,7 @@ describe('/inscriptions', () => {
             fee: 2805n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
             block_height: 775617,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
@@ -1504,7 +1504,7 @@ describe('/inscriptions', () => {
             fee: 2805n,
           },
           location: {
-            inscription_id: 0,
+            genesis_id: '567c7605439dfdc3a289d13fd2132237852f4a56e784b9364ba94499d5f9baf1i0',
             block_height: 778583,
             block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             tx_id: '567c7605439dfdc3a289d13fd2132237852f4a56e784b9364ba94499d5f9baf1',

@@ -89,7 +89,18 @@ export class PgStore extends BasePgStore {
       `;
       if (dbLocation.count === 0) {
         const location = {
-          ...args.location,
+          block_height: args.location.block_height,
+          block_hash: args.location.block_hash,
+          tx_id: args.location.tx_id,
+          address: args.location.address,
+          output: args.location.output,
+          offset: args.location.offset,
+          value: args.location.value,
+          sat_ordinal: args.location.sat_ordinal,
+          sat_rarity: args.location.sat_rarity,
+          sat_coinbase_height: args.location.sat_coinbase_height,
+          genesis: args.location.genesis,
+          current: args.location.current,
           timestamp: sql`to_timestamp(${args.location.timestamp})`,
           inscription_id: dbInscription[0].id,
         };
@@ -103,19 +114,33 @@ export class PgStore extends BasePgStore {
     });
   }
 
-  async updateInscriptionLocation(args: { location: DbLocationInsert }): Promise<void> {
+  async insertInscriptionTransfer(args: { location: DbLocationInsert }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
+      const inscription_id = await sql<{ id: number }[]>`
+        SELECT id FROM inscriptions WHERE genesis_id = ${args.location.genesis_id}
+      `;
+      await sql`
+        UPDATE locations SET current = FALSE WHERE inscription_id = ${inscription_id[0].id}
+      `;
       const location = {
-        ...args.location,
+        inscription_id: inscription_id[0].id,
+        block_height: args.location.block_height,
+        block_hash: args.location.block_hash,
+        tx_id: args.location.tx_id,
+        address: args.location.address,
+        output: args.location.output,
+        offset: args.location.offset,
+        value: args.location.value,
+        sat_ordinal: args.location.sat_ordinal,
+        sat_rarity: args.location.sat_rarity,
+        sat_coinbase_height: args.location.sat_coinbase_height,
+        genesis: args.location.genesis,
+        current: args.location.current,
         timestamp: sql`to_timestamp(${args.location.timestamp})`,
       };
       await sql`
-        UPDATE locations SET current = FALSE WHERE inscription_id = ${location.inscription_id}
-      `;
-      await sql`
         INSERT INTO locations ${sql(location)}
-        ON CONFLICT ON CONSTRAINT locations_inscription_id_block_hash_unique DO
-          UPDATE SET current = TRUE
+        ON CONFLICT ON CONSTRAINT locations_inscription_id_block_hash_unique DO NOTHING
       `;
     });
   }
@@ -123,6 +148,10 @@ export class PgStore extends BasePgStore {
   async rollBackInscriptionGenesis(args: { genesis_id: string }): Promise<void> {
     // This will cascade into the `locations` table.
     await this.sql`DELETE FROM inscriptions WHERE genesis_id = ${args.genesis_id}`;
+  }
+
+  async rollBackInscriptionTransfer(): Promise<void> {
+    //
   }
 
   async getInscriptionCurrentLocation(args: { output: string }): Promise<DbLocation | undefined> {

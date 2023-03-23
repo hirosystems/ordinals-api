@@ -141,11 +141,13 @@ describe('EventServer', () => {
                     inscription_fee: 3425,
                     inscription_id:
                       '0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8i0',
-                    inscription_authors: [
+                    inscriber_address:
                       'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-                    ],
                     ordinal_number: 125348773618236,
                     ordinal_block_height: 566462,
+                    ordinal_offset: 0,
+                    satpoint_post_inscription:
+                      '0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8:0:0',
                   },
                 },
               ],
