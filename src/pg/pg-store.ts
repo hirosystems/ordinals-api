@@ -150,8 +150,29 @@ export class PgStore extends BasePgStore {
     await this.sql`DELETE FROM inscriptions WHERE genesis_id = ${args.genesis_id}`;
   }
 
-  async rollBackInscriptionTransfer(): Promise<void> {
-    //
+  async rollBackInscriptionTransfer(args: { genesis_id: string; output: string }): Promise<void> {
+    await this.sqlWriteTransaction(async sql => {
+      const inscription_id = await sql<{ id: number }[]>`
+        SELECT id FROM inscriptions WHERE genesis_id = ${args.genesis_id}
+      `;
+      // Delete location.
+      await sql`
+        DELETE FROM locations
+        WHERE inscription_id = ${inscription_id[0].id} AND output = ${args.output}
+      `;
+      // Update `current` flag to latest location.
+      await sql`
+        UPDATE locations SET current = FALSE WHERE inscription_id = ${inscription_id[0].id}
+      `;
+      await sql`
+        UPDATE locations SET current = TRUE WHERE id = (
+          SELECT id FROM locations
+          WHERE inscription_id = ${inscription_id[0].id}
+          ORDER BY block_height DESC
+          LIMIT 1
+        )
+      `;
+    });
   }
 
   async getInscriptionCurrentLocation(args: { output: string }): Promise<DbLocation | undefined> {

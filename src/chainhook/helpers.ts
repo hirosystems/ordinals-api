@@ -89,8 +89,10 @@ export async function processInscriptionTransferred(payload: unknown, db: PgStor
         continue;
       }
       const genesis_id = transfer.inscription_id;
-      await db.rollBackInscriptionTransfer(); // TODO: h
-      logger.info(`[inscription_transferred] rollback inscription ${genesis_id}`);
+      const satpoint = transfer.satpoint_post_transfer.split(':');
+      const output = `${satpoint[0]}:${satpoint[1]}`;
+      await db.rollBackInscriptionTransfer({ genesis_id, output });
+      logger.info(`[inscription_transferred] rollback transfer ${genesis_id} ${output}`);
     }
   }
   for (const event of payload.apply) {
@@ -102,6 +104,7 @@ export async function processInscriptionTransferred(payload: unknown, db: PgStor
       }
       const txId = tx.transaction_identifier.hash.substring(2);
       const satpoint = transfer.satpoint_post_transfer.split(':');
+      const output = `${satpoint[0]}:${satpoint[1]}`;
       const utxo = tx.metadata.outputs[0];
       const satoshi = new OrdinalSatoshi(transfer.ordinal_number);
       await db.insertInscriptionTransfer({
@@ -111,7 +114,7 @@ export async function processInscriptionTransferred(payload: unknown, db: PgStor
           block_hash: event.block_identifier.hash,
           tx_id: txId,
           address: transfer.updated_address,
-          output: `${satpoint[0]}:${satpoint[1]}`,
+          output: output,
           offset: BigInt(satpoint[2]),
           value: BigInt(utxo.value),
           timestamp: event.timestamp,
@@ -123,7 +126,7 @@ export async function processInscriptionTransferred(payload: unknown, db: PgStor
         },
       });
       logger.info(
-        `[inscription_transferred] apply transfer for #${transfer.inscription_number} (${transfer.inscription_id}) to satpoint ${transfer.satpoint_post_transfer} at block ${event.block_identifier.index}`
+        `[inscription_transferred] apply transfer for #${transfer.inscription_number} (${transfer.inscription_id}) to output ${output} at block ${event.block_identifier.index}`
       );
     }
   }
