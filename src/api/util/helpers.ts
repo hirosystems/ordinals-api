@@ -35,7 +35,17 @@ export function parseDbInscription(item: DbFullyLocatedInscriptionResult): Inscr
 }
 
 export function parseInscriptionLocations(items: DbLocation[]): InscriptionLocationResponse[] {
-  //
+  return items.map(i => ({
+    block_height: i.block_height,
+    block_hash: i.block_hash,
+    address: i.address,
+    tx_id: i.tx_id,
+    location: `${i.output}:${i.offset}`,
+    output: i.output,
+    value: i.value.toString(),
+    offset: i.offset.toString(),
+    timestamp: i.timestamp.valueOf(),
+  }));
 }
 
 /**

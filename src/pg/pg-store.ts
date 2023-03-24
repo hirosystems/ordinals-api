@@ -371,6 +371,23 @@ export class PgStore extends BasePgStore {
   async getInscriptionLocations(
     args: InscriptionIdentifier & { limit: number; offset: number }
   ): Promise<DbPaginatedResult<DbLocation>> {
-    //
+    const results = await this.sql<({ total: number } & DbLocation)[]>`
+      SELECT ${this.sql(LOCATIONS_COLUMNS.map(c => `l.${c}`))}, COUNT(*) OVER() as total
+      FROM locations AS l
+      INNER JOIN inscriptions AS i ON l.inscription_id = i.id
+      WHERE
+        ${
+          'number' in args
+            ? this.sql`i.number = ${args.number}`
+            : this.sql`i.genesis_id = ${args.genesis_id}`
+        }
+      ORDER BY l.block_height DESC
+      LIMIT ${args.limit}
+      OFFSET ${args.offset}
+    `;
+    return {
+      total: results[0]?.total ?? 0,
+      results: results ?? [],
+    };
   }
 }
