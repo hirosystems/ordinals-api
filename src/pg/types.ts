@@ -1,4 +1,5 @@
-import { PgBytea } from './postgres-tools/types';
+import { OpJson } from './helpers';
+import { PgBytea, PgJsonb } from './postgres-tools/types';
 
 export type DbPaginatedResult<T> = {
   total: number;
@@ -116,3 +117,19 @@ export const INSCRIPTIONS_COLUMNS = [
   'content_length',
   'fee',
 ];
+
+export type DbJsonContent = {
+  id: number;
+  inscription_id: number;
+  p?: string;
+  op?: string;
+  content: OpJson;
+};
+
+export type DbJsonContentInsert = {
+  p: string | null;
+  op: string | null;
+  content: PgJsonb;
+};
+
+export const JSON_CONTENTS_COLUMNS = ['id', 'inscription_id', 'p', 'op', 'content'];

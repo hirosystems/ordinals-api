@@ -1,6 +1,7 @@
 import { Order, OrderBy } from '../api/schemas';
 import { SatoshiRarity } from '../api/util/ordinal-satoshi';
 import { ENV } from '../env';
+import { inscriptionContentToJson } from './helpers';
 import { runMigrations } from './migrations';
 import { connectPostgres } from './postgres-tools';
 import { BasePgStore } from './postgres-tools/base-pg-store';
@@ -9,10 +10,12 @@ import {
   DbInscription,
   DbInscriptionContent,
   DbInscriptionInsert,
+  DbJsonContent,
   DbLocation,
   DbLocationInsert,
   DbPaginatedResult,
   INSCRIPTIONS_COLUMNS,
+  JSON_CONTENTS_COLUMNS,
   LOCATIONS_COLUMNS,
 } from './types';
 
@@ -70,44 +73,43 @@ export class PgStore extends BasePgStore {
     location: DbLocationInsert;
   }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
-      let dbInscription = await this.sql<DbInscription[]>`
-        SELECT ${sql(INSCRIPTIONS_COLUMNS)}
-        FROM inscriptions
-        WHERE genesis_id = ${args.inscription.genesis_id}
+      const dbInscription = await sql<DbInscription[]>`
+        INSERT INTO inscriptions ${sql(args.inscription)}
+        ON CONFLICT ON CONSTRAINT inscriptions_genesis_id_unique DO NOTHING
+        RETURNING id
       `;
-      if (dbInscription.count === 0) {
-        dbInscription = await sql<DbInscription[]>`
-          INSERT INTO inscriptions ${sql(args.inscription)}
-          ON CONFLICT ON CONSTRAINT inscriptions_genesis_id_unique DO NOTHING
-          RETURNING ${this.sql(INSCRIPTIONS_COLUMNS)}
-        `;
-      }
-      let dbLocation = await this.sql<DbLocation[]>`
-        SELECT ${sql(LOCATIONS_COLUMNS)}
-        FROM locations
-        WHERE inscription_id = ${dbInscription[0].id} AND genesis = TRUE
+      if (dbInscription.count === 0) return; // Idempotent overwrite.
+      const location = {
+        block_height: args.location.block_height,
+        block_hash: args.location.block_hash,
+        tx_id: args.location.tx_id,
+        address: args.location.address,
+        output: args.location.output,
+        offset: args.location.offset,
+        value: args.location.value,
+        sat_ordinal: args.location.sat_ordinal,
+        sat_rarity: args.location.sat_rarity,
+        sat_coinbase_height: args.location.sat_coinbase_height,
+        genesis: args.location.genesis,
+        current: args.location.current,
+        timestamp: sql`to_timestamp(${args.location.timestamp})`,
+        inscription_id: dbInscription[0].id,
+      };
+      await sql<DbLocation[]>`
+        INSERT INTO locations ${sql(location)}
+        ON CONFLICT ON CONSTRAINT locations_inscription_id_block_hash_unique DO NOTHING
       `;
-      if (dbLocation.count === 0) {
-        const location = {
-          block_height: args.location.block_height,
-          block_hash: args.location.block_hash,
-          tx_id: args.location.tx_id,
-          address: args.location.address,
-          output: args.location.output,
-          offset: args.location.offset,
-          value: args.location.value,
-          sat_ordinal: args.location.sat_ordinal,
-          sat_rarity: args.location.sat_rarity,
-          sat_coinbase_height: args.location.sat_coinbase_height,
-          genesis: args.location.genesis,
-          current: args.location.current,
-          timestamp: sql`to_timestamp(${args.location.timestamp})`,
+      const json = inscriptionContentToJson(args.inscription);
+      if (json) {
+        const values = {
           inscription_id: dbInscription[0].id,
+          p: json.p,
+          op: json.op,
+          content: json,
         };
-        dbLocation = await sql<DbLocation[]>`
-          INSERT INTO locations ${sql(location)}
-          ON CONFLICT ON CONSTRAINT locations_inscription_id_block_hash_unique DO NOTHING
-          RETURNING ${this.sql(LOCATIONS_COLUMNS)}
+        await sql`
+          INSERT INTO json_contents ${sql(values)}
+          ON CONFLICT ON CONSTRAINT json_contents_inscription_id_unique DO NOTHING
         `;
       }
       await this.updateChainTipBlockHeight({ blockHeight: args.location.block_height });
@@ -140,7 +142,8 @@ export class PgStore extends BasePgStore {
       };
       await sql`
         INSERT INTO locations ${sql(location)}
-        ON CONFLICT ON CONSTRAINT locations_inscription_id_block_hash_unique DO NOTHING
+        ON CONFLICT ON CONSTRAINT locations_inscription_id_block_hash_unique DO UPDATE
+          SET current = TRUE
       `;
     });
   }
@@ -389,5 +392,23 @@ export class PgStore extends BasePgStore {
       total: results[0]?.total ?? 0,
       results: results ?? [],
     };
+  }
+
+  async getJsonContent(args: InscriptionIdentifier): Promise<DbJsonContent | undefined> {
+    const results = await this.sql<DbJsonContent[]>`
+      SELECT ${this.sql(JSON_CONTENTS_COLUMNS.map(c => `j.${c}`))}
+      FROM json_contents AS j
+      INNER JOIN inscriptions AS i ON j.inscription_id = i.id
+      WHERE
+        ${
+          'number' in args
+            ? this.sql`i.number = ${args.number}`
+            : this.sql`i.genesis_id = ${args.genesis_id}`
+        }
+      LIMIT 1
+    `;
+    if (results.count === 1) {
+      return results[0];
+    }
   }
 }
