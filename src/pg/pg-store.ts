@@ -367,4 +367,10 @@ export class PgStore extends BasePgStore {
       results: results ?? [],
     };
   }
+
+  async getInscriptionLocations(
+    args: InscriptionIdentifier & { limit: number; offset: number }
+  ): Promise<DbPaginatedResult<DbLocation>> {
+    //
+  }
 }

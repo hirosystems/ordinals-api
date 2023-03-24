@@ -1,5 +1,5 @@
-import { DbFullyLocatedInscriptionResult } from '../../pg/types';
-import { InscriptionResponseType } from '../schemas';
+import { DbFullyLocatedInscriptionResult, DbLocation } from '../../pg/types';
+import { InscriptionLocationResponse, InscriptionResponseType } from '../schemas';
 
 export const DEFAULT_API_LIMIT = 20;
 
@@ -32,6 +32,10 @@ export function parseDbInscriptions(
 }
 export function parseDbInscription(item: DbFullyLocatedInscriptionResult): InscriptionResponseType {
   return parseDbInscriptions([item])[0];
+}
+
+export function parseInscriptionLocations(items: DbLocation[]): InscriptionLocationResponse[] {
+  //
 }
 
 /**

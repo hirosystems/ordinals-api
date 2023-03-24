@@ -269,6 +269,29 @@ export const ApiStatusResponse = Type.Object({
   max_inscription_number: Type.Optional(Type.Integer()),
 });
 
+export const InscriptionLocationResponse = Type.Object({
+  block_height: Type.Integer({ examples: [778921] }),
+  block_hash: Type.String({
+    examples: ['0000000000000000000452773967cdd62297137cdaf79950c5e8bb0c62075133'],
+  }),
+  address: Type.String({
+    examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
+  }),
+  tx_id: Type.String({
+    examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218'],
+  }),
+  location: Type.String({
+    examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218:0:0'],
+  }),
+  output: Type.String({
+    examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218:0'],
+  }),
+  value: Type.String({ examples: ['546'] }),
+  offset: Type.String({ examples: ['0'] }),
+  timestamp: Type.Integer({ examples: [1677733170000] }),
+});
+export type InscriptionLocationResponse = Static<typeof InscriptionLocationResponse>;
+
 export const NotFoundResponse = Type.Object({
   error: Type.Literal('Not found'),
 });
