@@ -7,14 +7,12 @@ import { connectPostgres } from './postgres-tools';
 import { BasePgStore } from './postgres-tools/base-pg-store';
 import {
   DbFullyLocatedInscriptionResult,
-  DbInscription,
   DbInscriptionContent,
   DbInscriptionInsert,
   DbJsonContent,
   DbLocation,
   DbLocationInsert,
   DbPaginatedResult,
-  INSCRIPTIONS_COLUMNS,
   JSON_CONTENTS_COLUMNS,
   LOCATIONS_COLUMNS,
 } from './types';
@@ -73,13 +71,20 @@ export class PgStore extends BasePgStore {
     location: DbLocationInsert;
   }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
-      const dbInscription = await sql<DbInscription[]>`
+      const inscription = await sql<{ id: number }[]>`
         INSERT INTO inscriptions ${sql(args.inscription)}
-        ON CONFLICT ON CONSTRAINT inscriptions_genesis_id_unique DO NOTHING
+        ON CONFLICT ON CONSTRAINT inscriptions_number_unique DO UPDATE SET
+          genesis_id = EXCLUDED.genesis_id,
+          mime_type = EXCLUDED.mime_type,
+          content_type = EXCLUDED.content_type,
+          content_length = EXCLUDED.content_length,
+          content = EXCLUDED.content,
+          fee = EXCLUDED.fee
         RETURNING id
       `;
-      if (dbInscription.count === 0) return; // Idempotent overwrite.
+      const inscription_id = inscription[0].id;
       const location = {
+        inscription_id,
         block_height: args.location.block_height,
         block_hash: args.location.block_hash,
         tx_id: args.location.tx_id,
@@ -93,23 +98,37 @@ export class PgStore extends BasePgStore {
         genesis: args.location.genesis,
         current: args.location.current,
         timestamp: sql`to_timestamp(${args.location.timestamp})`,
-        inscription_id: dbInscription[0].id,
       };
       await sql<DbLocation[]>`
         INSERT INTO locations ${sql(location)}
-        ON CONFLICT ON CONSTRAINT locations_inscription_id_block_hash_unique DO NOTHING
+        ON CONFLICT ON CONSTRAINT locations_inscription_id_block_height_unique DO UPDATE SET
+          block_hash = EXCLUDED.block_hash,
+          tx_id = EXCLUDED.tx_id,
+          address = EXCLUDED.address,
+          output = EXCLUDED.output,
+          "offset" = EXCLUDED.offset,
+          value = EXCLUDED.value,
+          sat_ordinal = EXCLUDED.sat_ordinal,
+          sat_rarity = EXCLUDED.sat_rarity,
+          sat_coinbase_height = EXCLUDED.sat_coinbase_height,
+          genesis = EXCLUDED.genesis,
+          current = EXCLUDED.current,
+          timestamp = EXCLUDED.timestamp
       `;
       const json = inscriptionContentToJson(args.inscription);
       if (json) {
         const values = {
-          inscription_id: dbInscription[0].id,
+          inscription_id,
           p: json.p,
           op: json.op,
           content: json,
         };
         await sql`
           INSERT INTO json_contents ${sql(values)}
-          ON CONFLICT ON CONSTRAINT json_contents_inscription_id_unique DO NOTHING
+          ON CONFLICT ON CONSTRAINT json_contents_inscription_id_unique DO UPDATE SET
+            p = EXCLUDED.p,
+            op = EXCLUDED.op,
+            content = EXCLUDED.content
         `;
       }
       await this.updateChainTipBlockHeight({ blockHeight: args.location.block_height });
@@ -118,14 +137,15 @@ export class PgStore extends BasePgStore {
 
   async insertInscriptionTransfer(args: { location: DbLocationInsert }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
-      const inscription_id = await sql<{ id: number }[]>`
+      const inscription = await sql<{ id: number }[]>`
         SELECT id FROM inscriptions WHERE genesis_id = ${args.location.genesis_id}
       `;
+      const inscription_id = inscription[0].id;
       await sql`
-        UPDATE locations SET current = FALSE WHERE inscription_id = ${inscription_id[0].id}
+        UPDATE locations SET current = FALSE WHERE inscription_id = ${inscription_id}
       `;
       const location = {
-        inscription_id: inscription_id[0].id,
+        inscription_id,
         block_height: args.location.block_height,
         block_hash: args.location.block_hash,
         tx_id: args.location.tx_id,
@@ -142,8 +162,19 @@ export class PgStore extends BasePgStore {
       };
       await sql`
         INSERT INTO locations ${sql(location)}
-        ON CONFLICT ON CONSTRAINT locations_inscription_id_block_hash_unique DO UPDATE
-          SET current = TRUE
+        ON CONFLICT ON CONSTRAINT locations_inscription_id_block_height_unique DO UPDATE SET
+          block_hash = EXCLUDED.block_hash,
+          tx_id = EXCLUDED.tx_id,
+          address = EXCLUDED.address,
+          output = EXCLUDED.output,
+          "offset" = EXCLUDED.offset,
+          value = EXCLUDED.value,
+          sat_ordinal = EXCLUDED.sat_ordinal,
+          sat_rarity = EXCLUDED.sat_rarity,
+          sat_coinbase_height = EXCLUDED.sat_coinbase_height,
+          genesis = EXCLUDED.genesis,
+          current = EXCLUDED.current,
+          timestamp = EXCLUDED.timestamp
       `;
     });
   }

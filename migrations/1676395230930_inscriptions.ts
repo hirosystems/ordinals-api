@@ -38,8 +38,7 @@ export function up(pgm: MigrationBuilder): void {
       notNull: true,
     },
   });
-  pgm.createConstraint('inscriptions', 'inscriptions_genesis_id_unique', 'UNIQUE(genesis_id)');
+  pgm.createConstraint('inscriptions', 'inscriptions_number_unique', 'UNIQUE(number)');
   pgm.createIndex('inscriptions', ['genesis_id']);
-  pgm.createIndex('inscriptions', ['number']);
   pgm.createIndex('inscriptions', ['mime_type']);
 }
