@@ -134,10 +134,12 @@ export class PgStore extends BasePgStore {
 
   async insertInscriptionTransfer(args: { location: DbLocationInsert }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
-      const inscription = await sql<{ id: number }[]>`
-        SELECT id FROM inscriptions WHERE genesis_id = ${args.location.genesis_id}
-      `;
-      const inscription_id = inscription[0].id;
+      const inscription_id = await this.getInscriptionId({ genesis_id: args.location.genesis_id });
+      if (!inscription_id) {
+        throw Error(
+          `Attempting to insert transfer for non-existent inscription ${args.location.genesis_id}`
+        );
+      }
       const location = {
         inscription_id,
         block_height: args.location.block_height,
@@ -177,45 +179,17 @@ export class PgStore extends BasePgStore {
 
   async rollBackInscriptionTransfer(args: { genesis_id: string; output: string }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
-      const inscription = await sql<{ id: number }[]>`
-        SELECT id FROM inscriptions WHERE genesis_id = ${args.genesis_id}
-      `;
-      const inscription_id = inscription[0].id;
+      const inscription_id = await this.getInscriptionId({ genesis_id: args.genesis_id });
+      if (!inscription_id) {
+        throw Error(
+          `Attempting to roll back transfer for non-existent inscription ${args.genesis_id}`
+        );
+      }
       await sql`
         DELETE FROM locations
         WHERE inscription_id = ${inscription_id} AND output = ${args.output}
       `;
       await this.normalizeInscriptionLocations({ inscription_id });
-    });
-  }
-
-  private async normalizeInscriptionLocations(args: { inscription_id: number }): Promise<void> {
-    await this.sqlWriteTransaction(async sql => {
-      await sql`
-        UPDATE locations
-        SET current = FALSE, genesis = FALSE
-        WHERE inscription_id = ${args.inscription_id}
-      `;
-      await sql`
-        UPDATE locations
-        SET current = TRUE
-        WHERE id = (
-          SELECT id FROM locations
-          WHERE inscription_id = ${args.inscription_id}
-          ORDER BY block_height DESC
-          LIMIT 1
-        )
-      `;
-      await sql`
-        UPDATE locations
-        SET genesis = TRUE
-        WHERE id = (
-          SELECT id FROM locations
-          WHERE inscription_id = ${args.inscription_id}
-          ORDER BY block_height ASC
-          LIMIT 1
-        )
-      `;
     });
   }
 
@@ -450,6 +424,45 @@ export class PgStore extends BasePgStore {
     `;
     if (results.count === 1) {
       return results[0];
+    }
+  }
+
+  private async normalizeInscriptionLocations(args: { inscription_id: number }): Promise<void> {
+    await this.sqlWriteTransaction(async sql => {
+      await sql`
+        UPDATE locations
+        SET current = FALSE, genesis = FALSE
+        WHERE inscription_id = ${args.inscription_id}
+      `;
+      await sql`
+        UPDATE locations
+        SET current = TRUE
+        WHERE id = (
+          SELECT id FROM locations
+          WHERE inscription_id = ${args.inscription_id}
+          ORDER BY block_height DESC
+          LIMIT 1
+        )
+      `;
+      await sql`
+        UPDATE locations
+        SET genesis = TRUE
+        WHERE id = (
+          SELECT id FROM locations
+          WHERE inscription_id = ${args.inscription_id}
+          ORDER BY block_height ASC
+          LIMIT 1
+        )
+      `;
+    });
+  }
+
+  private async getInscriptionId(args: { genesis_id: string }): Promise<number | undefined> {
+    const inscription = await this.sql<{ id: number }[]>`
+      SELECT id FROM inscriptions WHERE genesis_id = ${args.genesis_id}
+    `;
+    if (inscription.count) {
+      return inscription[0].id;
     }
   }
 }
