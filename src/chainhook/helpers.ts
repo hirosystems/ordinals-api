@@ -59,8 +59,6 @@ export async function processInscriptionRevealed(payload: unknown, db: PgStore):
           sat_ordinal: BigInt(reveal.ordinal_number),
           sat_rarity: satoshi.rarity,
           sat_coinbase_height: satoshi.blockHeight,
-          genesis: true,
-          current: true,
         },
       });
       logger.info(
@@ -121,8 +119,6 @@ export async function processInscriptionTransferred(payload: unknown, db: PgStor
           sat_ordinal: BigInt(transfer.ordinal_number),
           sat_rarity: satoshi.rarity,
           sat_coinbase_height: satoshi.blockHeight,
-          genesis: false,
-          current: true,
         },
       });
       logger.info(

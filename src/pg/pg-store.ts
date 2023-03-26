@@ -95,8 +95,6 @@ export class PgStore extends BasePgStore {
         sat_ordinal: args.location.sat_ordinal,
         sat_rarity: args.location.sat_rarity,
         sat_coinbase_height: args.location.sat_coinbase_height,
-        genesis: args.location.genesis,
-        current: args.location.current,
         timestamp: sql`to_timestamp(${args.location.timestamp})`,
       };
       await sql<DbLocation[]>`
@@ -111,8 +109,6 @@ export class PgStore extends BasePgStore {
           sat_ordinal = EXCLUDED.sat_ordinal,
           sat_rarity = EXCLUDED.sat_rarity,
           sat_coinbase_height = EXCLUDED.sat_coinbase_height,
-          genesis = EXCLUDED.genesis,
-          current = EXCLUDED.current,
           timestamp = EXCLUDED.timestamp
       `;
       const json = inscriptionContentToJson(args.inscription);
@@ -131,6 +127,7 @@ export class PgStore extends BasePgStore {
             content = EXCLUDED.content
         `;
       }
+      await this.normalizeInscriptionLocations({ inscription_id });
       await this.updateChainTipBlockHeight({ blockHeight: args.location.block_height });
     });
   }
@@ -141,9 +138,6 @@ export class PgStore extends BasePgStore {
         SELECT id FROM inscriptions WHERE genesis_id = ${args.location.genesis_id}
       `;
       const inscription_id = inscription[0].id;
-      await sql`
-        UPDATE locations SET current = FALSE WHERE inscription_id = ${inscription_id}
-      `;
       const location = {
         inscription_id,
         block_height: args.location.block_height,
@@ -156,8 +150,6 @@ export class PgStore extends BasePgStore {
         sat_ordinal: args.location.sat_ordinal,
         sat_rarity: args.location.sat_rarity,
         sat_coinbase_height: args.location.sat_coinbase_height,
-        genesis: args.location.genesis,
-        current: args.location.current,
         timestamp: sql`to_timestamp(${args.location.timestamp})`,
       };
       await sql`
@@ -172,37 +164,55 @@ export class PgStore extends BasePgStore {
           sat_ordinal = EXCLUDED.sat_ordinal,
           sat_rarity = EXCLUDED.sat_rarity,
           sat_coinbase_height = EXCLUDED.sat_coinbase_height,
-          genesis = EXCLUDED.genesis,
-          current = EXCLUDED.current,
           timestamp = EXCLUDED.timestamp
       `;
+      await this.normalizeInscriptionLocations({ inscription_id });
     });
   }
 
   async rollBackInscriptionGenesis(args: { genesis_id: string }): Promise<void> {
-    // This will cascade into the `locations` table.
+    // This will cascade into dependent tables.
     await this.sql`DELETE FROM inscriptions WHERE genesis_id = ${args.genesis_id}`;
   }
 
   async rollBackInscriptionTransfer(args: { genesis_id: string; output: string }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
-      const inscription_id = await sql<{ id: number }[]>`
+      const inscription = await sql<{ id: number }[]>`
         SELECT id FROM inscriptions WHERE genesis_id = ${args.genesis_id}
       `;
-      // Delete location.
+      const inscription_id = inscription[0].id;
       await sql`
         DELETE FROM locations
-        WHERE inscription_id = ${inscription_id[0].id} AND output = ${args.output}
+        WHERE inscription_id = ${inscription_id} AND output = ${args.output}
       `;
-      // Update `current` flag to latest location.
+      await this.normalizeInscriptionLocations({ inscription_id });
+    });
+  }
+
+  private async normalizeInscriptionLocations(args: { inscription_id: number }): Promise<void> {
+    await this.sqlWriteTransaction(async sql => {
       await sql`
-        UPDATE locations SET current = FALSE WHERE inscription_id = ${inscription_id[0].id}
+        UPDATE locations
+        SET current = FALSE, genesis = FALSE
+        WHERE inscription_id = ${args.inscription_id}
       `;
       await sql`
-        UPDATE locations SET current = TRUE WHERE id = (
+        UPDATE locations
+        SET current = TRUE
+        WHERE id = (
           SELECT id FROM locations
-          WHERE inscription_id = ${inscription_id[0].id}
+          WHERE inscription_id = ${args.inscription_id}
           ORDER BY block_height DESC
+          LIMIT 1
+        )
+      `;
+      await sql`
+        UPDATE locations
+        SET genesis = TRUE
+        WHERE id = (
+          SELECT id FROM locations
+          WHERE inscription_id = ${args.inscription_id}
+          ORDER BY block_height ASC
           LIMIT 1
         )
       `;

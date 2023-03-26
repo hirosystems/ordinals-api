@@ -42,8 +42,6 @@ export type DbLocationInsert = {
   sat_rarity: string;
   sat_coinbase_height: number;
   timestamp: number;
-  genesis: boolean;
-  current: boolean;
 };
 
 export type DbLocation = {

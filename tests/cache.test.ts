@@ -42,8 +42,6 @@ describe('ETag cache', () => {
         sat_ordinal: 257418248345364n,
         sat_rarity: 'common',
         sat_coinbase_height: 650000,
-        genesis: true,
-        current: true,
       },
     });
     const response = await fastify.inject({
@@ -118,8 +116,6 @@ describe('ETag cache', () => {
         sat_ordinal: 257418248345364n,
         sat_rarity: 'common',
         sat_coinbase_height: 650000,
-        genesis: true,
-        current: true,
       },
     });
     await db.insertInscriptionGenesis({
@@ -145,8 +141,6 @@ describe('ETag cache', () => {
         sat_ordinal: 257418248345364n,
         sat_rarity: 'common',
         sat_coinbase_height: 650000,
-        genesis: true,
-        current: true,
       },
     });
 
@@ -182,8 +176,6 @@ describe('ETag cache', () => {
         sat_ordinal: 257418248345364n,
         sat_rarity: 'common',
         sat_coinbase_height: 20000,
-        genesis: false,
-        current: true,
       },
     });
     const cached2 = await fastify.inject({

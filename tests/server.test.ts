@@ -283,8 +283,6 @@ describe('EventServer', () => {
           sat_ordinal: 5n,
           sat_rarity: 'common',
           sat_coinbase_height: 0,
-          genesis: true,
-          current: true,
         },
       });
       const transfer = {

@@ -55,8 +55,6 @@ describe('Status', () => {
         sat_ordinal: 257418248345364n,
         sat_rarity: 'common',
         sat_coinbase_height: 650000,
-        genesis: true,
-        current: true,
       },
     });
 

@@ -43,8 +43,6 @@ describe('/inscriptions', () => {
           sat_ordinal: 257418248345364n,
           sat_rarity: 'common',
           sat_coinbase_height: 650000,
-          genesis: true,
-          current: true,
         },
       });
       await db.insertInscriptionGenesis({
@@ -70,8 +68,6 @@ describe('/inscriptions', () => {
           sat_ordinal: 257418248345364n,
           sat_rarity: 'common',
           sat_coinbase_height: 650000,
-          genesis: true,
-          current: true,
         },
       });
       const expected = {
@@ -139,8 +135,6 @@ describe('/inscriptions', () => {
           sat_ordinal: 257418248345364n,
           sat_rarity: 'common',
           sat_coinbase_height: 650000,
-          genesis: true,
-          current: true,
         },
       });
 
@@ -159,8 +153,6 @@ describe('/inscriptions', () => {
           sat_ordinal: 257418248345364n,
           sat_rarity: 'common',
           sat_coinbase_height: 650000,
-          genesis: false,
-          current: true,
         },
       });
       const response = await fastify.inject({
@@ -207,8 +199,6 @@ describe('/inscriptions', () => {
           sat_ordinal: 257418248345364n,
           sat_rarity: 'common',
           sat_coinbase_height: 650000,
-          genesis: false,
-          current: true,
         },
       });
       const response2 = await fastify.inject({
@@ -267,8 +257,6 @@ describe('/inscriptions', () => {
           sat_ordinal: 257418248345364n,
           sat_rarity: 'common',
           sat_coinbase_height: 650000,
-          genesis: true,
-          current: true,
         },
       });
 
@@ -287,8 +275,6 @@ describe('/inscriptions', () => {
           sat_ordinal: 257418248345364n,
           sat_rarity: 'common',
           sat_coinbase_height: 650000,
-          genesis: false,
-          current: true,
         },
       });
       const response = await fastify.inject({
@@ -338,8 +324,6 @@ describe('/inscriptions', () => {
           sat_ordinal: 257418248345364n,
           sat_rarity: 'common',
           sat_coinbase_height: 650000,
-          genesis: false,
-          current: true,
         },
       });
       const response2 = await fastify.inject({
@@ -413,8 +397,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 257418248345364n,
             sat_rarity: 'common',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
         await db.insertInscriptionGenesis({
@@ -440,8 +422,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 257418248345364n,
             sat_rarity: 'common',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
 
@@ -544,8 +524,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 257418248345364n,
             sat_rarity: 'common',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
         await db.insertInscriptionGenesis({
@@ -571,8 +549,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 257418248345364n,
             sat_rarity: 'epic',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
 
@@ -627,8 +603,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 257418248345364n,
             sat_rarity: 'common',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
         await db.insertInscriptionGenesis({
@@ -654,8 +628,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 257418248345364n,
             sat_rarity: 'epic',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
 
@@ -714,8 +686,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 257418248345364n,
             sat_rarity: 'common',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
         await db.insertInscriptionGenesis({
@@ -741,8 +711,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 257418248345364n,
             sat_rarity: 'epic',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
 
@@ -797,8 +765,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 257418248345364n,
             sat_rarity: 'common',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
         await db.insertInscriptionGenesis({
@@ -824,8 +790,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 257418248345364n,
             sat_rarity: 'epic',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
 
@@ -881,8 +845,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 257418248345364n,
             sat_rarity: 'common',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
         await db.insertInscriptionGenesis({
@@ -908,8 +870,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 257418248345364n,
             sat_rarity: 'epic',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
 
@@ -949,8 +909,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 257418248345364n,
             sat_rarity: 'common',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
         await db.insertInscriptionGenesis({
@@ -976,8 +934,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 257418248345364n,
             sat_rarity: 'epic',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
 
@@ -1024,8 +980,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 257418248345364n,
             sat_rarity: 'common',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
         await db.insertInscriptionGenesis({
@@ -1051,8 +1005,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 1000000000000n,
             sat_rarity: 'epic',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
 
@@ -1099,8 +1051,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 257418248345364n,
             sat_rarity: 'common',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
         await db.insertInscriptionGenesis({
@@ -1126,8 +1076,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 1000000000000n,
             sat_rarity: 'epic',
             sat_coinbase_height: 750000,
-            genesis: true,
-            current: true,
           },
         });
 
@@ -1174,8 +1122,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 257418248345364n,
             sat_rarity: 'common',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
         await db.insertInscriptionGenesis({
@@ -1201,8 +1147,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 1000000000000n,
             sat_rarity: 'epic',
             sat_coinbase_height: 750000,
-            genesis: true,
-            current: true,
           },
         });
 
@@ -1249,8 +1193,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 257418248345364n,
             sat_rarity: 'common',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
         await db.insertInscriptionGenesis({
@@ -1276,8 +1218,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 257418248345364n,
             sat_rarity: 'epic',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
 
@@ -1317,8 +1257,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 257418248345364n,
             sat_rarity: 'common',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
         await db.insertInscriptionGenesis({
@@ -1344,8 +1282,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 257418248345364n,
             sat_rarity: 'epic',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
 
@@ -1395,8 +1331,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 257418248345364n,
             sat_rarity: 'common',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
         await db.insertInscriptionGenesis({
@@ -1422,8 +1356,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 257418248345364n,
             sat_rarity: 'epic',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
         await db.insertInscriptionGenesis({
@@ -1449,8 +1381,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 0n,
             sat_rarity: 'mythic',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
 
@@ -1501,8 +1431,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 3n,
             sat_rarity: 'common',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
         await db.insertInscriptionGenesis({
@@ -1528,8 +1456,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 5n,
             sat_rarity: 'epic',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
         await db.insertInscriptionGenesis({
@@ -1555,8 +1481,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 0n,
             sat_rarity: 'mythic',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
 
@@ -1607,8 +1531,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 3n,
             sat_rarity: 'common',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
         await db.insertInscriptionGenesis({
@@ -1634,8 +1556,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 5n,
             sat_rarity: 'epic',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
         await db.insertInscriptionGenesis({
@@ -1661,8 +1581,6 @@ describe('/inscriptions', () => {
             sat_ordinal: 0n,
             sat_rarity: 'mythic',
             sat_coinbase_height: 650000,
-            genesis: true,
-            current: true,
           },
         });
 
