@@ -7,6 +7,7 @@ import { InscriptionsRoutes } from './routes/inscriptions';
 import { PgStore } from '../pg/pg-store';
 import { SatRoutes } from './routes/sats';
 import { StatusRoutes } from './routes/status';
+import FastifyMetrics from 'fastify-metrics';
 
 export const Api: FastifyPluginAsync<
   Record<never, never>,
@@ -25,6 +26,9 @@ export async function buildApiServer(args: { db: PgStore }) {
   }).withTypeProvider<TypeBoxTypeProvider>();
 
   fastify.decorate('db', args.db);
+  if (process.env.NODE_ENV === 'production') {
+    await fastify.register(FastifyMetrics);
+  }
   await fastify.register(FastifyCors);
   await fastify.register(Api, { prefix: '/ordinals/v1' });
   await fastify.register(Api, { prefix: '/ordinals' });
