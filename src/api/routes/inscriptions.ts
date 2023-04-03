@@ -214,11 +214,11 @@ const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTyp
   );
 
   fastify.get(
-    '/inscriptions/:id/history',
+    '/inscriptions/:id/transfers',
     {
       schema: {
-        summary: 'Inscription history',
-        description: 'Retrieves the ownership history of a single inscription',
+        summary: 'Inscription transfers',
+        description: 'Retrieves all transfers for a single inscription',
         tags: ['Inscriptions'],
         params: Type.Object({
           id: InscriptionIdentifierParam,

@@ -279,7 +279,7 @@ describe('/inscriptions', () => {
       });
       const response = await fastify.inject({
         method: 'GET',
-        url: '/ordinals/v1/inscriptions/38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0/history',
+        url: '/ordinals/v1/inscriptions/38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0/transfers',
       });
       expect(response.statusCode).toBe(200);
       const json1 = response.json();
@@ -328,7 +328,7 @@ describe('/inscriptions', () => {
       });
       const response2 = await fastify.inject({
         method: 'GET',
-        url: '/ordinals/v1/inscriptions/38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0/history',
+        url: '/ordinals/v1/inscriptions/38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0/transfers',
       });
       expect(response2.statusCode).toBe(200);
       const json2 = response2.json();
