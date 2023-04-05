@@ -70,6 +70,7 @@ export class PgStore extends BasePgStore {
     inscription: DbInscriptionInsert;
     location: DbLocationInsert;
   }): Promise<void> {
+    let inscription_id: number | undefined;
     await this.sqlWriteTransaction(async sql => {
       const inscription = await sql<{ id: number }[]>`
         INSERT INTO inscriptions ${sql(args.inscription)}
@@ -82,7 +83,7 @@ export class PgStore extends BasePgStore {
           fee = EXCLUDED.fee
         RETURNING id
       `;
-      const inscription_id = inscription[0].id;
+      inscription_id = inscription[0].id;
       const location = {
         inscription_id,
         block_height: args.location.block_height,
@@ -127,17 +128,18 @@ export class PgStore extends BasePgStore {
             content = EXCLUDED.content
         `;
       }
-      await this.normalizeInscriptionLocations({ inscription_id });
       await this.updateChainTipBlockHeight({ blockHeight: args.location.block_height });
     });
+    if (inscription_id) await this.normalizeInscriptionLocations({ inscription_id });
   }
 
   async insertInscriptionTransfer(args: { location: DbLocationInsert }): Promise<void> {
+    let inscription_id: number | undefined;
     await this.sqlWriteTransaction(async sql => {
       const inscription = await sql<{ id: number }[]>`
         SELECT id FROM inscriptions WHERE genesis_id = ${args.location.genesis_id}
       `;
-      const inscription_id = inscription[0].id;
+      inscription_id = inscription[0].id;
       const location = {
         inscription_id,
         block_height: args.location.block_height,
@@ -166,8 +168,8 @@ export class PgStore extends BasePgStore {
           sat_coinbase_height = EXCLUDED.sat_coinbase_height,
           timestamp = EXCLUDED.timestamp
       `;
-      await this.normalizeInscriptionLocations({ inscription_id });
     });
+    if (inscription_id) await this.normalizeInscriptionLocations({ inscription_id });
   }
 
   async rollBackInscriptionGenesis(args: { genesis_id: string }): Promise<void> {
@@ -176,47 +178,38 @@ export class PgStore extends BasePgStore {
   }
 
   async rollBackInscriptionTransfer(args: { genesis_id: string; output: string }): Promise<void> {
+    let inscription_id: number | undefined;
     await this.sqlWriteTransaction(async sql => {
       const inscription = await sql<{ id: number }[]>`
         SELECT id FROM inscriptions WHERE genesis_id = ${args.genesis_id}
       `;
-      const inscription_id = inscription[0].id;
+      inscription_id = inscription[0].id;
       await sql`
         DELETE FROM locations
         WHERE inscription_id = ${inscription_id} AND output = ${args.output}
       `;
-      await this.normalizeInscriptionLocations({ inscription_id });
     });
+    if (inscription_id) await this.normalizeInscriptionLocations({ inscription_id });
   }
 
   private async normalizeInscriptionLocations(args: { inscription_id: number }): Promise<void> {
-    await this.sqlWriteTransaction(async sql => {
-      await sql`
-        UPDATE locations
-        SET current = FALSE, genesis = FALSE
+    await this.sql`
+      WITH i_genesis AS (
+        SELECT id FROM locations
         WHERE inscription_id = ${args.inscription_id}
-      `;
-      await sql`
-        UPDATE locations
-        SET current = TRUE
-        WHERE id = (
-          SELECT id FROM locations
-          WHERE inscription_id = ${args.inscription_id}
-          ORDER BY block_height DESC
-          LIMIT 1
-        )
-      `;
-      await sql`
-        UPDATE locations
-        SET genesis = TRUE
-        WHERE id = (
-          SELECT id FROM locations
-          WHERE inscription_id = ${args.inscription_id}
-          ORDER BY block_height ASC
-          LIMIT 1
-        )
-      `;
-    });
+        ORDER BY block_height ASC
+        LIMIT 1
+      ), i_current AS (
+        SELECT id FROM locations
+        WHERE inscription_id = ${args.inscription_id}
+        ORDER BY block_height DESC
+        LIMIT 1
+      )
+      UPDATE locations SET
+        current = (CASE WHEN id = (SELECT id FROM i_current) THEN TRUE ELSE FALSE END),
+        genesis = (CASE WHEN id = (SELECT id FROM i_genesis) THEN TRUE ELSE FALSE END)
+      WHERE inscription_id = ${args.inscription_id}
+    `;
   }
 
   async getInscriptionCurrentLocation(args: { output: string }): Promise<DbLocation | undefined> {
