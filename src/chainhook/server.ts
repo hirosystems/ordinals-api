@@ -123,11 +123,19 @@ const Chainhook: FastifyPluginCallback<Record<never, never>, Server, TypeBoxType
 ) => {
   fastify.addHook('preHandler', isAuthorizedChainhookEvent);
   fastify.post('/chainhook/inscription_revealed', async (request, reply) => {
-    await processInscriptionRevealed(request.body, fastify.db);
+    try {
+      await processInscriptionRevealed(request.body, fastify.db);
+    } catch (error) {
+      logger.error(error, `EventServer error processing inscription_revealed`);
+    }
     await reply.code(200).send();
   });
   fastify.post('/chainhook/inscription_transferred', async (request, reply) => {
-    await processInscriptionTransferred(request.body, fastify.db);
+    try {
+      await processInscriptionTransferred(request.body, fastify.db);
+    } catch (error) {
+      logger.error(error, `EventServer error processing inscription_transferred`);
+    }
     await reply.code(200).send();
   });
   done();
