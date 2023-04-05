@@ -46,20 +46,22 @@ async function registerChainhookPredicates(this: FastifyInstance) {
     await request(`${CHAINHOOK_BASE_PATH}/v1/chainhooks`, {
       method: 'POST',
       body: JSON.stringify({
-        bitcoin: {
-          uuid: uuid,
-          name: name,
-          network: 'mainnet',
-          version: 1,
-          start_block: blockHeight,
-          predicate: {
-            scope: 'protocol',
-            ordinal: name,
-          },
-          action: {
-            http_post: {
-              url: `http://${ENV.EXTERNAL_HOSTNAME}/chainhook/${name}`,
-              authorization_header: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}`,
+        uuid: uuid,
+        name: name,
+        version: 1,
+        chain: 'bitcoin',
+        networks: {
+          mainnet: {
+            start_block: blockHeight,
+            if_this: {
+              scope: 'protocol',
+              ordinal: name,
+            },
+            then_that: {
+              http_post: {
+                url: `http://${ENV.EXTERNAL_HOSTNAME}/chainhook/${name}`,
+                authorization_header: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}`,
+              },
             },
           },
         },
