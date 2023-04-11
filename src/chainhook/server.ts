@@ -8,11 +8,16 @@ import Fastify, {
 } from 'fastify';
 import { Server } from 'http';
 import { request } from 'undici';
+
 import { ENV } from '../env';
 import { logger, PINO_CONFIG } from '../logger';
 import { PgStore } from '../pg/pg-store';
 import { timeout } from '../pg/postgres-tools/helpers';
-import { processInscriptionRevealed, processInscriptionTransferred } from './helpers';
+import {
+  processInscriptionRevealed,
+  processInscriptionTransferred,
+  refreshMaterializedViewsDebounced,
+} from './helpers';
 
 export const CHAINHOOK_BASE_PATH = `http://${ENV.CHAINHOOK_NODE_RPC_HOST}:${ENV.CHAINHOOK_NODE_RPC_PORT}`;
 export const REVEAL__PREDICATE_UUID = randomUUID();
@@ -125,6 +130,7 @@ const Chainhook: FastifyPluginCallback<Record<never, never>, Server, TypeBoxType
   fastify.post('/chainhook/inscription_revealed', async (request, reply) => {
     try {
       await processInscriptionRevealed(request.body, fastify.db);
+      refreshMaterializedViewsDebounced(fastify.db);
     } catch (error) {
       logger.error(error, `EventServer error processing inscription_revealed`);
     }

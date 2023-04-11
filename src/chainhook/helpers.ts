@@ -127,3 +127,32 @@ export async function processInscriptionTransferred(payload: unknown, db: PgStor
     }
   }
 }
+
+/**
+ * Refresh materialized views in the DB.
+ */
+export const refreshMaterializedViewsDebounced = debounceTrailing(
+  async function refreshMaterializedViews(db: PgStore): Promise<void> {
+    await db.refreshMaterializedViews();
+  },
+  10_000 // delays for 10 seconds, only then refreshes (once for all events in that time-frame)
+);
+
+type Procedure = (...args: any[]) => void | Promise<void>;
+
+/**
+ * Debounce a function call to the trailing edge of a delay.
+ * @internal
+ */
+function debounceTrailing<F extends Procedure>(
+  func: F,
+  delay: number
+): (...args: Parameters<F>) => void {
+  let timeoutId: NodeJS.Timeout | null = null;
+  return (...args: Parameters<F>): void => {
+    if (timeoutId) clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+      void func(...args);
+    }, delay);
+  };
+}

@@ -1,4 +1,4 @@
-import { ValuesRowList } from 'postgres';
+import { Row, RowList, ValuesRowList } from 'postgres';
 
 import { Order, OrderBy } from '../api/schemas';
 import { SatoshiRarity } from '../api/util/ordinal-satoshi';
@@ -451,17 +451,11 @@ export class PgStore extends BasePgStore {
 
   async getInscriptionCountPerBlock(): Promise<ValuesRowList<DbInscriptionCountPerBlock[]>> {
     return await this.sql<DbInscriptionCountPerBlock[]>`
-      SELECT t1.block_height,
-        COUNT(*) FILTER (WHERE t2.genesis = true) AS count,
-        SUM(COUNT(*) FILTER (WHERE t2.genesis = true)) OVER (ORDER BY t1.block_height) AS scan_count
-      FROM (
-        SELECT DISTINCT block_height
-        FROM locations
-      ) AS t1
-      LEFT JOIN locations AS t2
-      ON t1.block_height = t2.block_height
-      GROUP BY t1.block_height
-      ORDER BY t1.block_height ASC;
+      SELECT * FROM stats_inscriptions_per_block
     `.values();
+  }
+
+  async refreshMaterializedViews(): Promise<RowList<Row[]>> {
+    return await this.sql`REFRESH MATERIALIZED VIEW CONCURRENTLY stats_inscriptions_per_block`;
   }
 }
