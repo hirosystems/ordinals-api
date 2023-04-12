@@ -16,6 +16,7 @@ import { processInscriptionRevealed, processInscriptionTransferred } from './hel
 
 export const CHAINHOOK_BASE_PATH = `http://${ENV.CHAINHOOK_NODE_RPC_HOST}:${ENV.CHAINHOOK_NODE_RPC_PORT}`;
 export const REVEAL__PREDICATE_UUID = randomUUID();
+export const TRANSFER__PREDICATE_UUID = randomUUID();
 
 /**
  * Ping the chainhooks node indefinitely until it's ready.
@@ -45,20 +46,22 @@ async function registerChainhookPredicates(this: FastifyInstance) {
     await request(`${CHAINHOOK_BASE_PATH}/v1/chainhooks`, {
       method: 'POST',
       body: JSON.stringify({
-        bitcoin: {
-          uuid: uuid,
-          name: name,
-          network: 'mainnet',
-          version: 1,
-          start_block: blockHeight,
-          predicate: {
-            scope: 'protocol',
-            ordinal: name,
-          },
-          action: {
-            http_post: {
-              url: `http://${ENV.EXTERNAL_HOSTNAME}/chainhook/inscription_revealed`,
-              authorization_header: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}`,
+        uuid: uuid,
+        name: name,
+        version: 1,
+        chain: 'bitcoin',
+        networks: {
+          mainnet: {
+            start_block: blockHeight,
+            if_this: {
+              scope: 'protocol',
+              ordinal: name,
+            },
+            then_that: {
+              http_post: {
+                url: `http://${ENV.EXTERNAL_HOSTNAME}/chainhook/${name}`,
+                authorization_header: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}`,
+              },
             },
           },
         },
@@ -71,6 +74,7 @@ async function registerChainhookPredicates(this: FastifyInstance) {
 
   try {
     await register('inscription_revealed', REVEAL__PREDICATE_UUID, blockHeight);
+    await register('inscription_transferred', TRANSFER__PREDICATE_UUID, blockHeight);
   } catch (error) {
     logger.error(error, `EventServer unable to register predicate`);
   }
@@ -93,6 +97,7 @@ async function removeChainhookPredicates(this: FastifyInstance) {
 
   try {
     await deregister('inscription_revealed', REVEAL__PREDICATE_UUID);
+    await deregister('inscription_transferred', TRANSFER__PREDICATE_UUID);
   } catch (error) {
     logger.error(error, `EventServer unable to deregister predicate`);
   }
@@ -118,11 +123,19 @@ const Chainhook: FastifyPluginCallback<Record<never, never>, Server, TypeBoxType
 ) => {
   fastify.addHook('preHandler', isAuthorizedChainhookEvent);
   fastify.post('/chainhook/inscription_revealed', async (request, reply) => {
-    await processInscriptionRevealed(request.body, fastify.db);
+    try {
+      await processInscriptionRevealed(request.body, fastify.db);
+    } catch (error) {
+      logger.error(error, `EventServer error processing inscription_revealed`);
+    }
     await reply.code(200).send();
   });
-  fastify.post('/chainhook/inscription_transfered', async (request, reply) => {
-    await processInscriptionTransferred(request.body, fastify.db);
+  fastify.post('/chainhook/inscription_transferred', async (request, reply) => {
+    try {
+      await processInscriptionTransferred(request.body, fastify.db);
+    } catch (error) {
+      logger.error(error, `EventServer error processing inscription_transferred`);
+    }
     await reply.code(200).send();
   });
   done();

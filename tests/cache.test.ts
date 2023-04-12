@@ -30,7 +30,7 @@ describe('ETag cache', () => {
         fee: 2805n,
       },
       location: {
-        inscription_id: 0,
+        genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
         block_height: 775617,
         block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
         tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
@@ -42,8 +42,6 @@ describe('ETag cache', () => {
         sat_ordinal: 257418248345364n,
         sat_rarity: 'common',
         sat_coinbase_height: 650000,
-        genesis: true,
-        current: true,
       },
     });
     const response = await fastify.inject({
@@ -106,7 +104,7 @@ describe('ETag cache', () => {
         fee: 705n,
       },
       location: {
-        inscription_id: 0,
+        genesis_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
         block_height: 778575,
         block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
         tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
@@ -118,8 +116,6 @@ describe('ETag cache', () => {
         sat_ordinal: 257418248345364n,
         sat_rarity: 'common',
         sat_coinbase_height: 650000,
-        genesis: true,
-        current: true,
       },
     });
     await db.insertInscriptionGenesis({
@@ -133,7 +129,7 @@ describe('ETag cache', () => {
         fee: 2805n,
       },
       location: {
-        inscription_id: 0,
+        genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
         block_height: 775617,
         block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
         tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
@@ -145,8 +141,6 @@ describe('ETag cache', () => {
         sat_ordinal: 257418248345364n,
         sat_rarity: 'common',
         sat_coinbase_height: 650000,
-        genesis: true,
-        current: true,
       },
     });
 
@@ -168,9 +162,9 @@ describe('ETag cache', () => {
     expect(cached.statusCode).toBe(304);
 
     // Simulate new location
-    await db.updateInscriptionLocation({
+    await db.insertInscriptionTransfer({
       location: {
-        inscription_id: 2,
+        genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
         block_height: 775618,
         block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a9ff',
         tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
@@ -182,8 +176,6 @@ describe('ETag cache', () => {
         sat_ordinal: 257418248345364n,
         sat_rarity: 'common',
         sat_coinbase_height: 20000,
-        genesis: false,
-        current: true,
       },
     });
     const cached2 = await fastify.inject({

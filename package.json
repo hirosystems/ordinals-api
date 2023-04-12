@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "author": "Hiro Systems PBC <engineering@hiro.so> (https://hiro.so)",
-  "license": "GPL-3.0",
+  "license": "Apache 2.0",
   "scripts": {
     "build": "rimraf ./dist && tsc --project tsconfig.build.json",
     "start": "node dist/src/index.js",
@@ -54,6 +54,7 @@
     "bitcoinjs-lib": "^6.1.0",
     "env-schema": "^5.2.0",
     "fastify": "^4.3.0",
+    "fastify-metrics": "^10.2.0",
     "node-pg-migrate": "^6.2.2",
     "pino": "^8.10.0",
     "postgres": "^3.3.3",

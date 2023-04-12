@@ -1,18 +1,19 @@
 import { Order, OrderBy } from '../api/schemas';
 import { SatoshiRarity } from '../api/util/ordinal-satoshi';
 import { ENV } from '../env';
+import { inscriptionContentToJson } from './helpers';
 import { runMigrations } from './migrations';
 import { connectPostgres } from './postgres-tools';
 import { BasePgStore } from './postgres-tools/base-pg-store';
 import {
   DbFullyLocatedInscriptionResult,
-  DbInscription,
   DbInscriptionContent,
   DbInscriptionInsert,
+  DbJsonContent,
   DbLocation,
   DbLocationInsert,
   DbPaginatedResult,
-  INSCRIPTIONS_COLUMNS,
+  JSON_CONTENTS_COLUMNS,
   LOCATIONS_COLUMNS,
 } from './types';
 
@@ -69,60 +70,146 @@ export class PgStore extends BasePgStore {
     inscription: DbInscriptionInsert;
     location: DbLocationInsert;
   }): Promise<void> {
+    let inscription_id: number | undefined;
     await this.sqlWriteTransaction(async sql => {
-      let dbInscription = await this.sql<DbInscription[]>`
-        SELECT ${sql(INSCRIPTIONS_COLUMNS)}
-        FROM inscriptions
-        WHERE genesis_id = ${args.inscription.genesis_id}
+      const inscription = await sql<{ id: number }[]>`
+        INSERT INTO inscriptions ${sql(args.inscription)}
+        ON CONFLICT ON CONSTRAINT inscriptions_number_unique DO UPDATE SET
+          genesis_id = EXCLUDED.genesis_id,
+          mime_type = EXCLUDED.mime_type,
+          content_type = EXCLUDED.content_type,
+          content_length = EXCLUDED.content_length,
+          content = EXCLUDED.content,
+          fee = EXCLUDED.fee
+        RETURNING id
       `;
-      if (dbInscription.count === 0) {
-        dbInscription = await sql<DbInscription[]>`
-          INSERT INTO inscriptions ${sql(args.inscription)}
-          ON CONFLICT ON CONSTRAINT inscriptions_genesis_id_unique DO NOTHING
-          RETURNING ${this.sql(INSCRIPTIONS_COLUMNS)}
-        `;
-      }
-      let dbLocation = await this.sql<DbLocation[]>`
-        SELECT ${sql(LOCATIONS_COLUMNS)}
-        FROM locations
-        WHERE inscription_id = ${dbInscription[0].id} AND genesis = TRUE
+      inscription_id = inscription[0].id;
+      const location = {
+        inscription_id,
+        block_height: args.location.block_height,
+        block_hash: args.location.block_hash,
+        tx_id: args.location.tx_id,
+        address: args.location.address,
+        output: args.location.output,
+        offset: args.location.offset,
+        value: args.location.value,
+        sat_ordinal: args.location.sat_ordinal,
+        sat_rarity: args.location.sat_rarity,
+        sat_coinbase_height: args.location.sat_coinbase_height,
+        timestamp: sql`to_timestamp(${args.location.timestamp})`,
+      };
+      await sql<DbLocation[]>`
+        INSERT INTO locations ${sql(location)}
+        ON CONFLICT ON CONSTRAINT locations_inscription_id_block_height_unique DO UPDATE SET
+          block_hash = EXCLUDED.block_hash,
+          tx_id = EXCLUDED.tx_id,
+          address = EXCLUDED.address,
+          output = EXCLUDED.output,
+          "offset" = EXCLUDED.offset,
+          value = EXCLUDED.value,
+          sat_ordinal = EXCLUDED.sat_ordinal,
+          sat_rarity = EXCLUDED.sat_rarity,
+          sat_coinbase_height = EXCLUDED.sat_coinbase_height,
+          timestamp = EXCLUDED.timestamp
       `;
-      if (dbLocation.count === 0) {
-        const location = {
-          ...args.location,
-          timestamp: sql`to_timestamp(${args.location.timestamp})`,
-          inscription_id: dbInscription[0].id,
+      const json = inscriptionContentToJson(args.inscription);
+      if (json) {
+        const values = {
+          inscription_id,
+          p: json.p,
+          op: json.op,
+          content: json,
         };
-        dbLocation = await sql<DbLocation[]>`
-          INSERT INTO locations ${sql(location)}
-          ON CONFLICT ON CONSTRAINT locations_inscription_id_block_hash_unique DO NOTHING
-          RETURNING ${this.sql(LOCATIONS_COLUMNS)}
+        await sql`
+          INSERT INTO json_contents ${sql(values)}
+          ON CONFLICT ON CONSTRAINT json_contents_inscription_id_unique DO UPDATE SET
+            p = EXCLUDED.p,
+            op = EXCLUDED.op,
+            content = EXCLUDED.content
         `;
       }
       await this.updateChainTipBlockHeight({ blockHeight: args.location.block_height });
     });
+    if (inscription_id) await this.normalizeInscriptionLocations({ inscription_id });
   }
 
-  async updateInscriptionLocation(args: { location: DbLocationInsert }): Promise<void> {
+  async insertInscriptionTransfer(args: { location: DbLocationInsert }): Promise<void> {
+    let inscription_id: number | undefined;
     await this.sqlWriteTransaction(async sql => {
+      const inscription = await sql<{ id: number }[]>`
+        SELECT id FROM inscriptions WHERE genesis_id = ${args.location.genesis_id}
+      `;
+      inscription_id = inscription[0].id;
       const location = {
-        ...args.location,
+        inscription_id,
+        block_height: args.location.block_height,
+        block_hash: args.location.block_hash,
+        tx_id: args.location.tx_id,
+        address: args.location.address,
+        output: args.location.output,
+        offset: args.location.offset,
+        value: args.location.value,
+        sat_ordinal: args.location.sat_ordinal,
+        sat_rarity: args.location.sat_rarity,
+        sat_coinbase_height: args.location.sat_coinbase_height,
         timestamp: sql`to_timestamp(${args.location.timestamp})`,
       };
       await sql`
-        UPDATE locations SET current = FALSE WHERE inscription_id = ${location.inscription_id}
-      `;
-      await sql`
         INSERT INTO locations ${sql(location)}
-        ON CONFLICT ON CONSTRAINT locations_inscription_id_block_hash_unique DO
-          UPDATE SET current = TRUE
+        ON CONFLICT ON CONSTRAINT locations_inscription_id_block_height_unique DO UPDATE SET
+          block_hash = EXCLUDED.block_hash,
+          tx_id = EXCLUDED.tx_id,
+          address = EXCLUDED.address,
+          output = EXCLUDED.output,
+          "offset" = EXCLUDED.offset,
+          value = EXCLUDED.value,
+          sat_ordinal = EXCLUDED.sat_ordinal,
+          sat_rarity = EXCLUDED.sat_rarity,
+          sat_coinbase_height = EXCLUDED.sat_coinbase_height,
+          timestamp = EXCLUDED.timestamp
       `;
     });
+    if (inscription_id) await this.normalizeInscriptionLocations({ inscription_id });
   }
 
   async rollBackInscriptionGenesis(args: { genesis_id: string }): Promise<void> {
-    // This will cascade into the `locations` table.
+    // This will cascade into dependent tables.
     await this.sql`DELETE FROM inscriptions WHERE genesis_id = ${args.genesis_id}`;
+  }
+
+  async rollBackInscriptionTransfer(args: { genesis_id: string; output: string }): Promise<void> {
+    let inscription_id: number | undefined;
+    await this.sqlWriteTransaction(async sql => {
+      const inscription = await sql<{ id: number }[]>`
+        SELECT id FROM inscriptions WHERE genesis_id = ${args.genesis_id}
+      `;
+      inscription_id = inscription[0].id;
+      await sql`
+        DELETE FROM locations
+        WHERE inscription_id = ${inscription_id} AND output = ${args.output}
+      `;
+    });
+    if (inscription_id) await this.normalizeInscriptionLocations({ inscription_id });
+  }
+
+  private async normalizeInscriptionLocations(args: { inscription_id: number }): Promise<void> {
+    await this.sql`
+      WITH i_genesis AS (
+        SELECT id FROM locations
+        WHERE inscription_id = ${args.inscription_id}
+        ORDER BY block_height ASC
+        LIMIT 1
+      ), i_current AS (
+        SELECT id FROM locations
+        WHERE inscription_id = ${args.inscription_id}
+        ORDER BY block_height DESC
+        LIMIT 1
+      )
+      UPDATE locations SET
+        current = (CASE WHEN id = (SELECT id FROM i_current) THEN TRUE ELSE FALSE END),
+        genesis = (CASE WHEN id = (SELECT id FROM i_genesis) THEN TRUE ELSE FALSE END)
+      WHERE inscription_id = ${args.inscription_id}
+    `;
   }
 
   async getInscriptionCurrentLocation(args: { output: string }): Promise<DbLocation | undefined> {
@@ -316,5 +403,46 @@ export class PgStore extends BasePgStore {
       total: results[0]?.total ?? 0,
       results: results ?? [],
     };
+  }
+
+  async getInscriptionLocations(
+    args: InscriptionIdentifier & { limit: number; offset: number }
+  ): Promise<DbPaginatedResult<DbLocation>> {
+    const results = await this.sql<({ total: number } & DbLocation)[]>`
+      SELECT ${this.sql(LOCATIONS_COLUMNS.map(c => `l.${c}`))}, COUNT(*) OVER() as total
+      FROM locations AS l
+      INNER JOIN inscriptions AS i ON l.inscription_id = i.id
+      WHERE
+        ${
+          'number' in args
+            ? this.sql`i.number = ${args.number}`
+            : this.sql`i.genesis_id = ${args.genesis_id}`
+        }
+      ORDER BY l.block_height DESC
+      LIMIT ${args.limit}
+      OFFSET ${args.offset}
+    `;
+    return {
+      total: results[0]?.total ?? 0,
+      results: results ?? [],
+    };
+  }
+
+  async getJsonContent(args: InscriptionIdentifier): Promise<DbJsonContent | undefined> {
+    const results = await this.sql<DbJsonContent[]>`
+      SELECT ${this.sql(JSON_CONTENTS_COLUMNS.map(c => `j.${c}`))}
+      FROM json_contents AS j
+      INNER JOIN inscriptions AS i ON j.inscription_id = i.id
+      WHERE
+        ${
+          'number' in args
+            ? this.sql`i.number = ${args.number}`
+            : this.sql`i.genesis_id = ${args.genesis_id}`
+        }
+      LIMIT 1
+    `;
+    if (results.count === 1) {
+      return results[0];
+    }
   }
 }

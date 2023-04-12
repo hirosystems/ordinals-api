@@ -15,13 +15,25 @@ const InscriptionRevealed = Type.Object({
   inscription_number: Type.Integer(),
   inscription_fee: Type.Integer(),
   inscription_id: Type.String(),
-  inscription_authors: Type.Array(Type.String()),
+  inscriber_address: Type.String(),
   ordinal_number: Type.Integer(),
   ordinal_block_height: Type.Integer(),
+  ordinal_offset: Type.Integer(),
+  satpoint_post_inscription: Type.String(),
+});
+
+const InscriptionTransferred = Type.Object({
+  inscription_number: Type.Integer(),
+  inscription_id: Type.String(),
+  ordinal_number: Type.Integer(),
+  updated_address: Type.String(),
+  satpoint_pre_transfer: Type.String(),
+  satpoint_post_transfer: Type.String(),
 });
 
 const OrdinalOperation = Type.Object({
-  inscription_revealed: InscriptionRevealed,
+  inscription_revealed: Type.Optional(InscriptionRevealed),
+  inscription_transferred: Type.Optional(InscriptionTransferred),
 });
 
 const Output = Type.Object({
