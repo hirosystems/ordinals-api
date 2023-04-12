@@ -28,6 +28,7 @@ import {
   AddressesParam,
   InscriptionIdsParam,
   InscriptionNumbersParam,
+  InscriptionLocationResponse,
 } from '../schemas';
 import { handleInscriptionCache, handleInscriptionTransfersCache } from '../util/cache';
 import {
@@ -35,6 +36,7 @@ import {
   hexToBuffer,
   parseDbInscription,
   parseDbInscriptions,
+  parseInscriptionLocations,
 } from '../util/helpers';
 
 function blockParam(param: string | undefined, name: string) {
@@ -208,6 +210,43 @@ const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTyp
       } else {
         await reply.code(404).send(Value.Create(NotFoundResponse));
       }
+    }
+  );
+
+  fastify.get(
+    '/inscriptions/:id/transfers',
+    {
+      schema: {
+        summary: 'Inscription transfers',
+        description: 'Retrieves all transfers for a single inscription',
+        tags: ['Inscriptions'],
+        params: Type.Object({
+          id: InscriptionIdentifierParam,
+        }),
+        querystring: Type.Object({
+          offset: Type.Optional(OffsetParam),
+          limit: Type.Optional(LimitParam),
+        }),
+        response: {
+          200: PaginatedResponse(InscriptionLocationResponse),
+          404: NotFoundResponse,
+        },
+      },
+    },
+    async (request, reply) => {
+      const limit = request.query.limit ?? DEFAULT_API_LIMIT;
+      const offset = request.query.offset ?? 0;
+      const locations = await fastify.db.getInscriptionLocations({
+        ...inscriptionIdParam(request.params.id),
+        limit,
+        offset,
+      });
+      await reply.send({
+        limit,
+        offset,
+        total: locations.total,
+        results: parseInscriptionLocations(locations.results),
+      });
     }
   );
 

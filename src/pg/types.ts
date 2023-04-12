@@ -1,4 +1,5 @@
-import { PgBytea } from './postgres-tools/types';
+import { OpJson } from './helpers';
+import { PgBytea, PgJsonb } from './postgres-tools/types';
 
 export type DbPaginatedResult<T> = {
   total: number;
@@ -29,7 +30,7 @@ export type DbFullyLocatedInscriptionResult = {
 };
 
 export type DbLocationInsert = {
-  inscription_id: number;
+  genesis_id: string;
   block_height: number;
   block_hash: string;
   tx_id: string;
@@ -41,8 +42,6 @@ export type DbLocationInsert = {
   sat_rarity: string;
   sat_coinbase_height: number;
   timestamp: number;
-  genesis: boolean;
-  current: boolean;
 };
 
 export type DbLocation = {
@@ -116,3 +115,19 @@ export const INSCRIPTIONS_COLUMNS = [
   'content_length',
   'fee',
 ];
+
+export type DbJsonContent = {
+  id: number;
+  inscription_id: number;
+  p?: string;
+  op?: string;
+  content: OpJson;
+};
+
+export type DbJsonContentInsert = {
+  p: string | null;
+  op: string | null;
+  content: PgJsonb;
+};
+
+export const JSON_CONTENTS_COLUMNS = ['id', 'inscription_id', 'p', 'op', 'content'];

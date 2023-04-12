@@ -16,15 +16,24 @@ export async function processInscriptionRevealed(payload: unknown, db: PgStore):
   }
   for (const event of payload.rollback) {
     for (const tx of event.transactions) {
-      const genesis_id = tx.metadata.ordinal_operations[0].inscription_revealed.inscription_id;
+      const reveal = tx.metadata.ordinal_operations[0].inscription_revealed;
+      if (!reveal) {
+        logger.warn(`[inscription_revealed] invalid rollback`);
+        continue;
+      }
+      const genesis_id = reveal.inscription_id;
       await db.rollBackInscriptionGenesis({ genesis_id });
       logger.info(`[inscription_revealed] rollback inscription ${genesis_id}`);
     }
   }
   for (const event of payload.apply) {
     for (const tx of event.transactions) {
-      const txId = tx.transaction_identifier.hash.substring(2);
       const reveal = tx.metadata.ordinal_operations[0].inscription_revealed;
+      if (!reveal) {
+        logger.warn(`[inscription_revealed] invalid apply`);
+        continue;
+      }
+      const txId = tx.transaction_identifier.hash.substring(2);
       const utxo = tx.metadata.outputs[0];
       const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
       await db.insertInscriptionGenesis({
@@ -38,20 +47,18 @@ export async function processInscriptionRevealed(payload: unknown, db: PgStore):
           fee: BigInt(reveal.inscription_fee),
         },
         location: {
-          inscription_id: 0, // To be set when inserting.
+          genesis_id: reveal.inscription_id,
           block_height: event.block_identifier.index,
           block_hash: event.block_identifier.hash.substring(2),
           tx_id: txId,
-          address: reveal.inscription_authors[0],
+          address: reveal.inscriber_address,
           output: `${txId}:0`,
-          offset: 0n,
+          offset: BigInt(reveal.ordinal_offset),
           value: BigInt(utxo.value),
           timestamp: event.timestamp,
           sat_ordinal: BigInt(reveal.ordinal_number),
           sat_rarity: satoshi.rarity,
           sat_coinbase_height: satoshi.blockHeight,
-          genesis: true,
-          current: true,
         },
       });
       logger.info(
@@ -67,5 +74,56 @@ export async function processInscriptionRevealed(payload: unknown, db: PgStore):
  * @param db - DB
  */
 export async function processInscriptionTransferred(payload: unknown, db: PgStore): Promise<void> {
-  //
+  if (!ChainhookPayloadCType.Check(payload)) {
+    const errors = [...ChainhookPayloadCType.Errors(payload)];
+    logger.warn(errors, `[inscription_transferred] invalid payload`);
+    return;
+  }
+  for (const event of payload.rollback) {
+    for (const tx of event.transactions) {
+      const transfer = tx.metadata.ordinal_operations[0].inscription_transferred;
+      if (!transfer) {
+        logger.warn(`[inscription_transferred] invalid rollback`);
+        continue;
+      }
+      const genesis_id = transfer.inscription_id;
+      const satpoint = transfer.satpoint_post_transfer.split(':');
+      const output = `${satpoint[0]}:${satpoint[1]}`;
+      await db.rollBackInscriptionTransfer({ genesis_id, output });
+      logger.info(`[inscription_transferred] rollback transfer ${genesis_id} ${output}`);
+    }
+  }
+  for (const event of payload.apply) {
+    for (const tx of event.transactions) {
+      const transfer = tx.metadata.ordinal_operations[0].inscription_transferred;
+      if (!transfer) {
+        logger.warn(`[inscription_transferred] invalid apply`);
+        continue;
+      }
+      const txId = tx.transaction_identifier.hash.substring(2);
+      const satpoint = transfer.satpoint_post_transfer.split(':');
+      const output = `${satpoint[0]}:${satpoint[1]}`;
+      const utxo = tx.metadata.outputs[0];
+      const satoshi = new OrdinalSatoshi(transfer.ordinal_number);
+      await db.insertInscriptionTransfer({
+        location: {
+          genesis_id: transfer.inscription_id,
+          block_height: event.block_identifier.index,
+          block_hash: event.block_identifier.hash,
+          tx_id: txId,
+          address: transfer.updated_address,
+          output: output,
+          offset: BigInt(satpoint[2]),
+          value: BigInt(utxo.value),
+          timestamp: event.timestamp,
+          sat_ordinal: BigInt(transfer.ordinal_number),
+          sat_rarity: satoshi.rarity,
+          sat_coinbase_height: satoshi.blockHeight,
+        },
+      });
+      logger.info(
+        `[inscription_transferred] apply transfer for #${transfer.inscription_number} (${transfer.inscription_id}) to output ${output} at block ${event.block_identifier.index}`
+      );
+    }
+  }
 }

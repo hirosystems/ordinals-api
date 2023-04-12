@@ -50,7 +50,7 @@ describe('/sats', () => {
         fee: 2805n,
       },
       location: {
-        inscription_id: 0,
+        genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
         block_height: 775617,
         block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
         tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
@@ -62,8 +62,6 @@ describe('/sats', () => {
         sat_ordinal: 257418248345364n,
         sat_rarity: 'common',
         sat_coinbase_height: 650000,
-        genesis: true,
-        current: true,
       },
     });
     const response = await fastify.inject({

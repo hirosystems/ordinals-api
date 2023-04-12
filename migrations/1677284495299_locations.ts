@@ -75,8 +75,8 @@ export function up(pgm: MigrationBuilder): void {
   );
   pgm.createConstraint(
     'locations',
-    'locations_inscription_id_block_hash_unique',
-    'UNIQUE(inscription_id, block_hash)'
+    'locations_inscription_id_block_height_unique',
+    'UNIQUE(inscription_id, block_height)'
   );
   pgm.createIndex('locations', ['block_height']);
   pgm.createIndex('locations', ['block_hash']);

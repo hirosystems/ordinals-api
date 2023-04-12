@@ -1,5 +1,5 @@
-import { DbFullyLocatedInscriptionResult } from '../../pg/types';
-import { InscriptionResponseType } from '../schemas';
+import { DbFullyLocatedInscriptionResult, DbLocation } from '../../pg/types';
+import { InscriptionLocationResponse, InscriptionResponseType } from '../schemas';
 
 export const DEFAULT_API_LIMIT = 20;
 
@@ -32,6 +32,20 @@ export function parseDbInscriptions(
 }
 export function parseDbInscription(item: DbFullyLocatedInscriptionResult): InscriptionResponseType {
   return parseDbInscriptions([item])[0];
+}
+
+export function parseInscriptionLocations(items: DbLocation[]): InscriptionLocationResponse[] {
+  return items.map(i => ({
+    block_height: i.block_height,
+    block_hash: i.block_hash,
+    address: i.address,
+    tx_id: i.tx_id,
+    location: `${i.output}:${i.offset}`,
+    output: i.output,
+    value: i.value.toString(),
+    offset: i.offset.toString(),
+    timestamp: i.timestamp.valueOf(),
+  }));
 }
 
 /**
