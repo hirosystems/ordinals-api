@@ -1,3 +1,10 @@
+## [0.1.0-beta.7](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.6...v0.1.0-beta.7) (2023-04-12)
+
+
+### Features
+
+* support inscription transfers ([#37](https://github.com/hirosystems/ordinals-api/issues/37)) ([ebeb805](https://github.com/hirosystems/ordinals-api/commit/ebeb8054980b18db90e038ecf525e2d93b45de28))
+
 ## [0.1.0-beta.6](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.5...v0.1.0-beta.6) (2023-03-09)
 
 
