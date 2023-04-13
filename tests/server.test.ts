@@ -2,7 +2,7 @@ import { MockAgent, setGlobalDispatcher } from 'undici';
 import {
   buildChainhookServer,
   CHAINHOOK_BASE_PATH,
-  REVEAL__PREDICATE_UUID,
+  PREDICATE_UUID,
   TRANSFER__PREDICATE_UUID,
 } from '../src/chainhook/server';
 import { ENV } from '../src/env';
@@ -34,7 +34,7 @@ describe('EventServer', () => {
       interceptor.intercept({ path: '/v1/chainhooks', method: 'POST' }).reply(200).times(2);
       interceptor
         .intercept({
-          path: `/v1/chainhooks/bitcoin/${REVEAL__PREDICATE_UUID}`,
+          path: `/v1/chainhooks/bitcoin/${PREDICATE_UUID}`,
           method: 'DELETE',
         })
         .reply(200);
@@ -68,7 +68,7 @@ describe('EventServer', () => {
       interceptor.intercept({ path: '/v1/chainhooks', method: 'POST' }).reply(200).times(2);
       interceptor
         .intercept({
-          path: `/v1/chainhooks/bitcoin/${REVEAL__PREDICATE_UUID}`,
+          path: `/v1/chainhooks/bitcoin/${PREDICATE_UUID}`,
           method: 'DELETE',
         })
         .reply(200);
@@ -106,7 +106,7 @@ describe('EventServer', () => {
       interceptor.intercept({ path: '/v1/chainhooks', method: 'POST' }).reply(200).times(2);
       interceptor
         .intercept({
-          path: `/v1/chainhooks/bitcoin/${REVEAL__PREDICATE_UUID}`,
+          path: `/v1/chainhooks/bitcoin/${PREDICATE_UUID}`,
           method: 'DELETE',
         })
         .reply(200);

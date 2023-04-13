@@ -38,6 +38,8 @@ export const OpenApiSchemaOptions: SwaggerOptions = {
 // Parameters
 // ==========================
 
+const Nullable = <T extends TSchema>(type: T) => Type.Union([type, Type.Null()]);
+
 export const AddressParam = Type.String({
   title: 'Address',
   description: 'Bitcoin address',
@@ -286,7 +288,7 @@ export const InscriptionLocationResponse = Type.Object({
   output: Type.String({
     examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218:0'],
   }),
-  value: Type.String({ examples: ['546'] }),
+  value: Nullable(Type.String({ examples: ['546'] })),
   offset: Type.String({ examples: ['0'] }),
   timestamp: Type.Integer({ examples: [1677733170000] }),
 });

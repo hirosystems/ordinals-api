@@ -39,7 +39,6 @@ export function up(pgm: MigrationBuilder): void {
     },
     value: {
       type: 'bigint',
-      notNull: true,
     },
     sat_ordinal: {
       type: 'bigint',

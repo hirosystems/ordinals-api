@@ -37,7 +37,7 @@ export type DbLocationInsert = {
   address: string;
   output: string;
   offset: bigint;
-  value: bigint;
+  value: bigint | null;
   sat_ordinal: bigint;
   sat_rarity: string;
   sat_coinbase_height: number;
@@ -53,7 +53,7 @@ export type DbLocation = {
   address: string;
   output: string;
   offset: bigint;
-  value: bigint;
+  value: bigint | null;
   sat_ordinal: bigint;
   sat_rarity: string;
   sat_coinbase_height: number;

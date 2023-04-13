@@ -42,7 +42,7 @@ export function parseInscriptionLocations(items: DbLocation[]): InscriptionLocat
     tx_id: i.tx_id,
     location: `${i.output}:${i.offset}`,
     output: i.output,
-    value: i.value.toString(),
+    value: i.value ? i.value.toString() : null,
     offset: i.offset.toString(),
     timestamp: i.timestamp.valueOf(),
   }));
