@@ -1,5 +1,5 @@
 import { OpJson } from './helpers';
-import { PgBytea, PgJsonb } from './postgres-tools/types';
+import { PgBytea, PgJsonb, PgNumeric } from './postgres-tools/types';
 
 export type DbPaginatedResult<T> = {
   total: number;
@@ -36,9 +36,9 @@ export type DbLocationInsert = {
   tx_id: string;
   address: string;
   output: string;
-  offset: bigint;
-  value: bigint | null;
-  sat_ordinal: bigint;
+  offset: PgNumeric;
+  value: PgNumeric | null;
+  sat_ordinal: PgNumeric;
   sat_rarity: string;
   sat_coinbase_height: number;
   timestamp: number;
@@ -52,9 +52,9 @@ export type DbLocation = {
   tx_id: string;
   address: string;
   output: string;
-  offset: bigint;
-  value: bigint | null;
-  sat_ordinal: bigint;
+  offset: string;
+  value: string | null;
+  sat_ordinal: string;
   sat_rarity: string;
   sat_coinbase_height: number;
   timestamp: Date;
@@ -87,7 +87,7 @@ export type DbInscriptionInsert = {
   content_type: string;
   content_length: number;
   content: PgBytea;
-  fee: bigint;
+  fee: PgNumeric;
 };
 
 export type DbInscription = {
@@ -97,7 +97,7 @@ export type DbInscription = {
   mime_type: string;
   content_type: string;
   content_length: number;
-  fee: bigint;
+  fee: string;
 };
 
 export type DbInscriptionContent = {

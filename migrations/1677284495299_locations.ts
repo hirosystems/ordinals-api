@@ -34,14 +34,14 @@ export function up(pgm: MigrationBuilder): void {
       notNull: true,
     },
     offset: {
-      type: 'bigint',
+      type: 'numeric',
       notNull: true,
     },
     value: {
-      type: 'bigint',
+      type: 'numeric',
     },
     sat_ordinal: {
-      type: 'bigint',
+      type: 'numeric',
       notNull: true,
     },
     sat_rarity: {

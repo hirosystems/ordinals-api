@@ -11,7 +11,7 @@ import { ChainhookPayloadCType } from './schemas';
 export async function processInscriptionFeed(payload: unknown, db: PgStore): Promise<void> {
   if (!ChainhookPayloadCType.Check(payload)) {
     const errors = [...ChainhookPayloadCType.Errors(payload)];
-    logger.warn(errors, `[inscription_feed] invalid payload`);
+    logger.error({ payload, errors }, `[inscription_feed] invalid payload`);
     return;
   }
   for (const event of payload.rollback) {
@@ -47,7 +47,7 @@ export async function processInscriptionFeed(payload: unknown, db: PgStore): Pro
               content_length: reveal.content_length,
               number: reveal.inscription_number,
               content: reveal.content_bytes,
-              fee: BigInt(reveal.inscription_fee),
+              fee: reveal.inscription_fee.toString(),
             },
             location: {
               genesis_id: reveal.inscription_id,
@@ -56,10 +56,10 @@ export async function processInscriptionFeed(payload: unknown, db: PgStore): Pro
               tx_id: txId,
               address: reveal.inscriber_address,
               output: `${txId}:0`,
-              offset: BigInt(reveal.ordinal_offset),
-              value: BigInt(reveal.inscription_output_value),
+              offset: reveal.ordinal_offset.toString(),
+              value: reveal.inscription_output_value.toString(),
               timestamp: event.timestamp,
-              sat_ordinal: BigInt(reveal.ordinal_number),
+              sat_ordinal: reveal.ordinal_number.toString(),
               sat_rarity: satoshi.rarity,
               sat_coinbase_height: satoshi.blockHeight,
             },
@@ -82,18 +82,18 @@ export async function processInscriptionFeed(payload: unknown, db: PgStore): Pro
               tx_id: txId,
               address: transfer.updated_address,
               output: output,
-              offset: BigInt(satpoint[2]),
+              offset: satpoint[2].toString(),
               value: transfer.post_transfer_output_value
-                ? BigInt(transfer.post_transfer_output_value)
+                ? transfer.post_transfer_output_value.toString()
                 : null,
               timestamp: event.timestamp,
-              sat_ordinal: BigInt(transfer.ordinal_number),
+              sat_ordinal: transfer.ordinal_number.toString(),
               sat_rarity: satoshi.rarity,
               sat_coinbase_height: satoshi.blockHeight,
             },
           });
           logger.info(
-            `[inscription_transferred] apply transfer for #${transfer.inscription_number} (${transfer.inscription_id}) to output ${output} at block ${event.block_identifier.index}`
+            `[inscription_feed] apply transfer for #${transfer.inscription_number} (${transfer.inscription_id}) to output ${output} at block ${event.block_identifier.index}`
           );
         }
       }

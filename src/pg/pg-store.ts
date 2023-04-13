@@ -139,6 +139,11 @@ export class PgStore extends BasePgStore {
       const inscription = await sql<{ id: number }[]>`
         SELECT id FROM inscriptions WHERE genesis_id = ${args.location.genesis_id}
       `;
+      if (inscription.count === 0) {
+        throw new Error(
+          `Unable to find inscription with genesis_id ${args.location.genesis_id} for transfer insert`
+        );
+      }
       inscription_id = inscription[0].id;
       const location = {
         inscription_id,
@@ -183,6 +188,11 @@ export class PgStore extends BasePgStore {
       const inscription = await sql<{ id: number }[]>`
         SELECT id FROM inscriptions WHERE genesis_id = ${args.genesis_id}
       `;
+      if (inscription.count === 0) {
+        throw new Error(
+          `Unable to find inscription with genesis_id ${args.genesis_id} for transfer rollback`
+        );
+      }
       inscription_id = inscription[0].id;
       await sql`
         DELETE FROM locations
