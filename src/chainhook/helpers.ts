@@ -72,6 +72,7 @@ export async function processInscriptionFeed(payload: unknown, db: PgStore): Pro
           const transfer = operation.inscription_transferred;
           const txId = tx.transaction_identifier.hash.substring(2);
           const satpoint = transfer.satpoint_post_transfer.split(':');
+          const offset = satpoint[2];
           const output = `${satpoint[0]}:${satpoint[1]}`;
           const satoshi = new OrdinalSatoshi(transfer.ordinal_number);
           await db.insertInscriptionTransfer({
@@ -82,7 +83,7 @@ export async function processInscriptionFeed(payload: unknown, db: PgStore): Pro
               tx_id: txId,
               address: transfer.updated_address,
               output: output,
-              offset: satpoint[2].toString(),
+              offset: offset ?? null,
               value: transfer.post_transfer_output_value
                 ? transfer.post_transfer_output_value.toString()
                 : null,

@@ -84,8 +84,11 @@ export class PgStore extends BasePgStore {
         const maxNumber = await this.getMaxInscriptionNumber();
         if (maxNumber && maxNumber + 1 !== args.inscription.number) {
           logger.warn(
-            args.inscription,
-            `PgStore inserting out-of-order inscription genesis number, current number is ${maxNumber}`
+            {
+              block_height: args.location.block_height,
+              genesis_id: args.inscription.genesis_id,
+            },
+            `PgStore inserting out-of-order inscription genesis number ${args.inscription.number}, current max number is ${maxNumber}`
           );
         }
       }

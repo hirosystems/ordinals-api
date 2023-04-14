@@ -27,7 +27,6 @@ export function up(pgm: MigrationBuilder): void {
     },
     address: {
       type: 'text',
-      notNull: true,
     },
     output: {
       type: 'text',
@@ -35,7 +34,6 @@ export function up(pgm: MigrationBuilder): void {
     },
     offset: {
       type: 'numeric',
-      notNull: true,
     },
     value: {
       type: 'numeric',

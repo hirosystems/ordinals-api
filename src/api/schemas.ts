@@ -236,8 +236,8 @@ export const InscriptionResponse = Type.Object({
   output: Type.String({
     examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218:0'],
   }),
-  value: Type.String({ examples: ['546'] }),
-  offset: Type.String({ examples: ['0'] }),
+  value: Nullable(Type.String({ examples: ['546'] })),
+  offset: Nullable(Type.String({ examples: ['0'] })),
   sat_ordinal: Type.String({ examples: ['1232735286933201'] }),
   sat_rarity: Type.String({ examples: ['common'] }),
   sat_coinbase_height: Type.Integer({ examples: [430521] }),
@@ -293,7 +293,7 @@ export const InscriptionLocationResponse = Type.Object({
     examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218:0'],
   }),
   value: Nullable(Type.String({ examples: ['546'] })),
-  offset: Type.String({ examples: ['0'] }),
+  offset: Nullable(Type.String({ examples: ['0'] })),
   timestamp: Type.Integer({ examples: [1677733170000] }),
 });
 export type InscriptionLocationResponse = Static<typeof InscriptionLocationResponse>;

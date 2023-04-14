@@ -18,9 +18,9 @@ export type DbFullyLocatedInscriptionResult = {
   address: string | null;
   tx_id: string;
   output: string;
-  offset: bigint;
-  value: bigint;
-  sat_ordinal: bigint;
+  offset: string | null;
+  value: string | null;
+  sat_ordinal: string;
   sat_rarity: string;
   sat_coinbase_height: number;
   mime_type: string;
@@ -36,7 +36,7 @@ export type DbLocationInsert = {
   tx_id: string;
   address: string | null;
   output: string;
-  offset: PgNumeric;
+  offset: PgNumeric | null;
   value: PgNumeric | null;
   sat_ordinal: PgNumeric;
   sat_rarity: string;
@@ -52,7 +52,7 @@ export type DbLocation = {
   tx_id: string;
   address: string | null;
   output: string;
-  offset: string;
+  offset: string | null;
   value: string | null;
   sat_ordinal: string;
   sat_rarity: string;
