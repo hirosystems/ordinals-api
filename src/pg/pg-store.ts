@@ -73,12 +73,23 @@ export class PgStore extends BasePgStore {
   }): Promise<void> {
     let inscription_id: number | undefined;
     await this.sqlWriteTransaction(async sql => {
+      // Are we upserting?
       const prevInscription = await sql<{ id: number }[]>`
         SELECT id FROM inscriptions WHERE number = ${args.inscription.number}
       `;
       if (prevInscription.count !== 0) {
         logger.warn(args.inscription, `PgStore upserting inscription genesis`);
+      } else {
+        // Is this a sequential genesis insert?
+        const maxNumber = await this.getMaxInscriptionNumber();
+        if (maxNumber && maxNumber + 1 !== args.inscription.number) {
+          logger.warn(
+            args.inscription,
+            `PgStore inserting out-of-order inscription genesis number, current number is ${maxNumber}`
+          );
+        }
       }
+
       const inscription = await sql<{ id: number }[]>`
         INSERT INTO inscriptions ${sql(args.inscription)}
         ON CONFLICT ON CONSTRAINT inscriptions_number_unique DO UPDATE SET
