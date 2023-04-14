@@ -15,7 +15,7 @@ export type DbFullyLocatedInscriptionResult = {
   genesis_timestamp: Date;
   genesis_address: string;
   number: number;
-  address: string;
+  address: string | null;
   tx_id: string;
   output: string;
   offset: bigint;
@@ -34,7 +34,7 @@ export type DbLocationInsert = {
   block_height: number;
   block_hash: string;
   tx_id: string;
-  address: string;
+  address: string | null;
   output: string;
   offset: PgNumeric;
   value: PgNumeric | null;
@@ -50,7 +50,7 @@ export type DbLocation = {
   block_height: number;
   block_hash: string;
   tx_id: string;
-  address: string;
+  address: string | null;
   output: string;
   offset: string;
   value: string | null;

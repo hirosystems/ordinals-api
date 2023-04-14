@@ -210,9 +210,11 @@ export const InscriptionResponse = Type.Object({
     examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218i0'],
   }),
   number: Type.Integer({ examples: [248751] }),
-  address: Type.String({
-    examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
-  }),
+  address: Nullable(
+    Type.String({
+      examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
+    })
+  ),
   genesis_address: Type.String({
     examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
   }),
@@ -276,9 +278,11 @@ export const InscriptionLocationResponse = Type.Object({
   block_hash: Type.String({
     examples: ['0000000000000000000452773967cdd62297137cdaf79950c5e8bb0c62075133'],
   }),
-  address: Type.String({
-    examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
-  }),
+  address: Nullable(
+    Type.String({
+      examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
+    })
+  ),
   tx_id: Type.String({
     examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218'],
   }),

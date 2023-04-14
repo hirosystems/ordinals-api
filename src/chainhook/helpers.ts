@@ -11,7 +11,7 @@ import { ChainhookPayloadCType } from './schemas';
 export async function processInscriptionFeed(payload: unknown, db: PgStore): Promise<void> {
   if (!ChainhookPayloadCType.Check(payload)) {
     const errors = [...ChainhookPayloadCType.Errors(payload)];
-    logger.error({ payload, errors }, `[inscription_feed] invalid payload`);
+    logger.error(errors, `[inscription_feed] invalid payload`);
     return;
   }
   for (const event of payload.rollback) {

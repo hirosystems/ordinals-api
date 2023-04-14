@@ -1,6 +1,7 @@
 import { Order, OrderBy } from '../api/schemas';
 import { SatoshiRarity } from '../api/util/ordinal-satoshi';
 import { ENV } from '../env';
+import { logger } from '../logger';
 import { inscriptionContentToJson } from './helpers';
 import { runMigrations } from './migrations';
 import { connectPostgres } from './postgres-tools';
@@ -72,6 +73,12 @@ export class PgStore extends BasePgStore {
   }): Promise<void> {
     let inscription_id: number | undefined;
     await this.sqlWriteTransaction(async sql => {
+      const prevInscription = await sql<{ id: number }[]>`
+        SELECT id FROM inscriptions WHERE number = ${args.inscription.number}
+      `;
+      if (prevInscription.count !== 0) {
+        logger.warn(args.inscription, `PgStore upserting inscription genesis`);
+      }
       const inscription = await sql<{ id: number }[]>`
         INSERT INTO inscriptions ${sql(args.inscription)}
         ON CONFLICT ON CONSTRAINT inscriptions_number_unique DO UPDATE SET
@@ -141,7 +148,7 @@ export class PgStore extends BasePgStore {
       `;
       if (inscription.count === 0) {
         throw new Error(
-          `Unable to find inscription with genesis_id ${args.location.genesis_id} for transfer insert`
+          `PgStore unable to find inscription with genesis_id ${args.location.genesis_id} for transfer insert`
         );
       }
       inscription_id = inscription[0].id;
@@ -190,7 +197,7 @@ export class PgStore extends BasePgStore {
       `;
       if (inscription.count === 0) {
         throw new Error(
-          `Unable to find inscription with genesis_id ${args.genesis_id} for transfer rollback`
+          `PgStore unable to find inscription with genesis_id ${args.genesis_id} for transfer rollback`
         );
       }
       inscription_id = inscription[0].id;
