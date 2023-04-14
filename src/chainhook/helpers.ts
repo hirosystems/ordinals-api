@@ -14,7 +14,14 @@ export async function processInscriptionFeed(payload: unknown, db: PgStore): Pro
     logger.error(errors, `[inscription_feed] invalid payload`);
     return;
   }
+  const blockHeight = await db.getChainTipBlockHeight();
   for (const event of payload.rollback) {
+    if (event.block_identifier.index > blockHeight + 1) {
+      logger.warn(
+        `[inscription_feed] ignoring rollback event from future height ${event.block_identifier.index} because we are at ${blockHeight}`
+      );
+      continue;
+    }
     for (const tx of event.transactions) {
       for (const operation of tx.metadata.ordinal_operations) {
         if (operation.inscription_revealed) {
@@ -33,6 +40,12 @@ export async function processInscriptionFeed(payload: unknown, db: PgStore): Pro
     }
   }
   for (const event of payload.apply) {
+    if (event.block_identifier.index > blockHeight + 1) {
+      logger.warn(
+        `[inscription_feed] ignoring apply event from future height ${event.block_identifier.index} because we are at ${blockHeight}`
+      );
+      continue;
+    }
     for (const tx of event.transactions) {
       for (const operation of tx.metadata.ordinal_operations) {
         if (operation.inscription_revealed) {
