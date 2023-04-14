@@ -78,7 +78,13 @@ export class PgStore extends BasePgStore {
         SELECT id FROM inscriptions WHERE number = ${args.inscription.number}
       `;
       if (prevInscription.count !== 0) {
-        logger.warn(args.inscription, `PgStore upserting inscription genesis`);
+        logger.warn(
+          {
+            block_height: args.location.block_height,
+            genesis_id: args.inscription.genesis_id,
+          },
+          `PgStore upserting inscription genesis #${args.inscription.number}`
+        );
       } else {
         // Is this a sequential genesis insert?
         const maxNumber = await this.getMaxInscriptionNumber();
@@ -88,7 +94,7 @@ export class PgStore extends BasePgStore {
               block_height: args.location.block_height,
               genesis_id: args.inscription.genesis_id,
             },
-            `PgStore inserting out-of-order inscription genesis number ${args.inscription.number}, current max number is ${maxNumber}`
+            `PgStore inserting out-of-order inscription genesis #${args.inscription.number}, current max is #${maxNumber}`
           );
         }
       }
