@@ -147,9 +147,11 @@ export class PgStore extends BasePgStore {
         SELECT id FROM inscriptions WHERE genesis_id = ${args.location.genesis_id}
       `;
       if (inscription.count === 0) {
-        throw new Error(
-          `PgStore unable to find inscription with genesis_id ${args.location.genesis_id} for transfer insert`
+        logger.warn(
+          args.location,
+          `PgStore ignoring transfer for an inscription that does not exist`
         );
+        return;
       }
       inscription_id = inscription[0].id;
       const location = {
@@ -196,9 +198,8 @@ export class PgStore extends BasePgStore {
         SELECT id FROM inscriptions WHERE genesis_id = ${args.genesis_id}
       `;
       if (inscription.count === 0) {
-        throw new Error(
-          `PgStore unable to find inscription with genesis_id ${args.genesis_id} for transfer rollback`
-        );
+        logger.warn(args, `PgStore ignoring rollback for a transfer that does not exist`);
+        return;
       }
       inscription_id = inscription[0].id;
       await sql`
