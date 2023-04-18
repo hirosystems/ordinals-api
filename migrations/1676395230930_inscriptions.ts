@@ -34,7 +34,7 @@ export function up(pgm: MigrationBuilder): void {
       notNull: true,
     },
     fee: {
-      type: 'bigint',
+      type: 'numeric',
       notNull: true,
     },
   });

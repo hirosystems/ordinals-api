@@ -19,8 +19,8 @@ export function parseDbInscriptions(
     tx_id: i.tx_id,
     location: `${i.output}:${i.offset}`,
     output: i.output,
-    value: i.value.toString(),
-    offset: i.offset.toString(),
+    value: i.value,
+    offset: i.offset,
     sat_ordinal: i.sat_ordinal.toString(),
     sat_rarity: i.sat_rarity,
     sat_coinbase_height: i.sat_coinbase_height,
@@ -42,8 +42,8 @@ export function parseInscriptionLocations(items: DbLocation[]): InscriptionLocat
     tx_id: i.tx_id,
     location: `${i.output}:${i.offset}`,
     output: i.output,
-    value: i.value.toString(),
-    offset: i.offset.toString(),
+    value: i.value,
+    offset: i.offset,
     timestamp: i.timestamp.valueOf(),
   }));
 }

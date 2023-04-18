@@ -27,22 +27,19 @@ export function up(pgm: MigrationBuilder): void {
     },
     address: {
       type: 'text',
-      notNull: true,
     },
     output: {
       type: 'text',
       notNull: true,
     },
     offset: {
-      type: 'bigint',
-      notNull: true,
+      type: 'numeric',
     },
     value: {
-      type: 'bigint',
-      notNull: true,
+      type: 'numeric',
     },
     sat_ordinal: {
-      type: 'bigint',
+      type: 'numeric',
       notNull: true,
     },
     sat_rarity: {
