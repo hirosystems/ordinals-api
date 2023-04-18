@@ -1,3 +1,10 @@
+## [0.1.0-beta.8](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.7...v0.1.0-beta.8) (2023-04-18)
+
+
+### Features
+
+* move to new inscription_feed predicate ([#41](https://github.com/hirosystems/ordinals-api/issues/41)) ([efa4a62](https://github.com/hirosystems/ordinals-api/commit/efa4a6241db3de70a79b9a228a2c2ffa8e1fecd7))
+
 ## [0.1.0-beta.7](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.6...v0.1.0-beta.7) (2023-04-12)
 
 
