@@ -89,7 +89,7 @@ export class PgStore extends BasePgStore {
         // Is this a sequential genesis insert?
         const maxNumber = await this.getMaxInscriptionNumber();
         if (maxNumber && maxNumber + 1 !== args.inscription.number) {
-          logger.warn(
+          logger.error(
             {
               block_height: args.location.block_height,
               genesis_id: args.inscription.genesis_id,
