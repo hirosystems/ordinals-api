@@ -1,3 +1,10 @@
+## [0.1.0-beta.9](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.8...v0.1.0-beta.9) (2023-04-24)
+
+
+### Bug Fixes
+
+* increase out-of-order log level to error ([#42](https://github.com/hirosystems/ordinals-api/issues/42)) ([56ca661](https://github.com/hirosystems/ordinals-api/commit/56ca6610fe707080272274d60672a65574547fa2))
+
 ## [0.1.0-beta.8](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.7...v0.1.0-beta.8) (2023-04-18)
 
 
