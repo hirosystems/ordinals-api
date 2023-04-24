@@ -15,6 +15,7 @@ const InscriptionRevealed = Type.Object({
   inscription_number: Type.Integer(),
   inscription_fee: Type.Integer(),
   inscription_id: Type.String(),
+  inscription_output_value: Type.Integer(),
   inscriber_address: Type.String(),
   ordinal_number: Type.Integer(),
   ordinal_block_height: Type.Integer(),
@@ -26,9 +27,10 @@ const InscriptionTransferred = Type.Object({
   inscription_number: Type.Integer(),
   inscription_id: Type.String(),
   ordinal_number: Type.Integer(),
-  updated_address: Type.String(),
+  updated_address: Nullable(Type.String()),
   satpoint_pre_transfer: Type.String(),
   satpoint_post_transfer: Type.String(),
+  post_transfer_output_value: Nullable(Type.Integer()),
 });
 
 const OrdinalOperation = Type.Object({
@@ -46,7 +48,7 @@ const Transaction = Type.Object({
   operations: Type.Array(Type.Any()),
   metadata: Type.Object({
     ordinal_operations: Type.Array(OrdinalOperation),
-    outputs: Type.Array(Output),
+    outputs: Type.Optional(Type.Array(Output)),
     proof: Nullable(Type.String()),
   }),
 });
@@ -66,7 +68,7 @@ const ChainhookPayload = Type.Object({
     uuid: Type.String(),
     predicate: Type.Object({
       scope: Type.String(),
-      ordinal: Type.String(),
+      operation: Type.String(),
     }),
   }),
 });

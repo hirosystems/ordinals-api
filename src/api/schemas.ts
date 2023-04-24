@@ -38,6 +38,8 @@ export const OpenApiSchemaOptions: SwaggerOptions = {
 // Parameters
 // ==========================
 
+const Nullable = <T extends TSchema>(type: T) => Type.Union([type, Type.Null()]);
+
 export const AddressParam = Type.String({
   title: 'Address',
   description: 'Bitcoin address',
@@ -208,9 +210,11 @@ export const InscriptionResponse = Type.Object({
     examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218i0'],
   }),
   number: Type.Integer({ examples: [248751] }),
-  address: Type.String({
-    examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
-  }),
+  address: Nullable(
+    Type.String({
+      examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
+    })
+  ),
   genesis_address: Type.String({
     examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
   }),
@@ -232,8 +236,8 @@ export const InscriptionResponse = Type.Object({
   output: Type.String({
     examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218:0'],
   }),
-  value: Type.String({ examples: ['546'] }),
-  offset: Type.String({ examples: ['0'] }),
+  value: Nullable(Type.String({ examples: ['546'] })),
+  offset: Nullable(Type.String({ examples: ['0'] })),
   sat_ordinal: Type.String({ examples: ['1232735286933201'] }),
   sat_rarity: Type.String({ examples: ['common'] }),
   sat_coinbase_height: Type.Integer({ examples: [430521] }),
@@ -274,9 +278,11 @@ export const InscriptionLocationResponse = Type.Object({
   block_hash: Type.String({
     examples: ['0000000000000000000452773967cdd62297137cdaf79950c5e8bb0c62075133'],
   }),
-  address: Type.String({
-    examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
-  }),
+  address: Nullable(
+    Type.String({
+      examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
+    })
+  ),
   tx_id: Type.String({
     examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218'],
   }),
@@ -286,8 +292,8 @@ export const InscriptionLocationResponse = Type.Object({
   output: Type.String({
     examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218:0'],
   }),
-  value: Type.String({ examples: ['546'] }),
-  offset: Type.String({ examples: ['0'] }),
+  value: Nullable(Type.String({ examples: ['546'] })),
+  offset: Nullable(Type.String({ examples: ['0'] })),
   timestamp: Type.Integer({ examples: [1677733170000] }),
 });
 export type InscriptionLocationResponse = Static<typeof InscriptionLocationResponse>;

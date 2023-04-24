@@ -12,11 +12,10 @@ import { ENV } from '../env';
 import { logger, PINO_CONFIG } from '../logger';
 import { PgStore } from '../pg/pg-store';
 import { timeout } from '../pg/postgres-tools/helpers';
-import { processInscriptionRevealed, processInscriptionTransferred } from './helpers';
+import { processInscriptionFeed } from './helpers';
 
 export const CHAINHOOK_BASE_PATH = `http://${ENV.CHAINHOOK_NODE_RPC_HOST}:${ENV.CHAINHOOK_NODE_RPC_PORT}`;
-export const REVEAL__PREDICATE_UUID = randomUUID();
-export const TRANSFER__PREDICATE_UUID = randomUUID();
+export const PREDICATE_UUID = randomUUID();
 
 /**
  * Ping the chainhooks node indefinitely until it's ready.
@@ -40,7 +39,9 @@ async function waitForChainhookNode(this: FastifyInstance) {
  */
 async function registerChainhookPredicates(this: FastifyInstance) {
   const blockHeight = await this.db.getChainTipBlockHeight();
-  logger.info(`EventServer registering predicates starting from block ${blockHeight}...`);
+  logger.info(
+    `EventServer registering predicates on ${ENV.CHAINHOOK_NODE_RPC_HOST}:${ENV.CHAINHOOK_NODE_RPC_PORT} starting from block ${blockHeight}...`
+  );
 
   const register = async (name: string, uuid: string, blockHeight: number) => {
     await request(`${CHAINHOOK_BASE_PATH}/v1/chainhooks`, {
@@ -54,8 +55,8 @@ async function registerChainhookPredicates(this: FastifyInstance) {
           mainnet: {
             start_block: blockHeight,
             if_this: {
-              scope: 'protocol',
-              ordinal: name,
+              scope: 'ordinals_protocol',
+              operation: name,
             },
             then_that: {
               http_post: {
@@ -73,8 +74,7 @@ async function registerChainhookPredicates(this: FastifyInstance) {
   };
 
   try {
-    await register('inscription_revealed', REVEAL__PREDICATE_UUID, blockHeight);
-    await register('inscription_transferred', TRANSFER__PREDICATE_UUID, blockHeight);
+    await register('inscription_feed', PREDICATE_UUID, blockHeight);
   } catch (error) {
     logger.error(error, `EventServer unable to register predicate`);
   }
@@ -96,8 +96,7 @@ async function removeChainhookPredicates(this: FastifyInstance) {
   };
 
   try {
-    await deregister('inscription_revealed', REVEAL__PREDICATE_UUID);
-    await deregister('inscription_transferred', TRANSFER__PREDICATE_UUID);
+    await deregister('inscription_feed', PREDICATE_UUID);
   } catch (error) {
     logger.error(error, `EventServer unable to deregister predicate`);
   }
@@ -122,19 +121,11 @@ const Chainhook: FastifyPluginCallback<Record<never, never>, Server, TypeBoxType
   done
 ) => {
   fastify.addHook('preHandler', isAuthorizedChainhookEvent);
-  fastify.post('/chainhook/inscription_revealed', async (request, reply) => {
+  fastify.post('/chainhook/inscription_feed', async (request, reply) => {
     try {
-      await processInscriptionRevealed(request.body, fastify.db);
+      await processInscriptionFeed(request.body, fastify.db);
     } catch (error) {
-      logger.error(error, `EventServer error processing inscription_revealed`);
-    }
-    await reply.code(200).send();
-  });
-  fastify.post('/chainhook/inscription_transferred', async (request, reply) => {
-    try {
-      await processInscriptionTransferred(request.body, fastify.db);
-    } catch (error) {
-      logger.error(error, `EventServer error processing inscription_transferred`);
+      logger.error(error, `EventServer error processing inscription_feed`);
     }
     await reply.code(200).send();
   });

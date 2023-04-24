@@ -1,3 +1,24 @@
+## [0.1.0-beta.9](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.8...v0.1.0-beta.9) (2023-04-24)
+
+
+### Bug Fixes
+
+* increase out-of-order log level to error ([#42](https://github.com/hirosystems/ordinals-api/issues/42)) ([56ca661](https://github.com/hirosystems/ordinals-api/commit/56ca6610fe707080272274d60672a65574547fa2))
+
+## [0.1.0-beta.8](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.7...v0.1.0-beta.8) (2023-04-18)
+
+
+### Features
+
+* move to new inscription_feed predicate ([#41](https://github.com/hirosystems/ordinals-api/issues/41)) ([efa4a62](https://github.com/hirosystems/ordinals-api/commit/efa4a6241db3de70a79b9a228a2c2ffa8e1fecd7))
+
+## [0.1.0-beta.7](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.6...v0.1.0-beta.7) (2023-04-12)
+
+
+### Features
+
+* support inscription transfers ([#37](https://github.com/hirosystems/ordinals-api/issues/37)) ([ebeb805](https://github.com/hirosystems/ordinals-api/commit/ebeb8054980b18db90e038ecf525e2d93b45de28))
+
 ## [0.1.0-beta.6](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.5...v0.1.0-beta.6) (2023-03-09)
 
 

@@ -1,6 +1,7 @@
 import { Order, OrderBy } from '../api/schemas';
 import { SatoshiRarity } from '../api/util/ordinal-satoshi';
 import { ENV } from '../env';
+import { logger } from '../logger';
 import { inscriptionContentToJson } from './helpers';
 import { runMigrations } from './migrations';
 import { connectPostgres } from './postgres-tools';
@@ -72,6 +73,32 @@ export class PgStore extends BasePgStore {
   }): Promise<void> {
     let inscription_id: number | undefined;
     await this.sqlWriteTransaction(async sql => {
+      // Are we upserting?
+      const prevInscription = await sql<{ id: number }[]>`
+        SELECT id FROM inscriptions WHERE number = ${args.inscription.number}
+      `;
+      if (prevInscription.count !== 0) {
+        logger.warn(
+          {
+            block_height: args.location.block_height,
+            genesis_id: args.inscription.genesis_id,
+          },
+          `PgStore upserting inscription genesis #${args.inscription.number}`
+        );
+      } else {
+        // Is this a sequential genesis insert?
+        const maxNumber = await this.getMaxInscriptionNumber();
+        if (maxNumber && maxNumber + 1 !== args.inscription.number) {
+          logger.error(
+            {
+              block_height: args.location.block_height,
+              genesis_id: args.inscription.genesis_id,
+            },
+            `PgStore inserting out-of-order inscription genesis #${args.inscription.number}, current max is #${maxNumber}`
+          );
+        }
+      }
+
       const inscription = await sql<{ id: number }[]>`
         INSERT INTO inscriptions ${sql(args.inscription)}
         ON CONFLICT ON CONSTRAINT inscriptions_number_unique DO UPDATE SET
@@ -139,6 +166,13 @@ export class PgStore extends BasePgStore {
       const inscription = await sql<{ id: number }[]>`
         SELECT id FROM inscriptions WHERE genesis_id = ${args.location.genesis_id}
       `;
+      if (inscription.count === 0) {
+        logger.warn(
+          args.location,
+          `PgStore ignoring transfer for an inscription that does not exist`
+        );
+        return;
+      }
       inscription_id = inscription[0].id;
       const location = {
         inscription_id,
@@ -183,6 +217,10 @@ export class PgStore extends BasePgStore {
       const inscription = await sql<{ id: number }[]>`
         SELECT id FROM inscriptions WHERE genesis_id = ${args.genesis_id}
       `;
+      if (inscription.count === 0) {
+        logger.warn(args, `PgStore ignoring rollback for a transfer that does not exist`);
+        return;
+      }
       inscription_id = inscription[0].id;
       await sql`
         DELETE FROM locations

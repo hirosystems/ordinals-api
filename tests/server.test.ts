@@ -1,10 +1,5 @@
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import {
-  buildChainhookServer,
-  CHAINHOOK_BASE_PATH,
-  REVEAL__PREDICATE_UUID,
-  TRANSFER__PREDICATE_UUID,
-} from '../src/chainhook/server';
+import { buildChainhookServer, CHAINHOOK_BASE_PATH, PREDICATE_UUID } from '../src/chainhook/server';
 import { ENV } from '../src/env';
 import { cycleMigrations } from '../src/pg/migrations';
 import { PgStore } from '../src/pg/pg-store';
@@ -34,13 +29,7 @@ describe('EventServer', () => {
       interceptor.intercept({ path: '/v1/chainhooks', method: 'POST' }).reply(200).times(2);
       interceptor
         .intercept({
-          path: `/v1/chainhooks/bitcoin/${REVEAL__PREDICATE_UUID}`,
-          method: 'DELETE',
-        })
-        .reply(200);
-      interceptor
-        .intercept({
-          path: `/v1/chainhooks/bitcoin/${TRANSFER__PREDICATE_UUID}`,
+          path: `/v1/chainhooks/bitcoin/${PREDICATE_UUID}`,
           method: 'DELETE',
         })
         .reply(200);
@@ -50,7 +39,7 @@ describe('EventServer', () => {
       const payload = { test: 'value' };
       await fastify.inject({
         method: 'POST',
-        url: '/chainhook/inscription_revealed',
+        url: '/chainhook/inscription_feed',
         headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
         payload,
       });
@@ -68,13 +57,7 @@ describe('EventServer', () => {
       interceptor.intercept({ path: '/v1/chainhooks', method: 'POST' }).reply(200).times(2);
       interceptor
         .intercept({
-          path: `/v1/chainhooks/bitcoin/${REVEAL__PREDICATE_UUID}`,
-          method: 'DELETE',
-        })
-        .reply(200);
-      interceptor
-        .intercept({
-          path: `/v1/chainhooks/bitcoin/${TRANSFER__PREDICATE_UUID}`,
+          path: `/v1/chainhooks/bitcoin/${PREDICATE_UUID}`,
           method: 'DELETE',
         })
         .reply(200);
@@ -84,7 +67,7 @@ describe('EventServer', () => {
       const payload = { test: 'value' };
       const response = await fastify.inject({
         method: 'POST',
-        url: '/chainhook/inscription_revealed',
+        url: '/chainhook/inscription_feed',
         payload,
       });
       expect(response.statusCode).toBe(403);
@@ -106,13 +89,7 @@ describe('EventServer', () => {
       interceptor.intercept({ path: '/v1/chainhooks', method: 'POST' }).reply(200).times(2);
       interceptor
         .intercept({
-          path: `/v1/chainhooks/bitcoin/${REVEAL__PREDICATE_UUID}`,
-          method: 'DELETE',
-        })
-        .reply(200);
-      interceptor
-        .intercept({
-          path: `/v1/chainhooks/bitcoin/${TRANSFER__PREDICATE_UUID}`,
+          path: `/v1/chainhooks/bitcoin/${PREDICATE_UUID}`,
           method: 'DELETE',
         })
         .reply(200);
@@ -125,7 +102,7 @@ describe('EventServer', () => {
       await agent.close();
     });
 
-    test('parses inscription_revealed apply and rollback', async () => {
+    test('parses inscription_reveal apply and rollback', async () => {
       const reveal = {
         block_identifier: {
           index: 107,
@@ -143,13 +120,6 @@ describe('EventServer', () => {
             },
             operations: [],
             metadata: {
-              outputs: [
-                {
-                  value: 10000,
-                  script_pubkey:
-                    '0x512069cb384754a2ba3fde965ce4e27c60488abe6963181f5f08385dc89615d53520',
-                },
-              ],
               ordinal_operations: [
                 {
                   inscription_revealed: {
@@ -158,6 +128,7 @@ describe('EventServer', () => {
                     content_length: 12,
                     inscription_number: 100,
                     inscription_fee: 3425,
+                    inscription_output_value: 10000,
                     inscription_id:
                       '0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8i0',
                     inscriber_address:
@@ -184,14 +155,14 @@ describe('EventServer', () => {
         chainhook: {
           uuid: '1',
           predicate: {
-            scope: 'protocol',
-            ordinal: 'inscription_revealed',
+            scope: 'ordinals_protocol',
+            operation: 'inscription_feed',
           },
         },
       };
       const response = await fastify.inject({
         method: 'POST',
-        url: '/chainhook/inscription_revealed',
+        url: '/chainhook/inscription_feed',
         headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
         payload: payload1,
       });
@@ -241,14 +212,14 @@ describe('EventServer', () => {
         chainhook: {
           uuid: '1',
           predicate: {
-            scope: 'protocol',
-            ordinal: 'inscription_revealed',
+            scope: 'ordinals_protocol',
+            operation: 'inscription_feed',
           },
         },
       };
       const response2 = await fastify.inject({
         method: 'POST',
-        url: '/chainhook/inscription_revealed',
+        url: '/chainhook/inscription_feed',
         headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
         payload: payload2,
       });
@@ -268,7 +239,7 @@ describe('EventServer', () => {
           content_length: 5,
           number: 7,
           content: '0x48656C6C6F',
-          fee: 2805n,
+          fee: '2805',
         },
         location: {
           genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
@@ -277,10 +248,10 @@ describe('EventServer', () => {
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
           output: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0',
-          offset: 0n,
-          value: 10000n,
+          offset: '0',
+          value: '10000',
           timestamp: 1676913207,
-          sat_ordinal: 5n,
+          sat_ordinal: '5',
           sat_rarity: 'common',
           sat_coinbase_height: 0,
         },
@@ -302,13 +273,6 @@ describe('EventServer', () => {
             },
             operations: [],
             metadata: {
-              outputs: [
-                {
-                  value: 10000,
-                  script_pubkey:
-                    '0x512069cb384754a2ba3fde965ce4e27c60488abe6963181f5f08385dc89615d53520',
-                },
-              ],
               ordinal_operations: [
                 {
                   inscription_transferred: {
@@ -322,6 +286,7 @@ describe('EventServer', () => {
                       '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
                     satpoint_post_transfer:
                       '0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8:0:5000',
+                    post_transfer_output_value: 10000,
                   },
                 },
               ],
@@ -339,14 +304,14 @@ describe('EventServer', () => {
         chainhook: {
           uuid: '1',
           predicate: {
-            scope: 'protocol',
-            ordinal: 'inscription_transferred',
+            scope: 'ordinals_protocol',
+            operation: 'inscription_feed',
           },
         },
       };
       const response = await fastify.inject({
         method: 'POST',
-        url: '/chainhook/inscription_transferred',
+        url: '/chainhook/inscription_feed',
         headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
         payload: payload1,
       });
@@ -396,14 +361,14 @@ describe('EventServer', () => {
         chainhook: {
           uuid: '1',
           predicate: {
-            scope: 'protocol',
-            ordinal: 'inscription_transferred',
+            scope: 'ordinals_protocol',
+            operation: 'inscription_feed',
           },
         },
       };
       const response2 = await fastify.inject({
         method: 'POST',
-        url: '/chainhook/inscription_transferred',
+        url: '/chainhook/inscription_feed',
         headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
         payload: payload2,
       });
@@ -432,13 +397,6 @@ describe('EventServer', () => {
             },
             operations: [],
             metadata: {
-              outputs: [
-                {
-                  value: 10000,
-                  script_pubkey:
-                    '0x512069cb384754a2ba3fde965ce4e27c60488abe6963181f5f08385dc89615d53520',
-                },
-              ],
               ordinal_operations: [
                 {
                   inscription_revealed: {
@@ -458,6 +416,7 @@ describe('EventServer', () => {
                     ordinal_offset: 0,
                     satpoint_post_inscription:
                       '0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8:0:0',
+                    inscription_output_value: 10000,
                   },
                 },
               ],
@@ -475,14 +434,14 @@ describe('EventServer', () => {
         chainhook: {
           uuid: '1',
           predicate: {
-            scope: 'protocol',
-            ordinal: 'inscription_revealed',
+            scope: 'ordinals_protocol',
+            operation: 'inscription_feed',
           },
         },
       };
       const response = await fastify.inject({
         method: 'POST',
-        url: '/chainhook/inscription_revealed',
+        url: '/chainhook/inscription_feed',
         headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
         payload: payload1,
       });
