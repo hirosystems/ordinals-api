@@ -50,9 +50,22 @@ export class PgStore extends BasePgStore {
     `;
   }
 
+  async updateChainTipInscriptionCount(): Promise<void> {
+    await this.sql`
+      UPDATE chain_tip SET inscription_count = (SELECT COUNT(*) FROM inscriptions)
+    `;
+  }
+
   async getChainTipBlockHeight(): Promise<number> {
     const result = await this.sql<{ block_height: number }[]>`SELECT block_height FROM chain_tip`;
     return result[0].block_height;
+  }
+
+  async getChainTipInscriptionCount(): Promise<number> {
+    const result = await this.sql<{ inscription_count: number }[]>`
+      SELECT inscription_count FROM chain_tip
+    `;
+    return result[0].inscription_count;
   }
 
   async getMaxInscriptionNumber(): Promise<number | undefined> {
@@ -297,34 +310,40 @@ export class PgStore extends BasePgStore {
     }
   }
 
-  async getInscriptions(args: {
-    genesis_id?: string[];
-    genesis_block_height?: number;
-    genesis_block_hash?: string;
-    from_genesis_block_height?: number;
-    to_genesis_block_height?: number;
-    from_genesis_timestamp?: number;
-    to_genesis_timestamp?: number;
-    from_sat_coinbase_height?: number;
-    to_sat_coinbase_height?: number;
-    number?: number[];
-    from_number?: number;
-    to_number?: number;
-    address?: string[];
-    mime_type?: string[];
-    output?: string;
-    sat_rarity?: SatoshiRarity[];
-    sat_ordinal?: bigint;
-    from_sat_ordinal?: bigint;
-    to_sat_ordinal?: bigint;
-    order_by?: OrderBy;
-    order?: Order;
-    limit: number;
-    offset: number;
-  }): Promise<DbPaginatedResult<DbFullyLocatedInscriptionResult>> {
+  async getInscriptions(
+    page: {
+      limit: number;
+      offset: number;
+    },
+    args?: {
+      genesis_id?: string[];
+      genesis_block_height?: number;
+      genesis_block_hash?: string;
+      from_genesis_block_height?: number;
+      to_genesis_block_height?: number;
+      from_genesis_timestamp?: number;
+      to_genesis_timestamp?: number;
+      from_sat_coinbase_height?: number;
+      to_sat_coinbase_height?: number;
+      number?: number[];
+      from_number?: number;
+      to_number?: number;
+      address?: string[];
+      mime_type?: string[];
+      output?: string;
+      sat_rarity?: SatoshiRarity[];
+      sat_ordinal?: bigint;
+      from_sat_ordinal?: bigint;
+      to_sat_ordinal?: bigint;
+    },
+    sort?: {
+      order_by?: OrderBy;
+      order?: Order;
+    }
+  ): Promise<DbPaginatedResult<DbFullyLocatedInscriptionResult>> {
     // Sanitize ordering args because we'll use `unsafe` to concatenate them into the query.
     let orderBy = 'gen.block_height';
-    switch (args.order_by) {
+    switch (sort?.order_by) {
       case OrderBy.ordinal:
         orderBy = 'loc.sat_ordinal';
         break;
@@ -333,7 +352,10 @@ export class PgStore extends BasePgStore {
           "ARRAY_POSITION(ARRAY['common','uncommon','rare','epic','legendary','mythic'], loc.sat_rarity)";
         break;
     }
-    const order = args.order === Order.asc ? 'ASC' : 'DESC';
+    const order = sort?.order === Order.asc ? 'ASC' : 'DESC';
+    // Do we need a filtered `COUNT(*)`? If not, use the global inscription count from `chain_tip`.
+    const unfiltered =
+      args === undefined || Object.values(args).find(k => k !== undefined) === undefined;
 
     const results = await this.sql<({ total: number } & DbFullyLocatedInscriptionResult)[]>`
       SELECT
@@ -357,88 +379,93 @@ export class PgStore extends BasePgStore {
         loc.timestamp,
         loc.value,
         loc.sat_coinbase_height,
-        COUNT(*) OVER() as total
+        ${unfiltered ? '0 as total' : this.sql`COUNT(*) OVER() as total`}
       FROM inscriptions AS i
       INNER JOIN locations AS loc ON loc.inscription_id = i.id
       INNER JOIN locations AS gen ON gen.inscription_id = i.id
       WHERE loc.current = TRUE AND gen.genesis = TRUE
         ${
-          args.genesis_id?.length
+          args?.genesis_id?.length
             ? this.sql`AND i.genesis_id IN ${this.sql(args.genesis_id)}`
             : this.sql``
         }
         ${
-          args.genesis_block_height
+          args?.genesis_block_height
             ? this.sql`AND gen.block_height = ${args.genesis_block_height}`
             : this.sql``
         }
         ${
-          args.genesis_block_hash
+          args?.genesis_block_hash
             ? this.sql`AND gen.block_hash = ${args.genesis_block_hash}`
             : this.sql``
         }
         ${
-          args.from_genesis_block_height
+          args?.from_genesis_block_height
             ? this.sql`AND gen.block_height >= ${args.from_genesis_block_height}`
             : this.sql``
         }
         ${
-          args.to_genesis_block_height
+          args?.to_genesis_block_height
             ? this.sql`AND gen.block_height <= ${args.to_genesis_block_height}`
             : this.sql``
         }
         ${
-          args.from_sat_coinbase_height
+          args?.from_sat_coinbase_height
             ? this.sql`AND loc.sat_coinbase_height >= ${args.from_sat_coinbase_height}`
             : this.sql``
         }
         ${
-          args.to_sat_coinbase_height
+          args?.to_sat_coinbase_height
             ? this.sql`AND loc.sat_coinbase_height <= ${args.to_sat_coinbase_height}`
             : this.sql``
         }
         ${
-          args.from_genesis_timestamp
+          args?.from_genesis_timestamp
             ? this.sql`AND gen.timestamp >= to_timestamp(${args.from_genesis_timestamp})`
             : this.sql``
         }
         ${
-          args.to_genesis_timestamp
+          args?.to_genesis_timestamp
             ? this.sql`AND gen.timestamp <= to_timestamp(${args.to_genesis_timestamp})`
             : this.sql``
         }
         ${
-          args.from_sat_ordinal
+          args?.from_sat_ordinal
             ? this.sql`AND loc.sat_ordinal >= ${args.from_sat_ordinal}`
             : this.sql``
         }
         ${
-          args.to_sat_ordinal ? this.sql`AND loc.sat_ordinal <= ${args.to_sat_ordinal}` : this.sql``
+          args?.to_sat_ordinal
+            ? this.sql`AND loc.sat_ordinal <= ${args.to_sat_ordinal}`
+            : this.sql``
         }
-        ${args.number?.length ? this.sql`AND i.number IN ${this.sql(args.number)}` : this.sql``}
-        ${args.from_number ? this.sql`AND i.number >= ${args.from_number}` : this.sql``}
-        ${args.to_number ? this.sql`AND i.number <= ${args.to_number}` : this.sql``}
+        ${args?.number?.length ? this.sql`AND i.number IN ${this.sql(args.number)}` : this.sql``}
+        ${args?.from_number ? this.sql`AND i.number >= ${args.from_number}` : this.sql``}
+        ${args?.to_number ? this.sql`AND i.number <= ${args.to_number}` : this.sql``}
         ${
-          args.address?.length ? this.sql`AND loc.address IN ${this.sql(args.address)}` : this.sql``
+          args?.address?.length
+            ? this.sql`AND loc.address IN ${this.sql(args.address)}`
+            : this.sql``
         }
         ${
-          args.mime_type?.length
+          args?.mime_type?.length
             ? this.sql`AND i.mime_type IN ${this.sql(args.mime_type)}`
             : this.sql``
         }
-        ${args.output ? this.sql`AND loc.output = ${args.output}` : this.sql``}
+        ${args?.output ? this.sql`AND loc.output = ${args.output}` : this.sql``}
         ${
-          args.sat_rarity?.length
+          args?.sat_rarity?.length
             ? this.sql`AND loc.sat_rarity IN ${this.sql(args.sat_rarity)}`
             : this.sql``
         }
-        ${args.sat_ordinal ? this.sql`AND loc.sat_ordinal = ${args.sat_ordinal}` : this.sql``}
+        ${args?.sat_ordinal ? this.sql`AND loc.sat_ordinal = ${args.sat_ordinal}` : this.sql``}
       ORDER BY ${this.sql.unsafe(orderBy)} ${this.sql.unsafe(order)}
-      LIMIT ${args.limit}
-      OFFSET ${args.offset}
+      LIMIT ${page.limit}
+      OFFSET ${page.offset}
     `;
+    const total = unfiltered ? await this.getChainTipInscriptionCount() : results[0]?.total ?? 0;
     return {
-      total: results[0]?.total ?? 0,
+      total,
       results: results ?? [],
     };
   }

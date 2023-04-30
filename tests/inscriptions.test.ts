@@ -1383,6 +1383,7 @@ describe('/inscriptions', () => {
             sat_coinbase_height: 650000,
           },
         });
+        await db.updateChainTipInscriptionCount();
 
         const response1 = await fastify.inject({
           method: 'GET',
@@ -1483,6 +1484,7 @@ describe('/inscriptions', () => {
             sat_coinbase_height: 650000,
           },
         });
+        await db.updateChainTipInscriptionCount();
 
         const response1 = await fastify.inject({
           method: 'GET',
@@ -1583,6 +1585,7 @@ describe('/inscriptions', () => {
             sat_coinbase_height: 650000,
           },
         });
+        await db.updateChainTipInscriptionCount();
 
         const response1 = await fastify.inject({
           method: 'GET',

@@ -28,11 +28,10 @@ export const SatRoutes: FastifyPluginCallback<Record<never, never>, Server, Type
     },
     async (request, reply) => {
       const sat = new OrdinalSatoshi(request.params.ordinal);
-      const inscriptions = await fastify.db.getInscriptions({
-        sat_ordinal: BigInt(request.params.ordinal),
-        limit: 1,
-        offset: 0,
-      });
+      const inscriptions = await fastify.db.getInscriptions(
+        { limit: 1, offset: 0 },
+        { sat_ordinal: BigInt(request.params.ordinal) }
+      );
       await reply.send({
         coinbase_height: sat.blockHeight,
         cycle: sat.cycle,
