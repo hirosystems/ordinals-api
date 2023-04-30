@@ -168,11 +168,13 @@ describe('EventServer', () => {
       });
       expect(response.statusCode).toBe(200);
 
-      const query = await db.getInscriptions({
-        genesis_id: ['0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8i0'],
-        limit: 1,
-        offset: 0,
-      });
+      const query = await db.getInscriptions(
+        {
+          limit: 1,
+          offset: 0,
+        },
+        { genesis_id: ['0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8i0'] }
+      );
       const inscr = query.results[0];
       expect(inscr).not.toBeUndefined();
       expect(inscr.address).toBe('bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td');
@@ -317,11 +319,13 @@ describe('EventServer', () => {
       });
       expect(response.statusCode).toBe(200);
 
-      const query = await db.getInscriptions({
-        genesis_id: ['38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0'],
-        limit: 1,
-        offset: 0,
-      });
+      const query = await db.getInscriptions(
+        {
+          limit: 1,
+          offset: 0,
+        },
+        { genesis_id: ['38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0'] }
+      );
       const inscr = query.results[0];
       expect(inscr).not.toBeUndefined();
       expect(inscr.address).toBe('bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf00000');

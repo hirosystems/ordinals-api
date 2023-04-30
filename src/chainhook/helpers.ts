@@ -100,4 +100,5 @@ export async function processInscriptionFeed(payload: unknown, db: PgStore): Pro
       }
     }
   }
+  await db.updateChainTipInscriptionCount();
 }
