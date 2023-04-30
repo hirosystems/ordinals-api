@@ -1,3 +1,10 @@
+## [0.1.0-beta.10](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.9...v0.1.0-beta.10) (2023-04-30)
+
+
+### Bug Fixes
+
+* use pre-calculated inscription count for unfiltered results ([#48](https://github.com/hirosystems/ordinals-api/issues/48)) ([3e7a4f4](https://github.com/hirosystems/ordinals-api/commit/3e7a4f41b0429a26cca1c1af544fff90ed8a3c33))
+
 ## [0.1.0-beta.9](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.8...v0.1.0-beta.9) (2023-04-24)
 
 
