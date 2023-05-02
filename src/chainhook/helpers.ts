@@ -101,4 +101,6 @@ export async function processInscriptionFeed(payload: unknown, db: PgStore): Pro
     }
   }
   await db.updateChainTipInscriptionCount();
+  await db.refreshMaterializedView('mime_type_counts');
+  await db.refreshMaterializedView('sat_rarity_counts');
 }

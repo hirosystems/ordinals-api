@@ -1,7 +1,11 @@
 import { Static, Type } from '@sinclair/typebox';
 import { TypeCompiler } from '@sinclair/typebox/compiler';
 import { hexToBuffer } from '../api/util/helpers';
-import { DbInscriptionInsert } from './types';
+import {
+  DbInscriptionIndexFilters,
+  DbInscriptionIndexResultCountType,
+  DbInscriptionInsert,
+} from './types';
 
 const OpJson = Type.Object(
   {
@@ -31,4 +35,27 @@ export function inscriptionContentToJson(inscription: DbInscriptionInsert): OpJs
       // Not a JSON inscription.
     }
   }
+}
+
+/**
+ * Returns which inscription count is required based on filters sent to the index endpoint.
+ * @param filters - DbInscriptionIndexFilters
+ * @returns DbInscriptionIndexResultCountType
+ */
+export function getIndexResultCountType(
+  filters?: DbInscriptionIndexFilters
+): DbInscriptionIndexResultCountType {
+  if (!filters) return DbInscriptionIndexResultCountType.all;
+  // Remove undefined values.
+  Object.keys(filters).forEach(
+    key =>
+      filters[key as keyof DbInscriptionIndexFilters] === undefined &&
+      delete filters[key as keyof DbInscriptionIndexFilters]
+  );
+  // Check for selected filter.
+  if (Object.keys(filters).length === 1) {
+    if (filters.mime_type) return DbInscriptionIndexResultCountType.mimeType;
+    if (filters.sat_rarity) return DbInscriptionIndexResultCountType.satRarity;
+  }
+  return DbInscriptionIndexResultCountType.custom;
 }
