@@ -40,7 +40,7 @@ import {
 } from '../util/helpers';
 
 function blockParam(param: string | undefined, name: string) {
-  const out: { [k: string]: string } = {};
+  const out: Record<string, string> = {};
   if (BlockHashParamCType.Check(param)) {
     out[`${name}_hash`] = param;
   } else if (BlockHeightParamCType.Check(param)) {
