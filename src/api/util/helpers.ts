@@ -8,10 +8,10 @@ export function parseDbInscriptions(
 ): InscriptionResponseType[] {
   return items.map(i => ({
     id: i.genesis_id,
-    number: i.number,
+    number: parseInt(i.number),
     address: i.address,
     genesis_address: i.genesis_address,
-    genesis_block_height: i.genesis_block_height,
+    genesis_block_height: parseInt(i.genesis_block_height),
     genesis_block_hash: i.genesis_block_hash,
     genesis_tx_id: i.genesis_tx_id,
     genesis_fee: i.genesis_fee.toString(),
@@ -23,10 +23,10 @@ export function parseDbInscriptions(
     offset: i.offset,
     sat_ordinal: i.sat_ordinal.toString(),
     sat_rarity: i.sat_rarity,
-    sat_coinbase_height: i.sat_coinbase_height,
+    sat_coinbase_height: parseInt(i.sat_coinbase_height),
     mime_type: i.mime_type,
     content_type: i.content_type,
-    content_length: i.content_length,
+    content_length: parseInt(i.content_length),
     timestamp: i.timestamp.valueOf(),
   }));
 }
@@ -36,7 +36,7 @@ export function parseDbInscription(item: DbFullyLocatedInscriptionResult): Inscr
 
 export function parseInscriptionLocations(items: DbLocation[]): InscriptionLocationResponse[] {
   return items.map(i => ({
-    block_height: i.block_height,
+    block_height: parseInt(i.block_height),
     block_hash: i.block_hash,
     address: i.address,
     tx_id: i.tx_id,

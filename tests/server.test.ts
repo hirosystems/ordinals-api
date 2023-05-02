@@ -178,7 +178,7 @@ describe('EventServer', () => {
       const inscr = query.results[0];
       expect(inscr).not.toBeUndefined();
       expect(inscr.address).toBe('bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td');
-      expect(inscr.content_length).toBe(12);
+      expect(inscr.content_length).toBe('12');
       expect(inscr.content_type).toBe('text/plain;charset=utf-8');
       expect(inscr.genesis_address).toBe(
         'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td'
@@ -186,7 +186,7 @@ describe('EventServer', () => {
       expect(inscr.genesis_block_hash).toBe(
         '163de66dc9c0949905bfe8e148bde04600223cf88d19f26fdbeba1d6e6fa0f88'
       );
-      expect(inscr.genesis_block_height).toBe(107);
+      expect(inscr.genesis_block_height).toBe('107');
       expect(inscr.genesis_fee).toBe('3425');
       expect(inscr.genesis_id).toBe(
         '0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8i0'
@@ -196,12 +196,12 @@ describe('EventServer', () => {
         '0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8'
       );
       expect(inscr.mime_type).toBe('text/plain');
-      expect(inscr.number).toBe(100);
+      expect(inscr.number).toBe('100');
       expect(inscr.offset).toBe('0');
       expect(inscr.output).toBe(
         '0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8:0'
       );
-      expect(inscr.sat_coinbase_height).toBe(25069);
+      expect(inscr.sat_coinbase_height).toBe('25069');
       expect(inscr.sat_ordinal).toBe('125348773618236');
       expect(inscr.sat_rarity).toBe('common');
       expect(inscr.timestamp.toISOString()).toBe('2023-03-03T00:31:50.000Z');
@@ -329,7 +329,7 @@ describe('EventServer', () => {
       const inscr = query.results[0];
       expect(inscr).not.toBeUndefined();
       expect(inscr.address).toBe('bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf00000');
-      expect(inscr.content_length).toBe(5);
+      expect(inscr.content_length).toBe('5');
       expect(inscr.content_type).toBe('image/png');
       expect(inscr.genesis_address).toBe(
         'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td'
@@ -337,7 +337,7 @@ describe('EventServer', () => {
       expect(inscr.genesis_block_hash).toBe(
         '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d'
       );
-      expect(inscr.genesis_block_height).toBe(775617);
+      expect(inscr.genesis_block_height).toBe('775617');
       expect(inscr.genesis_fee).toBe('2805');
       expect(inscr.genesis_id).toBe(
         '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0'
@@ -347,12 +347,12 @@ describe('EventServer', () => {
         '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc'
       );
       expect(inscr.mime_type).toBe('image/png');
-      expect(inscr.number).toBe(7);
+      expect(inscr.number).toBe('7');
       expect(inscr.offset).toBe('5000');
       expect(inscr.output).toBe(
         '0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8:0'
       );
-      expect(inscr.sat_coinbase_height).toBe(0);
+      expect(inscr.sat_coinbase_height).toBe('0');
       expect(inscr.sat_ordinal).toBe('5');
       expect(inscr.sat_rarity).toBe('common');
       expect(inscr.timestamp.toISOString()).toBe('2023-03-03T00:31:50.000Z');
