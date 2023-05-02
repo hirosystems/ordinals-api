@@ -1,3 +1,10 @@
+## [0.1.0-beta.11](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.10...v0.1.0-beta.11) (2023-05-02)
+
+
+### Bug Fixes
+
+* expand int column sizes ([0e425ff](https://github.com/hirosystems/ordinals-api/commit/0e425ff42aa0f58c0203f4483acb1114f0e604e5))
+
 ## [0.1.0-beta.10](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.9...v0.1.0-beta.10) (2023-04-30)
 
 
