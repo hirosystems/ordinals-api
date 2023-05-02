@@ -6,18 +6,19 @@
       "type": "shell",
       "command": "npm run testenv:run -- -d",
       "isBackground": true,
-      "problemMatcher": [
-        {
-          "pattern": [
-            { "regexp": ".", "file": 1, "location": 2, "message": 3 }
-          ],
-          "background": {
-            "activeOnStart": true,
-            "beginsPattern": ".",
-            "endsPattern": "."
-          }
+      "problemMatcher": {
+        "pattern": {
+          "regexp": ".",
+          "file": 1,
+          "location": 2,
+          "message": 3
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "."
         }
-      ]
+      }
     },
     {
       "label": "npm: testenv:stop",
