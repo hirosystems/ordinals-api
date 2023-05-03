@@ -60,6 +60,7 @@ const Event = Type.Object({
   transactions: Type.Array(Transaction),
   metadata: Type.Any(),
 });
+export type InscriptionEvent = Static<typeof Event>;
 
 const ChainhookPayload = Type.Object({
   apply: Type.Array(Event),
