@@ -66,3 +66,7 @@ export function hexToBuffer(hex: string): Buffer {
 }
 
 export const has0xPrefix = (id: string) => id.substr(0, 2).toLowerCase() === '0x';
+
+export function normalizedHexString(hex: string): string {
+  return has0xPrefix(hex) ? hex.substring(2) : hex;
+}

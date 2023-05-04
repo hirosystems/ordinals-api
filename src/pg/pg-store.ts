@@ -1,6 +1,7 @@
 import { Order, OrderBy } from '../api/schemas';
+import { normalizedHexString } from '../api/util/helpers';
 import { OrdinalSatoshi, SatoshiRarity } from '../api/util/ordinal-satoshi';
-import { InscriptionEvent } from '../chainhook/schemas';
+import { ChainhookPayload, InscriptionEvent } from '../chainhook/schemas';
 import { ENV } from '../env';
 import { logger } from '../logger';
 import { getIndexResultCountType, inscriptionContentToJson } from './helpers';
@@ -54,13 +55,10 @@ export class PgStore extends BasePgStore {
    * chain re-orgs and materialized view refreshes.
    * @param args - Apply/Rollback Chainhook events
    */
-  async updateInscriptions(args: {
-    apply: InscriptionEvent[];
-    rollback: InscriptionEvent[];
-  }): Promise<void> {
+  async updateInscriptions(payload: ChainhookPayload): Promise<void> {
     const updatedInscriptionIds = new Set<number>();
     await this.sqlWriteTransaction(async sql => {
-      for (const event of args.rollback) {
+      for (const event of payload.rollback) {
         for (const tx of event.transactions) {
           for (const operation of tx.metadata.ordinal_operations) {
             if (operation.inscription_revealed) {
@@ -79,12 +77,13 @@ export class PgStore extends BasePgStore {
           }
         }
       }
-      for (const event of args.apply) {
+      for (const event of payload.apply) {
+        const block_hash = normalizedHexString(event.block_identifier.hash);
         for (const tx of event.transactions) {
+          const tx_id = normalizedHexString(tx.transaction_identifier.hash);
           for (const operation of tx.metadata.ordinal_operations) {
             if (operation.inscription_revealed) {
               const reveal = operation.inscription_revealed;
-              const txId = tx.transaction_identifier.hash.substring(2);
               const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
               const id = await this.insertInscriptionGenesis({
                 inscription: {
@@ -97,12 +96,12 @@ export class PgStore extends BasePgStore {
                   fee: reveal.inscription_fee.toString(),
                 },
                 location: {
+                  block_hash,
+                  tx_id,
                   genesis_id: reveal.inscription_id,
                   block_height: event.block_identifier.index,
-                  block_hash: event.block_identifier.hash.substring(2),
-                  tx_id: txId,
                   address: reveal.inscriber_address,
-                  output: `${txId}:0`,
+                  output: `${tx_id}:0`,
                   offset: reveal.ordinal_offset.toString(),
                   value: reveal.inscription_output_value.toString(),
                   timestamp: event.timestamp,
@@ -118,17 +117,16 @@ export class PgStore extends BasePgStore {
             }
             if (operation.inscription_transferred) {
               const transfer = operation.inscription_transferred;
-              const txId = tx.transaction_identifier.hash.substring(2);
               const satpoint = transfer.satpoint_post_transfer.split(':');
               const offset = satpoint[2];
               const output = `${satpoint[0]}:${satpoint[1]}`;
               const satoshi = new OrdinalSatoshi(transfer.ordinal_number);
               const id = await this.insertInscriptionTransfer({
                 location: {
+                  block_hash,
+                  tx_id,
                   genesis_id: transfer.inscription_id,
                   block_height: event.block_identifier.index,
-                  block_hash: event.block_identifier.hash,
-                  tx_id: txId,
                   address: transfer.updated_address,
                   output: output,
                   offset: offset ?? null,

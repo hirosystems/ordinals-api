@@ -13,5 +13,5 @@ export async function processInscriptionFeed(payload: unknown, db: PgStore): Pro
     logger.error(errors, `[inscription_feed] invalid payload`);
     return;
   }
-  await db.updateInscriptions({ apply: payload.apply, rollback: payload.rollback });
+  await db.updateInscriptions(payload);
 }

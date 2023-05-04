@@ -47,17 +47,17 @@ export class TestChainhookPayloadBuilder {
     return this;
   }
 
-  block(args: { height: number }): this {
+  block(args: { height: number; hash?: string; timestamp?: number }): this {
     this.payload[this.action].push({
       block_identifier: {
         index: args.height,
-        hash: '0x163de66dc9c0949905bfe8e148bde04600223cf88d19f26fdbeba1d6e6fa0f88',
+        hash: args.hash ?? '0x163de66dc9c0949905bfe8e148bde04600223cf88d19f26fdbeba1d6e6fa0f88',
       },
       parent_block_identifier: {
         index: args.height - 1,
         hash: '0x117374e7078440835a744b6b1b13dd2c48c4eff8c58dde07162241a8f15d1e03',
       },
-      timestamp: 1677803510,
+      timestamp: args.timestamp ?? 1677803510,
       transactions: [],
       metadata: {},
     });
