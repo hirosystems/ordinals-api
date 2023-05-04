@@ -1,7 +1,7 @@
 import { buildApiServer } from '../src/api/init';
 import { cycleMigrations } from '../src/pg/migrations';
 import { PgStore } from '../src/pg/pg-store';
-import { TestFastifyServer } from './helpers';
+import { TestChainhookPayloadBuilder, TestFastifyServer } from './helpers';
 
 describe('ETag cache', () => {
   let db: PgStore;
@@ -19,31 +19,27 @@ describe('ETag cache', () => {
   });
 
   test('inscription cache control', async () => {
-    await db.insertInscriptionGenesis({
-      inscription: {
-        genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-        mime_type: 'image/png',
+    const block = new TestChainhookPayloadBuilder()
+      .apply()
+      .block({ height: 775617 })
+      .transaction({ hash: '0x38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc' })
+      .inscriptionRevealed({
+        content_bytes: '0x48656C6C6F',
         content_type: 'image/png',
         content_length: 5,
-        number: 7,
-        content: '0x48656C6C6F',
-        fee: '2805',
-      },
-      location: {
-        genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-        block_height: 775617,
-        block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
-        tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
-        address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-        output: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0',
-        offset: '0',
-        value: '10000',
-        timestamp: 1676913207,
-        sat_ordinal: '257418248345364',
-        sat_rarity: 'common',
-        sat_coinbase_height: 650000,
-      },
-    });
+        inscription_number: 7,
+        inscription_fee: 2805,
+        inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+        inscription_output_value: 10000,
+        inscriber_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+        ordinal_number: 257418248345364,
+        ordinal_block_height: 650000,
+        ordinal_offset: 0,
+        satpoint_post_inscription:
+          '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+      })
+      .build();
+    await db.updateInscriptions(block);
     const response = await fastify.inject({
       method: 'GET',
       url: '/ordinals/v1/inscriptions/38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
@@ -93,56 +89,48 @@ describe('ETag cache', () => {
   });
 
   test('inscriptions index cache control', async () => {
-    await db.insertInscriptionGenesis({
-      inscription: {
-        genesis_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
-        mime_type: 'text/plain',
-        content_type: 'text/plain;charset=utf-8',
+    const block1 = new TestChainhookPayloadBuilder()
+      .apply()
+      .block({ height: 778575 })
+      .transaction({ hash: '0x9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201' })
+      .inscriptionRevealed({
+        content_bytes: '0x48656C6C6F',
+        content_type: 'text/plain',
         content_length: 5,
-        number: 7,
-        content: '0x48656C6C6F',
-        fee: '705',
-      },
-      location: {
-        genesis_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
-        block_height: 778575,
-        block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
-        tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
-        address: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
-        output: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0',
-        offset: '0',
-        value: '10000',
-        timestamp: 1676913207,
-        sat_ordinal: '257418248345364',
-        sat_rarity: 'common',
-        sat_coinbase_height: 650000,
-      },
-    });
-    await db.insertInscriptionGenesis({
-      inscription: {
-        genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-        mime_type: 'image/png',
+        inscription_number: 7,
+        inscription_fee: 705,
+        inscription_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
+        inscription_output_value: 10000,
+        inscriber_address: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+        ordinal_number: 257418248345364,
+        ordinal_block_height: 650000,
+        ordinal_offset: 0,
+        satpoint_post_inscription:
+          '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+      })
+      .build();
+    await db.updateInscriptions(block1);
+    const block2 = new TestChainhookPayloadBuilder()
+      .apply()
+      .block({ height: 775617 })
+      .transaction({ hash: '0x00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d' })
+      .inscriptionRevealed({
+        content_bytes: '0x48656C6C6F',
         content_type: 'image/png',
         content_length: 5,
-        number: 2,
-        content: '0x48656C6C6F',
-        fee: '2805',
-      },
-      location: {
-        genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-        block_height: 775617,
-        block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
-        tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
-        address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-        output: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0',
-        offset: '0',
-        value: '10000',
-        timestamp: 1676913207,
-        sat_ordinal: '257418248345364',
-        sat_rarity: 'common',
-        sat_coinbase_height: 650000,
-      },
-    });
+        inscription_number: 2,
+        inscription_fee: 2805,
+        inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+        inscription_output_value: 10000,
+        inscriber_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+        ordinal_number: 1676913207,
+        ordinal_block_height: 650000,
+        ordinal_offset: 0,
+        satpoint_post_inscription:
+          '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+      })
+      .build();
+    await db.updateInscriptions(block2);
 
     // ETag response
     const response = await fastify.inject({
@@ -162,22 +150,23 @@ describe('ETag cache', () => {
     expect(cached.statusCode).toBe(304);
 
     // Simulate new location
-    await db.insertInscriptionTransfer({
-      location: {
-        genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-        block_height: 775618,
-        block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a9ff',
-        tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
-        address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-        output: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0',
-        offset: '0',
-        value: '102',
-        timestamp: 1676913207,
-        sat_ordinal: '257418248345364',
-        sat_rarity: 'common',
-        sat_coinbase_height: 20000,
-      },
-    });
+    const block3 = new TestChainhookPayloadBuilder()
+      .apply()
+      .block({ height: 775618 })
+      .transaction({ hash: '0x38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc' })
+      .inscriptionTransferred({
+        inscription_number: 2,
+        inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+        ordinal_number: 257418248345364,
+        updated_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+        satpoint_pre_transfer:
+          '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+        satpoint_post_transfer:
+          '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+        post_transfer_output_value: 102,
+      })
+      .build();
+    await db.updateInscriptions(block3);
     const cached2 = await fastify.inject({
       method: 'GET',
       url: '/ordinals/v1/inscriptions',
