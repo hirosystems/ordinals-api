@@ -1,14 +1,20 @@
 import { Order, OrderBy } from '../api/schemas';
-import { SatoshiRarity } from '../api/util/ordinal-satoshi';
+import { normalizedHexString } from '../api/util/helpers';
+import { OrdinalSatoshi, SatoshiRarity } from '../api/util/ordinal-satoshi';
+import { ChainhookPayload, InscriptionEvent } from '../chainhook/schemas';
 import { ENV } from '../env';
 import { logger } from '../logger';
-import { inscriptionContentToJson } from './helpers';
+import { getIndexResultCountType, inscriptionContentToJson } from './helpers';
 import { runMigrations } from './migrations';
 import { connectPostgres } from './postgres-tools';
 import { BasePgStore } from './postgres-tools/base-pg-store';
 import {
   DbFullyLocatedInscriptionResult,
   DbInscriptionContent,
+  DbInscriptionIndexFilters,
+  DbInscriptionIndexOrder,
+  DbInscriptionIndexPaging,
+  DbInscriptionIndexResultCountType,
   DbInscriptionInsert,
   DbJsonContent,
   DbLocation,
@@ -44,16 +50,109 @@ export class PgStore extends BasePgStore {
     return new PgStore(sql);
   }
 
-  async updateChainTipBlockHeight(args: { blockHeight: number }): Promise<void> {
-    await this.sql`
-      UPDATE chain_tip SET block_height = GREATEST(${args.blockHeight}, block_height)
-    `;
-  }
-
-  async updateChainTipInscriptionCount(): Promise<void> {
-    await this.sql`
-      UPDATE chain_tip SET inscription_count = (SELECT COUNT(*) FROM inscriptions)
-    `;
+  /**
+   * Inserts inscription genesis and transfers from Chainhook events. Also handles rollbacks from
+   * chain re-orgs and materialized view refreshes.
+   * @param args - Apply/Rollback Chainhook events
+   */
+  async updateInscriptions(payload: ChainhookPayload): Promise<void> {
+    const updatedInscriptionIds = new Set<number>();
+    await this.sqlWriteTransaction(async sql => {
+      for (const event of payload.rollback) {
+        for (const tx of event.transactions) {
+          for (const operation of tx.metadata.ordinal_operations) {
+            if (operation.inscription_revealed) {
+              const genesis_id = operation.inscription_revealed.inscription_id;
+              await this.rollBackInscriptionGenesis({ genesis_id });
+              logger.info(`PgStore rollback inscription ${genesis_id}`);
+            }
+            if (operation.inscription_transferred) {
+              const genesis_id = operation.inscription_transferred.inscription_id;
+              const satpoint = operation.inscription_transferred.satpoint_post_transfer.split(':');
+              const output = `${satpoint[0]}:${satpoint[1]}`;
+              const id = await this.rollBackInscriptionTransfer({ genesis_id, output });
+              if (id) updatedInscriptionIds.add(id);
+              logger.info(`PgStore rollback transfer ${genesis_id} ${output}`);
+            }
+          }
+        }
+      }
+      for (const event of payload.apply) {
+        const block_hash = normalizedHexString(event.block_identifier.hash);
+        for (const tx of event.transactions) {
+          const tx_id = normalizedHexString(tx.transaction_identifier.hash);
+          for (const operation of tx.metadata.ordinal_operations) {
+            if (operation.inscription_revealed) {
+              const reveal = operation.inscription_revealed;
+              const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
+              const id = await this.insertInscriptionGenesis({
+                inscription: {
+                  genesis_id: reveal.inscription_id,
+                  mime_type: reveal.content_type.split(';')[0],
+                  content_type: reveal.content_type,
+                  content_length: reveal.content_length,
+                  number: reveal.inscription_number,
+                  content: reveal.content_bytes,
+                  fee: reveal.inscription_fee.toString(),
+                },
+                location: {
+                  block_hash,
+                  tx_id,
+                  genesis_id: reveal.inscription_id,
+                  block_height: event.block_identifier.index,
+                  address: reveal.inscriber_address,
+                  output: `${tx_id}:0`,
+                  offset: reveal.ordinal_offset.toString(),
+                  value: reveal.inscription_output_value.toString(),
+                  timestamp: event.timestamp,
+                  sat_ordinal: reveal.ordinal_number.toString(),
+                  sat_rarity: satoshi.rarity,
+                  sat_coinbase_height: satoshi.blockHeight,
+                },
+              });
+              if (id) updatedInscriptionIds.add(id);
+              logger.info(
+                `PgStore apply inscription #${reveal.inscription_number} (${reveal.inscription_id}) at block ${event.block_identifier.index}`
+              );
+            }
+            if (operation.inscription_transferred) {
+              const transfer = operation.inscription_transferred;
+              const satpoint = transfer.satpoint_post_transfer.split(':');
+              const offset = satpoint[2];
+              const output = `${satpoint[0]}:${satpoint[1]}`;
+              const satoshi = new OrdinalSatoshi(transfer.ordinal_number);
+              const id = await this.insertInscriptionTransfer({
+                location: {
+                  block_hash,
+                  tx_id,
+                  genesis_id: transfer.inscription_id,
+                  block_height: event.block_identifier.index,
+                  address: transfer.updated_address,
+                  output: output,
+                  offset: offset ?? null,
+                  value: transfer.post_transfer_output_value
+                    ? transfer.post_transfer_output_value.toString()
+                    : null,
+                  timestamp: event.timestamp,
+                  sat_ordinal: transfer.ordinal_number.toString(),
+                  sat_rarity: satoshi.rarity,
+                  sat_coinbase_height: satoshi.blockHeight,
+                },
+              });
+              if (id) updatedInscriptionIds.add(id);
+              logger.info(
+                `PgStore apply transfer for #${transfer.inscription_number} (${transfer.inscription_id}) to output ${output} at block ${event.block_identifier.index}`
+              );
+            }
+          }
+        }
+      }
+    });
+    await this.normalizeInscriptionLocations({ inscription_id: Array.from(updatedInscriptionIds) });
+    await this.refreshMaterializedView('chain_tip');
+    await this.refreshMaterializedView('inscription_count');
+    await this.refreshMaterializedView('mime_type_counts');
+    await this.refreshMaterializedView('sat_rarity_counts');
   }
 
   async getChainTipBlockHeight(): Promise<number> {
@@ -62,10 +161,30 @@ export class PgStore extends BasePgStore {
   }
 
   async getChainTipInscriptionCount(): Promise<number> {
-    const result = await this.sql<{ inscription_count: number }[]>`
-      SELECT inscription_count FROM chain_tip
+    const result = await this.sql<{ count: number }[]>`
+      SELECT count FROM inscription_count
     `;
-    return result[0].inscription_count;
+    return result[0].count;
+  }
+
+  async getMimeTypeInscriptionCount(mimeType?: string[]): Promise<number> {
+    if (!mimeType) return 0;
+    const result = await this.sql<{ count: number }[]>`
+      SELECT SUM(count) AS count
+      FROM mime_type_counts
+      WHERE mime_type IN ${this.sql(mimeType)}
+    `;
+    return result[0].count;
+  }
+
+  async geSatRarityInscriptionCount(satRarity?: SatoshiRarity[]): Promise<number> {
+    if (!satRarity) return 0;
+    const result = await this.sql<{ count: number }[]>`
+      SELECT SUM(count) AS count
+      FROM sat_rarity_counts
+      WHERE sat_rarity IN ${this.sql(satRarity)}
+    `;
+    return result[0].count;
   }
 
   async getMaxInscriptionNumber(): Promise<number | undefined> {
@@ -80,10 +199,243 @@ export class PgStore extends BasePgStore {
     return result[0].max.toString();
   }
 
-  async insertInscriptionGenesis(args: {
+  async getInscriptionCurrentLocation(args: { output: string }): Promise<DbLocation | undefined> {
+    const result = await this.sql<DbLocation[]>`
+      SELECT ${this.sql(LOCATIONS_COLUMNS)}
+      FROM locations
+      WHERE output = ${args.output}
+      AND current = TRUE
+    `;
+    if (result.count === 0) {
+      return undefined;
+    }
+    return result[0];
+  }
+
+  async getInscriptionContent(
+    args: InscriptionIdentifier
+  ): Promise<DbInscriptionContent | undefined> {
+    const result = await this.sql<DbInscriptionContent[]>`
+      SELECT content, content_type, content_length
+      FROM inscriptions
+      WHERE ${
+        'genesis_id' in args
+          ? this.sql`genesis_id = ${args.genesis_id}`
+          : this.sql`number = ${args.number}`
+      }
+    `;
+    if (result.count > 0) {
+      return result[0];
+    }
+  }
+
+  async getInscriptionETag(args: InscriptionIdentifier): Promise<string | undefined> {
+    const result = await this.sql<{ etag: string }[]>`
+      SELECT date_part('epoch', l.timestamp)::text AS etag
+      FROM locations AS l
+      INNER JOIN inscriptions AS i ON l.inscription_id = i.id
+      WHERE ${
+        'genesis_id' in args
+          ? this.sql`i.genesis_id = ${args.genesis_id}`
+          : this.sql`i.number = ${args.number}`
+      }
+      AND l.current = TRUE
+    `;
+    if (result.count > 0) {
+      return result[0].etag;
+    }
+  }
+
+  async getInscriptions(
+    page: DbInscriptionIndexPaging,
+    filters?: DbInscriptionIndexFilters,
+    sort?: DbInscriptionIndexOrder
+  ): Promise<DbPaginatedResult<DbFullyLocatedInscriptionResult>> {
+    return await this.sqlTransaction(async sql => {
+      // Do we need a filtered `COUNT(*)`? If so, try to use the pre-calculated counts we have in
+      // materialized views to speed up these queries.
+      const countType = getIndexResultCountType(filters);
+      // `ORDER BY` statement
+      let orderBy = sql`gen.block_height`;
+      switch (sort?.order_by) {
+        case OrderBy.ordinal:
+          orderBy = sql`loc.sat_ordinal`;
+          break;
+        case OrderBy.rarity:
+          orderBy = sql`ARRAY_POSITION(ARRAY['common','uncommon','rare','epic','legendary','mythic'], loc.sat_rarity)`;
+          break;
+      }
+      // `ORDER` statement
+      const order = sort?.order === Order.asc ? sql`ASC` : sql`DESC`;
+      const results = await sql<({ total: number } & DbFullyLocatedInscriptionResult)[]>`
+        SELECT
+          i.genesis_id,
+          i.number,
+          i.mime_type,
+          i.content_type,
+          i.content_length,
+          i.fee AS genesis_fee,
+          gen.block_height AS genesis_block_height,
+          gen.block_hash AS genesis_block_hash,
+          gen.tx_id AS genesis_tx_id,
+          gen.timestamp AS genesis_timestamp,
+          gen.address AS genesis_address,
+          loc.tx_id,
+          loc.address,
+          loc.output,
+          loc.offset,
+          loc.sat_ordinal,
+          loc.sat_rarity,
+          loc.timestamp,
+          loc.value,
+          loc.sat_coinbase_height,
+          ${
+            countType === DbInscriptionIndexResultCountType.custom
+              ? sql`COUNT(*) OVER() as total`
+              : sql`0 as total`
+          }
+        FROM inscriptions AS i
+        INNER JOIN locations AS loc ON loc.inscription_id = i.id
+        INNER JOIN locations AS gen ON gen.inscription_id = i.id
+        WHERE loc.current = TRUE AND gen.genesis = TRUE
+          ${
+            filters?.genesis_id?.length
+              ? sql`AND i.genesis_id IN ${sql(filters.genesis_id)}`
+              : sql``
+          }
+          ${
+            filters?.genesis_block_height
+              ? sql`AND gen.block_height = ${filters.genesis_block_height}`
+              : sql``
+          }
+          ${
+            filters?.genesis_block_hash
+              ? sql`AND gen.block_hash = ${filters.genesis_block_hash}`
+              : sql``
+          }
+          ${
+            filters?.from_genesis_block_height
+              ? sql`AND gen.block_height >= ${filters.from_genesis_block_height}`
+              : sql``
+          }
+          ${
+            filters?.to_genesis_block_height
+              ? sql`AND gen.block_height <= ${filters.to_genesis_block_height}`
+              : sql``
+          }
+          ${
+            filters?.from_sat_coinbase_height
+              ? sql`AND loc.sat_coinbase_height >= ${filters.from_sat_coinbase_height}`
+              : sql``
+          }
+          ${
+            filters?.to_sat_coinbase_height
+              ? sql`AND loc.sat_coinbase_height <= ${filters.to_sat_coinbase_height}`
+              : sql``
+          }
+          ${
+            filters?.from_genesis_timestamp
+              ? sql`AND gen.timestamp >= to_timestamp(${filters.from_genesis_timestamp})`
+              : sql``
+          }
+          ${
+            filters?.to_genesis_timestamp
+              ? sql`AND gen.timestamp <= to_timestamp(${filters.to_genesis_timestamp})`
+              : sql``
+          }
+          ${
+            filters?.from_sat_ordinal
+              ? sql`AND loc.sat_ordinal >= ${filters.from_sat_ordinal}`
+              : sql``
+          }
+          ${filters?.to_sat_ordinal ? sql`AND loc.sat_ordinal <= ${filters.to_sat_ordinal}` : sql``}
+          ${filters?.number?.length ? sql`AND i.number IN ${sql(filters.number)}` : sql``}
+          ${filters?.from_number ? sql`AND i.number >= ${filters.from_number}` : sql``}
+          ${filters?.to_number ? sql`AND i.number <= ${filters.to_number}` : sql``}
+          ${filters?.address?.length ? sql`AND loc.address IN ${sql(filters.address)}` : sql``}
+          ${filters?.mime_type?.length ? sql`AND i.mime_type IN ${sql(filters.mime_type)}` : sql``}
+          ${filters?.output ? sql`AND loc.output = ${filters.output}` : sql``}
+          ${
+            filters?.sat_rarity?.length
+              ? sql`AND loc.sat_rarity IN ${sql(filters.sat_rarity)}`
+              : sql``
+          }
+          ${filters?.sat_ordinal ? sql`AND loc.sat_ordinal = ${filters.sat_ordinal}` : sql``}
+        ORDER BY ${orderBy} ${order}
+        LIMIT ${page.limit}
+        OFFSET ${page.offset}
+      `;
+      let total = results[0]?.total ?? 0;
+      switch (countType) {
+        case DbInscriptionIndexResultCountType.all:
+          total = await this.getChainTipInscriptionCount();
+          break;
+        case DbInscriptionIndexResultCountType.mimeType:
+          total = await this.getMimeTypeInscriptionCount(filters?.mime_type);
+          break;
+        case DbInscriptionIndexResultCountType.satRarity:
+          total = await this.geSatRarityInscriptionCount(filters?.sat_rarity);
+          break;
+      }
+      return {
+        total,
+        results: results ?? [],
+      };
+    });
+  }
+
+  async getInscriptionLocations(
+    args: InscriptionIdentifier & { limit: number; offset: number }
+  ): Promise<DbPaginatedResult<DbLocation>> {
+    const results = await this.sql<({ total: number } & DbLocation)[]>`
+      SELECT ${this.sql(LOCATIONS_COLUMNS.map(c => `l.${c}`))}, COUNT(*) OVER() as total
+      FROM locations AS l
+      INNER JOIN inscriptions AS i ON l.inscription_id = i.id
+      WHERE
+        ${
+          'number' in args
+            ? this.sql`i.number = ${args.number}`
+            : this.sql`i.genesis_id = ${args.genesis_id}`
+        }
+      ORDER BY l.block_height DESC
+      LIMIT ${args.limit}
+      OFFSET ${args.offset}
+    `;
+    return {
+      total: results[0]?.total ?? 0,
+      results: results ?? [],
+    };
+  }
+
+  async getJsonContent(args: InscriptionIdentifier): Promise<DbJsonContent | undefined> {
+    const results = await this.sql<DbJsonContent[]>`
+      SELECT ${this.sql(JSON_CONTENTS_COLUMNS.map(c => `j.${c}`))}
+      FROM json_contents AS j
+      INNER JOIN inscriptions AS i ON j.inscription_id = i.id
+      WHERE
+        ${
+          'number' in args
+            ? this.sql`i.number = ${args.number}`
+            : this.sql`i.genesis_id = ${args.genesis_id}`
+        }
+      LIMIT 1
+    `;
+    if (results.count === 1) {
+      return results[0];
+    }
+  }
+
+  async refreshMaterializedView(viewName: string) {
+    const isProd = process.env.NODE_ENV === 'production';
+    await this.sql`REFRESH MATERIALIZED VIEW ${
+      isProd ? this.sql`CONCURRENTLY` : this.sql``
+    } ${this.sql(viewName)}`;
+  }
+
+  private async insertInscriptionGenesis(args: {
     inscription: DbInscriptionInsert;
     location: DbLocationInsert;
-  }): Promise<void> {
+  }): Promise<number | undefined> {
     let inscription_id: number | undefined;
     await this.sqlWriteTransaction(async sql => {
       // Are we upserting?
@@ -168,12 +520,13 @@ export class PgStore extends BasePgStore {
             content = EXCLUDED.content
         `;
       }
-      await this.updateChainTipBlockHeight({ blockHeight: args.location.block_height });
     });
-    if (inscription_id) await this.normalizeInscriptionLocations({ inscription_id });
+    return inscription_id;
   }
 
-  async insertInscriptionTransfer(args: { location: DbLocationInsert }): Promise<void> {
+  private async insertInscriptionTransfer(args: {
+    location: DbLocationInsert;
+  }): Promise<number | undefined> {
     let inscription_id: number | undefined;
     await this.sqlWriteTransaction(async sql => {
       const inscription = await sql<{ id: number }[]>`
@@ -216,15 +569,18 @@ export class PgStore extends BasePgStore {
           timestamp = EXCLUDED.timestamp
       `;
     });
-    if (inscription_id) await this.normalizeInscriptionLocations({ inscription_id });
+    return inscription_id;
   }
 
-  async rollBackInscriptionGenesis(args: { genesis_id: string }): Promise<void> {
+  private async rollBackInscriptionGenesis(args: { genesis_id: string }): Promise<void> {
     // This will cascade into dependent tables.
     await this.sql`DELETE FROM inscriptions WHERE genesis_id = ${args.genesis_id}`;
   }
 
-  async rollBackInscriptionTransfer(args: { genesis_id: string; output: string }): Promise<void> {
+  private async rollBackInscriptionTransfer(args: {
+    genesis_id: string;
+    output: string;
+  }): Promise<number | undefined> {
     let inscription_id: number | undefined;
     await this.sqlWriteTransaction(async sql => {
       const inscription = await sql<{ id: number }[]>`
@@ -240,274 +596,30 @@ export class PgStore extends BasePgStore {
         WHERE inscription_id = ${inscription_id} AND output = ${args.output}
       `;
     });
-    if (inscription_id) await this.normalizeInscriptionLocations({ inscription_id });
+    return inscription_id;
   }
 
-  private async normalizeInscriptionLocations(args: { inscription_id: number }): Promise<void> {
-    await this.sql`
-      WITH i_genesis AS (
-        SELECT id FROM locations
-        WHERE inscription_id = ${args.inscription_id}
-        ORDER BY block_height ASC
-        LIMIT 1
-      ), i_current AS (
-        SELECT id FROM locations
-        WHERE inscription_id = ${args.inscription_id}
-        ORDER BY block_height DESC
-        LIMIT 1
-      )
-      UPDATE locations SET
-        current = (CASE WHEN id = (SELECT id FROM i_current) THEN TRUE ELSE FALSE END),
-        genesis = (CASE WHEN id = (SELECT id FROM i_genesis) THEN TRUE ELSE FALSE END)
-      WHERE inscription_id = ${args.inscription_id}
-    `;
-  }
-
-  async getInscriptionCurrentLocation(args: { output: string }): Promise<DbLocation | undefined> {
-    const result = await this.sql<DbLocation[]>`
-      SELECT ${this.sql(LOCATIONS_COLUMNS)}
-      FROM locations
-      WHERE output = ${args.output}
-      AND current = TRUE
-    `;
-    if (result.count === 0) {
-      return undefined;
-    }
-    return result[0];
-  }
-
-  async getInscriptionContent(
-    args: InscriptionIdentifier
-  ): Promise<DbInscriptionContent | undefined> {
-    const result = await this.sql<DbInscriptionContent[]>`
-      SELECT content, content_type, content_length
-      FROM inscriptions
-      WHERE ${
-        'genesis_id' in args
-          ? this.sql`genesis_id = ${args.genesis_id}`
-          : this.sql`number = ${args.number}`
+  private async normalizeInscriptionLocations(args: { inscription_id: number[] }): Promise<void> {
+    await this.sqlWriteTransaction(async sql => {
+      for (const id of args.inscription_id) {
+        await sql`
+          WITH i_genesis AS (
+            SELECT id FROM locations
+            WHERE inscription_id = ${id}
+            ORDER BY block_height ASC
+            LIMIT 1
+          ), i_current AS (
+            SELECT id FROM locations
+            WHERE inscription_id = ${id}
+            ORDER BY block_height DESC
+            LIMIT 1
+          )
+          UPDATE locations SET
+            current = (CASE WHEN id = (SELECT id FROM i_current) THEN TRUE ELSE FALSE END),
+            genesis = (CASE WHEN id = (SELECT id FROM i_genesis) THEN TRUE ELSE FALSE END)
+          WHERE inscription_id = ${id}
+        `;
       }
-    `;
-    if (result.count > 0) {
-      return result[0];
-    }
-  }
-
-  async getInscriptionETag(args: InscriptionIdentifier): Promise<string | undefined> {
-    const result = await this.sql<{ etag: string }[]>`
-      SELECT date_part('epoch', l.timestamp)::text AS etag
-      FROM locations AS l
-      INNER JOIN inscriptions AS i ON l.inscription_id = i.id
-      WHERE ${
-        'genesis_id' in args
-          ? this.sql`i.genesis_id = ${args.genesis_id}`
-          : this.sql`i.number = ${args.number}`
-      }
-      AND l.current = TRUE
-    `;
-    if (result.count > 0) {
-      return result[0].etag;
-    }
-  }
-
-  async getInscriptions(
-    page: {
-      limit: number;
-      offset: number;
-    },
-    args?: {
-      genesis_id?: string[];
-      genesis_block_height?: number;
-      genesis_block_hash?: string;
-      from_genesis_block_height?: number;
-      to_genesis_block_height?: number;
-      from_genesis_timestamp?: number;
-      to_genesis_timestamp?: number;
-      from_sat_coinbase_height?: number;
-      to_sat_coinbase_height?: number;
-      number?: number[];
-      from_number?: number;
-      to_number?: number;
-      address?: string[];
-      mime_type?: string[];
-      output?: string;
-      sat_rarity?: SatoshiRarity[];
-      sat_ordinal?: bigint;
-      from_sat_ordinal?: bigint;
-      to_sat_ordinal?: bigint;
-    },
-    sort?: {
-      order_by?: OrderBy;
-      order?: Order;
-    }
-  ): Promise<DbPaginatedResult<DbFullyLocatedInscriptionResult>> {
-    // Sanitize ordering args because we'll use `unsafe` to concatenate them into the query.
-    let orderBy = 'gen.block_height';
-    switch (sort?.order_by) {
-      case OrderBy.ordinal:
-        orderBy = 'loc.sat_ordinal';
-        break;
-      case OrderBy.rarity:
-        orderBy =
-          "ARRAY_POSITION(ARRAY['common','uncommon','rare','epic','legendary','mythic'], loc.sat_rarity)";
-        break;
-    }
-    const order = sort?.order === Order.asc ? 'ASC' : 'DESC';
-    // Do we need a filtered `COUNT(*)`? If not, use the global inscription count from `chain_tip`.
-    const unfiltered =
-      args === undefined || Object.values(args).find(k => k !== undefined) === undefined;
-
-    const results = await this.sql<({ total: number } & DbFullyLocatedInscriptionResult)[]>`
-      SELECT
-        i.genesis_id,
-        i.number,
-        i.mime_type,
-        i.content_type,
-        i.content_length,
-        i.fee AS genesis_fee,
-        gen.block_height AS genesis_block_height,
-        gen.block_hash AS genesis_block_hash,
-        gen.tx_id AS genesis_tx_id,
-        gen.timestamp AS genesis_timestamp,
-        gen.address AS genesis_address,
-        loc.tx_id,
-        loc.address,
-        loc.output,
-        loc.offset,
-        loc.sat_ordinal,
-        loc.sat_rarity,
-        loc.timestamp,
-        loc.value,
-        loc.sat_coinbase_height,
-        ${unfiltered ? '0 as total' : this.sql`COUNT(*) OVER() as total`}
-      FROM inscriptions AS i
-      INNER JOIN locations AS loc ON loc.inscription_id = i.id
-      INNER JOIN locations AS gen ON gen.inscription_id = i.id
-      WHERE loc.current = TRUE AND gen.genesis = TRUE
-        ${
-          args?.genesis_id?.length
-            ? this.sql`AND i.genesis_id IN ${this.sql(args.genesis_id)}`
-            : this.sql``
-        }
-        ${
-          args?.genesis_block_height
-            ? this.sql`AND gen.block_height = ${args.genesis_block_height}`
-            : this.sql``
-        }
-        ${
-          args?.genesis_block_hash
-            ? this.sql`AND gen.block_hash = ${args.genesis_block_hash}`
-            : this.sql``
-        }
-        ${
-          args?.from_genesis_block_height
-            ? this.sql`AND gen.block_height >= ${args.from_genesis_block_height}`
-            : this.sql``
-        }
-        ${
-          args?.to_genesis_block_height
-            ? this.sql`AND gen.block_height <= ${args.to_genesis_block_height}`
-            : this.sql``
-        }
-        ${
-          args?.from_sat_coinbase_height
-            ? this.sql`AND loc.sat_coinbase_height >= ${args.from_sat_coinbase_height}`
-            : this.sql``
-        }
-        ${
-          args?.to_sat_coinbase_height
-            ? this.sql`AND loc.sat_coinbase_height <= ${args.to_sat_coinbase_height}`
-            : this.sql``
-        }
-        ${
-          args?.from_genesis_timestamp
-            ? this.sql`AND gen.timestamp >= to_timestamp(${args.from_genesis_timestamp})`
-            : this.sql``
-        }
-        ${
-          args?.to_genesis_timestamp
-            ? this.sql`AND gen.timestamp <= to_timestamp(${args.to_genesis_timestamp})`
-            : this.sql``
-        }
-        ${
-          args?.from_sat_ordinal
-            ? this.sql`AND loc.sat_ordinal >= ${args.from_sat_ordinal}`
-            : this.sql``
-        }
-        ${
-          args?.to_sat_ordinal
-            ? this.sql`AND loc.sat_ordinal <= ${args.to_sat_ordinal}`
-            : this.sql``
-        }
-        ${args?.number?.length ? this.sql`AND i.number IN ${this.sql(args.number)}` : this.sql``}
-        ${args?.from_number ? this.sql`AND i.number >= ${args.from_number}` : this.sql``}
-        ${args?.to_number ? this.sql`AND i.number <= ${args.to_number}` : this.sql``}
-        ${
-          args?.address?.length
-            ? this.sql`AND loc.address IN ${this.sql(args.address)}`
-            : this.sql``
-        }
-        ${
-          args?.mime_type?.length
-            ? this.sql`AND i.mime_type IN ${this.sql(args.mime_type)}`
-            : this.sql``
-        }
-        ${args?.output ? this.sql`AND loc.output = ${args.output}` : this.sql``}
-        ${
-          args?.sat_rarity?.length
-            ? this.sql`AND loc.sat_rarity IN ${this.sql(args.sat_rarity)}`
-            : this.sql``
-        }
-        ${args?.sat_ordinal ? this.sql`AND loc.sat_ordinal = ${args.sat_ordinal}` : this.sql``}
-      ORDER BY ${this.sql.unsafe(orderBy)} ${this.sql.unsafe(order)}
-      LIMIT ${page.limit}
-      OFFSET ${page.offset}
-    `;
-    const total = unfiltered ? await this.getChainTipInscriptionCount() : results[0]?.total ?? 0;
-    return {
-      total,
-      results: results ?? [],
-    };
-  }
-
-  async getInscriptionLocations(
-    args: InscriptionIdentifier & { limit: number; offset: number }
-  ): Promise<DbPaginatedResult<DbLocation>> {
-    const results = await this.sql<({ total: number } & DbLocation)[]>`
-      SELECT ${this.sql(LOCATIONS_COLUMNS.map(c => `l.${c}`))}, COUNT(*) OVER() as total
-      FROM locations AS l
-      INNER JOIN inscriptions AS i ON l.inscription_id = i.id
-      WHERE
-        ${
-          'number' in args
-            ? this.sql`i.number = ${args.number}`
-            : this.sql`i.genesis_id = ${args.genesis_id}`
-        }
-      ORDER BY l.block_height DESC
-      LIMIT ${args.limit}
-      OFFSET ${args.offset}
-    `;
-    return {
-      total: results[0]?.total ?? 0,
-      results: results ?? [],
-    };
-  }
-
-  async getJsonContent(args: InscriptionIdentifier): Promise<DbJsonContent | undefined> {
-    const results = await this.sql<DbJsonContent[]>`
-      SELECT ${this.sql(JSON_CONTENTS_COLUMNS.map(c => `j.${c}`))}
-      FROM json_contents AS j
-      INNER JOIN inscriptions AS i ON j.inscription_id = i.id
-      WHERE
-        ${
-          'number' in args
-            ? this.sql`i.number = ${args.number}`
-            : this.sql`i.genesis_id = ${args.genesis_id}`
-        }
-      LIMIT 1
-    `;
-    if (results.count === 1) {
-      return results[0];
-    }
+    });
   }
 }

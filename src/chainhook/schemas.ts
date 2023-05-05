@@ -8,7 +8,7 @@ const Block = Type.Object({
   hash: Type.String(),
 });
 
-const InscriptionRevealed = Type.Object({
+const InscriptionRevealedSchema = Type.Object({
   content_bytes: Type.String(),
   content_type: Type.String(),
   content_length: Type.Integer(),
@@ -22,8 +22,9 @@ const InscriptionRevealed = Type.Object({
   ordinal_offset: Type.Integer(),
   satpoint_post_inscription: Type.String(),
 });
+export type InscriptionRevealed = Static<typeof InscriptionRevealedSchema>;
 
-const InscriptionTransferred = Type.Object({
+const InscriptionTransferredSchema = Type.Object({
   inscription_number: Type.Integer(),
   inscription_id: Type.String(),
   ordinal_number: Type.Integer(),
@@ -32,10 +33,11 @@ const InscriptionTransferred = Type.Object({
   satpoint_post_transfer: Type.String(),
   post_transfer_output_value: Nullable(Type.Integer()),
 });
+export type InscriptionTransferred = Static<typeof InscriptionTransferredSchema>;
 
 const OrdinalOperation = Type.Object({
-  inscription_revealed: Type.Optional(InscriptionRevealed),
-  inscription_transferred: Type.Optional(InscriptionTransferred),
+  inscription_revealed: Type.Optional(InscriptionRevealedSchema),
+  inscription_transferred: Type.Optional(InscriptionTransferredSchema),
 });
 
 const Output = Type.Object({
@@ -43,7 +45,7 @@ const Output = Type.Object({
   value: Type.Integer(),
 });
 
-const Transaction = Type.Object({
+const TransactionSchema = Type.Object({
   transaction_identifier: Type.Object({ hash: Type.String() }),
   operations: Type.Array(Type.Any()),
   metadata: Type.Object({
@@ -52,14 +54,16 @@ const Transaction = Type.Object({
     proof: Nullable(Type.String()),
   }),
 });
+export type Transaction = Static<typeof TransactionSchema>;
 
 const Event = Type.Object({
   block_identifier: Block,
   parent_block_identifier: Block,
   timestamp: Type.Integer(),
-  transactions: Type.Array(Transaction),
+  transactions: Type.Array(TransactionSchema),
   metadata: Type.Any(),
 });
+export type InscriptionEvent = Static<typeof Event>;
 
 const ChainhookPayload = Type.Object({
   apply: Type.Array(Event),

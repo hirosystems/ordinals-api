@@ -1,3 +1,5 @@
+import { Order, OrderBy } from '../api/schemas';
+import { SatoshiRarity } from '../api/util/ordinal-satoshi';
 import { OpJson } from './helpers';
 import { PgBytea, PgJsonb, PgNumeric } from './postgres-tools/types';
 
@@ -131,3 +133,47 @@ export type DbJsonContentInsert = {
 };
 
 export const JSON_CONTENTS_COLUMNS = ['id', 'inscription_id', 'p', 'op', 'content'];
+
+export type DbInscriptionIndexPaging = {
+  limit: number;
+  offset: number;
+};
+
+export type DbInscriptionIndexFilters = {
+  genesis_id?: string[];
+  genesis_block_height?: number;
+  genesis_block_hash?: string;
+  from_genesis_block_height?: number;
+  to_genesis_block_height?: number;
+  from_genesis_timestamp?: number;
+  to_genesis_timestamp?: number;
+  from_sat_coinbase_height?: number;
+  to_sat_coinbase_height?: number;
+  number?: number[];
+  from_number?: number;
+  to_number?: number;
+  address?: string[];
+  mime_type?: string[];
+  output?: string;
+  sat_rarity?: SatoshiRarity[];
+  sat_ordinal?: bigint;
+  from_sat_ordinal?: bigint;
+  to_sat_ordinal?: bigint;
+};
+
+export type DbInscriptionIndexOrder = {
+  order_by?: OrderBy;
+  order?: Order;
+};
+
+/** Type of row count required for an inscription index endpoint call */
+export enum DbInscriptionIndexResultCountType {
+  /** All inscriptions */
+  all,
+  /** Filtered by mime type */
+  mimeType,
+  /** Filtered by sat rarity */
+  satRarity,
+  /** Filtered by custom arguments */
+  custom,
+}
