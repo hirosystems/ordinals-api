@@ -80,8 +80,7 @@ describe('OrdinalSatoshi', () => {
     expect(sat.epoch).toBe(0);
     expect(sat.name).toBe('nvtdijuwxdx');
     expect(sat.offset).toBe(200);
-    // TODO: Convert scientific notation to number.
-    // expect(sat.percentile).toBe('0.000000000009523809534285719%');
+    expect(sat.percentile).toBe('0.000000000009523809534285719%');
     expect(sat.period).toBe(0);
     expect(sat.blockHeight).toBe(0);
   });

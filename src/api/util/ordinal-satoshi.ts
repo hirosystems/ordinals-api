@@ -1,3 +1,5 @@
+import BigNumber from 'bignumber.js';
+
 const HALVING_BLOCKS = 210_000;
 const DIFFICULTY_ADJUST_BLOCKS = 2016;
 const INITIAL_SUBSIDY = 50;
@@ -13,6 +15,10 @@ export enum SatoshiRarity {
   mythic = 'mythic',
 }
 
+/**
+ * Ordinal Satoshi calculator. Mostly translated from the original Rust implementation at
+ * https://github.com/casey/ord/blob/master/src/sat.rs
+ */
 export class OrdinalSatoshi {
   public blockHeight: number;
   public cycle: number;
@@ -75,7 +81,8 @@ export class OrdinalSatoshi {
   }
 
   public get percentile(): string {
-    return `${(this.ordinal / (SAT_SUPPLY - 1)) * 100.0}%`;
+    const percentile = new BigNumber((this.ordinal / (SAT_SUPPLY - 1)) * 100.0);
+    return `${percentile.toFixed()}%`;
   }
 
   public get rarity(): SatoshiRarity {
