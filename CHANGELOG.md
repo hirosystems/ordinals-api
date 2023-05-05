@@ -1,3 +1,10 @@
+## [0.1.0-beta.12](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.11...v0.1.0-beta.12) (2023-05-05)
+
+
+### Bug Fixes
+
+* cache inscription counts for mime_type and sat_rarity ([#55](https://github.com/hirosystems/ordinals-api/issues/55)) ([f4fb4c7](https://github.com/hirosystems/ordinals-api/commit/f4fb4c75d8191b71c4d09443f698ec36491841dc))
+
 ## [0.1.0-beta.11](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.10...v0.1.0-beta.11) (2023-05-02)
 
 
