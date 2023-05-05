@@ -1,3 +1,10 @@
+## [0.1.0-beta.13](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.12...v0.1.0-beta.13) (2023-05-05)
+
+
+### Bug Fixes
+
+* use bignumber.js for sat percentiles ([8914e27](https://github.com/hirosystems/ordinals-api/commit/8914e27d4215470f9bea9a1f1e5339ffe38c31d0))
+
 ## [0.1.0-beta.12](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.11...v0.1.0-beta.12) (2023-05-05)
 
 
