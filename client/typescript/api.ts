@@ -749,7 +749,7 @@ export const InscriptionsApiFp = function(configuration?: Configuration) {
             return (fetch: FetchAPI = isomorphicFetch, basePath: string = BASE_PATH) => {
                 return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
                     if (response.status >= 200 && response.status < 300) {
-                        return response.json();
+                        return response.blob();
                     } else {
                         throw response;
                     }
