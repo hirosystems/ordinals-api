@@ -74,6 +74,11 @@
       "console": "integratedTerminal",
       "preLaunchTask": "npm: testenv:run",
       "postDebugTask": "npm: testenv:stop",
+      "env": {
+        "PGHOST": "localhost",
+        "PGUSER": "postgres",
+        "PGPASSWORD": "postgres",
+      },
     },
   ]
 }

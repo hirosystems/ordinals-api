@@ -40,7 +40,7 @@ import {
 } from '../util/helpers';
 
 function blockParam(param: string | undefined, name: string) {
-  const out: { [k: string]: string } = {};
+  const out: Record<string, string> = {};
   if (BlockHashParamCType.Check(param)) {
     out[`${name}_hash`] = param;
   } else if (BlockHeightParamCType.Check(param)) {
@@ -108,29 +108,32 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
     async (request, reply) => {
       const limit = request.query.limit ?? DEFAULT_API_LIMIT;
       const offset = request.query.offset ?? 0;
-      const inscriptions = await fastify.db.getInscriptions({
-        ...blockParam(request.query.genesis_block, 'genesis_block'),
-        ...blockParam(request.query.from_genesis_block_height, 'from_genesis_block'),
-        ...blockParam(request.query.to_genesis_block_height, 'to_genesis_block'),
-        ...blockParam(request.query.from_sat_coinbase_height, 'from_sat_coinbase'),
-        ...blockParam(request.query.to_sat_coinbase_height, 'to_sat_coinbase'),
-        from_genesis_timestamp: request.query.from_genesis_timestamp,
-        to_genesis_timestamp: request.query.to_genesis_timestamp,
-        from_sat_ordinal: bigIntParam(request.query.from_sat_ordinal),
-        to_sat_ordinal: bigIntParam(request.query.to_sat_ordinal),
-        from_number: request.query.from_number,
-        to_number: request.query.to_number,
-        genesis_id: request.query.id,
-        number: request.query.number,
-        output: request.query.output,
-        address: request.query.address,
-        mime_type: request.query.mime_type,
-        sat_rarity: request.query.rarity,
-        order_by: request.query.order_by ?? OrderBy.genesis_block_height,
-        order: request.query.order ?? Order.desc,
-        limit,
-        offset,
-      });
+      const inscriptions = await fastify.db.getInscriptions(
+        { limit, offset },
+        {
+          ...blockParam(request.query.genesis_block, 'genesis_block'),
+          ...blockParam(request.query.from_genesis_block_height, 'from_genesis_block'),
+          ...blockParam(request.query.to_genesis_block_height, 'to_genesis_block'),
+          ...blockParam(request.query.from_sat_coinbase_height, 'from_sat_coinbase'),
+          ...blockParam(request.query.to_sat_coinbase_height, 'to_sat_coinbase'),
+          from_genesis_timestamp: request.query.from_genesis_timestamp,
+          to_genesis_timestamp: request.query.to_genesis_timestamp,
+          from_sat_ordinal: bigIntParam(request.query.from_sat_ordinal),
+          to_sat_ordinal: bigIntParam(request.query.to_sat_ordinal),
+          from_number: request.query.from_number,
+          to_number: request.query.to_number,
+          genesis_id: request.query.id,
+          number: request.query.number,
+          output: request.query.output,
+          address: request.query.address,
+          mime_type: request.query.mime_type,
+          sat_rarity: request.query.rarity,
+        },
+        {
+          order_by: request.query.order_by ?? OrderBy.genesis_block_height,
+          order: request.query.order ?? Order.desc,
+        }
+      );
       await reply.send({
         limit,
         offset,
@@ -166,11 +169,10 @@ const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTyp
       },
     },
     async (request, reply) => {
-      const inscription = await fastify.db.getInscriptions({
-        ...inscriptionIdArrayParam(request.params.id),
-        limit: 1,
-        offset: 0,
-      });
+      const inscription = await fastify.db.getInscriptions(
+        { limit: 1, offset: 0 },
+        { ...inscriptionIdArrayParam(request.params.id) }
+      );
       if (inscription.total > 0) {
         await reply.send(parseDbInscription(inscription.results[0]));
       } else {

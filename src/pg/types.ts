@@ -1,3 +1,5 @@
+import { Order, OrderBy } from '../api/schemas';
+import { SatoshiRarity } from '../api/util/ordinal-satoshi';
 import { OpJson } from './helpers';
 import { PgBytea, PgJsonb, PgNumeric } from './postgres-tools/types';
 
@@ -8,13 +10,13 @@ export type DbPaginatedResult<T> = {
 
 export type DbFullyLocatedInscriptionResult = {
   genesis_id: string;
-  genesis_block_height: number;
+  genesis_block_height: string;
   genesis_block_hash: string;
   genesis_tx_id: string;
   genesis_fee: bigint;
   genesis_timestamp: Date;
   genesis_address: string;
-  number: number;
+  number: string;
   address: string | null;
   tx_id: string;
   output: string;
@@ -22,10 +24,10 @@ export type DbFullyLocatedInscriptionResult = {
   value: string | null;
   sat_ordinal: string;
   sat_rarity: string;
-  sat_coinbase_height: number;
+  sat_coinbase_height: string;
   mime_type: string;
   content_type: string;
-  content_length: number;
+  content_length: string;
   timestamp: Date;
 };
 
@@ -45,9 +47,9 @@ export type DbLocationInsert = {
 };
 
 export type DbLocation = {
-  id: number;
-  inscription_id: number;
-  block_height: number;
+  id: string;
+  inscription_id: string;
+  block_height: string;
   block_hash: string;
   tx_id: string;
   address: string | null;
@@ -56,7 +58,7 @@ export type DbLocation = {
   value: string | null;
   sat_ordinal: string;
   sat_rarity: string;
-  sat_coinbase_height: number;
+  sat_coinbase_height: string;
   timestamp: Date;
   genesis: boolean;
   current: boolean;
@@ -91,18 +93,18 @@ export type DbInscriptionInsert = {
 };
 
 export type DbInscription = {
-  id: number;
+  id: string;
   genesis_id: string;
-  number: number;
+  number: string;
   mime_type: string;
   content_type: string;
-  content_length: number;
+  content_length: string;
   fee: string;
 };
 
 export type DbInscriptionContent = {
   content_type: string;
-  content_length: number;
+  content_length: string;
   content: string;
 };
 
@@ -117,8 +119,8 @@ export const INSCRIPTIONS_COLUMNS = [
 ];
 
 export type DbJsonContent = {
-  id: number;
-  inscription_id: number;
+  id: string;
+  inscription_id: string;
   p?: string;
   op?: string;
   content: OpJson;
@@ -131,3 +133,47 @@ export type DbJsonContentInsert = {
 };
 
 export const JSON_CONTENTS_COLUMNS = ['id', 'inscription_id', 'p', 'op', 'content'];
+
+export type DbInscriptionIndexPaging = {
+  limit: number;
+  offset: number;
+};
+
+export type DbInscriptionIndexFilters = {
+  genesis_id?: string[];
+  genesis_block_height?: number;
+  genesis_block_hash?: string;
+  from_genesis_block_height?: number;
+  to_genesis_block_height?: number;
+  from_genesis_timestamp?: number;
+  to_genesis_timestamp?: number;
+  from_sat_coinbase_height?: number;
+  to_sat_coinbase_height?: number;
+  number?: number[];
+  from_number?: number;
+  to_number?: number;
+  address?: string[];
+  mime_type?: string[];
+  output?: string;
+  sat_rarity?: SatoshiRarity[];
+  sat_ordinal?: bigint;
+  from_sat_ordinal?: bigint;
+  to_sat_ordinal?: bigint;
+};
+
+export type DbInscriptionIndexOrder = {
+  order_by?: OrderBy;
+  order?: Order;
+};
+
+/** Type of row count required for an inscription index endpoint call */
+export enum DbInscriptionIndexResultCountType {
+  /** All inscriptions */
+  all,
+  /** Filtered by mime type */
+  mimeType,
+  /** Filtered by sat rarity */
+  satRarity,
+  /** Filtered by custom arguments */
+  custom,
+}
