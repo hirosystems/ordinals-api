@@ -197,107 +197,125 @@ export const OrderParam = Type.Enum(Order, {
 // Responses
 // ==========================
 
-export const PaginatedResponse = <T extends TSchema>(type: T) =>
-  Type.Object({
-    limit: Type.Integer({ examples: [20] }),
-    offset: Type.Integer({ examples: [0] }),
-    total: Type.Integer({ examples: [1] }),
-    results: Type.Array(type),
-  });
+export const PaginatedResponse = <T extends TSchema>(type: T, title: string) =>
+  Type.Object(
+    {
+      limit: Type.Integer({ examples: [20] }),
+      offset: Type.Integer({ examples: [0] }),
+      total: Type.Integer({ examples: [1] }),
+      results: Type.Array(type),
+    },
+    { title }
+  );
 
-export const InscriptionResponse = Type.Object({
-  id: Type.String({
-    examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218i0'],
-  }),
-  number: Type.Integer({ examples: [248751] }),
-  address: Nullable(
-    Type.String({
+export const InscriptionResponse = Type.Object(
+  {
+    id: Type.String({
+      examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218i0'],
+    }),
+    number: Type.Integer({ examples: [248751] }),
+    address: Nullable(
+      Type.String({
+        examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
+      })
+    ),
+    genesis_address: Type.String({
       examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
-    })
-  ),
-  genesis_address: Type.String({
-    examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
-  }),
-  genesis_block_height: Type.Integer({ examples: [778921] }),
-  genesis_block_hash: Type.String({
-    examples: ['0000000000000000000452773967cdd62297137cdaf79950c5e8bb0c62075133'],
-  }),
-  genesis_tx_id: Type.String({
-    examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218'],
-  }),
-  genesis_fee: Type.String({ examples: ['3179'] }),
-  genesis_timestamp: Type.Integer({ exmaples: [1677733170000] }),
-  tx_id: Type.String({
-    examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218'],
-  }),
-  location: Type.String({
-    examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218:0:0'],
-  }),
-  output: Type.String({
-    examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218:0'],
-  }),
-  value: Nullable(Type.String({ examples: ['546'] })),
-  offset: Nullable(Type.String({ examples: ['0'] })),
-  sat_ordinal: Type.String({ examples: ['1232735286933201'] }),
-  sat_rarity: Type.String({ examples: ['common'] }),
-  sat_coinbase_height: Type.Integer({ examples: [430521] }),
-  mime_type: Type.String({ examples: ['text/plain'] }),
-  content_type: Type.String({ examples: ['text/plain;charset=utf-8'] }),
-  content_length: Type.Integer({ examples: [59] }),
-  timestamp: Type.Integer({ examples: [1677733170000] }),
-});
+    }),
+    genesis_block_height: Type.Integer({ examples: [778921] }),
+    genesis_block_hash: Type.String({
+      examples: ['0000000000000000000452773967cdd62297137cdaf79950c5e8bb0c62075133'],
+    }),
+    genesis_tx_id: Type.String({
+      examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218'],
+    }),
+    genesis_fee: Type.String({ examples: ['3179'] }),
+    genesis_timestamp: Type.Integer({ exmaples: [1677733170000] }),
+    tx_id: Type.String({
+      examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218'],
+    }),
+    location: Type.String({
+      examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218:0:0'],
+    }),
+    output: Type.String({
+      examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218:0'],
+    }),
+    value: Nullable(Type.String({ examples: ['546'] })),
+    offset: Nullable(Type.String({ examples: ['0'] })),
+    sat_ordinal: Type.String({ examples: ['1232735286933201'] }),
+    sat_rarity: Type.String({ examples: ['common'] }),
+    sat_coinbase_height: Type.Integer({ examples: [430521] }),
+    mime_type: Type.String({ examples: ['text/plain'] }),
+    content_type: Type.String({ examples: ['text/plain;charset=utf-8'] }),
+    content_length: Type.Integer({ examples: [59] }),
+    timestamp: Type.Integer({ examples: [1677733170000] }),
+  },
+  { title: 'Inscription Response' }
+);
 export type InscriptionResponseType = Static<typeof InscriptionResponse>;
 
-export const SatoshiResponse = Type.Object({
-  coinbase_height: Type.Integer({ examples: [752860] }),
-  cycle: Type.Integer({ examples: [0] }),
-  decimal: Type.String({ examples: ['752860.20444193'] }),
-  degree: Type.String({ examples: ['0°122860′892″20444193‴'] }),
-  inscription_id: Type.Optional(
-    Type.String({
-      examples: ['ff4503ab9048d6d0ff4e23def81b614d5270d341ce993992e93902ceb0d4ed79i0'],
-    })
-  ),
-  epoch: Type.Number({ examples: [3] }),
-  name: Type.String({ examples: ['ahehcbywzae'] }),
-  offset: Type.Number({ examples: [20444193] }),
-  percentile: Type.String({ examples: ['91.15654869285287%'] }),
-  period: Type.Integer({ examples: [373] }),
-  rarity: Type.Enum(SatoshiRarity, { examples: ['common'] }),
-});
+export const SatoshiResponse = Type.Object(
+  {
+    coinbase_height: Type.Integer({ examples: [752860] }),
+    cycle: Type.Integer({ examples: [0] }),
+    decimal: Type.String({ examples: ['752860.20444193'] }),
+    degree: Type.String({ examples: ['0°122860′892″20444193‴'] }),
+    inscription_id: Type.Optional(
+      Type.String({
+        examples: ['ff4503ab9048d6d0ff4e23def81b614d5270d341ce993992e93902ceb0d4ed79i0'],
+      })
+    ),
+    epoch: Type.Number({ examples: [3] }),
+    name: Type.String({ examples: ['ahehcbywzae'] }),
+    offset: Type.Number({ examples: [20444193] }),
+    percentile: Type.String({ examples: ['91.15654869285287%'] }),
+    period: Type.Integer({ examples: [373] }),
+    rarity: Type.Enum(SatoshiRarity, { examples: ['common'] }),
+  },
+  { title: 'Satoshi Response' }
+);
 
-export const ApiStatusResponse = Type.Object({
-  server_version: Type.String({ examples: [''] }),
-  status: Type.String(),
-  block_height: Type.Optional(Type.Integer()),
-  max_inscription_number: Type.Optional(Type.Integer()),
-});
+export const ApiStatusResponse = Type.Object(
+  {
+    server_version: Type.String({ examples: [''] }),
+    status: Type.String(),
+    block_height: Type.Optional(Type.Integer()),
+    max_inscription_number: Type.Optional(Type.Integer()),
+  },
+  { title: 'Api Status Response' }
+);
 
-export const InscriptionLocationResponse = Type.Object({
-  block_height: Type.Integer({ examples: [778921] }),
-  block_hash: Type.String({
-    examples: ['0000000000000000000452773967cdd62297137cdaf79950c5e8bb0c62075133'],
-  }),
-  address: Nullable(
-    Type.String({
-      examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
-    })
-  ),
-  tx_id: Type.String({
-    examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218'],
-  }),
-  location: Type.String({
-    examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218:0:0'],
-  }),
-  output: Type.String({
-    examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218:0'],
-  }),
-  value: Nullable(Type.String({ examples: ['546'] })),
-  offset: Nullable(Type.String({ examples: ['0'] })),
-  timestamp: Type.Integer({ examples: [1677733170000] }),
-});
+export const InscriptionLocationResponse = Type.Object(
+  {
+    block_height: Type.Integer({ examples: [778921] }),
+    block_hash: Type.String({
+      examples: ['0000000000000000000452773967cdd62297137cdaf79950c5e8bb0c62075133'],
+    }),
+    address: Nullable(
+      Type.String({
+        examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
+      })
+    ),
+    tx_id: Type.String({
+      examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218'],
+    }),
+    location: Type.String({
+      examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218:0:0'],
+    }),
+    output: Type.String({
+      examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218:0'],
+    }),
+    value: Nullable(Type.String({ examples: ['546'] })),
+    offset: Nullable(Type.String({ examples: ['0'] })),
+    timestamp: Type.Integer({ examples: [1677733170000] }),
+  },
+  { title: 'Inscription Location Response' }
+);
 export type InscriptionLocationResponse = Static<typeof InscriptionLocationResponse>;
 
-export const NotFoundResponse = Type.Object({
-  error: Type.Literal('Not found'),
-});
+export const NotFoundResponse = Type.Object(
+  {
+    error: Type.Literal('Not found'),
+  },
+  { title: 'Not Found Response' }
+);

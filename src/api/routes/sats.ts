@@ -14,6 +14,7 @@ export const SatRoutes: FastifyPluginCallback<Record<never, never>, Server, Type
     '/sats/:ordinal',
     {
       schema: {
+        operationId: 'getSatoshi',
         summary: 'Satoshi Ordinal',
         description: 'Retrieves ordinal information for a single satoshi',
         tags: ['Satoshis'],

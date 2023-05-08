@@ -71,6 +71,7 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
     '/inscriptions',
     {
       schema: {
+        operationId: 'getInscriptions',
         summary: 'Inscriptions',
         description: 'Retrieves a list of inscriptions with options to filter and sort results',
         tags: ['Inscriptions'],
@@ -100,7 +101,7 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
           order: Type.Optional(OrderParam),
         }),
         response: {
-          200: PaginatedResponse(InscriptionResponse),
+          200: PaginatedResponse(InscriptionResponse, 'Paginated Inscriptions Response'),
           404: NotFoundResponse,
         },
       },
@@ -156,6 +157,7 @@ const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTyp
     '/inscriptions/:id',
     {
       schema: {
+        operationId: 'getInscription',
         summary: 'Inscription',
         description: 'Retrieves a single inscription',
         tags: ['Inscriptions'],
@@ -185,6 +187,7 @@ const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTyp
     '/inscriptions/:id/content',
     {
       schema: {
+        operationId: 'getInscriptionContent',
         summary: 'Inscription content',
         description: 'Retrieves the contents of a single inscription',
         tags: ['Inscriptions'],
@@ -219,6 +222,7 @@ const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTyp
     '/inscriptions/:id/transfers',
     {
       schema: {
+        operationId: 'getInscriptionTransfers',
         summary: 'Inscription transfers',
         description: 'Retrieves all transfers for a single inscription',
         tags: ['Inscriptions'],
@@ -230,7 +234,10 @@ const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTyp
           limit: Type.Optional(LimitParam),
         }),
         response: {
-          200: PaginatedResponse(InscriptionLocationResponse),
+          200: PaginatedResponse(
+            InscriptionLocationResponse,
+            'Paginated Inscription Locations Response'
+          ),
           404: NotFoundResponse,
         },
       },
