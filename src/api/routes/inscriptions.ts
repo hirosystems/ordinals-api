@@ -28,12 +28,14 @@ import {
   AddressesParam,
   InscriptionIdsParam,
   InscriptionNumbersParam,
-  InscriptionLocationResponse,
+  InscriptionLocationResponseSchema,
+  BlockInscriptionTransferSchema,
 } from '../schemas';
 import { handleInscriptionCache, handleInscriptionTransfersCache } from '../util/cache';
 import {
   DEFAULT_API_LIMIT,
   hexToBuffer,
+  parseBlockInscriptionTransfers,
   parseDbInscription,
   parseDbInscriptions,
   parseInscriptionLocations,
@@ -144,6 +146,46 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
     }
   );
 
+  fastify.get(
+    '/inscriptions/transfers',
+    {
+      schema: {
+        operationId: 'getInscriptionTransfersPerBlock',
+        summary: 'Inscription Transfers per Block',
+        description: 'Retrieves a list of inscription transfers for a Bitcoin block',
+        tags: ['Inscriptions'],
+        querystring: Type.Object({
+          block: BlockParam,
+          // Pagination
+          offset: Type.Optional(OffsetParam),
+          limit: Type.Optional(LimitParam),
+        }),
+        response: {
+          200: PaginatedResponse(
+            BlockInscriptionTransferSchema,
+            'Paginated Block Transfers Response'
+          ),
+          404: NotFoundResponse,
+        },
+      },
+    },
+    async (request, reply) => {
+      const limit = request.query.limit ?? DEFAULT_API_LIMIT;
+      const offset = request.query.offset ?? 0;
+      const transfers = await fastify.db.getBlockInscriptionTransfers({
+        limit,
+        offset,
+        ...blockParam(request.query.block, 'block'),
+      });
+      await reply.send({
+        limit,
+        offset,
+        total: transfers.total,
+        results: parseBlockInscriptionTransfers(transfers.results),
+      });
+    }
+  );
+
   done();
 };
 
@@ -235,7 +277,7 @@ const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTyp
         }),
         response: {
           200: PaginatedResponse(
-            InscriptionLocationResponse,
+            InscriptionLocationResponseSchema,
             'Paginated Inscription Locations Response'
           ),
           404: NotFoundResponse,

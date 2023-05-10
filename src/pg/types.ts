@@ -64,6 +64,41 @@ export type DbLocation = {
   current: boolean;
 };
 
+export type DbInscriptionLocationChange = {
+  genesis_id: string;
+  number: string;
+  from_id: string;
+  from_inscription_id: string;
+  from_block_height: string;
+  from_block_hash: string;
+  from_tx_id: string;
+  from_address: string | null;
+  from_output: string;
+  from_offset: string | null;
+  from_value: string | null;
+  from_sat_ordinal: string;
+  from_sat_rarity: string;
+  from_sat_coinbase_height: string;
+  from_timestamp: Date;
+  from_genesis: boolean;
+  from_current: boolean;
+  to_id: string;
+  to_inscription_id: string;
+  to_block_height: string;
+  to_block_hash: string;
+  to_tx_id: string;
+  to_address: string | null;
+  to_output: string;
+  to_offset: string | null;
+  to_value: string | null;
+  to_sat_ordinal: string;
+  to_sat_rarity: string;
+  to_sat_coinbase_height: string;
+  to_timestamp: Date;
+  to_genesis: boolean;
+  to_current: boolean;
+};
+
 export const LOCATIONS_COLUMNS = [
   'id',
   'inscription_id',

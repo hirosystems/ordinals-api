@@ -16,6 +16,7 @@ import {
   DbInscriptionIndexPaging,
   DbInscriptionIndexResultCountType,
   DbInscriptionInsert,
+  DbInscriptionLocationChange,
   DbJsonContent,
   DbLocation,
   DbLocationInsert,
@@ -400,6 +401,54 @@ export class PgStore extends BasePgStore {
       ORDER BY l.block_height DESC
       LIMIT ${args.limit}
       OFFSET ${args.offset}
+    `;
+    return {
+      total: results[0]?.total ?? 0,
+      results: results ?? [],
+    };
+  }
+
+  async getBlockInscriptionTransfers(
+    args: { block_height?: number; block_hash?: string } & DbInscriptionIndexPaging
+  ): Promise<DbPaginatedResult<DbInscriptionLocationChange>> {
+    const results = await this.sql<({ total: number } & DbInscriptionLocationChange)[]>`
+      WITH transfers AS (
+        SELECT
+          i.id AS inscription_id,
+          i.genesis_id,
+          i.number,
+          l.id AS to_id,
+          (
+            SELECT id
+            FROM locations AS ll
+            WHERE
+              ll.inscription_id = i.id
+              AND ll.block_height < l.block_height
+            ORDER BY ll.block_height ASC
+            LIMIT 1
+          ) AS from_id,
+          COUNT(*) OVER() as total
+        FROM locations AS l
+        INNER JOIN inscriptions AS i ON l.inscription_id = i.id
+        WHERE
+          ${
+            'block_height' in args
+              ? this.sql`l.block_height = ${args.block_height}`
+              : this.sql`l.block_hash = ${args.block_hash}`
+          }
+          AND l.genesis = FALSE
+        LIMIT ${args.limit}
+        OFFSET ${args.offset}
+      )
+      SELECT
+        t.genesis_id,
+        t.number,
+        t.total,
+        ${this.sql.unsafe(LOCATIONS_COLUMNS.map(c => `lf.${c} AS from_${c}`).join(','))},
+        ${this.sql.unsafe(LOCATIONS_COLUMNS.map(c => `lt.${c} AS to_${c}`).join(','))}
+      FROM transfers AS t
+      INNER JOIN locations AS lf ON t.from_id = lf.id
+      INNER JOIN locations AS lt ON t.to_id = lt.id
     `;
     return {
       total: results[0]?.total ?? 0,
