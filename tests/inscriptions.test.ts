@@ -564,6 +564,67 @@ describe('/inscriptions', () => {
           },
         },
       ]);
+
+      // More transfers
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 775701,
+            hash: '000000000000000000044b12039abd3112963959d9fd7510ac503ea84dc17002',
+            timestamp: 1676913208,
+          })
+          .transaction({
+            hash: '5cabafe04aaf98b1f325b0c3ffcbff904dbdb6f3d2e9e451102fda36f1056b5e',
+          })
+          .inscriptionTransferred({
+            inscription_number: 7,
+            inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+            ordinal_number: 257418248345364,
+            updated_address: 'bc1pkx5me775s748lzchytzdsw4f0lq04wssxnyk27g8fn3gee8zhjjqsn9tfp',
+            satpoint_pre_transfer:
+              'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
+            satpoint_post_transfer:
+              '5cabafe04aaf98b1f325b0c3ffcbff904dbdb6f3d2e9e451102fda36f1056b5e:0:0',
+            post_transfer_output_value: 8000,
+          })
+          .build()
+      );
+      const response3 = await fastify.inject({
+        method: 'GET',
+        url: '/ordinals/v1/inscriptions/transfers?block=775701',
+      });
+      expect(response3.statusCode).toBe(200);
+      const json3 = response3.json();
+      expect(json3.total).toBe(1);
+      expect(json3.results).toStrictEqual([
+        {
+          id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+          number: 7,
+          from: {
+            address: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+            block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7bbbb',
+            block_height: 775700,
+            location: 'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
+            offset: '0',
+            output: 'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0',
+            timestamp: 1678122360000,
+            tx_id: 'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444',
+            value: '9000',
+          },
+          to: {
+            address: 'bc1pkx5me775s748lzchytzdsw4f0lq04wssxnyk27g8fn3gee8zhjjqsn9tfp',
+            block_hash: '000000000000000000044b12039abd3112963959d9fd7510ac503ea84dc17002',
+            block_height: 775701,
+            location: '5cabafe04aaf98b1f325b0c3ffcbff904dbdb6f3d2e9e451102fda36f1056b5e:0:0',
+            offset: '0',
+            output: '5cabafe04aaf98b1f325b0c3ffcbff904dbdb6f3d2e9e451102fda36f1056b5e:0',
+            timestamp: 1676913208000,
+            tx_id: '5cabafe04aaf98b1f325b0c3ffcbff904dbdb6f3d2e9e451102fda36f1056b5e',
+            value: '8000',
+          },
+        },
+      ]);
     });
   });
 

@@ -424,7 +424,7 @@ export class PgStore extends BasePgStore {
             WHERE
               ll.inscription_id = i.id
               AND ll.block_height < l.block_height
-            ORDER BY ll.block_height ASC
+            ORDER BY ll.block_height DESC
             LIMIT 1
           ) AS from_id,
           COUNT(*) OVER() as total
