@@ -285,7 +285,7 @@ export const ApiStatusResponse = Type.Object(
   { title: 'Api Status Response' }
 );
 
-export const InscriptionLocationResponse = Type.Object(
+export const InscriptionLocationResponseSchema = Type.Object(
   {
     block_height: Type.Integer({ examples: [778921] }),
     block_hash: Type.String({
@@ -311,7 +311,17 @@ export const InscriptionLocationResponse = Type.Object(
   },
   { title: 'Inscription Location Response' }
 );
-export type InscriptionLocationResponse = Static<typeof InscriptionLocationResponse>;
+export type InscriptionLocationResponse = Static<typeof InscriptionLocationResponseSchema>;
+
+export const BlockInscriptionTransferSchema = Type.Object({
+  id: Type.String({
+    examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218i0'],
+  }),
+  number: Type.Integer({ examples: [248751] }),
+  from: InscriptionLocationResponseSchema,
+  to: InscriptionLocationResponseSchema,
+});
+export type BlockInscriptionTransfer = Static<typeof BlockInscriptionTransferSchema>;
 
 export const NotFoundResponse = Type.Object(
   {
