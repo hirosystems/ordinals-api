@@ -408,7 +408,7 @@ export class PgStore extends BasePgStore {
     };
   }
 
-  async getBlockInscriptionTransfers(
+  async getTransfersPerBlock(
     args: { block_height?: number; block_hash?: string } & DbInscriptionIndexPaging
   ): Promise<DbPaginatedResult<DbInscriptionLocationChange>> {
     const results = await this.sql<({ total: number } & DbInscriptionLocationChange)[]>`

@@ -35,7 +35,7 @@ import { handleInscriptionCache, handleInscriptionTransfersCache } from '../util
 import {
   DEFAULT_API_LIMIT,
   hexToBuffer,
-  parseBlockInscriptionTransfers,
+  parseBlockTransfers,
   parseDbInscription,
   parseDbInscriptions,
   parseInscriptionLocations,
@@ -150,9 +150,10 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
     '/inscriptions/transfers',
     {
       schema: {
-        operationId: 'getInscriptionTransfersPerBlock',
-        summary: 'Inscription Transfers per Block',
-        description: 'Retrieves a list of inscription transfers for a Bitcoin block',
+        operationId: 'getTransfersPerBlock',
+        summary: 'Transfers per block',
+        description:
+          'Retrieves a list of inscription transfers that ocurred at a specific Bitcoin block',
         tags: ['Inscriptions'],
         querystring: Type.Object({
           block: BlockParam,
@@ -172,7 +173,7 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
     async (request, reply) => {
       const limit = request.query.limit ?? DEFAULT_API_LIMIT;
       const offset = request.query.offset ?? 0;
-      const transfers = await fastify.db.getBlockInscriptionTransfers({
+      const transfers = await fastify.db.getTransfersPerBlock({
         limit,
         offset,
         ...blockParam(request.query.block, 'block'),
@@ -181,7 +182,7 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
         limit,
         offset,
         total: transfers.total,
-        results: parseBlockInscriptionTransfers(transfers.results),
+        results: parseBlockTransfers(transfers.results),
       });
     }
   );

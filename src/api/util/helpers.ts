@@ -56,7 +56,7 @@ export function parseInscriptionLocations(items: DbLocation[]): InscriptionLocat
   }));
 }
 
-export function parseBlockInscriptionTransfers(
+export function parseBlockTransfers(
   items: DbInscriptionLocationChange[]
 ): BlockInscriptionTransfer[] {
   return items.map(i => ({
