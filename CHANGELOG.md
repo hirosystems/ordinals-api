@@ -1,3 +1,10 @@
+## [0.1.0-beta.14](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.13...v0.1.0-beta.14) (2023-05-11)
+
+
+### Bug Fixes
+
+* use materialized view total count correctly ([#64](https://github.com/hirosystems/ordinals-api/issues/64)) ([939f6b9](https://github.com/hirosystems/ordinals-api/commit/939f6b987202f4c554aedc36a766f41f51bae434))
+
 ## [0.1.0-beta.13](https://github.com/hirosystems/ordinals-api/compare/v0.1.0-beta.12...v0.1.0-beta.13) (2023-05-05)
 
 
