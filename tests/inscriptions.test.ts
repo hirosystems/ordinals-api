@@ -408,6 +408,121 @@ describe('/inscriptions', () => {
   });
 
   describe('index', () => {
+    test('unfiltered index', async () => {
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 778575,
+            hash: '0x00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+            timestamp: 1676913207,
+          })
+          .transaction({
+            hash: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
+          })
+          .inscriptionRevealed({
+            content_bytes: '0x48656C6C6F',
+            content_type: 'text/plain;charset=utf-8',
+            content_length: 5,
+            inscription_number: 7,
+            inscription_fee: 705,
+            inscription_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
+            inscription_output_value: 10000,
+            inscriber_address: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+            ordinal_number: 257418248345364,
+            ordinal_block_height: 650000,
+            ordinal_offset: 0,
+            satpoint_post_inscription:
+              '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+          })
+          .build()
+      );
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 775617,
+            hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+            timestamp: 1676913207,
+          })
+          .transaction({
+            hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+          })
+          .inscriptionRevealed({
+            content_bytes: '0x48656C6C6F',
+            content_type: 'image/png',
+            content_length: 5,
+            inscription_number: 1,
+            inscription_fee: 2805,
+            inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+            inscription_output_value: 10000,
+            inscriber_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+            ordinal_number: 257418248345364,
+            ordinal_block_height: 650000,
+            ordinal_offset: 0,
+            satpoint_post_inscription:
+              '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+          })
+          .build()
+      );
+
+      const response1 = await fastify.inject({
+        method: 'GET',
+        url: '/ordinals/v1/inscriptions',
+      });
+      expect(response1.statusCode).toBe(200);
+      const responseJson1 = response1.json();
+      expect(responseJson1.total).toBe(2);
+      expect(responseJson1.results).toStrictEqual([
+        {
+          address: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+          genesis_address: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+          genesis_block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+          genesis_block_height: 778575,
+          content_length: 5,
+          mime_type: 'text/plain',
+          content_type: 'text/plain;charset=utf-8',
+          genesis_fee: '705',
+          id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
+          offset: '0',
+          number: 7,
+          value: '10000',
+          sat_ordinal: '257418248345364',
+          sat_coinbase_height: 51483,
+          output: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0',
+          location: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+          sat_rarity: 'common',
+          tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
+          timestamp: 1676913207000,
+          genesis_timestamp: 1676913207000,
+          genesis_tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
+        },
+        {
+          address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+          genesis_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+          genesis_block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+          genesis_block_height: 775617,
+          content_length: 5,
+          mime_type: 'image/png',
+          content_type: 'image/png',
+          genesis_fee: '2805',
+          id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+          offset: '0',
+          number: 1,
+          value: '10000',
+          sat_ordinal: '257418248345364',
+          tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+          sat_coinbase_height: 51483,
+          output: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0',
+          location: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+          sat_rarity: 'common',
+          timestamp: 1676913207000,
+          genesis_timestamp: 1676913207000,
+          genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+        },
+      ]);
+    });
+
     describe('filters', () => {
       test('index filtered by mime type', async () => {
         await db.updateInscriptions(
