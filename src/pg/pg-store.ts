@@ -188,9 +188,9 @@ export class PgStore extends BasePgStore {
   }
 
   async getMaxInscriptionNumber(): Promise<number | undefined> {
-    const result = await this.sql<{ max: number }[]>`SELECT MAX(number) FROM inscriptions`;
+    const result = await this.sql<{ max: string }[]>`SELECT MAX(number) FROM inscriptions`;
     if (result[0].max) {
-      return result[0].max;
+      return parseInt(result[0].max);
     }
   }
 
@@ -453,7 +453,7 @@ export class PgStore extends BasePgStore {
       } else {
         // Is this a sequential genesis insert?
         const maxNumber = await this.getMaxInscriptionNumber();
-        if (maxNumber && maxNumber + 1 !== args.inscription.number) {
+        if (maxNumber !== undefined && maxNumber + 1 !== args.inscription.number) {
           logger.error(
             {
               block_height: args.location.block_height,
