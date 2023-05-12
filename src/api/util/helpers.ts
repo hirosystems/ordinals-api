@@ -87,6 +87,15 @@ export function parseBlockTransfers(
   }));
 }
 
+export function parseSatPoint(satpoint: string): {
+  tx_id: string;
+  vout: string;
+  offset?: string;
+} {
+  const [tx_id, vout, offset] = satpoint.split(':');
+  return { tx_id, vout: vout, offset };
+}
+
 /**
  * Decodes a `0x` prefixed hex string to a buffer.
  * @param hex - A hex string with a `0x` prefix.
