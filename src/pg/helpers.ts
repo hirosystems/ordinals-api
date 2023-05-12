@@ -52,10 +52,14 @@ export function getIndexResultCountType(
       filters[key as keyof DbInscriptionIndexFilters] === undefined &&
       delete filters[key as keyof DbInscriptionIndexFilters]
   );
-  // Check for selected filter.
-  if (Object.keys(filters).length === 1) {
-    if (filters.mime_type) return DbInscriptionIndexResultCountType.mimeType;
-    if (filters.sat_rarity) return DbInscriptionIndexResultCountType.satRarity;
+  switch (Object.keys(filters).length) {
+    case 0:
+      return DbInscriptionIndexResultCountType.all;
+    case 1:
+      if (filters.mime_type) return DbInscriptionIndexResultCountType.mimeType;
+      if (filters.sat_rarity) return DbInscriptionIndexResultCountType.satRarity;
+      return DbInscriptionIndexResultCountType.custom;
+    default:
+      return DbInscriptionIndexResultCountType.custom;
   }
-  return DbInscriptionIndexResultCountType.custom;
 }
