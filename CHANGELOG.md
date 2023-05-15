@@ -1,3 +1,10 @@
+## [0.1.1](https://github.com/hirosystems/ordinals-api/compare/v0.1.0...v0.1.1) (2023-05-15)
+
+
+### Bug Fixes
+
+* allow empty NODE_ENV for prometheus ([#73](https://github.com/hirosystems/ordinals-api/issues/73)) ([e8dcd3b](https://github.com/hirosystems/ordinals-api/commit/e8dcd3bd7ab6adc0fd1d6dd015438545a645504b))
+
 ## [0.1.0](https://github.com/hirosystems/ordinals-api/compare/v0.0.1...v0.1.0) (2023-05-15)
 
 
