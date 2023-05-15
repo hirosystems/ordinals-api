@@ -8,6 +8,7 @@ import { PgStore } from '../pg/pg-store';
 import { SatRoutes } from './routes/sats';
 import { StatusRoutes } from './routes/status';
 import FastifyMetrics from 'fastify-metrics';
+import { isProdEnv } from './util/helpers';
 
 export const Api: FastifyPluginAsync<
   Record<never, never>,
@@ -26,7 +27,7 @@ export async function buildApiServer(args: { db: PgStore }) {
   }).withTypeProvider<TypeBoxTypeProvider>();
 
   fastify.decorate('db', args.db);
-  if (process.env.NODE_ENV === 'production') {
+  if (isProdEnv) {
     await fastify.register(FastifyMetrics);
   }
   await fastify.register(FastifyCors);

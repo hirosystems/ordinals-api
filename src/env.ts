@@ -1,14 +1,6 @@
 import { Static, Type } from '@sinclair/typebox';
 import envSchema from 'env-schema';
 
-export const isDevEnv = process.env.NODE_ENV === 'development';
-export const isTestEnv = process.env.NODE_ENV === 'test';
-export const isProdEnv =
-  process.env.NODE_ENV === 'production' ||
-  process.env.NODE_ENV === 'prod' ||
-  !process.env.NODE_ENV ||
-  (!isTestEnv && !isDevEnv);
-
 const schema = Type.Object({
   /**
    * Run mode for this service. Allows you to control how the API runs, typically in an auto-scaled
