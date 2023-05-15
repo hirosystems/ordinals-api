@@ -1,7 +1,7 @@
 import pino from 'pino';
 
 export const PINO_CONFIG = {
-  name: 'stx-btc-api',
+  name: 'ordinals-api',
   level: 'info',
   timestamp: pino.stdTimeFunctions.isoTime,
   formatters: {

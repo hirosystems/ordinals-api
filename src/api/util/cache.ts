@@ -1,6 +1,11 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { ENV } from '../env';
-import { fetchJson } from './util';
+import { logger } from '../../logger';
+import { InscriptionIdParamCType, InscriptionNumberParamCType } from '../schemas';
+
+export enum ETagType {
+  inscriptionTransfers,
+  inscription,
+}
 
 /**
  * A `Cache-Control` header used for re-validation based caching.
@@ -10,28 +15,76 @@ import { fetchJson } from './util';
  */
 const CACHE_CONTROL_MUST_REVALIDATE = 'public, no-cache, must-revalidate';
 
-export async function handleChainTipCache(request: FastifyRequest, reply: FastifyReply) {
+export async function handleInscriptionCache(request: FastifyRequest, reply: FastifyReply) {
+  return handleCache(ETagType.inscription, request, reply);
+}
+
+export async function handleInscriptionTransfersCache(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  return handleCache(ETagType.inscriptionTransfers, request, reply);
+}
+
+async function handleCache(type: ETagType, request: FastifyRequest, reply: FastifyReply) {
   const ifNoneMatch = parseIfNoneMatchHeader(request.headers['if-none-match']);
-  const etag = await getNodeChainTipEtag();
+  let etag: string | undefined;
+  switch (type) {
+    case ETagType.inscription:
+      etag = await getInscriptionLocationEtag(request);
+      break;
+    case ETagType.inscriptionTransfers:
+      etag = await getInscriptionTransfersEtag(request);
+      break;
+  }
   if (etag) {
     if (ifNoneMatch && ifNoneMatch.includes(etag)) {
-      await reply.header('cache-control', CACHE_CONTROL_MUST_REVALIDATE).code(304).send();
+      await reply.header('Cache-Control', CACHE_CONTROL_MUST_REVALIDATE).code(304).send();
     } else {
-      await reply.header('etag', etag);
+      void reply.headers({ 'Cache-Control': CACHE_CONTROL_MUST_REVALIDATE, ETag: `"${etag}"` });
     }
   }
 }
 
+export function setReplyNonCacheable(reply: FastifyReply) {
+  reply.removeHeader('Cache-Control');
+  reply.removeHeader('Etag');
+}
+
 /**
- * Retrieve the chain tip from the node so we can build the etag.
+ * Retrieve the inscriptions's location timestamp as a UNIX epoch so we can use it as the response
+ * ETag.
+ * @param request - Fastify request
  * @returns Etag string
  */
-async function getNodeChainTipEtag(): Promise<string | undefined> {
-  const url = new URL(`/v2/info`, ENV.STACKS_API_ENDPOINT);
-  const result = await fetchJson({ url, init: { method: 'GET' } });
-  if (result.result === 'ok') {
-    const response = result.response as any;
-    return `${response.stacks_tip}:${response.unanchored_tip}`;
+async function getInscriptionLocationEtag(request: FastifyRequest): Promise<string | undefined> {
+  try {
+    const components = request.url.split('/');
+    do {
+      const lastElement = components.pop();
+      if (lastElement && lastElement.length) {
+        if (InscriptionIdParamCType.Check(lastElement)) {
+          return await request.server.db.getInscriptionETag({ genesis_id: lastElement });
+        } else if (InscriptionNumberParamCType.Check(parseInt(lastElement))) {
+          return await request.server.db.getInscriptionETag({ number: lastElement });
+        }
+      }
+    } while (components.length);
+  } catch (error) {
+    return;
+  }
+}
+
+/**
+ * Get an ETag based on the last state of inscription transfers.
+ * @param request - Fastify request
+ * @returns ETag string
+ */
+async function getInscriptionTransfersEtag(request: FastifyRequest): Promise<string | undefined> {
+  try {
+    return await request.server.db.getInscriptionTransfersETag();
+  } catch (error) {
+    return;
   }
 }
 
@@ -67,7 +120,7 @@ function parseIfNoneMatchHeader(ifNoneMatchHeaderValue: string | undefined): str
   if (!normalized) {
     // This should never happen unless handling a buggy request with something like `If-None-Match: ""`,
     // or if there's a flaw in the above code. Log warning for now.
-    console.warn(`Normalized If-None-Match header is falsy: ${ifNoneMatchHeaderValue}`);
+    logger.warn(`Normalized If-None-Match header is falsy: ${ifNoneMatchHeaderValue}`);
     return undefined;
   } else if (normalized.includes(',')) {
     // Multiple etag values provided, likely irrelevant extra values added by a proxy/CDN.

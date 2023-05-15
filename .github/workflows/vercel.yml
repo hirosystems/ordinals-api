@@ -1,0 +1,71 @@
+name: Vercel
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+on:
+  push:
+    branches:
+      - develop
+      - beta
+  pull_request:
+
+jobs:
+  vercel:
+    runs-on: ubuntu-latest
+
+    env:
+      VERCEL_ENV: ${{ github.ref_name == 'master' && 'production' || 'preview' }}
+      VERCEL_PROD: ${{ github.ref_name == 'master' && '--prod' || '' }}
+
+    environment:
+      name: ${{ github.ref_name == 'master' && 'Production' || 'Preview' }}
+      url: ${{ github.ref_name == 'master' && 'https://ordinals-api.vercel.app/' || 'https://ordinals-api-pbcblockstack-blockstack.vercel.app/' }}
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Cache node modules
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: |
+            ~/.npm
+            **/node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+      - name: Install deps
+        run: npm ci --audit=false
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel environment information
+        run: vercel pull --yes --environment=${{ env.VERCEL_ENV }} --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build project artifacts
+        run: vercel build ${{ env.VERCEL_PROD }} --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy project artifacts to Vercel
+        id: deploy
+        run: vercel deploy ${{ env.VERCEL_PROD }} --prebuilt --token=${{ secrets.VERCEL_TOKEN }} | awk '{print "deployment_url="$1}' >> $GITHUB_OUTPUT
+
+      - name: Add comment with Vercel deployment URL
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          comment_tag: vercel
+          message: |
+            Vercel deployment URL: ${{ steps.deploy.outputs.deployment_url }} :rocket:
