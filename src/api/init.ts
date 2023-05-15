@@ -7,7 +7,7 @@ import { InscriptionsRoutes } from './routes/inscriptions';
 import { PgStore } from '../pg/pg-store';
 import { SatRoutes } from './routes/sats';
 import { StatusRoutes } from './routes/status';
-import FastifyMetrics from 'fastify-metrics';
+import FastifyMetrics, { IFastifyMetrics } from 'fastify-metrics';
 import { isProdEnv } from './util/helpers';
 
 export const Api: FastifyPluginAsync<
@@ -28,11 +28,29 @@ export async function buildApiServer(args: { db: PgStore }) {
 
   fastify.decorate('db', args.db);
   if (isProdEnv) {
-    await fastify.register(FastifyMetrics);
+    await fastify.register(FastifyMetrics, { endpoint: null });
   }
   await fastify.register(FastifyCors);
   await fastify.register(Api, { prefix: '/ordinals/v1' });
   await fastify.register(Api, { prefix: '/ordinals' });
 
   return fastify;
+}
+
+export async function buildPromServer(args: { metrics: IFastifyMetrics }) {
+  const promServer = Fastify({
+    trustProxy: true,
+    logger: PINO_CONFIG,
+  });
+
+  promServer.route({
+    url: '/metrics',
+    method: 'GET',
+    logLevel: 'info',
+    handler: async (_, reply) => {
+      await reply.type('text/plain').send(await args.metrics.client.register.metrics());
+    },
+  });
+
+  return promServer;
 }
