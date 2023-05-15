@@ -1,3 +1,10 @@
+## [0.1.2](https://github.com/hirosystems/ordinals-api/compare/v0.1.1...v0.1.2) (2023-05-15)
+
+
+### Bug Fixes
+
+* run prometheus server at port 9153 ([#75](https://github.com/hirosystems/ordinals-api/issues/75)) ([33823d2](https://github.com/hirosystems/ordinals-api/commit/33823d249027f351b842bd926dec9bc74ad6c2d1))
+
 ## [0.1.1](https://github.com/hirosystems/ordinals-api/compare/v0.1.0...v0.1.1) (2023-05-15)
 
 
