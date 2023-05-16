@@ -12,6 +12,7 @@ import {
   DbFullyLocatedInscriptionResult,
   DbInscriptionContent,
   DbInscriptionCountPerBlock,
+  DbInscriptionCountPerBlockFilters,
   DbInscriptionIndexFilters,
   DbInscriptionIndexOrder,
   DbInscriptionIndexPaging,
@@ -531,9 +532,18 @@ export class PgStore extends BasePgStore {
     }
   }
 
-  // todo: add range filter
-  async getInscriptionCountPerBlock(): Promise<DbInscriptionCountPerBlock[]> {
-    return this.sql<DbInscriptionCountPerBlock[]>`SELECT * FROM inscriptions_per_block`;
+  async getInscriptionCountPerBlock(
+    filters?: DbInscriptionCountPerBlockFilters
+  ): Promise<DbInscriptionCountPerBlock[]> {
+    // 9223372036854775807 is the max value for a bigint
+    return await this.sql<DbInscriptionCountPerBlock[]>`
+      SELECT *
+      FROM inscriptions_per_block
+      WHERE block_height >= ${filters?.from_block_height ?? '0'}
+        AND block_height <= ${filters?.to_block_height ?? '9223372036854775807'}
+      ORDER BY block_height DESC
+      LIMIT 10000
+    `; // roughly 70 days of blocks, assuming 10 minute block times on a full database
   }
 
   async refreshMaterializedView(viewName: string) {

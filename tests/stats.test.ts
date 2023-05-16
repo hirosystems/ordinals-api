@@ -21,76 +21,130 @@ describe('/stats', () => {
   });
 
   describe('/stats/inscriptions', () => {
-    const EXPECTED = {
-      results: [
-        { block_height: '778000', inscription_count: '2', inscription_count_total: '2' },
-        { block_height: '778001', inscription_count: '1', inscription_count_total: '3' },
-        { block_height: '778002', inscription_count: '1', inscription_count_total: '4' },
-        { block_height: '778005', inscription_count: '2', inscription_count_total: '6' },
-        { block_height: '778010', inscription_count: '3', inscription_count_total: '9' },
-      ],
-    };
+    describe('event processing', () => {
+      const EXPECTED = {
+        results: [
+          { block_height: '778010', inscription_count: '3', inscription_count_total: '9' },
+          { block_height: '778005', inscription_count: '2', inscription_count_total: '6' },
+          { block_height: '778002', inscription_count: '1', inscription_count_total: '4' },
+          { block_height: '778001', inscription_count: '1', inscription_count_total: '3' },
+          { block_height: '778000', inscription_count: '2', inscription_count_total: '2' },
+        ],
+      };
 
-    test('returns stats when processing blocks in order', async () => {
-      await db.updateInscriptions(testRevealBuilder(778_000).build());
-      await db.updateInscriptions(testRevealBuilder(778_000).build());
-      await db.updateInscriptions(testRevealBuilder(778_001).build());
-      await db.updateInscriptions(testRevealBuilder(778_002).build());
-      await db.updateInscriptions(testRevealBuilder(778_005).build());
-      await db.updateInscriptions(testRevealBuilder(778_005).build());
-      await db.updateInscriptions(testRevealBuilder(778_010).build());
-      await db.updateInscriptions(testRevealBuilder(778_010).build());
-      await db.updateInscriptions(testRevealBuilder(778_010).build());
+      test('returns stats when processing blocks in order', async () => {
+        await db.updateInscriptions(testRevealBuilder(778_000).build());
+        await db.updateInscriptions(testRevealBuilder(778_000).build());
+        await db.updateInscriptions(testRevealBuilder(778_001).build());
+        await db.updateInscriptions(testRevealBuilder(778_002).build());
+        await db.updateInscriptions(testRevealBuilder(778_005).build());
+        await db.updateInscriptions(testRevealBuilder(778_005).build());
+        await db.updateInscriptions(testRevealBuilder(778_010).build());
+        await db.updateInscriptions(testRevealBuilder(778_010).build());
+        await db.updateInscriptions(testRevealBuilder(778_010).build());
 
-      const response = await fastify.inject({
-        method: 'GET',
-        url: '/ordinals/v1/stats/inscriptions',
+        const response = await fastify.inject({
+          method: 'GET',
+          url: '/ordinals/v1/stats/inscriptions',
+        });
+        expect(response.statusCode).toBe(200);
+        expect(response.json()).toStrictEqual(EXPECTED);
       });
-      expect(response.statusCode).toBe(200);
-      expect(response.json()).toStrictEqual(EXPECTED);
+
+      test('returns stats when processing blocks out-of-order', async () => {
+        await db.updateInscriptions(testRevealBuilder(778_001).build());
+        await db.updateInscriptions(testRevealBuilder(778_010).build());
+        await db.updateInscriptions(testRevealBuilder(778_000).build());
+        await db.updateInscriptions(testRevealBuilder(778_000).build());
+        await db.updateInscriptions(testRevealBuilder(778_005).build());
+        await db.updateInscriptions(testRevealBuilder(778_010).build());
+        await db.updateInscriptions(testRevealBuilder(778_002).build());
+        await db.updateInscriptions(testRevealBuilder(778_010).build());
+        await db.updateInscriptions(testRevealBuilder(778_005).build());
+
+        const response = await fastify.inject({
+          method: 'GET',
+          url: '/ordinals/v1/stats/inscriptions',
+        });
+        expect(response.statusCode).toBe(200);
+        expect(response.json()).toStrictEqual(EXPECTED);
+      });
+
+      test('returns stats when processing rollbacks', async () => {
+        const payloadApply = testRevealBuilder(778_004).build();
+        const payloadRollback = { ...payloadApply, apply: [], rollback: payloadApply.apply };
+
+        await db.updateInscriptions(testRevealBuilder(778_001).build());
+        await db.updateInscriptions(testRevealBuilder(778_010).build());
+        await db.updateInscriptions(testRevealBuilder(778_000).build());
+        await db.updateInscriptions(payloadApply);
+        await db.updateInscriptions(testRevealBuilder(778_005).build());
+        await db.updateInscriptions(testRevealBuilder(778_000).build());
+        await db.updateInscriptions(payloadRollback);
+        await db.updateInscriptions(testRevealBuilder(778_010).build());
+        await db.updateInscriptions(testRevealBuilder(778_002).build());
+        await db.updateInscriptions(testRevealBuilder(778_010).build());
+        await db.updateInscriptions(testRevealBuilder(778_005).build());
+
+        const response = await fastify.inject({
+          method: 'GET',
+          url: '/ordinals/v1/stats/inscriptions',
+        });
+        expect(response.statusCode).toBe(200);
+        expect(response.json()).toStrictEqual(EXPECTED);
+      });
     });
 
-    test('returns stats when processing blocks out-of-order', async () => {
+    test('range filters', async () => {
+      await db.updateInscriptions(testRevealBuilder(778_000).build());
       await db.updateInscriptions(testRevealBuilder(778_001).build());
-      await db.updateInscriptions(testRevealBuilder(778_010).build());
-      await db.updateInscriptions(testRevealBuilder(778_000).build());
-      await db.updateInscriptions(testRevealBuilder(778_000).build());
-      await db.updateInscriptions(testRevealBuilder(778_005).build());
-      await db.updateInscriptions(testRevealBuilder(778_010).build());
       await db.updateInscriptions(testRevealBuilder(778_002).build());
-      await db.updateInscriptions(testRevealBuilder(778_010).build());
       await db.updateInscriptions(testRevealBuilder(778_005).build());
+      await db.updateInscriptions(testRevealBuilder(778_005).build());
+      await db.updateInscriptions(testRevealBuilder(778_010).build());
 
-      const response = await fastify.inject({
+      const responseFrom = await fastify.inject({
         method: 'GET',
         url: '/ordinals/v1/stats/inscriptions',
+        query: { from_block_height: '778004' },
       });
-      expect(response.statusCode).toBe(200);
-      expect(response.json()).toStrictEqual(EXPECTED);
-    });
+      expect(responseFrom.statusCode).toBe(200);
+      expect(responseFrom.json()).toStrictEqual({
+        results: [
+          { block_height: '778010', inscription_count: '1', inscription_count_total: '6' },
+          { block_height: '778005', inscription_count: '2', inscription_count_total: '5' },
+        ],
+      });
 
-    test('returns stats when processing rollbacks', async () => {
-      const payloadApply = testRevealBuilder(778_004).build();
-      const payloadRollback = { ...payloadApply, apply: [], rollback: payloadApply.apply };
-
-      await db.updateInscriptions(testRevealBuilder(778_001).build());
-      await db.updateInscriptions(testRevealBuilder(778_010).build());
-      await db.updateInscriptions(testRevealBuilder(778_000).build());
-      await db.updateInscriptions(payloadApply);
-      await db.updateInscriptions(testRevealBuilder(778_005).build());
-      await db.updateInscriptions(testRevealBuilder(778_000).build());
-      await db.updateInscriptions(payloadRollback);
-      await db.updateInscriptions(testRevealBuilder(778_010).build());
-      await db.updateInscriptions(testRevealBuilder(778_002).build());
-      await db.updateInscriptions(testRevealBuilder(778_010).build());
-      await db.updateInscriptions(testRevealBuilder(778_005).build());
-
-      const response = await fastify.inject({
+      const responseTo = await fastify.inject({
         method: 'GET',
         url: '/ordinals/v1/stats/inscriptions',
+        query: { to_block_height: '778004' },
       });
-      expect(response.statusCode).toBe(200);
-      expect(response.json()).toStrictEqual(EXPECTED);
+      expect(responseTo.statusCode).toBe(200);
+      expect(responseTo.json()).toStrictEqual({
+        results: [
+          { block_height: '778002', inscription_count: '1', inscription_count_total: '3' },
+          { block_height: '778001', inscription_count: '1', inscription_count_total: '2' },
+          { block_height: '778000', inscription_count: '1', inscription_count_total: '1' },
+        ],
+      });
+
+      const responseFromTo = await fastify.inject({
+        method: 'GET',
+        url: '/ordinals/v1/stats/inscriptions',
+        query: {
+          from_block_height: '778002',
+          to_block_height: '778005',
+        },
+      });
+      expect(responseFromTo.statusCode).toBe(200);
+      expect(responseFromTo.json()).toStrictEqual({
+        results: [
+          { block_height: '778005', inscription_count: '2', inscription_count_total: '5' },
+          { block_height: '778002', inscription_count: '1', inscription_count_total: '3' },
+        ],
+      });
     });
   });
 });

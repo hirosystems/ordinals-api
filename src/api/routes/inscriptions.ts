@@ -34,22 +34,13 @@ import {
 import { handleInscriptionCache, handleInscriptionTransfersCache } from '../util/cache';
 import {
   DEFAULT_API_LIMIT,
+  blockParam,
   hexToBuffer,
   parseBlockTransfers,
   parseDbInscription,
   parseDbInscriptions,
   parseInscriptionLocations,
 } from '../util/helpers';
-
-function blockParam(param: string | undefined, name: string) {
-  const out: Record<string, string> = {};
-  if (BlockHashParamCType.Check(param)) {
-    out[`${name}_hash`] = param;
-  } else if (BlockHeightParamCType.Check(param)) {
-    out[`${name}_height`] = param;
-  }
-  return out;
-}
 
 function inscriptionIdArrayParam(param: string | number) {
   return InscriptionIdParamCType.Check(param) ? { genesis_id: [param] } : { number: [param] };

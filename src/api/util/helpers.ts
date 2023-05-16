@@ -4,6 +4,8 @@ import {
   DbLocation,
 } from '../../pg/types';
 import {
+  BlockHashParamCType,
+  BlockHeightParamCType,
   BlockInscriptionTransfer,
   InscriptionLocationResponse,
   InscriptionResponseType,
@@ -126,4 +128,14 @@ export const has0xPrefix = (id: string) => id.substr(0, 2).toLowerCase() === '0x
 
 export function normalizedHexString(hex: string): string {
   return has0xPrefix(hex) ? hex.substring(2) : hex;
+}
+
+export function blockParam(param: string | undefined, name: string) {
+  const out: Record<string, string> = {};
+  if (BlockHashParamCType.Check(param)) {
+    out[`${name}_hash`] = param;
+  } else if (BlockHeightParamCType.Check(param)) {
+    out[`${name}_height`] = param;
+  }
+  return out;
 }

@@ -220,6 +220,11 @@ export enum DbInscriptionIndexResultCountType {
   custom,
 }
 
+export type DbInscriptionCountPerBlockFilters = {
+  from_block_height?: number;
+  to_block_height?: number;
+};
+
 export type DbInscriptionCountPerBlock = {
   block_height: string;
   inscription_count: string;
