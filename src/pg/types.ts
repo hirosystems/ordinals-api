@@ -212,3 +212,27 @@ export enum DbInscriptionIndexResultCountType {
   /** Filtered by custom arguments */
   custom,
 }
+
+export type DbBrc20Deploy = {
+  id: string;
+  inscription_id: string;
+  block_height: string;
+  tx_id: string;
+  address: string;
+  ticker: string;
+  max: string;
+  limit?: string;
+  decimals: number;
+};
+
+export const BRC20_DEPLOYS_COLUMNS = [
+  'id',
+  'inscription_id',
+  'block_height',
+  'tx_id',
+  'address',
+  'ticker',
+  'max',
+  'limit',
+  'decimals',
+];

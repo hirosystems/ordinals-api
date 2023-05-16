@@ -35,10 +35,9 @@ export function up(pgm: MigrationBuilder): void {
     },
     limit: {
       type: 'numeric',
-      notNull: true,
     },
     decimals: {
-      type: 'numeric',
+      type: 'int',
       notNull: true,
     },
   });
@@ -47,7 +46,7 @@ export function up(pgm: MigrationBuilder): void {
     'brc20_deploys_inscription_id_fk',
     'FOREIGN KEY(inscription_id) REFERENCES inscriptions(id) ON DELETE CASCADE'
   );
-  pgm.createConstraint('brc20_deploys', 'brc20_deploys_ticker_unique', 'UNIQUE(ticker)');
+  pgm.createIndex('brc20_deploys', 'LOWER(ticker)', { unique: true });
   pgm.createIndex('brc20_deploys', ['block_height']);
   pgm.createIndex('brc20_deploys', ['address']);
 }

@@ -1,14 +1,23 @@
 import { Order, OrderBy } from '../api/schemas';
 import { normalizedHexString } from '../api/util/helpers';
 import { OrdinalSatoshi, SatoshiRarity } from '../api/util/ordinal-satoshi';
-import { ChainhookPayload, InscriptionEvent } from '../chainhook/schemas';
+import { ChainhookPayload } from '../chainhook/schemas';
 import { ENV } from '../env';
 import { logger } from '../logger';
-import { getIndexResultCountType, inscriptionContentToJson } from './helpers';
+import {
+  Brc20Deploy,
+  Brc20Mint,
+  brc20DeployFromOpJson,
+  brc20MintFromOpJson,
+  getIndexResultCountType,
+  inscriptionContentToJson,
+} from './helpers';
 import { runMigrations } from './migrations';
 import { connectPostgres } from './postgres-tools';
 import { BasePgStore } from './postgres-tools/base-pg-store';
 import {
+  BRC20_DEPLOYS_COLUMNS,
+  DbBrc20Deploy,
   DbFullyLocatedInscriptionResult,
   DbInscriptionContent,
   DbInscriptionIndexFilters,
@@ -474,6 +483,18 @@ export class PgStore extends BasePgStore {
     }
   }
 
+  async getBrc20Deploy(args: { ticker: string }): Promise<DbBrc20Deploy | undefined> {
+    const results = await this.sql<DbBrc20Deploy[]>`
+      SELECT ${this.sql(BRC20_DEPLOYS_COLUMNS)}
+      FROM brc20_deploys
+      WHERE LOWER(ticker) = LOWER(${args.ticker})
+      LIMIT 1
+    `;
+    if (results.count === 1) {
+      return results[0];
+    }
+  }
+
   async refreshMaterializedView(viewName: string) {
     const isProd = process.env.NODE_ENV === 'production';
     await this.sql`REFRESH MATERIALIZED VIEW ${
@@ -553,21 +574,20 @@ export class PgStore extends BasePgStore {
           sat_coinbase_height = EXCLUDED.sat_coinbase_height,
           timestamp = EXCLUDED.timestamp
       `;
+      // TODO: No valid action can occur via the spending of an ordinal via transaction fee. If it
+      // occurs during the inscription process then the resulting inscription is ignored. If it
+      // occurs during the second phase of the transfer process, the balance is returned to the
+      // senders available balance.
       const json = inscriptionContentToJson(args.inscription);
       if (json) {
-        const values = {
-          inscription_id,
-          p: json.p,
-          op: json.op,
-          content: json,
-        };
-        await sql`
-          INSERT INTO json_contents ${sql(values)}
-          ON CONFLICT ON CONSTRAINT json_contents_inscription_id_unique DO UPDATE SET
-            p = EXCLUDED.p,
-            op = EXCLUDED.op,
-            content = EXCLUDED.content
-        `;
+        // Is this a BRC-20 operation?
+        const deploy = brc20DeployFromOpJson(json);
+        if (deploy) {
+          await this.insertBrc20Deploy({ deploy, inscription_id, location: args.location });
+        } else {
+          const mint = brc20MintFromOpJson(json);
+          if (mint) await this.insertBrc20Mint({ mint, inscription_id, location: args.location });
+        }
       }
     });
     return inscription_id;
@@ -669,6 +689,73 @@ export class PgStore extends BasePgStore {
           WHERE inscription_id = ${id}
         `;
       }
+    });
+  }
+
+  private async insertBrc20Deploy(args: {
+    deploy: Brc20Deploy;
+    inscription_id: number;
+    location: DbLocationInsert;
+  }): Promise<void> {
+    const deploy = {
+      inscription_id: args.inscription_id,
+      block_height: args.location.block_height,
+      tx_id: args.location.tx_id,
+      address: args.location.address,
+      ticker: args.deploy.tick,
+      max: args.deploy.max,
+      limit: args.deploy.lim ?? null,
+      decimals: args.deploy.dec ?? 18,
+    };
+    const insertion = await this.sql`
+      INSERT INTO brc20_deploys ${this.sql(deploy)}
+      ON CONFLICT (LOWER(ticker)) DO NOTHING
+    `;
+    if (insertion.count > 0) {
+      logger.info(
+        `PgStore [BRC-20] inserted deploy for ${args.deploy.tick} at block ${args.location.block_height}`
+      );
+    } else {
+      logger.debug(
+        `PgStore [BRC-20] attempted to insert deploy for ${args.deploy.tick} at block ${args.location.block_height} but a previous entry existed`
+      );
+    }
+  }
+
+  private async insertBrc20Mint(args: {
+    mint: Brc20Mint;
+    inscription_id: number;
+    location: DbLocationInsert;
+  }): Promise<void> {
+    await this.sqlWriteTransaction(async sql => {
+      // Get which token this belongs to
+      const deploy = await sql<{ id: number }[]>`
+        SELECT id FROM brc20_deploys WHERE ticker = ${args.mint.tick}
+      `;
+      if (deploy.count === 0) {
+        logger.debug(
+          `PgStore [BRC-20] attempted to insert mint for non-deployed token ${args.mint.tick} at block ${args.location.block_height}`
+        );
+        return;
+      }
+      const deploy_id = deploy[0].id;
+      // TODO: The first mint to exceed the maximum supply will receive the fraction that is valid.
+      // (ex. 21,000,000 maximum supply, 20,999,242 circulating supply, and 1000 mint inscription =
+      // 758 balance state applied)
+
+      // TODO: Check limit per mint
+      const mint = {
+        inscription_id: args.inscription_id,
+        brc20_deploy_id: deploy_id,
+        block_height: args.location.block_height,
+        tx_id: args.location.tx_id,
+        address: args.location.address,
+        amount: args.mint.amt,
+      };
+      await this.sql`INSERT INTO brc20_mints ${this.sql(mint)}`;
+      logger.info(
+        `PgStore [BRC-20] inserted mint for ${args.mint.tick} (${args.mint.amt}) at block ${args.location.block_height}`
+      );
     });
   }
 }
