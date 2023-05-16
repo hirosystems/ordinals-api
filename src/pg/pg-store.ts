@@ -59,6 +59,7 @@ export class PgStore extends BasePgStore {
    */
   async updateInscriptions(payload: Payload): Promise<void> {
     const updatedInscriptionIds = new Set<number>();
+    const updatedBlockHeights = new Set<number>();
     await this.sqlWriteTransaction(async sql => {
       for (const rollbackEvent of payload.rollback) {
         const event = rollbackEvent as BitcoinEvent;
@@ -89,9 +90,7 @@ export class PgStore extends BasePgStore {
             }
           }
         }
-        const block_height = event.block_identifier.index;
-        await this.rollBackInscriptionCount({ block_height });
-        logger.info(`PgStore rollback inscription counts for block ${block_height}`);
+        updatedBlockHeights.add(event.block_identifier.index);
       }
       for (const applyEvent of payload.apply) {
         const event = applyEvent as BitcoinEvent;
@@ -204,12 +203,11 @@ export class PgStore extends BasePgStore {
             }
           }
         }
-        const block_height = event.block_identifier.index;
-        await this.insertInscriptionCount({ block_height });
-        logger.info(`PgStore apply inscription counts at block ${block_height}`);
+        updatedBlockHeights.add(event.block_identifier.index);
       }
     });
     await this.normalizeInscriptionLocations({ inscription_id: Array.from(updatedInscriptionIds) });
+    await this.normalizeInscriptionCount({ block_heights: Array.from(updatedBlockHeights) });
     await this.refreshMaterializedView('chain_tip');
     await this.refreshMaterializedView('inscription_count');
     await this.refreshMaterializedView('mime_type_counts');
@@ -533,6 +531,7 @@ export class PgStore extends BasePgStore {
     }
   }
 
+  // todo: add range filter
   async getInscriptionCountPerBlock(): Promise<DbInscriptionCountPerBlock[]> {
     return this.sql<DbInscriptionCountPerBlock[]>`SELECT * FROM inscriptions_per_block`;
   }
@@ -715,34 +714,40 @@ export class PgStore extends BasePgStore {
     return inscription_id;
   }
 
-  private async insertInscriptionCount(args: { block_height: number }): Promise<void> {
-    await this.sql`
+  private async normalizeInscriptionCount(args: { block_heights: number[] }): Promise<void> {
+    const min_block_height = Math.min(...args.block_heights);
+    await this.sqlWriteTransaction(async sql => {
+      await sql`
+        DELETE FROM inscriptions_per_block
+        WHERE block_height >= ${min_block_height}
+      `;
+      // - gets highest total for a block < min_block_height
+      // - calculates new totals for all blocks >= min_block_height
+      // - inserts new totals
+      await sql`
       WITH previous AS (
-        SELECT COALESCE((
-          SELECT inscriptions_total
-          FROM inscriptions_per_block
-          WHERE block_height = ${args.block_height - 1}
-        ), 0) as previous_total
-      ), current AS (
+        SELECT *
+        FROM inscriptions_per_block
+        WHERE block_height < ${min_block_height}
+        ORDER BY block_height DESC
+        LIMIT 1
+      ), updated_blocks AS (
         SELECT
           block_height,
-          COUNT(*) as inscriptions,
-          COUNT(*) + (SELECT previous_total FROM previous) as inscriptions_total
+          COUNT(*) AS inscription_count,
+          COALESCE((SELECT previous.inscription_count_total FROM previous), 0) + (SUM(COUNT(*)) OVER (ORDER BY block_height ASC)) AS inscription_count_total
         FROM locations
-        WHERE block_height = ${args.block_height} AND genesis = true
+        WHERE block_height >= ${min_block_height} AND genesis = true
         GROUP BY block_height
-        LIMIT 1
+        ORDER BY block_height ASC
       )
       INSERT INTO inscriptions_per_block
-      SELECT * FROM current
+      SELECT * FROM updated_blocks
       ON CONFLICT (block_height) DO UPDATE SET
-        inscriptions = EXCLUDED.inscriptions,
-        inscriptions_total = EXCLUDED.inscriptions_total;
+        inscription_count = EXCLUDED.inscription_count,
+        inscription_count_total = EXCLUDED.inscription_count_total;
     `;
-  }
-
-  private async rollBackInscriptionCount(args: { block_height: number }): Promise<void> {
-    await this.sql`DELETE FROM inscriptions_per_block WHERE block_height = ${args.block_height}`;
+    });
   }
 
   private async rollBackInscriptionGenesis(args: { genesis_id: string }): Promise<void> {

@@ -221,7 +221,7 @@ export enum DbInscriptionIndexResultCountType {
 }
 
 export type DbInscriptionCountPerBlock = {
-  block_height: number;
-  inscriptions: number;
-  inscriptions_total: number;
+  block_height: string;
+  inscription_count: string;
+  inscription_count_total: string;
 };
