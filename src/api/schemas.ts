@@ -30,6 +30,10 @@ export const OpenApiSchemaOptions: SwaggerOptions = {
         name: 'Satoshis',
         description: 'Endpoints to query Satoshi ordinal and rarity information',
       },
+      {
+        name: 'BRC-20',
+        description: 'Endpoints to query BRC-20 token balances and events',
+      },
     ],
   },
 };
@@ -56,6 +60,8 @@ export const AddressesParam = Type.Array(AddressParam, {
     ],
   ],
 });
+
+export const Brc20TickersParam = Type.Array(Type.String());
 
 export const InscriptionIdParam = Type.RegEx(/^[a-fA-F0-9]{64}i[0-9]+$/, {
   title: 'Inscription ID',
@@ -322,6 +328,14 @@ export const BlockInscriptionTransferSchema = Type.Object({
   to: InscriptionLocationResponseSchema,
 });
 export type BlockInscriptionTransfer = Static<typeof BlockInscriptionTransferSchema>;
+
+export const Brc20BalanceResponseSchema = Type.Object({
+  ticker: Type.String({ examples: ['PEPE'] }),
+  available_balance: Type.String({ examples: ['1500.00000'] }),
+  transferrable_balance: Type.String({ examples: ['500.00000'] }),
+  overall_balance: Type.String({ examples: ['2000.00000'] }),
+});
+export type Brc20BalanceResponse = Static<typeof Brc20BalanceResponseSchema>;
 
 export const NotFoundResponse = Type.Object(
   {

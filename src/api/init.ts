@@ -8,6 +8,7 @@ import { PgStore } from '../pg/pg-store';
 import { SatRoutes } from './routes/sats';
 import { StatusRoutes } from './routes/status';
 import FastifyMetrics from 'fastify-metrics';
+import { Brc20Routes } from './routes/brc20';
 
 export const Api: FastifyPluginAsync<
   Record<never, never>,
@@ -17,6 +18,7 @@ export const Api: FastifyPluginAsync<
   await fastify.register(StatusRoutes);
   await fastify.register(InscriptionsRoutes);
   await fastify.register(SatRoutes);
+  await fastify.register(Brc20Routes);
 };
 
 export async function buildApiServer(args: { db: PgStore }) {

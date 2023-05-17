@@ -1,16 +1,20 @@
+import { buildApiServer } from '../src/api/init';
 import { cycleMigrations } from '../src/pg/migrations';
 import { PgStore } from '../src/pg/pg-store';
-import { TestChainhookPayloadBuilder, brc20Reveal } from './helpers';
+import { TestChainhookPayloadBuilder, TestFastifyServer, brc20Reveal } from './helpers';
 
 describe('BRC-20', () => {
   let db: PgStore;
+  let fastify: TestFastifyServer;
 
   beforeEach(async () => {
     db = await PgStore.connect({ skipMigrations: true });
+    fastify = await buildApiServer({ db });
     await cycleMigrations();
   });
 
   afterEach(async () => {
+    await fastify.close();
     await db.close();
   });
 
@@ -204,6 +208,7 @@ describe('BRC-20', () => {
 
   describe('mint', () => {
     test('valid mints are saved and balance reflected', async () => {
+      const address = 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td';
       await db.updateInscriptions(
         new TestChainhookPayloadBuilder()
           .apply()
@@ -224,7 +229,7 @@ describe('BRC-20', () => {
               },
               number: 5,
               tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
-              address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+              address: address,
             })
           )
           .build()
@@ -249,24 +254,27 @@ describe('BRC-20', () => {
               },
               number: 6,
               tx_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
-              address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+              address: address,
             })
           )
           .build()
       );
 
-      const balance = await db.getBrc20Balance({
-        ticker: 'pepe',
-        address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+      const response1 = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/balances?address=${address}`,
       });
-      expect(balance).toStrictEqual({
-        address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-        avail_balance: '250000',
-        block_height: '775618',
-        decimals: 18,
-        ticker: 'PEPE',
-        trans_balance: '0',
-      });
+      expect(response1.statusCode).toBe(200);
+      const responseJson1 = response1.json();
+      expect(responseJson1.total).toBe(1);
+      expect(responseJson1.results).toStrictEqual([
+        {
+          ticker: 'PEPE',
+          available_balance: '250000',
+          overall_balance: '250000',
+          transferrable_balance: '0',
+        },
+      ]);
 
       // New mint
       await db.updateInscriptions(
@@ -295,18 +303,21 @@ describe('BRC-20', () => {
           .build()
       );
 
-      const balance2 = await db.getBrc20Balance({
-        ticker: 'pepe',
-        address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+      const response2 = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/balances?address=${address}`,
       });
-      expect(balance2).toStrictEqual({
-        address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-        avail_balance: '350000',
-        block_height: '775619',
-        decimals: 18,
-        ticker: 'PEPE',
-        trans_balance: '0',
-      });
+      expect(response2.statusCode).toBe(200);
+      const responseJson2 = response2.json();
+      expect(responseJson2.total).toBe(1);
+      expect(responseJson2.results).toStrictEqual([
+        {
+          ticker: 'PEPE',
+          available_balance: '350000',
+          overall_balance: '350000',
+          transferrable_balance: '0',
+        },
+      ]);
     });
 
     test('rollback mints deduct balance correctly', async () => {});

@@ -502,23 +502,33 @@ export class PgStore extends BasePgStore {
 
   /**
    * Returns an address balance for a BRC-20 token.
-   * @param ticker - BRC-20 ticker
    * @param address - Owner address
+   * @param ticker - BRC-20 tickers
    * @returns `DbBrc20Balance`
    */
-  async getBrc20Balance(args: {
-    ticker: string;
-    address: string;
-  }): Promise<DbBrc20Balance | undefined> {
-    const results = await this.sql<DbBrc20Balance[]>`
-      SELECT d.ticker, d.decimals, b.address, b.block_height, b.avail_balance, b.trans_balance
+  async getBrc20Balances(
+    args: {
+      address: string;
+      ticker?: string[];
+    } & DbInscriptionIndexPaging
+  ): Promise<DbPaginatedResult<DbBrc20Balance>> {
+    const lowerTickers = args.ticker ? args.ticker.map(t => t.toLowerCase()) : undefined;
+    const results = await this.sql<(DbBrc20Balance & { total: number })[]>`
+      SELECT
+        d.ticker, d.decimals, b.address, b.block_height, b.avail_balance, b.trans_balance,
+        COUNT(*) OVER() as total
       FROM brc20_balances AS b
       INNER JOIN brc20_deploys AS d ON d.id = b.brc20_deploy_id
-      WHERE LOWER(d.ticker) = LOWER(${args.ticker}) AND b.address = ${args.address}
+      WHERE
+        b.address = ${args.address}
+        ${lowerTickers ? this.sql`AND LOWER(d.ticker) IN ${this.sql(lowerTickers)}` : this.sql``} 
+      LIMIT ${args.limit}
+      OFFSET ${args.offset}
     `;
-    if (results.count === 1) {
-      return results[0];
-    }
+    return {
+      total: results[0]?.total ?? 0,
+      results: results ?? [],
+    };
   }
 
   async getBrc20History(args: { ticker: string } & DbInscriptionIndexPaging): Promise<void> {

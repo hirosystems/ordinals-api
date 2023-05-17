@@ -1,10 +1,13 @@
+import BigNumber from 'bignumber.js';
 import {
+  DbBrc20Balance,
   DbFullyLocatedInscriptionResult,
   DbInscriptionLocationChange,
   DbLocation,
 } from '../../pg/types';
 import {
   BlockInscriptionTransfer,
+  Brc20BalanceResponse,
   InscriptionLocationResponse,
   InscriptionResponseType,
 } from '../schemas';
@@ -84,6 +87,15 @@ export function parseBlockTransfers(
       offset: i.to_offset,
       timestamp: i.to_timestamp.valueOf(),
     },
+  }));
+}
+
+export function parseBrc20Balances(items: DbBrc20Balance[]): Brc20BalanceResponse[] {
+  return items.map(i => ({
+    ticker: i.ticker,
+    available_balance: i.avail_balance,
+    transferrable_balance: i.trans_balance,
+    overall_balance: BigNumber(i.avail_balance).plus(i.trans_balance).toString(),
   }));
 }
 
