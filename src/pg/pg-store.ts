@@ -18,6 +18,7 @@ import { connectPostgres } from './postgres-tools';
 import { BasePgStore } from './postgres-tools/base-pg-store';
 import {
   BRC20_DEPLOYS_COLUMNS,
+  DbBrc20DeployInsert,
   DbBrc20Balance,
   DbBrc20Deploy,
   DbFullyLocatedInscriptionResult,
@@ -34,6 +35,8 @@ import {
   DbPaginatedResult,
   JSON_CONTENTS_COLUMNS,
   LOCATIONS_COLUMNS,
+  DbBrc20EventInsert,
+  BRC20_EVENTS_COLUMNS,
 } from './types';
 
 type InscriptionIdentifier = { genesis_id: string } | { number: number };
@@ -497,6 +500,12 @@ export class PgStore extends BasePgStore {
     }
   }
 
+  /**
+   * Returns an address balance for a BRC-20 token.
+   * @param ticker - BRC-20 ticker
+   * @param address - Owner address
+   * @returns `DbBrc20Balance`
+   */
   async getBrc20Balance(args: {
     ticker: string;
     address: string;
@@ -510,6 +519,24 @@ export class PgStore extends BasePgStore {
     if (results.count === 1) {
       return results[0];
     }
+  }
+
+  async getBrc20History(args: { ticker: string } & DbInscriptionIndexPaging): Promise<void> {
+    const results = await this.sql`
+      WITH events AS (
+        SELECT ${this.sql(BRC20_EVENTS_COLUMNS)}
+        FROM brc20_events AS e
+        INNER JOIN brc20_deploys AS d ON d.id = e.brc20_deploy_id
+        INNER JOIN inscriptions AS i ON i.id = e.inscription_id
+        WHERE LOWER(d.ticker) = LOWER(${args.ticker})
+        ORDER BY i.number DESC
+        LIMIT ${args.limit}
+        OFFSET ${args.offset}
+      )
+      SELECT *
+      FROM events
+      INNER JOIN
+    `;
   }
 
   async refreshMaterializedView(viewName: string) {
@@ -714,30 +741,51 @@ export class PgStore extends BasePgStore {
     inscription_id: number;
     location: DbLocationInsert;
   }): Promise<void> {
-    const deploy = {
-      inscription_id: args.inscription_id,
-      block_height: args.location.block_height,
-      tx_id: args.location.tx_id,
-      address: args.location.address,
-      ticker: args.deploy.tick,
-      max: args.deploy.max,
-      limit: args.deploy.lim ?? null,
-      decimals: args.deploy.dec ?? 18,
-    };
-    // TODO: Maximum supply cannot exceed uint64_max
-    const insertion = await this.sql`
-      INSERT INTO brc20_deploys ${this.sql(deploy)}
-      ON CONFLICT (LOWER(ticker)) DO NOTHING
-    `;
-    if (insertion.count > 0) {
-      logger.info(
-        `PgStore [BRC-20] inserted deploy for ${args.deploy.tick} at block ${args.location.block_height}`
-      );
-    } else {
-      logger.debug(
-        `PgStore [BRC-20] attempted to insert deploy for ${args.deploy.tick} at block ${args.location.block_height} but a previous entry existed`
-      );
-    }
+    await this.sqlWriteTransaction(async sql => {
+      const address = args.location.address;
+      if (!address) {
+        logger.debug(
+          `PgStore [BRC-20] ignoring deploy with null address for ${args.deploy.tick} at block ${args.location.block_height}`
+        );
+        return;
+      }
+      const deploy: DbBrc20DeployInsert = {
+        inscription_id: args.inscription_id,
+        block_height: args.location.block_height,
+        tx_id: args.location.tx_id,
+        address: address,
+        ticker: args.deploy.tick,
+        max: args.deploy.max,
+        limit: args.deploy.lim ?? null,
+        decimals: args.deploy.dec ?? '18',
+      };
+      // TODO: Maximum supply cannot exceed uint64_max
+      const insertion = await sql<{ id: string }[]>`
+        INSERT INTO brc20_deploys ${sql(deploy)}
+        ON CONFLICT (LOWER(ticker)) DO NOTHING
+        RETURNING id
+      `;
+      if (insertion.count > 0) {
+        // Add to history
+        const event: DbBrc20EventInsert = {
+          inscription_id: args.inscription_id,
+          brc20_deploy_id: insertion[0].id,
+          deploy_id: insertion[0].id,
+          mint_id: null,
+          transfer_id: null,
+        };
+        await sql`
+          INSERT INTO brc20_events ${sql(event)}
+        `;
+        logger.info(
+          `PgStore [BRC-20] inserted deploy for ${args.deploy.tick} at block ${args.location.block_height}`
+        );
+      } else {
+        logger.debug(
+          `PgStore [BRC-20] ignoring duplicate deploy for ${args.deploy.tick} at block ${args.location.block_height}`
+        );
+      }
+    });
   }
 
   private async insertBrc20Mint(args: {

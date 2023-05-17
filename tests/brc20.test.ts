@@ -203,7 +203,7 @@ describe('BRC-20', () => {
   });
 
   describe('mint', () => {
-    test('valid mint is saved and balance reflected', async () => {
+    test('valid mints are saved and balance reflected', async () => {
       await db.updateInscriptions(
         new TestChainhookPayloadBuilder()
           .apply()
@@ -309,7 +309,11 @@ describe('BRC-20', () => {
       });
     });
 
-    test('mint exceeds token supply', async () => {});
+    test('rollback mints deduct balance correctly', async () => {});
+
+    test.skip('mint exceeds token supply', async () => {});
+
+    test('mints in same block are applied in order', async () => {});
 
     test('ignores mint for non-existent token', async () => {});
 

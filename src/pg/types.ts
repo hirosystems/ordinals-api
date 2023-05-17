@@ -213,6 +213,17 @@ export enum DbInscriptionIndexResultCountType {
   custom,
 }
 
+export type DbBrc20DeployInsert = {
+  inscription_id: number;
+  block_height: number;
+  tx_id: string;
+  address: string;
+  ticker: string;
+  max: string;
+  decimals: string;
+  limit: string | null;
+};
+
 export type DbBrc20Deploy = {
   id: string;
   inscription_id: string;
@@ -245,3 +256,20 @@ export type DbBrc20Balance = {
   avail_balance: string;
   trans_balance: string;
 };
+
+export type DbBrc20EventInsert = {
+  inscription_id: number;
+  brc20_deploy_id: string;
+  deploy_id: string | null;
+  mint_id: string | null;
+  transfer_id: string | null;
+};
+
+export const BRC20_EVENTS_COLUMNS = [
+  'id',
+  'inscription_id',
+  'brc20_deploy_id',
+  'deploy_id',
+  'mint_id',
+  'transfer_id',
+];
