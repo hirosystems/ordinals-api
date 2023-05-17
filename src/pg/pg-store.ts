@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { Order, OrderBy } from '../api/schemas';
 import { normalizedHexString } from '../api/util/helpers';
 import { OrdinalSatoshi, SatoshiRarity } from '../api/util/ordinal-satoshi';
@@ -17,6 +18,7 @@ import { connectPostgres } from './postgres-tools';
 import { BasePgStore } from './postgres-tools/base-pg-store';
 import {
   BRC20_DEPLOYS_COLUMNS,
+  DbBrc20Balance,
   DbBrc20Deploy,
   DbFullyLocatedInscriptionResult,
   DbInscriptionContent,
@@ -187,7 +189,7 @@ export class PgStore extends BasePgStore {
     return result[0].count;
   }
 
-  async geSatRarityInscriptionCount(satRarity?: SatoshiRarity[]): Promise<number> {
+  async getSatRarityInscriptionCount(satRarity?: SatoshiRarity[]): Promise<number> {
     if (!satRarity) return 0;
     const result = await this.sql<{ count: number }[]>`
       SELECT SUM(count) AS count
@@ -384,7 +386,7 @@ export class PgStore extends BasePgStore {
           total = await this.getMimeTypeInscriptionCount(filters?.mime_type);
           break;
         case DbInscriptionIndexResultCountType.satRarity:
-          total = await this.geSatRarityInscriptionCount(filters?.sat_rarity);
+          total = await this.getSatRarityInscriptionCount(filters?.sat_rarity);
           break;
       }
       return {
@@ -489,6 +491,21 @@ export class PgStore extends BasePgStore {
       FROM brc20_deploys
       WHERE LOWER(ticker) = LOWER(${args.ticker})
       LIMIT 1
+    `;
+    if (results.count === 1) {
+      return results[0];
+    }
+  }
+
+  async getBrc20Balance(args: {
+    ticker: string;
+    address: string;
+  }): Promise<DbBrc20Balance | undefined> {
+    const results = await this.sql<DbBrc20Balance[]>`
+      SELECT d.ticker, d.decimals, b.address, b.block_height, b.avail_balance, b.trans_balance
+      FROM brc20_balances AS b
+      INNER JOIN brc20_deploys AS d ON d.id = b.brc20_deploy_id
+      WHERE LOWER(d.ticker) = LOWER(${args.ticker}) AND b.address = ${args.address}
     `;
     if (results.count === 1) {
       return results[0];
@@ -707,6 +724,7 @@ export class PgStore extends BasePgStore {
       limit: args.deploy.lim ?? null,
       decimals: args.deploy.dec ?? 18,
     };
+    // TODO: Maximum supply cannot exceed uint64_max
     const insertion = await this.sql`
       INSERT INTO brc20_deploys ${this.sql(deploy)}
       ON CONFLICT (LOWER(ticker)) DO NOTHING
@@ -728,34 +746,52 @@ export class PgStore extends BasePgStore {
     location: DbLocationInsert;
   }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
-      // Get which token this belongs to
-      const deploy = await sql<{ id: number }[]>`
-        SELECT id FROM brc20_deploys WHERE ticker = ${args.mint.tick}
-      `;
-      if (deploy.count === 0) {
+      // Is the token deployed?
+      const deploy = await this.getBrc20Deploy({ ticker: args.mint.tick });
+      if (!deploy) {
         logger.debug(
-          `PgStore [BRC-20] attempted to insert mint for non-deployed token ${args.mint.tick} at block ${args.location.block_height}`
+          `PgStore [BRC-20] ignoring mint for non-deployed token ${args.mint.tick} at block ${args.location.block_height}`
         );
         return;
       }
-      const deploy_id = deploy[0].id;
       // TODO: The first mint to exceed the maximum supply will receive the fraction that is valid.
       // (ex. 21,000,000 maximum supply, 20,999,242 circulating supply, and 1000 mint inscription =
       // 758 balance state applied)
 
-      // TODO: Check limit per mint
+      // Is the mint amount within the allowed token limits?
+      if (deploy.limit && BigNumber(args.mint.amt).isGreaterThan(deploy.limit)) {
+        logger.debug(
+          `PgStore [BRC-20] ignoring mint for ${args.mint.tick} that exceeds mint limit of ${deploy.limit} at block ${args.location.block_height}`
+        );
+        return;
+      }
       const mint = {
         inscription_id: args.inscription_id,
-        brc20_deploy_id: deploy_id,
+        brc20_deploy_id: deploy.id,
         block_height: args.location.block_height,
         tx_id: args.location.tx_id,
         address: args.location.address,
         amount: args.mint.amt,
       };
-      await this.sql`INSERT INTO brc20_mints ${this.sql(mint)}`;
+      await sql`INSERT INTO brc20_mints ${sql(mint)}`;
       logger.info(
         `PgStore [BRC-20] inserted mint for ${args.mint.tick} (${args.mint.amt}) at block ${args.location.block_height}`
       );
+
+      // Upsert available balance for minting address
+      const balance = {
+        brc20_deploy_id: deploy.id,
+        block_height: args.location.block_height,
+        address: args.location.address,
+        avail_balance: args.mint.amt,
+        trans_balance: 0,
+      };
+      await sql`
+        INSERT INTO brc20_balances ${sql(balance)}
+        ON CONFLICT ON CONSTRAINT brc20_balances_brc20_deploy_id_address_unique DO UPDATE SET
+          block_height = EXCLUDED.block_height,
+          avail_balance = brc20_balances.avail_balance + EXCLUDED.avail_balance
+      `;
     });
   }
 }

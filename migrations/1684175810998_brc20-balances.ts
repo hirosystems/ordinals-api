@@ -13,11 +13,19 @@ export function up(pgm: MigrationBuilder): void {
       type: 'bigint',
       notNull: true,
     },
+    block_height: {
+      type: 'bigint',
+      notNull: true,
+    },
     address: {
       type: 'text',
       notNull: true,
     },
-    balance: {
+    avail_balance: {
+      type: 'numeric',
+      notNull: true,
+    },
+    trans_balance: {
       type: 'numeric',
       notNull: true,
     },
@@ -26,6 +34,11 @@ export function up(pgm: MigrationBuilder): void {
     'brc20_balances',
     'brc20_balances_brc20_deploy_id_fk',
     'FOREIGN KEY(brc20_deploy_id) REFERENCES brc20_deploys(id) ON DELETE CASCADE'
+  );
+  pgm.createConstraint(
+    'brc20_balances',
+    'brc20_balances_brc20_deploy_id_address_unique',
+    'UNIQUE(brc20_deploy_id, address)'
   );
   pgm.createIndex('brc20_balances', ['address']);
 }

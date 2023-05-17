@@ -236,3 +236,12 @@ export const BRC20_DEPLOYS_COLUMNS = [
   'limit',
   'decimals',
 ];
+
+export type DbBrc20Balance = {
+  ticker: string;
+  decimals: number;
+  address: string;
+  block_height: string;
+  avail_balance: string;
+  trans_balance: string;
+};
