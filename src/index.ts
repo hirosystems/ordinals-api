@@ -1,4 +1,5 @@
-import { buildApiServer } from './api/init';
+import { buildApiServer, buildPromServer } from './api/init';
+import { isProdEnv } from './api/util/helpers';
 import { buildChainhookServer } from './chainhook/server';
 import { ENV } from './env';
 import { logger } from './logger';
@@ -31,6 +32,19 @@ async function initApiService(db: PgStore) {
   });
 
   await fastify.listen({ host: ENV.API_HOST, port: ENV.API_PORT });
+
+  if (isProdEnv) {
+    const promServer = await buildPromServer({ metrics: fastify.metrics });
+    registerShutdownConfig({
+      name: 'Prometheus Server',
+      forceKillable: false,
+      handler: async () => {
+        await promServer.close();
+      },
+    });
+
+    await promServer.listen({ host: ENV.API_HOST, port: 9153 });
+  }
 }
 
 async function initApp() {

@@ -2,6 +2,7 @@ import { SwaggerOptions } from '@fastify/swagger';
 import { Static, TSchema, Type } from '@sinclair/typebox';
 import { TypeCompiler } from '@sinclair/typebox/compiler';
 import { SatoshiRarity, SAT_SUPPLY } from './util/ordinal-satoshi';
+import { SERVER_VERSION } from '../server-version';
 
 export const OpenApiSchemaOptions: SwaggerOptions = {
   openapi: {
@@ -9,7 +10,7 @@ export const OpenApiSchemaOptions: SwaggerOptions = {
       title: 'Ordinals API',
       description:
         'A service that indexes Bitcoin Ordinals data and exposes it via REST API endpoints.',
-      version: 'v0.0.1',
+      version: SERVER_VERSION.tag,
     },
     externalDocs: {
       url: 'https://github.com/hirosystems/ordinals-api',
