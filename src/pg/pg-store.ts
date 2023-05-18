@@ -1,5 +1,5 @@
 import { Order, OrderBy } from '../api/schemas';
-import { normalizedHexString } from '../api/util/helpers';
+import { normalizedHexString, parseSatPoint } from '../api/util/helpers';
 import { OrdinalSatoshi, SatoshiRarity } from '../api/util/ordinal-satoshi';
 import { ChainhookPayload, InscriptionEvent } from '../chainhook/schemas';
 import { ENV } from '../env';
@@ -63,22 +63,27 @@ export class PgStore extends BasePgStore {
         for (const tx of event.transactions) {
           for (const operation of tx.metadata.ordinal_operations) {
             if (operation.inscription_revealed) {
+              const number = operation.inscription_revealed.inscription_number;
               const genesis_id = operation.inscription_revealed.inscription_id;
               await this.rollBackInscriptionGenesis({ genesis_id });
-              logger.info(`PgStore rollback inscription ${genesis_id}`);
+              logger.info(`PgStore rollback reveal #${number} (${genesis_id})`);
             }
             if (operation.inscription_transferred) {
+              const number = operation.inscription_transferred.inscription_number;
               const genesis_id = operation.inscription_transferred.inscription_id;
-              const satpoint = operation.inscription_transferred.satpoint_post_transfer.split(':');
-              const output = `${satpoint[0]}:${satpoint[1]}`;
+              const satpoint = parseSatPoint(
+                operation.inscription_transferred.satpoint_post_transfer
+              );
+              const output = `${satpoint.tx_id}:${satpoint.vout}`;
               const id = await this.rollBackInscriptionTransfer({ genesis_id, output });
               if (id) updatedInscriptionIds.add(id);
-              logger.info(`PgStore rollback transfer ${genesis_id} ${output}`);
+              logger.info(`PgStore rollback transfer #${number} (${genesis_id}) ${output}`);
             }
           }
         }
       }
       for (const event of payload.apply) {
+        const block_height = event.block_identifier.index;
         const block_hash = normalizedHexString(event.block_identifier.hash);
         for (const tx of event.transactions) {
           const tx_id = normalizedHexString(tx.transaction_identifier.hash);
@@ -86,6 +91,7 @@ export class PgStore extends BasePgStore {
             if (operation.inscription_revealed) {
               const reveal = operation.inscription_revealed;
               const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
+              const satpoint = parseSatPoint(reveal.satpoint_post_inscription);
               const id = await this.insertInscriptionGenesis({
                 inscription: {
                   genesis_id: reveal.inscription_id,
@@ -98,12 +104,12 @@ export class PgStore extends BasePgStore {
                 },
                 location: {
                   block_hash,
+                  block_height,
                   tx_id,
                   genesis_id: reveal.inscription_id,
-                  block_height: event.block_identifier.index,
                   address: reveal.inscriber_address,
-                  output: `${tx_id}:0`,
-                  offset: reveal.ordinal_offset.toString(),
+                  output: `${satpoint.tx_id}:${satpoint.vout}`,
+                  offset: satpoint.offset ?? null,
                   value: reveal.inscription_output_value.toString(),
                   timestamp: event.timestamp,
                   sat_ordinal: reveal.ordinal_number.toString(),
@@ -113,24 +119,22 @@ export class PgStore extends BasePgStore {
               });
               if (id) updatedInscriptionIds.add(id);
               logger.info(
-                `PgStore apply inscription #${reveal.inscription_number} (${reveal.inscription_id}) at block ${event.block_identifier.index}`
+                `PgStore reveal #${reveal.inscription_number} (${reveal.inscription_id}) at block ${block_height}`
               );
             }
             if (operation.inscription_transferred) {
               const transfer = operation.inscription_transferred;
-              const satpoint = transfer.satpoint_post_transfer.split(':');
-              const offset = satpoint[2];
-              const output = `${satpoint[0]}:${satpoint[1]}`;
+              const satpoint = parseSatPoint(transfer.satpoint_post_transfer);
               const satoshi = new OrdinalSatoshi(transfer.ordinal_number);
               const id = await this.insertInscriptionTransfer({
                 location: {
                   block_hash,
+                  block_height,
                   tx_id,
                   genesis_id: transfer.inscription_id,
-                  block_height: event.block_identifier.index,
                   address: transfer.updated_address,
-                  output: output,
-                  offset: offset ?? null,
+                  output: `${satpoint.tx_id}:${satpoint.vout}`,
+                  offset: satpoint.offset ?? null,
                   value: transfer.post_transfer_output_value
                     ? transfer.post_transfer_output_value.toString()
                     : null,
@@ -142,7 +146,7 @@ export class PgStore extends BasePgStore {
               });
               if (id) updatedInscriptionIds.add(id);
               logger.info(
-                `PgStore apply transfer for #${transfer.inscription_number} (${transfer.inscription_id}) to output ${output} at block ${event.block_identifier.index}`
+                `PgStore transfer #${transfer.inscription_number} (${transfer.inscription_id}) to output ${satpoint.tx_id}:${satpoint.vout} at block ${block_height}`
               );
             }
           }
