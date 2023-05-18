@@ -1,4 +1,3 @@
-import BigNumber from 'bignumber.js';
 import {
   DbBrc20Balance,
   DbFullyLocatedInscriptionResult,
@@ -95,7 +94,7 @@ export function parseBrc20Balances(items: DbBrc20Balance[]): Brc20BalanceRespons
     ticker: i.ticker,
     available_balance: i.avail_balance,
     transferrable_balance: i.trans_balance,
-    overall_balance: BigNumber(i.avail_balance).plus(i.trans_balance).toString(),
+    overall_balance: i.total_balance,
   }));
 }
 

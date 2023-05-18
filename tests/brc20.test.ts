@@ -295,7 +295,7 @@ describe('BRC-20', () => {
                 tick: 'pepe',
                 amt: '100000',
               },
-              number: 6,
+              number: 7,
               tx_id: '7a1adbc3e93ddf8d7c4e0ba75aa11c98c431521dd850be8b955feedb716d8bec',
               address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
             })
@@ -320,11 +320,98 @@ describe('BRC-20', () => {
       ]);
     });
 
-    test('rollback mints deduct balance correctly', async () => {});
+    test('rollback mints deduct balance correctly', async () => {
+      const address = 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td';
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 775617,
+            hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+          })
+          .transaction({
+            hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'deploy',
+                tick: 'PEPE',
+                max: '21000000',
+              },
+              number: 5,
+              tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+              address: address,
+            })
+          )
+          .build()
+      );
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 775618,
+            hash: '0000000000000000000098d8f2663891d439f6bb7de230d4e9f6bcc2e85452bf',
+          })
+          .transaction({
+            hash: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'mint',
+                tick: 'PEPE',
+                amt: '250000',
+              },
+              number: 6,
+              tx_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
+              address: address,
+            })
+          )
+          .build()
+      );
+      // Rollback
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .rollback()
+          .block({
+            height: 775619,
+            hash: '0000000000000000000077163227125e51d838787d6af031bc9b55a3a1cc1b2c',
+          })
+          .transaction({
+            hash: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'mint',
+                tick: 'PEPE',
+                amt: '250000',
+              },
+              number: 6,
+              tx_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
+              address: address,
+            })
+          )
+          .build()
+      );
+
+      const response2 = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/balances?address=${address}`,
+      });
+      expect(response2.statusCode).toBe(200);
+      const responseJson2 = response2.json();
+      expect(responseJson2.total).toBe(0);
+      expect(responseJson2.results).toStrictEqual([]);
+    });
 
     test.skip('mint exceeds token supply', async () => {});
 
-    test('mints in same block are applied in order', async () => {});
+    test.skip('mints in same block are applied in order', async () => {});
 
     test('ignores mint for non-existent token', async () => {});
 

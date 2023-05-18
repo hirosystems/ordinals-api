@@ -515,13 +515,17 @@ export class PgStore extends BasePgStore {
     const lowerTickers = args.ticker ? args.ticker.map(t => t.toLowerCase()) : undefined;
     const results = await this.sql<(DbBrc20Balance & { total: number })[]>`
       SELECT
-        d.ticker, d.decimals, b.address, b.block_height, b.avail_balance, b.trans_balance,
+        d.ticker,
+        SUM(b.avail_balance) AS avail_balance,
+        SUM(b.trans_balance) AS trans_balance,
+        SUM(b.avail_balance + b.trans_balance) AS total_balance,
         COUNT(*) OVER() as total
       FROM brc20_balances AS b
       INNER JOIN brc20_deploys AS d ON d.id = b.brc20_deploy_id
       WHERE
         b.address = ${args.address}
-        ${lowerTickers ? this.sql`AND LOWER(d.ticker) IN ${this.sql(lowerTickers)}` : this.sql``} 
+        ${lowerTickers ? this.sql`AND LOWER(d.ticker) IN ${this.sql(lowerTickers)}` : this.sql``}
+      GROUP BY d.ticker
       LIMIT ${args.limit}
       OFFSET ${args.offset}
     `;
@@ -836,8 +840,9 @@ export class PgStore extends BasePgStore {
         `PgStore [BRC-20] inserted mint for ${args.mint.tick} (${args.mint.amt}) at block ${args.location.block_height}`
       );
 
-      // Upsert available balance for minting address
+      // Insert balance change for minting address
       const balance = {
+        inscription_id: args.inscription_id,
         brc20_deploy_id: deploy.id,
         block_height: args.location.block_height,
         address: args.location.address,
@@ -846,9 +851,6 @@ export class PgStore extends BasePgStore {
       };
       await sql`
         INSERT INTO brc20_balances ${sql(balance)}
-        ON CONFLICT ON CONSTRAINT brc20_balances_brc20_deploy_id_address_unique DO UPDATE SET
-          block_height = EXCLUDED.block_height,
-          avail_balance = brc20_balances.avail_balance + EXCLUDED.avail_balance
       `;
     });
   }

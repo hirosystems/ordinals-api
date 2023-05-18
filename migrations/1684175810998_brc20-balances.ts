@@ -9,6 +9,10 @@ export function up(pgm: MigrationBuilder): void {
       type: 'bigserial',
       primaryKey: true,
     },
+    inscription_id: {
+      type: 'bigint',
+      notNull: true,
+    },
     brc20_deploy_id: {
       type: 'bigint',
       notNull: true,
@@ -32,13 +36,13 @@ export function up(pgm: MigrationBuilder): void {
   });
   pgm.createConstraint(
     'brc20_balances',
-    'brc20_balances_brc20_deploy_id_fk',
-    'FOREIGN KEY(brc20_deploy_id) REFERENCES brc20_deploys(id) ON DELETE CASCADE'
+    'brc20_balances_inscription_id_fk',
+    'FOREIGN KEY(inscription_id) REFERENCES inscriptions(id) ON DELETE CASCADE'
   );
   pgm.createConstraint(
     'brc20_balances',
-    'brc20_balances_brc20_deploy_id_address_unique',
-    'UNIQUE(brc20_deploy_id, address)'
+    'brc20_balances_brc20_deploy_id_fk',
+    'FOREIGN KEY(brc20_deploy_id) REFERENCES brc20_deploys(id) ON DELETE CASCADE'
   );
   pgm.createIndex('brc20_balances', ['address']);
 }
