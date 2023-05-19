@@ -17,45 +17,48 @@ const OpJsonSchema = Type.Object(
 const OpJsonC = TypeCompiler.Compile(OpJsonSchema);
 export type OpJson = Static<typeof OpJsonSchema>;
 
-const Brc20DeploySchema = Type.Object({
-  p: Type.Literal('brc-20'),
-  op: Type.Literal('deploy'),
-  tick: Type.String(),
-  max: Type.String(),
-  lim: Type.Optional(Type.String()),
-  dec: Type.Optional(Type.String()),
-});
-const Brc20DeployC = TypeCompiler.Compile(Brc20DeploySchema);
+const Brc20TickerSchema = Type.String({ minLength: 1, maxLength: 4 });
+
+const Brc20DeploySchema = Type.Object(
+  {
+    p: Type.Literal('brc-20'),
+    op: Type.Literal('deploy'),
+    tick: Brc20TickerSchema,
+    max: Type.String({ minLength: 1 }),
+    lim: Type.Optional(Type.String({ minLength: 1 })),
+    dec: Type.Optional(Type.String({ minLength: 1 })),
+  },
+  { additionalProperties: true }
+);
 export type Brc20Deploy = Static<typeof Brc20DeploySchema>;
 
-const Brc20MintSchema = Type.Object({
-  p: Type.Literal('brc-20'),
-  op: Type.Literal('mint'),
-  tick: Type.String(),
-  amt: Type.String(),
-});
-const Brc20MintC = TypeCompiler.Compile(Brc20MintSchema);
+const Brc20MintSchema = Type.Object(
+  {
+    p: Type.Literal('brc-20'),
+    op: Type.Literal('mint'),
+    tick: Brc20TickerSchema,
+    amt: Type.String({ minLength: 1 }),
+  },
+  { additionalProperties: true }
+);
 export type Brc20Mint = Static<typeof Brc20MintSchema>;
 
-const Brc20TransferSchema = Type.Object({
-  p: Type.Literal('brc-20'),
-  op: Type.Literal('transfer'),
-  tick: Type.String(),
-  amt: Type.String(),
-});
-const Brc20TransferC = TypeCompiler.Compile(Brc20TransferSchema);
+const Brc20TransferSchema = Type.Object(
+  {
+    p: Type.Literal('brc-20'),
+    op: Type.Literal('transfer'),
+    tick: Brc20TickerSchema,
+    amt: Type.String({ minLength: 1 }),
+  },
+  { additionalProperties: true }
+);
 export type Brc20Transfer = Static<typeof Brc20TransferSchema>;
 
 const Brc20Schema = Type.Union([Brc20DeploySchema, Brc20MintSchema, Brc20TransferSchema]);
-// const Brc20C = TypeCompiler.Compile(Brc20Schema);
+const Brc20C = TypeCompiler.Compile(Brc20Schema);
 export type Brc20 = Static<typeof Brc20Schema>;
 
-/**
- * Tries to parse a text inscription into an OpJson schema.
- * @param inscription - Inscription content
- * @returns OpJson
- */
-export function inscriptionContentToJson(inscription: DbInscriptionInsert): OpJson | undefined {
+export function brc20FromInscription(inscription: DbInscriptionInsert): Brc20 | undefined {
   if (
     inscription.mime_type.startsWith('text/plain') ||
     inscription.mime_type.startsWith('application/json')
@@ -66,24 +69,10 @@ export function inscriptionContentToJson(inscription: DbInscriptionInsert): OpJs
           ? hexToBuffer(inscription.content)
           : inscription.content;
       const result = JSON.parse(buf.toString('utf-8'));
-      if (OpJsonC.Check(result)) {
-        return result;
-      }
+      if (Brc20C.Check(result)) return result;
     } catch (error) {
-      // Not a JSON inscription.
+      // Not a BRC-20 inscription.
     }
-  }
-}
-
-export function brc20DeployFromOpJson(json: OpJson): Brc20Deploy | undefined {
-  if (Brc20DeployC.Check(json)) {
-    return json;
-  }
-}
-
-export function brc20MintFromOpJson(json: OpJson): Brc20Mint | undefined {
-  if (Brc20MintC.Check(json)) {
-    return json;
   }
 }
 

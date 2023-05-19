@@ -1,6 +1,8 @@
 import { buildApiServer } from '../src/api/init';
+import { brc20FromInscription } from '../src/pg/helpers';
 import { cycleMigrations } from '../src/pg/migrations';
 import { PgStore } from '../src/pg/pg-store';
+import { DbInscriptionInsert } from '../src/pg/types';
 import { TestChainhookPayloadBuilder, TestFastifyServer, brc20Reveal } from './helpers';
 
 describe('BRC-20', () => {
@@ -16,6 +18,208 @@ describe('BRC-20', () => {
   afterEach(async () => {
     await fastify.close();
     await db.close();
+  });
+
+  describe('token standard validation', () => {
+    const testInsert = (json: any): DbInscriptionInsert => {
+      const content = Buffer.from(JSON.stringify(json), 'utf-8');
+      return {
+        genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+        number: 1,
+        mime_type: 'application/json',
+        content_type: 'application/json',
+        content_length: content.length,
+        content: `0x${content.toString('hex')}`,
+        fee: '200',
+      };
+    };
+
+    test('ignores incorrect MIME type', () => {
+      const content = Buffer.from(
+        JSON.stringify({
+          p: 'brc-20',
+          op: 'deploy',
+          tick: 'PEPE',
+          max: '21000000',
+        }),
+        'utf-8'
+      );
+      const insert: DbInscriptionInsert = {
+        genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+        number: 1,
+        mime_type: 'foo/bar',
+        content_type: 'foo/bar;x=1',
+        content_length: content.length,
+        content: `0x${content.toString('hex')}`,
+        fee: '200',
+      };
+      expect(brc20FromInscription(insert)).toBeUndefined();
+      insert.content_type = 'application/json';
+      insert.mime_type = 'application/json';
+      expect(brc20FromInscription(insert)).not.toBeUndefined();
+      insert.content_type = 'text/plain;charset=utf-8';
+      insert.mime_type = 'text/plain';
+      expect(brc20FromInscription(insert)).not.toBeUndefined();
+    });
+
+    test('ignores invalid JSON', () => {
+      const content = Buffer.from(
+        '{"p": "brc-20", "op": "deploy", "tick": "PEPE", "max": "21000000"',
+        'utf-8'
+      );
+      const insert: DbInscriptionInsert = {
+        genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+        number: 1,
+        mime_type: 'application/json',
+        content_type: 'application/json',
+        content_length: content.length,
+        content: `0x${content.toString('hex')}`,
+        fee: '200',
+      };
+      expect(brc20FromInscription(insert)).toBeUndefined();
+    });
+
+    test('ignores incorrect p field', () => {
+      const insert = testInsert({
+        p: 'brc20', // incorrect
+        op: 'deploy',
+        tick: 'PEPE',
+        max: '21000000',
+      });
+      expect(brc20FromInscription(insert)).toBeUndefined();
+    });
+
+    test('ignores incorrect op field', () => {
+      const insert = testInsert({
+        p: 'brc-20',
+        op: 'deploi', // incorrect
+        tick: 'PEPE',
+        max: '21000000',
+      });
+      expect(brc20FromInscription(insert)).toBeUndefined();
+    });
+
+    test('ignores invalid tick fields', () => {
+      const insert = testInsert({
+        p: 'brc-20',
+        op: 'deploy',
+        tick: 'PEPETESTER', // incorrect length
+        max: '21000000',
+      });
+      expect(brc20FromInscription(insert)).toBeUndefined();
+      const insert2 = testInsert({
+        p: 'brc-20',
+        op: 'deploy',
+        tick: 'Pé P', // valid
+        max: '21000000',
+      });
+      expect(brc20FromInscription(insert2)).not.toBeUndefined();
+    });
+
+    test('all fields must be strings', () => {
+      const insert1 = testInsert({
+        p: 'brc-20',
+        op: 'deploy',
+        tick: 'PEPE',
+        max: 21000000,
+      });
+      expect(brc20FromInscription(insert1)).toBeUndefined();
+      const insert1a = testInsert({
+        p: 'brc-20',
+        op: 'deploy',
+        tick: 'PEPE',
+        max: '21000000',
+        lim: 300,
+      });
+      expect(brc20FromInscription(insert1a)).toBeUndefined();
+      const insert1b = testInsert({
+        p: 'brc-20',
+        op: 'deploy',
+        tick: 'PEPE',
+        max: '21000000',
+        lim: '300',
+        dec: 2,
+      });
+      expect(brc20FromInscription(insert1b)).toBeUndefined();
+      const insert2 = testInsert({
+        p: 'brc-20',
+        op: 'mint',
+        tick: 'PEPE',
+        amt: 2,
+      });
+      expect(brc20FromInscription(insert2)).toBeUndefined();
+      const insert3 = testInsert({
+        p: 'brc-20',
+        op: 'transfer',
+        tick: 'PEPE',
+        amt: 2,
+      });
+      expect(brc20FromInscription(insert3)).toBeUndefined();
+    });
+
+    test('ignores empty strings', () => {
+      const insert1 = testInsert({
+        p: 'brc-20',
+        op: 'deploy',
+        tick: '',
+        max: '21000000',
+      });
+      expect(brc20FromInscription(insert1)).toBeUndefined();
+      const insert1a = testInsert({
+        p: 'brc-20',
+        op: 'deploy',
+        tick: 'PEPE',
+        max: '',
+      });
+      expect(brc20FromInscription(insert1a)).toBeUndefined();
+      const insert1b = testInsert({
+        p: 'brc-20',
+        op: 'deploy',
+        tick: 'PEPE',
+        max: '21000000',
+        lim: '',
+      });
+      expect(brc20FromInscription(insert1b)).toBeUndefined();
+      const insert1c = testInsert({
+        p: 'brc-20',
+        op: 'deploy',
+        tick: 'PEPE',
+        max: '21000000',
+        lim: '200',
+        dec: '',
+      });
+      expect(brc20FromInscription(insert1c)).toBeUndefined();
+      const insert2 = testInsert({
+        p: 'brc-20',
+        op: 'mint',
+        tick: '',
+      });
+      expect(brc20FromInscription(insert2)).toBeUndefined();
+      const insert2a = testInsert({
+        p: 'brc-20',
+        op: 'mint',
+        tick: 'PEPE',
+        amt: '',
+      });
+      expect(brc20FromInscription(insert2a)).toBeUndefined();
+      const insert3 = testInsert({
+        p: 'brc-20',
+        op: 'transfer',
+        tick: '',
+      });
+      expect(brc20FromInscription(insert3)).toBeUndefined();
+      const insert3a = testInsert({
+        p: 'brc-20',
+        op: 'transfer',
+        tick: 'PEPE',
+        amt: '',
+      });
+      expect(brc20FromInscription(insert3a)).toBeUndefined();
+    });
+
+    test.skip('numeric strings must be valid', () => {});
+
+    test.skip('valid JSONs can have additional properties', () => {});
   });
 
   describe('deploy', () => {

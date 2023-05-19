@@ -5,14 +5,7 @@ import { OrdinalSatoshi, SatoshiRarity } from '../api/util/ordinal-satoshi';
 import { ChainhookPayload } from '../chainhook/schemas';
 import { ENV } from '../env';
 import { logger } from '../logger';
-import {
-  Brc20Deploy,
-  Brc20Mint,
-  brc20DeployFromOpJson,
-  brc20MintFromOpJson,
-  getIndexResultCountType,
-  inscriptionContentToJson,
-} from './helpers';
+import { Brc20Deploy, Brc20Mint, brc20FromInscription, getIndexResultCountType } from './helpers';
 import { runMigrations } from './migrations';
 import { connectPostgres } from './postgres-tools';
 import { BasePgStore } from './postgres-tools/base-pg-store';
@@ -635,19 +628,22 @@ export class PgStore extends BasePgStore {
           sat_coinbase_height = EXCLUDED.sat_coinbase_height,
           timestamp = EXCLUDED.timestamp
       `;
-      // TODO: No valid action can occur via the spending of an ordinal via transaction fee. If it
-      // occurs during the inscription process then the resulting inscription is ignored. If it
-      // occurs during the second phase of the transfer process, the balance is returned to the
-      // senders available balance.
-      const json = inscriptionContentToJson(args.inscription);
-      if (json) {
-        // Is this a BRC-20 operation?
-        const deploy = brc20DeployFromOpJson(json);
-        if (deploy) {
-          await this.insertBrc20Deploy({ deploy, inscription_id, location: args.location });
-        } else {
-          const mint = brc20MintFromOpJson(json);
-          if (mint) await this.insertBrc20Mint({ mint, inscription_id, location: args.location });
+
+      // Is this a BRC-20 operation?
+      // TODO: No valid action can occur via the spending of an ordinal via transaction fee.
+      const brc20 = brc20FromInscription(args.inscription);
+      if (brc20) {
+        switch (brc20.op) {
+          case 'deploy':
+            await this.insertBrc20Deploy({
+              deploy: brc20,
+              inscription_id,
+              location: args.location,
+            });
+            break;
+          case 'mint':
+            await this.insertBrc20Mint({ mint: brc20, inscription_id, location: args.location });
+            break;
         }
       }
     });
