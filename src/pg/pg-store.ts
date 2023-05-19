@@ -19,7 +19,7 @@ import { BasePgStore } from './postgres-tools/base-pg-store';
 import {
   DbBrc20DeployInsert,
   DbBrc20Balance,
-  DbBrc20Deploy,
+  DbBrc20Token,
   DbFullyLocatedInscriptionResult,
   DbInscriptionContent,
   DbInscriptionIndexFilters,
@@ -487,19 +487,20 @@ export class PgStore extends BasePgStore {
     }
   }
 
-  async getBrc20Token(args: { ticker: string }): Promise<DbBrc20Deploy | undefined> {
-    const results = await this.sql<DbBrc20Deploy[]>`
+  async getBrc20Tokens(args: { ticker?: string[] }): Promise<DbPaginatedResult<DbBrc20Token>> {
+    const lowerTickers = args.ticker ? args.ticker.map(t => t.toLowerCase()) : undefined;
+    const results = await this.sql<(DbBrc20Token & { total: number })[]>`
       SELECT
         d.id, i.genesis_id, i.number, d.block_height, d.tx_id, d.address, d.ticker, d.max, d.limit,
-        d.decimals
+        d.decimals, COUNT(*) OVER() as total
       FROM brc20_deploys AS d
       INNER JOIN inscriptions AS i ON i.id = d.inscription_id
-      WHERE LOWER(d.ticker) = LOWER(${args.ticker})
-      LIMIT 1
+      ${lowerTickers ? this.sql`WHERE LOWER(d.ticker) IN ${this.sql(lowerTickers)}` : this.sql``}
     `;
-    if (results.count === 1) {
-      return results[0];
-    }
+    return {
+      total: results[0]?.total ?? 0,
+      results: results ?? [],
+    };
   }
 
   /**
@@ -811,27 +812,31 @@ export class PgStore extends BasePgStore {
   }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
       // Is the token deployed?
-      const deploy = await this.getBrc20Token({ ticker: args.mint.tick });
-      if (!deploy) {
+      const deploy = await sql<{ id: string; limit?: string }[]>`
+        SELECT id, "limit" FROM brc20_deploys WHERE LOWER(ticker) = LOWER(${args.mint.tick})
+      `;
+      if (deploy.count === 0) {
         logger.debug(
           `PgStore [BRC-20] ignoring mint for non-deployed token ${args.mint.tick} at block ${args.location.block_height}`
         );
         return;
       }
+      const token = deploy[0];
+
       // TODO: The first mint to exceed the maximum supply will receive the fraction that is valid.
       // (ex. 21,000,000 maximum supply, 20,999,242 circulating supply, and 1000 mint inscription =
       // 758 balance state applied)
 
       // Is the mint amount within the allowed token limits?
-      if (deploy.limit && BigNumber(args.mint.amt).isGreaterThan(deploy.limit)) {
+      if (token.limit && BigNumber(args.mint.amt).isGreaterThan(token.limit)) {
         logger.debug(
-          `PgStore [BRC-20] ignoring mint for ${args.mint.tick} that exceeds mint limit of ${deploy.limit} at block ${args.location.block_height}`
+          `PgStore [BRC-20] ignoring mint for ${args.mint.tick} that exceeds mint limit of ${token.limit} at block ${args.location.block_height}`
         );
         return;
       }
       const mint = {
         inscription_id: args.inscription_id,
-        brc20_deploy_id: deploy.id,
+        brc20_deploy_id: token.id,
         block_height: args.location.block_height,
         tx_id: args.location.tx_id,
         address: args.location.address,
@@ -845,7 +850,7 @@ export class PgStore extends BasePgStore {
       // Insert balance change for minting address
       const balance = {
         inscription_id: args.inscription_id,
-        brc20_deploy_id: deploy.id,
+        brc20_deploy_id: token.id,
         block_height: args.location.block_height,
         address: args.location.address,
         avail_balance: args.mint.amt,

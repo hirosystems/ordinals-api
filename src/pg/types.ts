@@ -224,7 +224,7 @@ export type DbBrc20DeployInsert = {
   limit: string | null;
 };
 
-export type DbBrc20Deploy = {
+export type DbBrc20Token = {
   id: string;
   genesis_id: string;
   number: string;

@@ -5,7 +5,6 @@ import { Server } from 'http';
 import {
   AddressParam,
   Brc20BalanceResponseSchema,
-  Brc20TickerParam,
   Brc20TickersParam,
   Brc20TokenResponseSchema,
   LimitParam,
@@ -13,7 +12,7 @@ import {
   OffsetParam,
   PaginatedResponse,
 } from '../schemas';
-import { DEFAULT_API_LIMIT, parseBrc20Balances, parseBrc20Token } from '../util/helpers';
+import { DEFAULT_API_LIMIT, parseBrc20Balances, parseBrc20Tokens } from '../util/helpers';
 import { Value } from '@sinclair/typebox/value';
 
 export const Brc20Routes: FastifyPluginCallback<
@@ -27,24 +26,29 @@ export const Brc20Routes: FastifyPluginCallback<
       schema: {
         operationId: 'getBrc20Tokens',
         summary: 'BRC-20 Tokens',
-        description: 'Retrieves deployment and supply info for BRC-20 tokens',
+        description: 'Retrieves information for BRC-20 tokens',
         tags: ['BRC-20'],
         querystring: Type.Object({
-          ticker: Brc20TickerParam,
+          ticker: Type.Optional(Brc20TickersParam),
+          // Pagination
+          offset: Type.Optional(OffsetParam),
+          limit: Type.Optional(LimitParam),
         }),
         response: {
-          200: Brc20TokenResponseSchema,
-          404: NotFoundResponse,
+          200: PaginatedResponse(Brc20TokenResponseSchema, 'Paginated BRC-20 Token Response'),
         },
       },
     },
     async (request, reply) => {
-      const response = await fastify.db.getBrc20Token({ ticker: request.query.ticker });
-      if (response) {
-        await reply.send(parseBrc20Token(response));
-      } else {
-        await reply.code(404).send(Value.Create(NotFoundResponse));
-      }
+      const limit = request.query.limit ?? DEFAULT_API_LIMIT;
+      const offset = request.query.offset ?? 0;
+      const response = await fastify.db.getBrc20Tokens({ ticker: request.query.ticker });
+      await reply.send({
+        limit,
+        offset,
+        total: response.total,
+        results: parseBrc20Tokens(response.results),
+      });
     }
   );
 
