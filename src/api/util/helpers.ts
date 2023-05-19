@@ -1,5 +1,13 @@
-import { DbFullyLocatedInscriptionResult, DbLocation } from '../../pg/types';
-import { InscriptionLocationResponse, InscriptionResponseType } from '../schemas';
+import {
+  DbFullyLocatedInscriptionResult,
+  DbInscriptionLocationChange,
+  DbLocation,
+} from '../../pg/types';
+import {
+  BlockInscriptionTransfer,
+  InscriptionLocationResponse,
+  InscriptionResponseType,
+} from '../schemas';
 
 export const isDevEnv = process.env.NODE_ENV === 'development';
 export const isTestEnv = process.env.NODE_ENV === 'test';
@@ -54,6 +62,46 @@ export function parseInscriptionLocations(items: DbLocation[]): InscriptionLocat
     offset: i.offset,
     timestamp: i.timestamp.valueOf(),
   }));
+}
+
+export function parseBlockTransfers(
+  items: DbInscriptionLocationChange[]
+): BlockInscriptionTransfer[] {
+  return items.map(i => ({
+    id: i.genesis_id,
+    number: parseInt(i.number),
+    from: {
+      block_height: parseInt(i.from_block_height),
+      block_hash: i.from_block_hash,
+      address: i.from_address,
+      tx_id: i.from_tx_id,
+      location: `${i.from_output}:${i.from_offset}`,
+      output: i.from_output,
+      value: i.from_value,
+      offset: i.from_offset,
+      timestamp: i.from_timestamp.valueOf(),
+    },
+    to: {
+      block_height: parseInt(i.to_block_height),
+      block_hash: i.to_block_hash,
+      address: i.to_address,
+      tx_id: i.to_tx_id,
+      location: `${i.to_output}:${i.to_offset}`,
+      output: i.to_output,
+      value: i.to_value,
+      offset: i.to_offset,
+      timestamp: i.to_timestamp.valueOf(),
+    },
+  }));
+}
+
+export function parseSatPoint(satpoint: string): {
+  tx_id: string;
+  vout: string;
+  offset?: string;
+} {
+  const [tx_id, vout, offset] = satpoint.split(':');
+  return { tx_id, vout: vout, offset };
 }
 
 /**

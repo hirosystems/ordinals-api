@@ -28,12 +28,14 @@ import {
   AddressesParam,
   InscriptionIdsParam,
   InscriptionNumbersParam,
-  InscriptionLocationResponse,
+  InscriptionLocationResponseSchema,
+  BlockInscriptionTransferSchema,
 } from '../schemas';
 import { handleInscriptionCache, handleInscriptionTransfersCache } from '../util/cache';
 import {
   DEFAULT_API_LIMIT,
   hexToBuffer,
+  parseBlockTransfers,
   parseDbInscription,
   parseDbInscriptions,
   parseInscriptionLocations,
@@ -71,6 +73,7 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
     '/inscriptions',
     {
       schema: {
+        operationId: 'getInscriptions',
         summary: 'Inscriptions',
         description: 'Retrieves a list of inscriptions with options to filter and sort results',
         tags: ['Inscriptions'],
@@ -100,7 +103,7 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
           order: Type.Optional(OrderParam),
         }),
         response: {
-          200: PaginatedResponse(InscriptionResponse),
+          200: PaginatedResponse(InscriptionResponse, 'Paginated Inscriptions Response'),
           404: NotFoundResponse,
         },
       },
@@ -143,6 +146,47 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
     }
   );
 
+  fastify.get(
+    '/inscriptions/transfers',
+    {
+      schema: {
+        operationId: 'getTransfersPerBlock',
+        summary: 'Transfers per block',
+        description:
+          'Retrieves a list of inscription transfers that ocurred at a specific Bitcoin block',
+        tags: ['Inscriptions'],
+        querystring: Type.Object({
+          block: BlockParam,
+          // Pagination
+          offset: Type.Optional(OffsetParam),
+          limit: Type.Optional(LimitParam),
+        }),
+        response: {
+          200: PaginatedResponse(
+            BlockInscriptionTransferSchema,
+            'Paginated Block Transfers Response'
+          ),
+          404: NotFoundResponse,
+        },
+      },
+    },
+    async (request, reply) => {
+      const limit = request.query.limit ?? DEFAULT_API_LIMIT;
+      const offset = request.query.offset ?? 0;
+      const transfers = await fastify.db.getTransfersPerBlock({
+        limit,
+        offset,
+        ...blockParam(request.query.block, 'block'),
+      });
+      await reply.send({
+        limit,
+        offset,
+        total: transfers.total,
+        results: parseBlockTransfers(transfers.results),
+      });
+    }
+  );
+
   done();
 };
 
@@ -156,6 +200,7 @@ const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTyp
     '/inscriptions/:id',
     {
       schema: {
+        operationId: 'getInscription',
         summary: 'Inscription',
         description: 'Retrieves a single inscription',
         tags: ['Inscriptions'],
@@ -185,6 +230,7 @@ const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTyp
     '/inscriptions/:id/content',
     {
       schema: {
+        operationId: 'getInscriptionContent',
         summary: 'Inscription content',
         description: 'Retrieves the contents of a single inscription',
         tags: ['Inscriptions'],
@@ -219,6 +265,7 @@ const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTyp
     '/inscriptions/:id/transfers',
     {
       schema: {
+        operationId: 'getInscriptionTransfers',
         summary: 'Inscription transfers',
         description: 'Retrieves all transfers for a single inscription',
         tags: ['Inscriptions'],
@@ -230,7 +277,10 @@ const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTyp
           limit: Type.Optional(LimitParam),
         }),
         response: {
-          200: PaginatedResponse(InscriptionLocationResponse),
+          200: PaginatedResponse(
+            InscriptionLocationResponseSchema,
+            'Paginated Inscription Locations Response'
+          ),
           404: NotFoundResponse,
         },
       },

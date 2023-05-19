@@ -405,6 +405,227 @@ describe('/inscriptions', () => {
         },
       ]);
     });
+
+    test('shows transfers per block', async () => {
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 775617,
+            hash: '0x00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+            timestamp: 1676913207,
+          })
+          .transaction({
+            hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+          })
+          .inscriptionRevealed({
+            content_bytes: '0x48656C6C6F',
+            content_type: 'image/png',
+            content_length: 5,
+            inscription_number: 7,
+            inscription_fee: 2805,
+            inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+            inscription_output_value: 10000,
+            inscriber_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+            ordinal_number: 257418248345364,
+            ordinal_block_height: 650000,
+            ordinal_offset: 0,
+            satpoint_post_inscription:
+              '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+          })
+          .transaction({
+            hash: '7ac73ecd01b9da4a7eab904655416dbfe8e03f193e091761b5a63ad0963570cd',
+          })
+          .inscriptionRevealed({
+            content_bytes: '0x48656C6C6F',
+            content_type: 'image/png',
+            content_length: 5,
+            inscription_number: 8,
+            inscription_fee: 2805,
+            inscription_id: '7ac73ecd01b9da4a7eab904655416dbfe8e03f193e091761b5a63ad0963570cdi0',
+            inscription_output_value: 10000,
+            inscriber_address: 'bc1ptrehxtus25xx8jp5pchljxg2aps7mdemc4264zzzsdcvs6q25hhsf3rrph',
+            ordinal_number: 257418248345364,
+            ordinal_block_height: 650000,
+            ordinal_offset: 0,
+            satpoint_post_inscription:
+              '7ac73ecd01b9da4a7eab904655416dbfe8e03f193e091761b5a63ad0963570cd:0:0',
+          })
+          .build()
+      );
+
+      // No transfers on this block because they are all genesis.
+      const response1 = await fastify.inject({
+        method: 'GET',
+        url: '/ordinals/v1/inscriptions/transfers?block=775617',
+      });
+      expect(response1.statusCode).toBe(200);
+      const json1 = response1.json();
+      expect(json1.total).toBe(0);
+      expect(json1.results).toStrictEqual([]);
+
+      // Transfers
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 775700,
+            hash: '0x00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7bbbb',
+            timestamp: 1678122360,
+          })
+          .transaction({
+            hash: '0xbdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444',
+          })
+          .inscriptionTransferred({
+            inscription_number: 7,
+            inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+            ordinal_number: 257418248345364,
+            updated_address: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+            satpoint_pre_transfer:
+              '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+            satpoint_post_transfer:
+              'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
+            post_transfer_output_value: 9000,
+          })
+          .transaction({
+            hash: 'abe7deebd0c6bacc9b1ddd234f9442db0530180448e934f34b9cbf3d7e6d91cb',
+          })
+          .inscriptionTransferred({
+            inscription_number: 8,
+            inscription_id: '7ac73ecd01b9da4a7eab904655416dbfe8e03f193e091761b5a63ad0963570cdi0',
+            ordinal_number: 257418248345364,
+            updated_address: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+            satpoint_pre_transfer:
+              '7ac73ecd01b9da4a7eab904655416dbfe8e03f193e091761b5a63ad0963570cd:0:0',
+            satpoint_post_transfer:
+              'abe7deebd0c6bacc9b1ddd234f9442db0530180448e934f34b9cbf3d7e6d91cb:0:0',
+            post_transfer_output_value: 9000,
+          })
+          .build()
+      );
+      const response2 = await fastify.inject({
+        method: 'GET',
+        url: '/ordinals/v1/inscriptions/transfers?block=775700',
+      });
+      expect(response2.statusCode).toBe(200);
+      const json2 = response2.json();
+      expect(json2.total).toBe(2);
+      expect(json2.results).toStrictEqual([
+        {
+          id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+          number: 7,
+          from: {
+            address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+            block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+            block_height: 775617,
+            location: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+            offset: '0',
+            output: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0',
+            timestamp: 1676913207000,
+            tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+            value: '10000',
+          },
+          to: {
+            address: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+            block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7bbbb',
+            block_height: 775700,
+            location: 'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
+            offset: '0',
+            output: 'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0',
+            timestamp: 1678122360000,
+            tx_id: 'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444',
+            value: '9000',
+          },
+        },
+        {
+          id: '7ac73ecd01b9da4a7eab904655416dbfe8e03f193e091761b5a63ad0963570cdi0',
+          number: 8,
+          from: {
+            address: 'bc1ptrehxtus25xx8jp5pchljxg2aps7mdemc4264zzzsdcvs6q25hhsf3rrph',
+            block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+            block_height: 775617,
+            location: '7ac73ecd01b9da4a7eab904655416dbfe8e03f193e091761b5a63ad0963570cd:0:0',
+            offset: '0',
+            output: '7ac73ecd01b9da4a7eab904655416dbfe8e03f193e091761b5a63ad0963570cd:0',
+            timestamp: 1676913207000,
+            tx_id: '7ac73ecd01b9da4a7eab904655416dbfe8e03f193e091761b5a63ad0963570cd',
+            value: '10000',
+          },
+          to: {
+            address: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+            block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7bbbb',
+            block_height: 775700,
+            location: 'abe7deebd0c6bacc9b1ddd234f9442db0530180448e934f34b9cbf3d7e6d91cb:0:0',
+            offset: '0',
+            output: 'abe7deebd0c6bacc9b1ddd234f9442db0530180448e934f34b9cbf3d7e6d91cb:0',
+            timestamp: 1678122360000,
+            tx_id: 'abe7deebd0c6bacc9b1ddd234f9442db0530180448e934f34b9cbf3d7e6d91cb',
+            value: '9000',
+          },
+        },
+      ]);
+
+      // More transfers
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 775701,
+            hash: '000000000000000000044b12039abd3112963959d9fd7510ac503ea84dc17002',
+            timestamp: 1676913208,
+          })
+          .transaction({
+            hash: '5cabafe04aaf98b1f325b0c3ffcbff904dbdb6f3d2e9e451102fda36f1056b5e',
+          })
+          .inscriptionTransferred({
+            inscription_number: 7,
+            inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+            ordinal_number: 257418248345364,
+            updated_address: 'bc1pkx5me775s748lzchytzdsw4f0lq04wssxnyk27g8fn3gee8zhjjqsn9tfp',
+            satpoint_pre_transfer:
+              'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
+            satpoint_post_transfer:
+              '5cabafe04aaf98b1f325b0c3ffcbff904dbdb6f3d2e9e451102fda36f1056b5e:0:0',
+            post_transfer_output_value: 8000,
+          })
+          .build()
+      );
+      const response3 = await fastify.inject({
+        method: 'GET',
+        url: '/ordinals/v1/inscriptions/transfers?block=775701',
+      });
+      expect(response3.statusCode).toBe(200);
+      const json3 = response3.json();
+      expect(json3.total).toBe(1);
+      expect(json3.results).toStrictEqual([
+        {
+          id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+          number: 7,
+          from: {
+            address: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+            block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7bbbb',
+            block_height: 775700,
+            location: 'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
+            offset: '0',
+            output: 'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0',
+            timestamp: 1678122360000,
+            tx_id: 'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444',
+            value: '9000',
+          },
+          to: {
+            address: 'bc1pkx5me775s748lzchytzdsw4f0lq04wssxnyk27g8fn3gee8zhjjqsn9tfp',
+            block_hash: '000000000000000000044b12039abd3112963959d9fd7510ac503ea84dc17002',
+            block_height: 775701,
+            location: '5cabafe04aaf98b1f325b0c3ffcbff904dbdb6f3d2e9e451102fda36f1056b5e:0:0',
+            offset: '0',
+            output: '5cabafe04aaf98b1f325b0c3ffcbff904dbdb6f3d2e9e451102fda36f1056b5e:0',
+            timestamp: 1676913208000,
+            tx_id: '5cabafe04aaf98b1f325b0c3ffcbff904dbdb6f3d2e9e451102fda36f1056b5e',
+            value: '8000',
+          },
+        },
+      ]);
+    });
   });
 
   describe('index', () => {
