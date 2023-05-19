@@ -535,12 +535,23 @@ export class PgStore extends BasePgStore {
   async getInscriptionCountPerBlock(
     filters?: DbInscriptionCountPerBlockFilters
   ): Promise<DbInscriptionCountPerBlock[]> {
-    // 9223372036854775807 is the max value for a bigint
+    const fromCondition = filters?.from_block_height
+      ? this.sql`block_height >= ${filters?.from_block_height}`
+      : this.sql``;
+
+    const toCondition = filters?.to_block_height
+      ? this.sql`block_height <= ${filters?.to_block_height}`
+      : this.sql``;
+
+    const where =
+      filters?.from_block_height && filters?.to_block_height
+        ? this.sql`WHERE ${fromCondition} AND ${toCondition}`
+        : this.sql`WHERE ${fromCondition}${toCondition}`;
+
     return await this.sql<DbInscriptionCountPerBlock[]>`
       SELECT *
       FROM inscriptions_per_block
-      WHERE block_height >= ${filters?.from_block_height ?? '0'}
-        AND block_height <= ${filters?.to_block_height ?? '9223372036854775807'}
+      ${filters?.from_block_height || filters?.to_block_height ? where : this.sql``}
       ORDER BY block_height DESC
       LIMIT 10000
     `; // roughly 70 days of blocks, assuming 10 minute block times on a full database
