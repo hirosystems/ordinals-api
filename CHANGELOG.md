@@ -1,3 +1,16 @@
+## [0.2.0](https://github.com/hirosystems/ordinals-api/compare/v0.1.2...v0.2.0) (2023-05-19)
+
+
+### Features
+
+* add endpoint to retrieve all inscription transfers per block ([#63](https://github.com/hirosystems/ordinals-api/issues/63)) ([e1afa7d](https://github.com/hirosystems/ordinals-api/commit/e1afa7dbaf29407c9ddacc775ce69782138c591f))
+* add typescript client library ([#58](https://github.com/hirosystems/ordinals-api/issues/58)) ([23e48f1](https://github.com/hirosystems/ordinals-api/commit/23e48f138b0a92137fb350236e7c988ed3a45d72))
+
+
+### Bug Fixes
+
+* parse chainhooks satpoint to get offset ([#69](https://github.com/hirosystems/ordinals-api/issues/69)) ([73580fb](https://github.com/hirosystems/ordinals-api/commit/73580fb6c9ddab2bd6a3dde2cc90e408bfa7be7e))
+
 ## [0.1.2](https://github.com/hirosystems/ordinals-api/compare/v0.1.1...v0.1.2) (2023-05-15)
 
 
