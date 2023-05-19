@@ -33,15 +33,15 @@ describe('/stats', () => {
       };
 
       test('returns stats when processing blocks in order', async () => {
-        await db.updateInscriptions(testRevealBuilder(778_000).build());
-        await db.updateInscriptions(testRevealBuilder(778_000).build());
-        await db.updateInscriptions(testRevealBuilder(778_001).build());
-        await db.updateInscriptions(testRevealBuilder(778_002).build());
-        await db.updateInscriptions(testRevealBuilder(778_005).build());
-        await db.updateInscriptions(testRevealBuilder(778_005).build());
-        await db.updateInscriptions(testRevealBuilder(778_010).build());
-        await db.updateInscriptions(testRevealBuilder(778_010).build());
-        await db.updateInscriptions(testRevealBuilder(778_010).build());
+        await db.updateInscriptions(testRevealApply(778_000));
+        await db.updateInscriptions(testRevealApply(778_000));
+        await db.updateInscriptions(testRevealApply(778_001));
+        await db.updateInscriptions(testRevealApply(778_002));
+        await db.updateInscriptions(testRevealApply(778_005));
+        await db.updateInscriptions(testRevealApply(778_005));
+        await db.updateInscriptions(testRevealApply(778_010));
+        await db.updateInscriptions(testRevealApply(778_010));
+        await db.updateInscriptions(testRevealApply(778_010));
 
         const response = await fastify.inject({
           method: 'GET',
@@ -52,15 +52,15 @@ describe('/stats', () => {
       });
 
       test('returns stats when processing blocks out-of-order', async () => {
-        await db.updateInscriptions(testRevealBuilder(778_001).build());
-        await db.updateInscriptions(testRevealBuilder(778_010).build());
-        await db.updateInscriptions(testRevealBuilder(778_000).build());
-        await db.updateInscriptions(testRevealBuilder(778_000).build());
-        await db.updateInscriptions(testRevealBuilder(778_005).build());
-        await db.updateInscriptions(testRevealBuilder(778_010).build());
-        await db.updateInscriptions(testRevealBuilder(778_002).build());
-        await db.updateInscriptions(testRevealBuilder(778_010).build());
-        await db.updateInscriptions(testRevealBuilder(778_005).build());
+        await db.updateInscriptions(testRevealApply(778_001));
+        await db.updateInscriptions(testRevealApply(778_010));
+        await db.updateInscriptions(testRevealApply(778_000));
+        await db.updateInscriptions(testRevealApply(778_000));
+        await db.updateInscriptions(testRevealApply(778_005));
+        await db.updateInscriptions(testRevealApply(778_010));
+        await db.updateInscriptions(testRevealApply(778_002));
+        await db.updateInscriptions(testRevealApply(778_010));
+        await db.updateInscriptions(testRevealApply(778_005));
 
         const response = await fastify.inject({
           method: 'GET',
@@ -71,20 +71,20 @@ describe('/stats', () => {
       });
 
       test('returns stats when processing rollbacks', async () => {
-        const payloadApply = testRevealBuilder(778_004).build();
+        const payloadApply = testRevealApply(778_004);
         const payloadRollback = { ...payloadApply, apply: [], rollback: payloadApply.apply };
 
-        await db.updateInscriptions(testRevealBuilder(778_001).build());
-        await db.updateInscriptions(testRevealBuilder(778_010).build());
-        await db.updateInscriptions(testRevealBuilder(778_000).build());
+        await db.updateInscriptions(testRevealApply(778_001));
+        await db.updateInscriptions(testRevealApply(778_010));
+        await db.updateInscriptions(testRevealApply(778_000));
         await db.updateInscriptions(payloadApply);
-        await db.updateInscriptions(testRevealBuilder(778_005).build());
-        await db.updateInscriptions(testRevealBuilder(778_000).build());
+        await db.updateInscriptions(testRevealApply(778_005));
+        await db.updateInscriptions(testRevealApply(778_000));
         await db.updateInscriptions(payloadRollback);
-        await db.updateInscriptions(testRevealBuilder(778_010).build());
-        await db.updateInscriptions(testRevealBuilder(778_002).build());
-        await db.updateInscriptions(testRevealBuilder(778_010).build());
-        await db.updateInscriptions(testRevealBuilder(778_005).build());
+        await db.updateInscriptions(testRevealApply(778_010));
+        await db.updateInscriptions(testRevealApply(778_002));
+        await db.updateInscriptions(testRevealApply(778_010));
+        await db.updateInscriptions(testRevealApply(778_005));
 
         const response = await fastify.inject({
           method: 'GET',
@@ -96,12 +96,12 @@ describe('/stats', () => {
     });
 
     test('range filters', async () => {
-      await db.updateInscriptions(testRevealBuilder(778_000).build());
-      await db.updateInscriptions(testRevealBuilder(778_001).build());
-      await db.updateInscriptions(testRevealBuilder(778_002).build());
-      await db.updateInscriptions(testRevealBuilder(778_005).build());
-      await db.updateInscriptions(testRevealBuilder(778_005).build());
-      await db.updateInscriptions(testRevealBuilder(778_010).build());
+      await db.updateInscriptions(testRevealApply(778_000));
+      await db.updateInscriptions(testRevealApply(778_001));
+      await db.updateInscriptions(testRevealApply(778_002));
+      await db.updateInscriptions(testRevealApply(778_005));
+      await db.updateInscriptions(testRevealApply(778_005));
+      await db.updateInscriptions(testRevealApply(778_010));
 
       const responseFrom = await fastify.inject({
         method: 'GET',
@@ -149,7 +149,7 @@ describe('/stats', () => {
   });
 });
 
-function testRevealBuilder(blockHeight: number) {
+function testRevealApply(blockHeight: number) {
   const randomHex = [...Array(64)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
   return new TestChainhookPayloadBuilder()
     .apply()
@@ -174,5 +174,6 @@ function testRevealBuilder(blockHeight: number) {
       ordinal_block_height: Math.floor(Math.random() * 777_000),
       ordinal_offset: 0,
       satpoint_post_inscription: `${randomHex}:0:0`,
-    });
+    })
+    .build();
 }
