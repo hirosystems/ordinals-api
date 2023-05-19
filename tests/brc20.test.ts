@@ -51,17 +51,20 @@ describe('BRC-20', () => {
       });
       expect(response1.statusCode).toBe(200);
       const responseJson1 = response1.json();
-      expect(responseJson1).toStrictEqual({
-        address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-        block_height: 775617,
-        decimals: 18,
-        id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-        number: 5,
-        mint_limit: null,
-        max_supply: '21000000',
-        ticker: 'PEPE',
-        tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
-      });
+      expect(responseJson1.total).toBe(1);
+      expect(responseJson1.results).toStrictEqual([
+        {
+          address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+          block_height: 775617,
+          decimals: 18,
+          id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+          number: 5,
+          mint_limit: null,
+          max_supply: '21000000',
+          ticker: 'PEPE',
+          tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+        },
+      ]);
     });
 
     test('ignores deploys for existing token', async () => {
@@ -121,17 +124,20 @@ describe('BRC-20', () => {
       });
       expect(response1.statusCode).toBe(200);
       const responseJson1 = response1.json();
-      expect(responseJson1).toStrictEqual({
-        address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-        block_height: 775617,
-        decimals: 18,
-        id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-        max_supply: '21000000',
-        mint_limit: null,
-        number: 5,
-        ticker: 'PEPE',
-        tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
-      });
+      expect(responseJson1.total).toBe(1);
+      expect(responseJson1.results).toStrictEqual([
+        {
+          address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+          block_height: 775617,
+          decimals: 18,
+          id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+          max_supply: '21000000',
+          mint_limit: null,
+          number: 5,
+          ticker: 'PEPE',
+          tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+        },
+      ]);
     });
 
     test('ignores case insensitive deploy for existing token', async () => {
@@ -191,34 +197,40 @@ describe('BRC-20', () => {
       });
       expect(response1.statusCode).toBe(200);
       const responseJson1 = response1.json();
-      expect(responseJson1).toStrictEqual({
-        address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-        block_height: 775617,
-        decimals: 18,
-        id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-        max_supply: '21000000',
-        mint_limit: null,
-        number: 5,
-        ticker: 'PEPE',
-        tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
-      });
+      expect(responseJson1.total).toBe(1);
+      expect(responseJson1.results).toStrictEqual([
+        {
+          address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+          block_height: 775617,
+          decimals: 18,
+          id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+          max_supply: '21000000',
+          mint_limit: null,
+          number: 5,
+          ticker: 'PEPE',
+          tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+        },
+      ]);
       const response2 = await fastify.inject({
         method: 'GET',
         url: `/ordinals/brc-20/tokens?ticker=pepe`, // Lowercase
       });
       expect(response2.statusCode).toBe(200);
       const responseJson2 = response2.json();
-      expect(responseJson2).toStrictEqual({
-        address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-        block_height: 775617,
-        decimals: 18,
-        id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-        max_supply: '21000000',
-        mint_limit: null,
-        number: 5,
-        ticker: 'PEPE',
-        tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
-      });
+      expect(responseJson2.total).toBe(1);
+      expect(responseJson2.results).toStrictEqual([
+        {
+          address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+          block_height: 775617,
+          decimals: 18,
+          id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+          max_supply: '21000000',
+          mint_limit: null,
+          number: 5,
+          ticker: 'PEPE',
+          tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+        },
+      ]);
     });
 
     test.skip('deploy exceeds decimal limit', async () => {});
