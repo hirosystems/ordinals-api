@@ -226,7 +226,8 @@ export type DbBrc20DeployInsert = {
 
 export type DbBrc20Deploy = {
   id: string;
-  inscription_id: string;
+  genesis_id: string;
+  number: string;
   block_height: string;
   tx_id: string;
   address: string;
@@ -235,18 +236,6 @@ export type DbBrc20Deploy = {
   limit?: string;
   decimals: number;
 };
-
-export const BRC20_DEPLOYS_COLUMNS = [
-  'id',
-  'inscription_id',
-  'block_height',
-  'tx_id',
-  'address',
-  'ticker',
-  'max',
-  'limit',
-  'decimals',
-];
 
 export type DbBrc20Balance = {
   ticker: string;

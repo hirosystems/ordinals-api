@@ -5,18 +5,49 @@ import { Server } from 'http';
 import {
   AddressParam,
   Brc20BalanceResponseSchema,
+  Brc20TickerParam,
   Brc20TickersParam,
+  Brc20TokenResponseSchema,
   LimitParam,
+  NotFoundResponse,
   OffsetParam,
   PaginatedResponse,
 } from '../schemas';
-import { DEFAULT_API_LIMIT, parseBrc20Balances } from '../util/helpers';
+import { DEFAULT_API_LIMIT, parseBrc20Balances, parseBrc20Token } from '../util/helpers';
+import { Value } from '@sinclair/typebox/value';
 
 export const Brc20Routes: FastifyPluginCallback<
   Record<never, never>,
   Server,
   TypeBoxTypeProvider
 > = (fastify, options, done) => {
+  fastify.get(
+    '/brc-20/tokens',
+    {
+      schema: {
+        operationId: 'getBrc20Tokens',
+        summary: 'BRC-20 Tokens',
+        description: 'Retrieves deployment and supply info for BRC-20 tokens',
+        tags: ['BRC-20'],
+        querystring: Type.Object({
+          ticker: Brc20TickerParam,
+        }),
+        response: {
+          200: Brc20TokenResponseSchema,
+          404: NotFoundResponse,
+        },
+      },
+    },
+    async (request, reply) => {
+      const response = await fastify.db.getBrc20Token({ ticker: request.query.ticker });
+      if (response) {
+        await reply.send(parseBrc20Token(response));
+      } else {
+        await reply.code(404).send(Value.Create(NotFoundResponse));
+      }
+    }
+  );
+
   fastify.get(
     '/brc-20/balances',
     {

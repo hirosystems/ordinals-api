@@ -17,7 +17,6 @@ import { runMigrations } from './migrations';
 import { connectPostgres } from './postgres-tools';
 import { BasePgStore } from './postgres-tools/base-pg-store';
 import {
-  BRC20_DEPLOYS_COLUMNS,
   DbBrc20DeployInsert,
   DbBrc20Balance,
   DbBrc20Deploy,
@@ -488,11 +487,14 @@ export class PgStore extends BasePgStore {
     }
   }
 
-  async getBrc20Deploy(args: { ticker: string }): Promise<DbBrc20Deploy | undefined> {
+  async getBrc20Token(args: { ticker: string }): Promise<DbBrc20Deploy | undefined> {
     const results = await this.sql<DbBrc20Deploy[]>`
-      SELECT ${this.sql(BRC20_DEPLOYS_COLUMNS)}
-      FROM brc20_deploys
-      WHERE LOWER(ticker) = LOWER(${args.ticker})
+      SELECT
+        d.id, i.genesis_id, i.number, d.block_height, d.tx_id, d.address, d.ticker, d.max, d.limit,
+        d.decimals
+      FROM brc20_deploys AS d
+      INNER JOIN inscriptions AS i ON i.id = d.inscription_id
+      WHERE LOWER(d.ticker) = LOWER(${args.ticker})
       LIMIT 1
     `;
     if (results.count === 1) {
@@ -809,7 +811,7 @@ export class PgStore extends BasePgStore {
   }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
       // Is the token deployed?
-      const deploy = await this.getBrc20Deploy({ ticker: args.mint.tick });
+      const deploy = await this.getBrc20Token({ ticker: args.mint.tick });
       if (!deploy) {
         logger.debug(
           `PgStore [BRC-20] ignoring mint for non-deployed token ${args.mint.tick} at block ${args.location.block_height}`

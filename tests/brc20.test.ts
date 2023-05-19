@@ -45,15 +45,20 @@ describe('BRC-20', () => {
           )
           .build()
       );
-      const deploy = await db.getBrc20Deploy({ ticker: 'PEPE' });
-      expect(deploy).toStrictEqual({
+      const response1 = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/tokens?ticker=PEPE`,
+      });
+      expect(response1.statusCode).toBe(200);
+      const responseJson1 = response1.json();
+      expect(responseJson1).toStrictEqual({
         address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-        block_height: '775617',
+        block_height: 775617,
         decimals: 18,
-        id: '1',
-        inscription_id: '1',
-        limit: null,
-        max: '21000000',
+        id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+        number: 5,
+        mint_limit: null,
+        max_supply: '21000000',
         ticker: 'PEPE',
         tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
       });
@@ -110,15 +115,20 @@ describe('BRC-20', () => {
           )
           .build()
       );
-      const deploy = await db.getBrc20Deploy({ ticker: 'PEPE' });
-      expect(deploy).toStrictEqual({
+      const response1 = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/tokens?ticker=PEPE`,
+      });
+      expect(response1.statusCode).toBe(200);
+      const responseJson1 = response1.json();
+      expect(responseJson1).toStrictEqual({
         address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-        block_height: '775617',
+        block_height: 775617,
         decimals: 18,
-        id: '1',
-        inscription_id: '1',
-        limit: null,
-        max: '21000000',
+        id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+        max_supply: '21000000',
+        mint_limit: null,
+        number: 5,
         ticker: 'PEPE',
         tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
       });
@@ -175,27 +185,37 @@ describe('BRC-20', () => {
           )
           .build()
       );
-      const deploy = await db.getBrc20Deploy({ ticker: 'PEPE' });
-      expect(deploy).toStrictEqual({
+      const response1 = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/tokens?ticker=PEPE`,
+      });
+      expect(response1.statusCode).toBe(200);
+      const responseJson1 = response1.json();
+      expect(responseJson1).toStrictEqual({
         address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-        block_height: '775617',
+        block_height: 775617,
         decimals: 18,
-        id: '1',
-        inscription_id: '1',
-        limit: null,
-        max: '21000000',
+        id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+        max_supply: '21000000',
+        mint_limit: null,
+        number: 5,
         ticker: 'PEPE',
         tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
       });
-      const deploy2 = await db.getBrc20Deploy({ ticker: 'pepe' }); // Lowercase
-      expect(deploy2).toStrictEqual({
+      const response2 = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/tokens?ticker=pepe`, // Lowercase
+      });
+      expect(response2.statusCode).toBe(200);
+      const responseJson2 = response2.json();
+      expect(responseJson2).toStrictEqual({
         address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-        block_height: '775617',
+        block_height: 775617,
         decimals: 18,
-        id: '1',
-        inscription_id: '1',
-        limit: null,
-        max: '21000000',
+        id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+        max_supply: '21000000',
+        mint_limit: null,
+        number: 5,
         ticker: 'PEPE',
         tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
       });

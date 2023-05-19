@@ -1,5 +1,6 @@
 import {
   DbBrc20Balance,
+  DbBrc20Deploy,
   DbFullyLocatedInscriptionResult,
   DbInscriptionLocationChange,
   DbLocation,
@@ -7,6 +8,7 @@ import {
 import {
   BlockInscriptionTransfer,
   Brc20BalanceResponse,
+  Brc20TokenResponse,
   InscriptionLocationResponse,
   InscriptionResponseType,
 } from '../schemas';
@@ -87,6 +89,20 @@ export function parseBlockTransfers(
       timestamp: i.to_timestamp.valueOf(),
     },
   }));
+}
+
+export function parseBrc20Token(item: DbBrc20Deploy): Brc20TokenResponse {
+  return {
+    id: item.genesis_id,
+    number: parseInt(item.number),
+    block_height: parseInt(item.block_height),
+    tx_id: item.tx_id,
+    address: item.address,
+    ticker: item.ticker,
+    max_supply: item.max,
+    mint_limit: item.limit ?? null,
+    decimals: item.decimals,
+  };
 }
 
 export function parseBrc20Balances(items: DbBrc20Balance[]): Brc20BalanceResponse[] {

@@ -61,7 +61,9 @@ export const AddressesParam = Type.Array(AddressParam, {
   ],
 });
 
-export const Brc20TickersParam = Type.Array(Type.String());
+export const Brc20TickerParam = Type.String();
+
+export const Brc20TickersParam = Type.Array(Brc20TickerParam);
 
 export const InscriptionIdParam = Type.RegEx(/^[a-fA-F0-9]{64}i[0-9]+$/, {
   title: 'Inscription ID',
@@ -336,6 +338,28 @@ export const Brc20BalanceResponseSchema = Type.Object({
   overall_balance: Type.String({ examples: ['2000.00000'] }),
 });
 export type Brc20BalanceResponse = Static<typeof Brc20BalanceResponseSchema>;
+
+export const Brc20TokenResponseSchema = Type.Object(
+  {
+    id: Type.String({
+      examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218i0'],
+    }),
+    number: Type.Integer({ examples: [248751] }),
+    block_height: Type.Integer({ examples: [752860] }),
+    tx_id: Type.String({
+      examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218'],
+    }),
+    address: Type.String({
+      examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
+    }),
+    ticker: Type.String({ examples: ['PEPE'] }),
+    max_supply: Type.String({ examples: ['21000000'] }),
+    mint_limit: Nullable(Type.String({ examples: ['100000'] })),
+    decimals: Type.Integer({ examples: [18] }),
+  },
+  { title: 'BRC-20 Token Response' }
+);
+export type Brc20TokenResponse = Static<typeof Brc20TokenResponseSchema>;
 
 export const NotFoundResponse = Type.Object(
   {
