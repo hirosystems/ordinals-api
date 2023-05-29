@@ -39,6 +39,8 @@ export type DbLocationInsert = {
   address: string | null;
   output: string;
   offset: PgNumeric | null;
+  prev_output: string | null;
+  prev_offset: PgNumeric | null;
   value: PgNumeric | null;
   sat_ordinal: PgNumeric;
   sat_rarity: string;
@@ -55,6 +57,8 @@ export type DbLocation = {
   address: string | null;
   output: string;
   offset: string | null;
+  prev_output: string | null;
+  prev_offset: string | null;
   value: string | null;
   sat_ordinal: string;
   sat_rarity: string;

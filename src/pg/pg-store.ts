@@ -110,6 +110,8 @@ export class PgStore extends BasePgStore {
                   address: reveal.inscriber_address,
                   output: `${satpoint.tx_id}:${satpoint.vout}`,
                   offset: satpoint.offset ?? null,
+                  prev_output: null,
+                  prev_offset: null,
                   value: reveal.inscription_output_value.toString(),
                   timestamp: event.timestamp,
                   sat_ordinal: reveal.ordinal_number.toString(),
@@ -125,6 +127,7 @@ export class PgStore extends BasePgStore {
             if (operation.inscription_transferred) {
               const transfer = operation.inscription_transferred;
               const satpoint = parseSatPoint(transfer.satpoint_post_transfer);
+              const prevSatpoint = parseSatPoint(transfer.satpoint_pre_transfer);
               const satoshi = new OrdinalSatoshi(transfer.ordinal_number);
               const id = await this.insertInscriptionTransfer({
                 location: {
@@ -135,6 +138,8 @@ export class PgStore extends BasePgStore {
                   address: transfer.updated_address,
                   output: `${satpoint.tx_id}:${satpoint.vout}`,
                   offset: satpoint.offset ?? null,
+                  prev_output: `${prevSatpoint.tx_id}:${prevSatpoint.vout}`,
+                  prev_offset: prevSatpoint.offset ?? null,
                   value: transfer.post_transfer_output_value
                     ? transfer.post_transfer_output_value.toString()
                     : null,
@@ -202,19 +207,6 @@ export class PgStore extends BasePgStore {
   async getInscriptionTransfersETag(): Promise<string> {
     const result = await this.sql<{ max: number }[]>`SELECT MAX(id) FROM locations`;
     return result[0].max.toString();
-  }
-
-  async getInscriptionCurrentLocation(args: { output: string }): Promise<DbLocation | undefined> {
-    const result = await this.sql<DbLocation[]>`
-      SELECT ${this.sql(LOCATIONS_COLUMNS)}
-      FROM locations
-      WHERE output = ${args.output}
-      AND current = TRUE
-    `;
-    if (result.count === 0) {
-      return undefined;
-    }
-    return result[0];
   }
 
   async getInscriptionContent(
@@ -537,6 +529,8 @@ export class PgStore extends BasePgStore {
         address: args.location.address,
         output: args.location.output,
         offset: args.location.offset,
+        prev_output: args.location.prev_output,
+        prev_offset: args.location.prev_offset,
         value: args.location.value,
         sat_ordinal: args.location.sat_ordinal,
         sat_rarity: args.location.sat_rarity,
@@ -601,6 +595,8 @@ export class PgStore extends BasePgStore {
         address: args.location.address,
         output: args.location.output,
         offset: args.location.offset,
+        prev_output: args.location.prev_output,
+        prev_offset: args.location.prev_offset,
         value: args.location.value,
         sat_ordinal: args.location.sat_ordinal,
         sat_rarity: args.location.sat_rarity,
