@@ -77,7 +77,6 @@ export const InscriptionIdsParam = Type.Array(InscriptionIdParam, {
 });
 
 export const InscriptionNumberParam = Type.Integer({
-  minimum: 0,
   title: 'Inscription Number',
   description: 'Inscription number',
   examples: ['10500'],
@@ -282,6 +281,7 @@ export const ApiStatusResponse = Type.Object(
     status: Type.String(),
     block_height: Type.Optional(Type.Integer()),
     max_inscription_number: Type.Optional(Type.Integer()),
+    max_cursed_inscription_number: Type.Optional(Type.Integer()),
   },
   { title: 'Api Status Response' }
 );

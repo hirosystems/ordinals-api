@@ -26,11 +26,13 @@ export const StatusRoutes: FastifyPluginCallback<
       const result = await fastify.db.sqlTransaction(async sql => {
         const block_height = await fastify.db.getChainTipBlockHeight();
         const max_inscription_number = await fastify.db.getMaxInscriptionNumber();
+        const max_cursed_inscription_number = await fastify.db.getMaxCursedInscriptionNumber();
         return {
           server_version: `ordinals-api ${SERVER_VERSION.tag} (${SERVER_VERSION.branch}:${SERVER_VERSION.commit})`,
           status: 'ready',
           block_height,
           max_inscription_number,
+          max_cursed_inscription_number,
         };
       });
       await reply.send(result);

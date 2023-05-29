@@ -198,9 +198,20 @@ export class PgStore extends BasePgStore {
   }
 
   async getMaxInscriptionNumber(): Promise<number | undefined> {
-    const result = await this.sql<{ max: string }[]>`SELECT MAX(number) FROM inscriptions`;
+    const result = await this.sql<{ max: string }[]>`
+      SELECT MAX(number) FROM inscriptions WHERE number >= 0
+    `;
     if (result[0].max) {
       return parseInt(result[0].max);
+    }
+  }
+
+  async getMaxCursedInscriptionNumber(): Promise<number | undefined> {
+    const result = await this.sql<{ min: string }[]>`
+      SELECT MIN(number) FROM inscriptions WHERE number < 0
+    `;
+    if (result[0].min) {
+      return parseInt(result[0].min);
     }
   }
 
@@ -497,15 +508,29 @@ export class PgStore extends BasePgStore {
         );
       } else {
         // Is this a sequential genesis insert?
-        const maxNumber = await this.getMaxInscriptionNumber();
-        if (maxNumber !== undefined && maxNumber + 1 !== args.inscription.number) {
-          logger.error(
-            {
-              block_height: args.location.block_height,
-              genesis_id: args.inscription.genesis_id,
-            },
-            `PgStore inserting out-of-order inscription genesis #${args.inscription.number}, current max is #${maxNumber}`
-          );
+        if (args.inscription.number < 0) {
+          // Is it a cursed inscription?
+          const maxCursed = await this.getMaxCursedInscriptionNumber();
+          if (maxCursed !== undefined && maxCursed - 1 !== args.inscription.number) {
+            logger.warn(
+              {
+                block_height: args.location.block_height,
+                genesis_id: args.inscription.genesis_id,
+              },
+              `PgStore inserting out-of-order cursed inscription genesis #${args.inscription.number}, current max is #${maxCursed}`
+            );
+          }
+        } else {
+          const maxNumber = await this.getMaxInscriptionNumber();
+          if (maxNumber !== undefined && maxNumber + 1 !== args.inscription.number) {
+            logger.warn(
+              {
+                block_height: args.location.block_height,
+                genesis_id: args.inscription.genesis_id,
+              },
+              `PgStore inserting out-of-order inscription genesis #${args.inscription.number}, current max is #${maxNumber}`
+            );
+          }
         }
       }
 
