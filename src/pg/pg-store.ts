@@ -531,6 +531,19 @@ export class PgStore extends BasePgStore {
               `PgStore inserting out-of-order inscription genesis #${args.inscription.number}, current max is #${maxNumber}`
             );
           }
+          // Is this a blessed inscription in a duplicate sat?
+          const dup = await sql<{ id: number }[]>`
+            SELECT id FROM locations WHERE sat_ordinal = ${args.location.sat_ordinal}
+          `;
+          if (dup.count > 0) {
+            logger.error(
+              {
+                block_height: args.location.block_height,
+                genesis_id: args.inscription.genesis_id,
+              },
+              `PgStore inserting duplicate blessed inscription in satoshi ${args.location.sat_ordinal}`
+            );
+          }
         }
       }
 
