@@ -7,22 +7,24 @@ env:
 on:
   push:
     branches:
-      - master
       - beta
       - develop
   pull_request:
+  release:
+    types:
+      - published
 
 jobs:
   vercel:
     runs-on: ubuntu-latest
 
     env:
-      VERCEL_ENV: ${{ github.ref_name == 'master' && 'production' || 'preview' }}
-      VERCEL_PROD: ${{ github.ref_name == 'master' && '--prod' || '' }}
+      VERCEL_ENV: ${{ contains(github.ref_name, "refs/tags") && 'production' || 'preview' }}
+      VERCEL_PROD: ${{ contains(github.ref_name, "refs/tags") && '--prod' || '' }}
 
     environment:
-      name: ${{ github.ref_name == 'master' && 'Production' || 'Preview' }}
-      url: ${{ github.ref_name == 'master' && 'https://ordinals-api.vercel.app/' || 'https://ordinals-api-pbcblockstack-blockstack.vercel.app/' }}
+      name: ${{ contains(github.ref_name, "refs/tags") && 'Production' || 'Preview' }}
+      url: ${{ contains(github.ref_name, "refs/tags") && 'https://ordinals-api.vercel.app/' || 'https://ordinals-api-pbcblockstack-blockstack.vercel.app/' }}
 
     steps:
       - uses: actions/checkout@v2
