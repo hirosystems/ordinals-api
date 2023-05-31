@@ -18,7 +18,7 @@ const OpJsonSchema = Type.Object(
 const OpJsonC = TypeCompiler.Compile(OpJsonSchema);
 export type OpJson = Static<typeof OpJsonSchema>;
 
-const Brc20TickerSchema = Type.String({ minLength: 1, maxLength: 4 });
+const Brc20TickerSchema = Type.String({ minLength: 1 });
 const Brc20NumberSchema = Type.RegEx(/^((\d+)|(\d*\.?\d+))$/);
 
 const Brc20DeploySchema = Type.Object(
@@ -72,23 +72,35 @@ export function brc20FromInscription(inscription: DbInscriptionInsert): Brc20 | 
           : inscription.content;
       const json = JSON.parse(buf.toString('utf-8'));
       if (Brc20C.Check(json)) {
+        // Check ticker byte length
+        if (Buffer.from(json.tick).length > 4) {
+          return;
+        }
         // Check numeric values.
         const uint64_max = BigNumber('18446744073709551615');
         if (json.op === 'deploy') {
           const max = BigNumber(json.max);
-          if (max.isNaN() || max.isZero() || max.isGreaterThan(uint64_max)) return;
+          if (max.isNaN() || max.isZero() || max.isGreaterThan(uint64_max)) {
+            return;
+          }
           if (json.lim) {
             const lim = BigNumber(json.lim);
-            if (lim.isNaN() || lim.isZero() || lim.isGreaterThan(uint64_max)) return;
+            if (lim.isNaN() || lim.isZero() || lim.isGreaterThan(uint64_max)) {
+              return;
+            }
           }
           if (json.dec) {
             // `dec` can have a value of 0 but must be no more than 18.
             const dec = BigNumber(json.dec);
-            if (dec.isNaN() || dec.isGreaterThan(18)) return;
+            if (dec.isNaN() || dec.isGreaterThan(18)) {
+              return;
+            }
           }
         } else {
           const amt = BigNumber(json.amt);
-          if (amt.isNaN() || amt.isZero() || amt.isGreaterThan(uint64_max)) return;
+          if (amt.isNaN() || amt.isZero() || amt.isGreaterThan(uint64_max)) {
+            return;
+          }
         }
         return json;
       }

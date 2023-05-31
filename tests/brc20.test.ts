@@ -103,17 +103,24 @@ describe('BRC-20', () => {
       const insert = testInsert({
         p: 'brc-20',
         op: 'deploy',
-        tick: 'PEPETESTER', // incorrect length
+        tick: 'PEPETESTER', // more than 4 bytes
         max: '21000000',
       });
       expect(brc20FromInscription(insert)).toBeUndefined();
       const insert2 = testInsert({
         p: 'brc-20',
         op: 'deploy',
-        tick: 'Pé P', // valid
+        tick: 'Pe P', // valid
         max: '21000000',
       });
       expect(brc20FromInscription(insert2)).not.toBeUndefined();
+      const insert3 = testInsert({
+        p: 'brc-20',
+        op: 'deploy',
+        tick: '🤬😉', // more than 4 bytes
+        max: '21000000',
+      });
+      expect(brc20FromInscription(insert3)).toBeUndefined();
     });
 
     test('all fields must be strings', () => {
