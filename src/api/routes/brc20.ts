@@ -8,12 +8,10 @@ import {
   Brc20TickersParam,
   Brc20TokenResponseSchema,
   LimitParam,
-  NotFoundResponse,
   OffsetParam,
   PaginatedResponse,
 } from '../schemas';
 import { DEFAULT_API_LIMIT, parseBrc20Balances, parseBrc20Tokens } from '../util/helpers';
-import { Value } from '@sinclair/typebox/value';
 
 export const Brc20Routes: FastifyPluginCallback<
   Record<never, never>,

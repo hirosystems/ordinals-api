@@ -99,7 +99,7 @@ describe('BRC-20', () => {
       expect(brc20FromInscription(insert)).toBeUndefined();
     });
 
-    test('ignores invalid tick fields', () => {
+    test('tick must be 4 bytes wide', () => {
       const insert = testInsert({
         p: 'brc-20',
         op: 'deploy',
@@ -217,9 +217,162 @@ describe('BRC-20', () => {
       expect(brc20FromInscription(insert3a)).toBeUndefined();
     });
 
-    test.skip('numeric strings must be valid', () => {});
+    test('numeric strings must not be zero', () => {
+      const insert1 = testInsert({
+        p: 'brc-20',
+        op: 'deploy',
+        tick: 'PEPE',
+        max: '0',
+      });
+      expect(brc20FromInscription(insert1)).toBeUndefined();
+      const insert1b = testInsert({
+        p: 'brc-20',
+        op: 'deploy',
+        tick: 'PEPE',
+        max: '21000000',
+        lim: '0.0',
+      });
+      expect(brc20FromInscription(insert1b)).toBeUndefined();
+      const insert1c = testInsert({
+        p: 'brc-20',
+        op: 'deploy',
+        tick: 'PEPE',
+        max: '21000000',
+        lim: '200',
+        dec: '0',
+      });
+      // `dec` can have a value of 0
+      expect(brc20FromInscription(insert1c)).not.toBeUndefined();
+      const insert2a = testInsert({
+        p: 'brc-20',
+        op: 'mint',
+        tick: 'PEPE',
+        amt: '0',
+      });
+      expect(brc20FromInscription(insert2a)).toBeUndefined();
+      const insert3a = testInsert({
+        p: 'brc-20',
+        op: 'transfer',
+        tick: 'PEPE',
+        amt: '.0000',
+      });
+      expect(brc20FromInscription(insert3a)).toBeUndefined();
+    });
 
-    test.skip('valid JSONs can have additional properties', () => {});
+    test('numeric fields are not stripped/trimmed', () => {
+      const insert1 = testInsert({
+        p: 'brc-20',
+        op: 'deploy',
+        tick: 'PEPE',
+        max: ' 200  ',
+      });
+      expect(brc20FromInscription(insert1)).toBeUndefined();
+      const insert1b = testInsert({
+        p: 'brc-20',
+        op: 'deploy',
+        tick: 'PEPE',
+        max: '21000000',
+        lim: '+10000',
+      });
+      expect(brc20FromInscription(insert1b)).toBeUndefined();
+      const insert1c = testInsert({
+        p: 'brc-20',
+        op: 'deploy',
+        tick: 'PEPE',
+        max: '21000000',
+        lim: '200',
+        dec: '   0 ',
+      });
+      expect(brc20FromInscription(insert1c)).toBeUndefined();
+      const insert2a = testInsert({
+        p: 'brc-20',
+        op: 'mint',
+        tick: 'PEPE',
+        amt: '.05 ',
+      });
+      expect(brc20FromInscription(insert2a)).toBeUndefined();
+      const insert3a = testInsert({
+        p: 'brc-20',
+        op: 'transfer',
+        tick: 'PEPE',
+        amt: '-25.00',
+      });
+      expect(brc20FromInscription(insert3a)).toBeUndefined();
+    });
+
+    test('max value of dec is 18', () => {
+      const insert1c = testInsert({
+        p: 'brc-20',
+        op: 'deploy',
+        tick: 'PEPE',
+        max: '21000000',
+        lim: '200',
+        dec: '20',
+      });
+      expect(brc20FromInscription(insert1c)).toBeUndefined();
+    });
+
+    test('max value of any numeric field is uint64_max', () => {
+      const insert1 = testInsert({
+        p: 'brc-20',
+        op: 'deploy',
+        tick: 'PEPE',
+        max: '18446744073709551999',
+      });
+      expect(brc20FromInscription(insert1)).toBeUndefined();
+      const insert1b = testInsert({
+        p: 'brc-20',
+        op: 'deploy',
+        tick: 'PEPE',
+        max: '21000000',
+        lim: '18446744073709551999',
+      });
+      expect(brc20FromInscription(insert1b)).toBeUndefined();
+      const insert2a = testInsert({
+        p: 'brc-20',
+        op: 'mint',
+        tick: 'PEPE',
+        amt: '18446744073709551999',
+      });
+      expect(brc20FromInscription(insert2a)).toBeUndefined();
+      const insert3a = testInsert({
+        p: 'brc-20',
+        op: 'transfer',
+        tick: 'PEPE',
+        amt: '18446744073709551999',
+      });
+      expect(brc20FromInscription(insert3a)).toBeUndefined();
+    });
+
+    test('valid JSONs can have additional properties', () => {
+      const insert1 = testInsert({
+        p: 'brc-20',
+        op: 'deploy',
+        tick: 'PEPE',
+        max: '200',
+        foo: 'bar',
+        test: 1,
+      });
+      expect(brc20FromInscription(insert1)).not.toBeUndefined();
+      const insert2a = testInsert({
+        p: 'brc-20',
+        op: 'mint',
+        tick: 'PEPE',
+        amt: '5',
+        foo: 'bar',
+        test: 1,
+      });
+      expect(brc20FromInscription(insert2a)).not.toBeUndefined();
+      const insert3a = testInsert({
+        p: 'brc-20',
+        op: 'transfer',
+        tick: 'PEPE',
+        amt: '25',
+        foo: 'bar',
+        test: 1,
+      });
+      expect(brc20FromInscription(insert3a)).not.toBeUndefined();
+    });
   });
 
   describe('deploy', () => {
@@ -645,14 +798,16 @@ describe('BRC-20', () => {
       expect(responseJson2.results).toStrictEqual([]);
     });
 
+    test.skip('numbers should not have more decimal digits than "dec" of ticker', async () => {});
+
     test.skip('mint exceeds token supply', async () => {});
 
     test.skip('mints in same block are applied in order', async () => {});
 
-    test('ignores mint for non-existent token', async () => {});
+    test.skip('ignores mint for non-existent token', async () => {});
 
-    test('mint exceeds token mint limit', async () => {});
+    test.skip('mint exceeds token mint limit', async () => {});
 
-    test('ignores mint for token with no more supply', async () => {});
+    test.skip('ignores mint for token with no more supply', async () => {});
   });
 });
