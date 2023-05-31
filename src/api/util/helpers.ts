@@ -13,6 +13,14 @@ import {
   InscriptionResponseType,
 } from '../schemas';
 
+export const isDevEnv = process.env.NODE_ENV === 'development';
+export const isTestEnv = process.env.NODE_ENV === 'test';
+export const isProdEnv =
+  process.env.NODE_ENV === 'production' ||
+  process.env.NODE_ENV === 'prod' ||
+  !process.env.NODE_ENV ||
+  (!isTestEnv && !isDevEnv);
+
 export const DEFAULT_API_LIMIT = 20;
 
 export function parseDbInscriptions(
@@ -112,6 +120,15 @@ export function parseBrc20Balances(items: DbBrc20Balance[]): Brc20BalanceRespons
     transferrable_balance: i.trans_balance,
     overall_balance: i.total_balance,
   }));
+}
+
+export function parseSatPoint(satpoint: string): {
+  tx_id: string;
+  vout: string;
+  offset?: string;
+} {
+  const [tx_id, vout, offset] = satpoint.split(':');
+  return { tx_id, vout: vout, offset };
 }
 
 /**
