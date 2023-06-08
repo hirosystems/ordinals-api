@@ -98,6 +98,7 @@ describe('/inscriptions', () => {
         timestamp: 1676913207000,
         genesis_timestamp: 1676913207000,
         genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+        curse_type: null,
       };
 
       // By inscription id
@@ -129,7 +130,7 @@ describe('/inscriptions', () => {
           .transaction({
             hash: '0x38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           })
-          .inscriptionRevealed({
+          .cursedInscriptionRevealed({
             content_bytes: '0x48656C6C6F',
             content_type: 'image/png',
             content_length: 5,
@@ -143,6 +144,7 @@ describe('/inscriptions', () => {
             ordinal_offset: 0,
             satpoint_post_inscription:
               '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+            curse_type: 'p2wsh',
           })
           .build()
       );
@@ -168,6 +170,7 @@ describe('/inscriptions', () => {
         timestamp: 1676913207000,
         genesis_timestamp: 1676913207000,
         genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+        curse_type: 'p2wsh',
       };
 
       // By inscription id
@@ -265,6 +268,7 @@ describe('/inscriptions', () => {
         timestamp: 1678122360000,
         genesis_timestamp: 1676913207000,
         genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+        curse_type: null,
       });
 
       // Transfer 2
@@ -315,6 +319,7 @@ describe('/inscriptions', () => {
         timestamp: 1678124000000,
         genesis_timestamp: 1676913207000,
         genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+        curse_type: null,
       });
     });
 
@@ -330,7 +335,7 @@ describe('/inscriptions', () => {
           .transaction({
             hash: '0x38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           })
-          .inscriptionRevealed({
+          .cursedInscriptionRevealed({
             content_bytes: '0x48656C6C6F',
             content_type: 'image/png',
             content_length: 5,
@@ -344,6 +349,7 @@ describe('/inscriptions', () => {
             ordinal_offset: 0,
             satpoint_post_inscription:
               '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+            curse_type: 'p2wsh',
           })
           .build()
       );
@@ -396,6 +402,7 @@ describe('/inscriptions', () => {
         timestamp: 1678122360000,
         genesis_timestamp: 1676913207000,
         genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+        curse_type: 'p2wsh',
       });
 
       // Transfer 2
@@ -446,6 +453,7 @@ describe('/inscriptions', () => {
         timestamp: 1678124000000,
         genesis_timestamp: 1676913207000,
         genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+        curse_type: 'p2wsh',
       });
     });
   });
@@ -918,6 +926,7 @@ describe('/inscriptions', () => {
           timestamp: 1676913207000,
           genesis_timestamp: 1676913207000,
           genesis_tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
+          curse_type: null,
         },
         {
           address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
@@ -941,6 +950,7 @@ describe('/inscriptions', () => {
           timestamp: 1676913207000,
           genesis_timestamp: 1676913207000,
           genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+          curse_type: null,
         },
       ]);
     });
@@ -1033,6 +1043,7 @@ describe('/inscriptions', () => {
           timestamp: 1676913207000,
           genesis_timestamp: 1676913207000,
           genesis_tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
+          curse_type: null,
         };
         expect(responseJson1.results[0]).toStrictEqual(result1);
 
@@ -1065,6 +1076,7 @@ describe('/inscriptions', () => {
           timestamp: 1676913207000,
           genesis_timestamp: 1676913207000,
           genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+          curse_type: null,
         };
         expect(responseJson2.results[0]).toStrictEqual(result2);
 

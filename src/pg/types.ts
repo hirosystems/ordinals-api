@@ -29,6 +29,7 @@ export type DbFullyLocatedInscriptionResult = {
   content_type: string;
   content_length: string;
   timestamp: Date;
+  curse_type: string | null;
 };
 
 export type DbLocationInsert = {
@@ -129,6 +130,7 @@ export type DbInscriptionInsert = {
   content_length: number;
   content: PgBytea;
   fee: PgNumeric;
+  curse_type: string | null;
 };
 
 export type DbInscription = {
@@ -155,6 +157,7 @@ export const INSCRIPTIONS_COLUMNS = [
   'content_type',
   'content_length',
   'fee',
+  'curse_type',
 ];
 
 export type DbJsonContent = {

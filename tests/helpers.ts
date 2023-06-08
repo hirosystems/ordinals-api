@@ -3,6 +3,7 @@ import { IncomingMessage, Server, ServerResponse } from 'http';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import {
   ChainhookPayload,
+  CursedInscriptionRevealed,
   InscriptionEvent,
   InscriptionRevealed,
   InscriptionTransferred,
@@ -80,6 +81,11 @@ export class TestChainhookPayloadBuilder {
 
   inscriptionRevealed(args: InscriptionRevealed): this {
     this.lastBlockTx.metadata.ordinal_operations.push({ inscription_revealed: args });
+    return this;
+  }
+
+  cursedInscriptionRevealed(args: CursedInscriptionRevealed): this {
+    this.lastBlockTx.metadata.ordinal_operations.push({ cursed_inscription_revealed: args });
     return this;
   }
 

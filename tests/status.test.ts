@@ -59,7 +59,7 @@ describe('Status', () => {
         .apply()
         .block({ height: 791975 })
         .transaction({ hash: 'a98d7055a77fa0b96cc31e30bb8bacf777382d1b67f1b7eca6f2014e961591c8' })
-        .inscriptionRevealed({
+        .cursedInscriptionRevealed({
           content_bytes: '0x48656C6C6F',
           content_type: 'text/plain;charset=utf-8',
           content_length: 5,
@@ -73,6 +73,7 @@ describe('Status', () => {
           ordinal_offset: 0,
           satpoint_post_inscription:
             'a98d7055a77fa0b96cc31e30bb8bacf777382d1b67f1b7eca6f2014e961591c8:0:0',
+          curse_type: 'p2wsh',
         })
         .build()
     );

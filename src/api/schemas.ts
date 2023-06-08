@@ -249,6 +249,7 @@ export const InscriptionResponse = Type.Object(
     content_type: Type.String({ examples: ['text/plain;charset=utf-8'] }),
     content_length: Type.Integer({ examples: [59] }),
     timestamp: Type.Integer({ examples: [1677733170000] }),
+    curse_type: Nullable(Type.String({ examples: ['p2wsh'] })),
   },
   { title: 'Inscription Response' }
 );
