@@ -1,7 +1,11 @@
 import { Order, OrderBy } from '../api/schemas';
 import { normalizedHexString, parseSatPoint } from '../api/util/helpers';
 import { OrdinalSatoshi, SatoshiRarity } from '../api/util/ordinal-satoshi';
-import { ChainhookPayload, InscriptionEvent } from '../chainhook/schemas';
+import {
+  ChainhookPayload,
+  CursedInscriptionRevealed,
+  InscriptionRevealed,
+} from '../chainhook/schemas';
 import { ENV } from '../env';
 import { logger } from '../logger';
 import { getIndexResultCountType, inscriptionContentToJson } from './helpers';
@@ -68,6 +72,12 @@ export class PgStore extends BasePgStore {
               await this.rollBackInscriptionGenesis({ genesis_id });
               logger.info(`PgStore rollback reveal #${number} (${genesis_id})`);
             }
+            if (operation.cursed_inscription_revealed) {
+              const number = operation.cursed_inscription_revealed.inscription_number;
+              const genesis_id = operation.cursed_inscription_revealed.inscription_id;
+              await this.rollBackInscriptionGenesis({ genesis_id });
+              logger.info(`PgStore rollback cursed reveal #${number} (${genesis_id})`);
+            }
             if (operation.inscription_transferred) {
               const number = operation.inscription_transferred.inscription_number;
               const genesis_id = operation.inscription_transferred.inscription_id;
@@ -101,6 +111,7 @@ export class PgStore extends BasePgStore {
                   number: reveal.inscription_number,
                   content: reveal.content_bytes,
                   fee: reveal.inscription_fee.toString(),
+                  curse_type: null,
                 },
                 location: {
                   block_hash,
@@ -110,6 +121,8 @@ export class PgStore extends BasePgStore {
                   address: reveal.inscriber_address,
                   output: `${satpoint.tx_id}:${satpoint.vout}`,
                   offset: satpoint.offset ?? null,
+                  prev_output: null,
+                  prev_offset: null,
                   value: reveal.inscription_output_value.toString(),
                   timestamp: event.timestamp,
                   sat_ordinal: reveal.ordinal_number.toString(),
@@ -122,9 +135,47 @@ export class PgStore extends BasePgStore {
                 `PgStore reveal #${reveal.inscription_number} (${reveal.inscription_id}) at block ${block_height}`
               );
             }
+            if (operation.cursed_inscription_revealed) {
+              const reveal = operation.cursed_inscription_revealed;
+              const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
+              const satpoint = parseSatPoint(reveal.satpoint_post_inscription);
+              const id = await this.insertInscriptionGenesis({
+                inscription: {
+                  genesis_id: reveal.inscription_id,
+                  mime_type: reveal.content_type.split(';')[0],
+                  content_type: reveal.content_type,
+                  content_length: reveal.content_length,
+                  number: reveal.inscription_number,
+                  content: reveal.content_bytes,
+                  fee: reveal.inscription_fee.toString(),
+                  curse_type: reveal.curse_type,
+                },
+                location: {
+                  block_hash,
+                  block_height,
+                  tx_id,
+                  genesis_id: reveal.inscription_id,
+                  address: reveal.inscriber_address,
+                  output: `${satpoint.tx_id}:${satpoint.vout}`,
+                  offset: satpoint.offset ?? null,
+                  prev_output: null,
+                  prev_offset: null,
+                  value: reveal.inscription_output_value.toString(),
+                  timestamp: event.timestamp,
+                  sat_ordinal: reveal.ordinal_number.toString(),
+                  sat_rarity: satoshi.rarity,
+                  sat_coinbase_height: satoshi.blockHeight,
+                },
+              });
+              if (id) updatedInscriptionIds.add(id);
+              logger.info(
+                `PgStore cursed reveal #${reveal.inscription_number} (${reveal.inscription_id}) at block ${block_height}`
+              );
+            }
             if (operation.inscription_transferred) {
               const transfer = operation.inscription_transferred;
               const satpoint = parseSatPoint(transfer.satpoint_post_transfer);
+              const prevSatpoint = parseSatPoint(transfer.satpoint_pre_transfer);
               const satoshi = new OrdinalSatoshi(transfer.ordinal_number);
               const id = await this.insertInscriptionTransfer({
                 location: {
@@ -135,6 +186,8 @@ export class PgStore extends BasePgStore {
                   address: transfer.updated_address,
                   output: `${satpoint.tx_id}:${satpoint.vout}`,
                   offset: satpoint.offset ?? null,
+                  prev_output: `${prevSatpoint.tx_id}:${prevSatpoint.vout}`,
+                  prev_offset: prevSatpoint.offset ?? null,
                   value: transfer.post_transfer_output_value
                     ? transfer.post_transfer_output_value.toString()
                     : null,
@@ -193,28 +246,26 @@ export class PgStore extends BasePgStore {
   }
 
   async getMaxInscriptionNumber(): Promise<number | undefined> {
-    const result = await this.sql<{ max: string }[]>`SELECT MAX(number) FROM inscriptions`;
+    const result = await this.sql<{ max: string }[]>`
+      SELECT MAX(number) FROM inscriptions WHERE number >= 0
+    `;
     if (result[0].max) {
       return parseInt(result[0].max);
+    }
+  }
+
+  async getMaxCursedInscriptionNumber(): Promise<number | undefined> {
+    const result = await this.sql<{ min: string }[]>`
+      SELECT MIN(number) FROM inscriptions WHERE number < 0
+    `;
+    if (result[0].min) {
+      return parseInt(result[0].min);
     }
   }
 
   async getInscriptionTransfersETag(): Promise<string> {
     const result = await this.sql<{ max: number }[]>`SELECT MAX(id) FROM locations`;
     return result[0].max.toString();
-  }
-
-  async getInscriptionCurrentLocation(args: { output: string }): Promise<DbLocation | undefined> {
-    const result = await this.sql<DbLocation[]>`
-      SELECT ${this.sql(LOCATIONS_COLUMNS)}
-      FROM locations
-      WHERE output = ${args.output}
-      AND current = TRUE
-    `;
-    if (result.count === 0) {
-      return undefined;
-    }
-    return result[0];
   }
 
   async getInscriptionContent(
@@ -280,6 +331,7 @@ export class PgStore extends BasePgStore {
           i.content_type,
           i.content_length,
           i.fee AS genesis_fee,
+          i.curse_type,
           gen.block_height AS genesis_block_height,
           gen.block_hash AS genesis_block_hash,
           gen.tx_id AS genesis_tx_id,
@@ -505,15 +557,42 @@ export class PgStore extends BasePgStore {
         );
       } else {
         // Is this a sequential genesis insert?
-        const maxNumber = await this.getMaxInscriptionNumber();
-        if (maxNumber !== undefined && maxNumber + 1 !== args.inscription.number) {
-          logger.error(
-            {
-              block_height: args.location.block_height,
-              genesis_id: args.inscription.genesis_id,
-            },
-            `PgStore inserting out-of-order inscription genesis #${args.inscription.number}, current max is #${maxNumber}`
-          );
+        if (args.inscription.number < 0) {
+          // Is it a cursed inscription?
+          const maxCursed = await this.getMaxCursedInscriptionNumber();
+          if (maxCursed !== undefined && maxCursed - 1 !== args.inscription.number) {
+            logger.warn(
+              {
+                block_height: args.location.block_height,
+                genesis_id: args.inscription.genesis_id,
+              },
+              `PgStore inserting out-of-order cursed inscription genesis #${args.inscription.number}, current max is #${maxCursed}`
+            );
+          }
+        } else {
+          const maxNumber = await this.getMaxInscriptionNumber();
+          if (maxNumber !== undefined && maxNumber + 1 !== args.inscription.number) {
+            logger.warn(
+              {
+                block_height: args.location.block_height,
+                genesis_id: args.inscription.genesis_id,
+              },
+              `PgStore inserting out-of-order inscription genesis #${args.inscription.number}, current max is #${maxNumber}`
+            );
+          }
+          // Is this a blessed inscription in a duplicate sat?
+          const dup = await sql<{ id: number }[]>`
+            SELECT id FROM locations WHERE sat_ordinal = ${args.location.sat_ordinal}
+          `;
+          if (dup.count > 0) {
+            logger.error(
+              {
+                block_height: args.location.block_height,
+                genesis_id: args.inscription.genesis_id,
+              },
+              `PgStore inserting duplicate blessed inscription in satoshi ${args.location.sat_ordinal}`
+            );
+          }
         }
       }
 
@@ -537,6 +616,8 @@ export class PgStore extends BasePgStore {
         address: args.location.address,
         output: args.location.output,
         offset: args.location.offset,
+        prev_output: args.location.prev_output,
+        prev_offset: args.location.prev_offset,
         value: args.location.value,
         sat_ordinal: args.location.sat_ordinal,
         sat_rarity: args.location.sat_rarity,
@@ -601,6 +682,8 @@ export class PgStore extends BasePgStore {
         address: args.location.address,
         output: args.location.output,
         offset: args.location.offset,
+        prev_output: args.location.prev_output,
+        prev_offset: args.location.prev_offset,
         value: args.location.value,
         sat_ordinal: args.location.sat_ordinal,
         sat_rarity: args.location.sat_rarity,

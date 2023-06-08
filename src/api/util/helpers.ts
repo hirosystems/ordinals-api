@@ -44,6 +44,7 @@ export function parseDbInscriptions(
     content_type: i.content_type,
     content_length: parseInt(i.content_length),
     timestamp: i.timestamp.valueOf(),
+    curse_type: i.curse_type,
   }));
 }
 export function parseDbInscription(item: DbFullyLocatedInscriptionResult): InscriptionResponseType {
