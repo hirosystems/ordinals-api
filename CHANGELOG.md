@@ -1,3 +1,10 @@
+## [0.3.0](https://github.com/hirosystems/ordinals-api/compare/v0.2.0...v0.3.0) (2023-06-08)
+
+
+### Features
+
+* support cursed inscriptions ([#85](https://github.com/hirosystems/ordinals-api/issues/85)) ([fb93474](https://github.com/hirosystems/ordinals-api/commit/fb9347452bdf261faa600c4785f67d2c99860ce8))
+
 ## [0.2.0](https://github.com/hirosystems/ordinals-api/compare/v0.1.2...v0.2.0) (2023-05-19)
 
 
