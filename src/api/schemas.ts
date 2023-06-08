@@ -77,7 +77,6 @@ export const InscriptionIdsParam = Type.Array(InscriptionIdParam, {
 });
 
 export const InscriptionNumberParam = Type.Integer({
-  minimum: 0,
   title: 'Inscription Number',
   description: 'Inscription number',
   examples: ['10500'],
@@ -250,6 +249,7 @@ export const InscriptionResponse = Type.Object(
     content_type: Type.String({ examples: ['text/plain;charset=utf-8'] }),
     content_length: Type.Integer({ examples: [59] }),
     timestamp: Type.Integer({ examples: [1677733170000] }),
+    curse_type: Nullable(Type.String({ examples: ['p2wsh'] })),
   },
   { title: 'Inscription Response' }
 );
@@ -282,6 +282,7 @@ export const ApiStatusResponse = Type.Object(
     status: Type.String(),
     block_height: Type.Optional(Type.Integer()),
     max_inscription_number: Type.Optional(Type.Integer()),
+    max_cursed_inscription_number: Type.Optional(Type.Integer()),
   },
   { title: 'Api Status Response' }
 );

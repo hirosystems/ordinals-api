@@ -24,6 +24,23 @@ const InscriptionRevealedSchema = Type.Object({
 });
 export type InscriptionRevealed = Static<typeof InscriptionRevealedSchema>;
 
+const CursedInscriptionRevealedSchema = Type.Object({
+  content_bytes: Type.String(),
+  content_type: Type.String(),
+  content_length: Type.Integer(),
+  inscription_number: Type.Integer(),
+  inscription_fee: Type.Integer(),
+  inscription_id: Type.String(),
+  inscription_output_value: Type.Integer(),
+  inscriber_address: Type.String(),
+  ordinal_number: Type.Integer(),
+  ordinal_block_height: Type.Integer(),
+  ordinal_offset: Type.Integer(),
+  satpoint_post_inscription: Type.String(),
+  curse_type: Type.String(),
+});
+export type CursedInscriptionRevealed = Static<typeof CursedInscriptionRevealedSchema>;
+
 const InscriptionTransferredSchema = Type.Object({
   inscription_number: Type.Integer(),
   inscription_id: Type.String(),
@@ -36,6 +53,7 @@ const InscriptionTransferredSchema = Type.Object({
 export type InscriptionTransferred = Static<typeof InscriptionTransferredSchema>;
 
 const OrdinalOperation = Type.Object({
+  cursed_inscription_revealed: Type.Optional(CursedInscriptionRevealedSchema),
   inscription_revealed: Type.Optional(InscriptionRevealedSchema),
   inscription_transferred: Type.Optional(InscriptionTransferredSchema),
 });
