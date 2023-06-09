@@ -60,7 +60,7 @@ export class PgStore extends BasePgStore {
    */
   async updateInscriptions(payload: Payload): Promise<void> {
     const updatedInscriptionIds = new Set<number>();
-    const updatedBlockHeights = new Set<number>();
+    let updatedBlockHeightMin = Infinity;
     await this.sqlWriteTransaction(async sql => {
       for (const rollbackEvent of payload.rollback) {
         const event = rollbackEvent as BitcoinEvent;
@@ -91,7 +91,7 @@ export class PgStore extends BasePgStore {
             }
           }
         }
-        updatedBlockHeights.add(event.block_identifier.index);
+        updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
       }
       for (const applyEvent of payload.apply) {
         const event = applyEvent as BitcoinEvent;
@@ -204,11 +204,11 @@ export class PgStore extends BasePgStore {
             }
           }
         }
-        updatedBlockHeights.add(event.block_identifier.index);
+        updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
       }
     });
     await this.normalizeInscriptionLocations({ inscription_id: Array.from(updatedInscriptionIds) });
-    await this.normalizeInscriptionCount({ block_heights: Array.from(updatedBlockHeights) });
+    await this.normalizeInscriptionCount({ min_block_height: updatedBlockHeightMin });
     await this.refreshMaterializedView('chain_tip');
     await this.refreshMaterializedView('inscription_count');
     await this.refreshMaterializedView('mime_type_counts');
@@ -735,12 +735,11 @@ export class PgStore extends BasePgStore {
     return inscription_id;
   }
 
-  private async normalizeInscriptionCount(args: { block_heights: number[] }): Promise<void> {
-    const min_block_height = Math.min(...args.block_heights);
+  private async normalizeInscriptionCount(args: { min_block_height: number }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
       await sql`
         DELETE FROM inscriptions_per_block
-        WHERE block_height >= ${min_block_height}
+        WHERE block_height >= ${args.min_block_height}
       `;
       // - gets highest total for a block < min_block_height
       // - calculates new totals for all blocks >= min_block_height
@@ -749,7 +748,7 @@ export class PgStore extends BasePgStore {
       WITH previous AS (
         SELECT *
         FROM inscriptions_per_block
-        WHERE block_height < ${min_block_height}
+        WHERE block_height < ${args.min_block_height}
         ORDER BY block_height DESC
         LIMIT 1
       ), updated_blocks AS (
@@ -758,7 +757,7 @@ export class PgStore extends BasePgStore {
           COUNT(*) AS inscription_count,
           COALESCE((SELECT previous.inscription_count_total FROM previous), 0) + (SUM(COUNT(*)) OVER (ORDER BY block_height ASC)) AS inscription_count_total
         FROM locations
-        WHERE block_height >= ${min_block_height} AND genesis = true
+        WHERE block_height >= ${args.min_block_height} AND genesis = true
         GROUP BY block_height
         ORDER BY block_height ASC
       )
