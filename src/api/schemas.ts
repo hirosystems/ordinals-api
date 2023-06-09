@@ -31,6 +31,10 @@ export const OpenApiSchemaOptions: SwaggerOptions = {
         name: 'Satoshis',
         description: 'Endpoints to query Satoshi ordinal and rarity information',
       },
+      {
+        name: 'Statistics',
+        description: 'Endpoints to query statistics on ordinal inscription data',
+      },
     ],
   },
 };

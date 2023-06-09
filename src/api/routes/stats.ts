@@ -14,10 +14,10 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
     '/stats/inscriptions',
     {
       schema: {
-        operationId: 'getInscriptionCount',
+        operationId: 'getStatsInscriptionCount',
         summary: 'Inscription Count',
-        description: 'Retrieves count of inscriptions revealed per block',
-        tags: ['Inscriptions'],
+        description: 'Retrieves statistics on the number of inscriptions revealed per block',
+        tags: ['Statistics'],
         querystring: Type.Object({
           from_block_height: Type.Optional(BlockHeightParam),
           to_block_height: Type.Optional(BlockHeightParam),
