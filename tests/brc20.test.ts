@@ -31,6 +31,7 @@ describe('BRC-20', () => {
         content_length: content.length,
         content: `0x${content.toString('hex')}`,
         fee: '200',
+        curse_type: null,
       };
     };
 
@@ -52,6 +53,7 @@ describe('BRC-20', () => {
         content_length: content.length,
         content: `0x${content.toString('hex')}`,
         fee: '200',
+        curse_type: null,
       };
       expect(brc20FromInscription(insert)).toBeUndefined();
       insert.content_type = 'application/json';
@@ -75,6 +77,7 @@ describe('BRC-20', () => {
         content_length: content.length,
         content: `0x${content.toString('hex')}`,
         fee: '200',
+        curse_type: null,
       };
       expect(brc20FromInscription(insert)).toBeUndefined();
     });
@@ -805,7 +808,69 @@ describe('BRC-20', () => {
       expect(responseJson2.results).toStrictEqual([]);
     });
 
-    test.skip('numbers should not have more decimal digits than "dec" of ticker', async () => {});
+    test('numbers should not have more decimal digits than "dec" of ticker', async () => {
+      const address = 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td';
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 775617,
+            hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+          })
+          .transaction({
+            hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'deploy',
+                tick: 'PEPE',
+                max: '21000000',
+                dec: '1',
+              },
+              number: 5,
+              tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+              address: address,
+            })
+          )
+          .build()
+      );
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 775618,
+            hash: '0000000000000000000098d8f2663891d439f6bb7de230d4e9f6bcc2e85452bf',
+          })
+          .transaction({
+            hash: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'mint',
+                tick: 'PEPE',
+                amt: '250000.000', // Invalid decimal count
+              },
+              number: 6,
+              tx_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
+              address: address,
+            })
+          )
+          .build()
+      );
+
+      const response2 = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/balances?address=${address}`,
+      });
+      expect(response2.statusCode).toBe(200);
+      const responseJson2 = response2.json();
+      expect(responseJson2.total).toBe(0);
+      expect(responseJson2.results).toStrictEqual([]);
+    });
 
     test.skip('mint exceeds token supply', async () => {});
 

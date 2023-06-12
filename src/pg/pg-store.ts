@@ -891,8 +891,8 @@ export class PgStore extends BasePgStore {
   }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
       // Is the token deployed?
-      const deploy = await sql<{ id: string; limit?: string }[]>`
-        SELECT id, "limit" FROM brc20_deploys WHERE LOWER(ticker) = LOWER(${args.mint.tick})
+      const deploy = await sql<{ id: string; limit?: string; decimals: string }[]>`
+        SELECT id, "limit", decimals FROM brc20_deploys WHERE LOWER(ticker) = LOWER(${args.mint.tick})
       `;
       if (deploy.count === 0) {
         logger.debug(
@@ -913,6 +913,17 @@ export class PgStore extends BasePgStore {
         );
         return;
       }
+      // Is the number of decimals correct?
+      if (
+        args.mint.amt.includes('.') &&
+        args.mint.amt.split('.')[1].length > parseInt(token.decimals)
+      ) {
+        logger.debug(
+          `PgStore [BRC-20] ignoring mint for ${args.mint.tick} because amount ${args.mint.amt} exceeds token decimals at block ${args.location.block_height}`
+        );
+        return;
+      }
+
       const mint = {
         inscription_id: args.inscription_id,
         brc20_deploy_id: token.id,
