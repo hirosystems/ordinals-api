@@ -29,6 +29,8 @@ import {
   LOCATIONS_COLUMNS,
   DbBrc20EventInsert,
   BRC20_EVENTS_COLUMNS,
+  DbBrc20Deploy,
+  BRC20_DEPLOYS_COLUMNS,
 } from './types';
 
 type InscriptionIdentifier = { genesis_id: string } | { number: number };
@@ -884,6 +886,15 @@ export class PgStore extends BasePgStore {
     });
   }
 
+  private async getBrc20Deploy(args: { ticker: string }): Promise<DbBrc20Deploy | undefined> {
+    const deploy = await this.sql<DbBrc20Deploy[]>`
+      SELECT ${this.sql(BRC20_DEPLOYS_COLUMNS)}
+      FROM brc20_deploys
+      WHERE LOWER(ticker) = LOWER(${args.ticker})
+    `;
+    if (deploy.count) return deploy[0];
+  }
+
   private async insertBrc20Mint(args: {
     mint: Brc20Mint;
     inscription_id: number;
@@ -891,20 +902,13 @@ export class PgStore extends BasePgStore {
   }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
       // Is the token deployed?
-      const deploy = await sql<{ id: string; limit?: string; decimals: string }[]>`
-        SELECT id, "limit", decimals FROM brc20_deploys WHERE LOWER(ticker) = LOWER(${args.mint.tick})
-      `;
-      if (deploy.count === 0) {
+      const token = await this.getBrc20Deploy({ ticker: args.mint.tick });
+      if (!token) {
         logger.debug(
           `PgStore [BRC-20] ignoring mint for non-deployed token ${args.mint.tick} at block ${args.location.block_height}`
         );
         return;
       }
-      const token = deploy[0];
-
-      // TODO: The first mint to exceed the maximum supply will receive the fraction that is valid.
-      // (ex. 21,000,000 maximum supply, 20,999,242 circulating supply, and 1000 mint inscription =
-      // 758 balance state applied)
 
       // Is the mint amount within the allowed token limits?
       if (token.limit && BigNumber(args.mint.amt).isGreaterThan(token.limit)) {
@@ -923,6 +927,19 @@ export class PgStore extends BasePgStore {
         );
         return;
       }
+      // Does the mint amount exceed remaining supply?
+      const mintedSupply = await sql<{ minted: string }[]>`
+        SELECT COALESCE(SUM(amount), 0) AS minted FROM brc20_mints WHERE brc20_deploy_id = ${token.id}
+      `;
+      const minted = new BigNumber(mintedSupply[0].minted);
+      const availSupply = new BigNumber(token.max).minus(minted);
+      if (availSupply.isLessThanOrEqualTo(0)) {
+        logger.debug(
+          `PgStore [BRC-20] ignoring mint for ${args.mint.tick} because token has been completely minted at block ${args.location.block_height}`
+        );
+        return;
+      }
+      const mintAmt = BigNumber.min(availSupply, args.mint.amt);
 
       const mint = {
         inscription_id: args.inscription_id,
@@ -930,7 +947,7 @@ export class PgStore extends BasePgStore {
         block_height: args.location.block_height,
         tx_id: args.location.tx_id,
         address: args.location.address,
-        amount: args.mint.amt,
+        amount: args.mint.amt, // Original requested amount
       };
       await sql`INSERT INTO brc20_mints ${sql(mint)}`;
       logger.info(
@@ -943,7 +960,7 @@ export class PgStore extends BasePgStore {
         brc20_deploy_id: token.id,
         block_height: args.location.block_height,
         address: args.location.address,
-        avail_balance: args.mint.amt,
+        avail_balance: mintAmt, // Real minted balance
         trans_balance: 0,
       };
       await sql`

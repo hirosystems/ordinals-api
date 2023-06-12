@@ -872,7 +872,143 @@ describe('BRC-20', () => {
       expect(responseJson2.results).toStrictEqual([]);
     });
 
-    test.skip('mint exceeds token supply', async () => {});
+    test('mint exceeds token supply', async () => {
+      const address = 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td';
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 775617,
+            hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+          })
+          .transaction({
+            hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'deploy',
+                tick: 'PEPE',
+                max: '2500',
+                dec: '1',
+              },
+              number: 5,
+              tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+              address: address,
+            })
+          )
+          .build()
+      );
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 775618,
+            hash: '0000000000000000000098d8f2663891d439f6bb7de230d4e9f6bcc2e85452bf',
+          })
+          .transaction({
+            hash: '3b55f624eaa4f8de6c42e0c490176b67123a83094384f658611faf7bfb85dd0f',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'mint',
+                tick: 'PEPE',
+                amt: '1000',
+              },
+              number: 6,
+              tx_id: '3b55f624eaa4f8de6c42e0c490176b67123a83094384f658611faf7bfb85dd0f',
+              address: address,
+            })
+          )
+          .transaction({
+            hash: '7e09bda2cba34bca648cca6d79a074940d39b6137150d3a3edcf80c0e01419a5',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'mint',
+                tick: 'PEPE',
+                amt: '1000',
+              },
+              number: 6,
+              tx_id: '7e09bda2cba34bca648cca6d79a074940d39b6137150d3a3edcf80c0e01419a5',
+              address: address,
+            })
+          )
+          .transaction({
+            hash: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'mint',
+                tick: 'PEPE',
+                amt: '250000', // Exceeds supply
+              },
+              number: 8,
+              tx_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
+              address: address,
+            })
+          )
+          .build()
+      );
+
+      const response2 = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/balances?address=${address}`,
+      });
+      expect(response2.statusCode).toBe(200);
+      const responseJson2 = response2.json();
+      expect(responseJson2.total).toBe(1);
+      expect(responseJson2.results).toStrictEqual([
+        {
+          available_balance: '2500', // Max capacity
+          overall_balance: '2500',
+          ticker: 'PEPE',
+          transferrable_balance: '0',
+        },
+      ]);
+
+      // No more mints allowed
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 775619,
+            hash: '000000000000000000001f14513d722146fddab04a1855665a5eca22df288c3c',
+          })
+          .transaction({
+            hash: 'bf7a3e1a0647ca88f6539119b2defaec302683704ea270b3302e709597643548',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'mint',
+                tick: 'PEPE',
+                amt: '1000',
+              },
+              number: 9,
+              tx_id: 'bf7a3e1a0647ca88f6539119b2defaec302683704ea270b3302e709597643548',
+              address: address,
+            })
+          )
+          .build()
+      );
+
+      const response3 = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/balances?address=${address}`,
+      });
+      expect(response3.statusCode).toBe(200);
+      const responseJson3 = response3.json();
+      expect(responseJson3).toStrictEqual(responseJson2);
+    });
 
     test.skip('mints in same block are applied in order', async () => {});
 

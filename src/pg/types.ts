@@ -231,6 +231,18 @@ export type DbBrc20DeployInsert = {
   limit: string | null;
 };
 
+export type DbBrc20Deploy = {
+  id: string;
+  inscription_id: number;
+  block_height: number;
+  tx_id: string;
+  address: string;
+  ticker: string;
+  max: string;
+  decimals: string;
+  limit?: string;
+};
+
 export type DbBrc20Token = {
   id: string;
   genesis_id: string;
@@ -258,6 +270,18 @@ export type DbBrc20EventInsert = {
   mint_id: string | null;
   transfer_id: string | null;
 };
+
+export const BRC20_DEPLOYS_COLUMNS = [
+  'id',
+  'inscription_id',
+  'block_height',
+  'tx_id',
+  'address',
+  'ticker',
+  'max',
+  'decimals',
+  'limit',
+];
 
 export const BRC20_EVENTS_COLUMNS = [
   'id',
