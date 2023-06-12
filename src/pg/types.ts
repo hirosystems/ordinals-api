@@ -29,6 +29,7 @@ export type DbFullyLocatedInscriptionResult = {
   content_type: string;
   content_length: string;
   timestamp: Date;
+  curse_type: string | null;
 };
 
 export type DbLocationInsert = {
@@ -39,6 +40,8 @@ export type DbLocationInsert = {
   address: string | null;
   output: string;
   offset: PgNumeric | null;
+  prev_output: string | null;
+  prev_offset: PgNumeric | null;
   value: PgNumeric | null;
   sat_ordinal: PgNumeric;
   sat_rarity: string;
@@ -55,6 +58,8 @@ export type DbLocation = {
   address: string | null;
   output: string;
   offset: string | null;
+  prev_output: string | null;
+  prev_offset: string | null;
   value: string | null;
   sat_ordinal: string;
   sat_rarity: string;
@@ -125,6 +130,7 @@ export type DbInscriptionInsert = {
   content_length: number;
   content: PgBytea;
   fee: PgNumeric;
+  curse_type: string | null;
 };
 
 export type DbInscription = {
@@ -151,6 +157,7 @@ export const INSCRIPTIONS_COLUMNS = [
   'content_type',
   'content_length',
   'fee',
+  'curse_type',
 ];
 
 export type DbJsonContent = {

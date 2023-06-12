@@ -54,14 +54,38 @@ describe('Status', () => {
         })
         .build()
     );
+    await db.updateInscriptions(
+      new TestChainhookPayloadBuilder()
+        .apply()
+        .block({ height: 791975 })
+        .transaction({ hash: 'a98d7055a77fa0b96cc31e30bb8bacf777382d1b67f1b7eca6f2014e961591c8' })
+        .cursedInscriptionRevealed({
+          content_bytes: '0x48656C6C6F',
+          content_type: 'text/plain;charset=utf-8',
+          content_length: 5,
+          inscription_number: -2,
+          inscription_fee: 2805,
+          inscription_id: 'a98d7055a77fa0b96cc31e30bb8bacf777382d1b67f1b7eca6f2014e961591c8i0',
+          inscription_output_value: 10000,
+          inscriber_address: 'bc1pk6y72s45lcaurfwxrjyg7cf9xa9ezzuc8f5hhhzhtvhe5fgygckq0t0m5f',
+          ordinal_number: 257418248345364,
+          ordinal_block_height: 650000,
+          ordinal_offset: 0,
+          satpoint_post_inscription:
+            'a98d7055a77fa0b96cc31e30bb8bacf777382d1b67f1b7eca6f2014e961591c8:0:0',
+          curse_type: 'p2wsh',
+        })
+        .build()
+    );
 
     const response = await fastify.inject({ method: 'GET', url: '/ordinals/v1/' });
     const json = response.json();
     expect(json).toStrictEqual({
       server_version: 'ordinals-api v0.0.1 (test:123456)',
       status: 'ready',
-      block_height: 775617,
+      block_height: 791975,
       max_inscription_number: 7,
+      max_cursed_inscription_number: -2,
     });
   });
 });
