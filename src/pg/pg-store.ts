@@ -37,6 +37,8 @@ import {
   BRC20_EVENTS_COLUMNS,
   DbBrc20Deploy,
   BRC20_DEPLOYS_COLUMNS,
+  BRC20_TRANSFERS_COLUMNS,
+  DbBrc20Transfer,
 } from './types';
 
 type InscriptionIdentifier = { genesis_id: string } | { number: number };
@@ -792,10 +794,31 @@ export class PgStore extends BasePgStore {
           sat_coinbase_height = EXCLUDED.sat_coinbase_height,
           timestamp = EXCLUDED.timestamp
       `;
+
+      // Is this a BRC-20 balance transfer? Check if we have a valid transfer inscription emitted by
+      // this address that hasn't been sent to another address before.
+      const brc20Transfer = await sql<DbBrc20Transfer[]>`
+        SELECT ${sql(BRC20_TRANSFERS_COLUMNS.map(c => `t.${c}`))}
+        FROM locations AS l
+        INNER JOIN brc20_transfers AS t ON t.inscription_id = l.inscription_id 
+        WHERE
+          l.inscription_id = ${inscription_id}
+          AND l.address = ${args.location.address}
+          AND l.genesis = TRUE
+          AND l.current = TRUE
+        LIMIT 1
+      `;
+      if (brc20Transfer.count > 0) {
+        await this.applyBrc20BalanceTransfer({
+          transfer: brc20Transfer[0],
+          location: args.location,
+        });
+      }
     });
     return inscription_id;
   }
 
+  // TODO: Roll back BRC20 transfers
   private async rollBackInscriptionGenesis(args: { genesis_id: string }): Promise<void> {
     // This will cascade into dependent tables.
     await this.sql`DELETE FROM inscriptions WHERE genesis_id = ${args.genesis_id}`;
@@ -1045,6 +1068,43 @@ export class PgStore extends BasePgStore {
       };
       await sql`
         INSERT INTO brc20_balances ${sql(values)}
+      `;
+    });
+  }
+
+  private async applyBrc20BalanceTransfer(args: {
+    transfer: DbBrc20Transfer;
+    location: DbLocationInsert;
+  }): Promise<void> {
+    await this.sqlWriteTransaction(async sql => {
+      // Reflect balance transfer
+      const amount = new BigNumber(args.transfer.amount);
+      const changes = [
+        {
+          inscription_id: args.transfer.inscription_id,
+          brc20_deploy_id: args.transfer.brc20_deploy_id,
+          block_height: args.location.block_height,
+          address: args.transfer.from_address,
+          avail_balance: 0,
+          trans_balance: amount.negated(),
+        },
+        {
+          inscription_id: args.transfer.inscription_id,
+          brc20_deploy_id: args.transfer.brc20_deploy_id,
+          block_height: args.location.block_height,
+          address: args.location.address,
+          avail_balance: amount,
+          trans_balance: 0,
+        },
+      ];
+      await sql`
+        INSERT INTO brc20_balances ${sql(changes)}
+      `;
+      // Keep the new valid owner of the transfer inscription
+      await sql`
+        UPDATE brc20_transfers
+        SET to_address = ${args.location.address}
+        WHERE id = ${args.transfer.id}
       `;
     });
   }
