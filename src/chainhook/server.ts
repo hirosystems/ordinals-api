@@ -44,29 +44,31 @@ async function registerChainhookPredicates(this: FastifyInstance) {
   );
 
   const register = async (name: string, uuid: string, blockHeight: number) => {
-    await request(`${CHAINHOOK_BASE_PATH}/v1/chainhooks`, {
-      method: 'POST',
-      body: JSON.stringify({
-        uuid: uuid,
-        name: name,
-        version: 1,
-        chain: 'bitcoin',
-        networks: {
-          mainnet: {
-            start_block: blockHeight,
-            if_this: {
-              scope: 'ordinals_protocol',
-              operation: name,
-            },
-            then_that: {
-              http_post: {
-                url: `http://${ENV.EXTERNAL_HOSTNAME}/chainhook/${name}`,
-                authorization_header: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}`,
-              },
+    const body = {
+      uuid: uuid,
+      name: name,
+      version: 1,
+      chain: 'bitcoin',
+      networks: {
+        mainnet: {
+          start_block: blockHeight,
+          if_this: {
+            scope: 'ordinals_protocol',
+            operation: name,
+          },
+          then_that: {
+            http_post: {
+              url: `http://${ENV.EXTERNAL_HOSTNAME}/chainhook/${name}`,
+              authorization_header: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}`,
             },
           },
         },
-      }),
+      },
+    };
+    logger.info({ predicate: body }, `EventServer registering '${name}' predicate (${uuid})`);
+    await request(`${CHAINHOOK_BASE_PATH}/v1/chainhooks`, {
+      method: 'POST',
+      body: JSON.stringify(body),
       headers: { 'content-type': 'application/json' },
       throwOnError: true,
     });
