@@ -31,7 +31,6 @@ export function up(pgm: MigrationBuilder): void {
     },
     to_address: {
       type: 'text',
-      notNull: true,
     },
     amount: {
       type: 'numeric',

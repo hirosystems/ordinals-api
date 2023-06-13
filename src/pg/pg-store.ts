@@ -5,7 +5,13 @@ import { OrdinalSatoshi, SatoshiRarity } from '../api/util/ordinal-satoshi';
 import { ChainhookPayload } from '../chainhook/schemas';
 import { ENV } from '../env';
 import { logger } from '../logger';
-import { Brc20Deploy, Brc20Mint, brc20FromInscription, getIndexResultCountType } from './helpers';
+import {
+  Brc20Deploy,
+  Brc20Mint,
+  Brc20Transfer,
+  brc20FromInscription,
+  getIndexResultCountType,
+} from './helpers';
 import { runMigrations } from './migrations';
 import { connectPostgres } from './postgres-tools';
 import { BasePgStore } from './postgres-tools/base-pg-store';
@@ -727,6 +733,13 @@ export class PgStore extends BasePgStore {
           case 'mint':
             await this.insertBrc20Mint({ mint: brc20, inscription_id, location: args.location });
             break;
+          case 'transfer':
+            await this.insertBrc20Transfer({
+              transfer: brc20,
+              inscription_id,
+              location: args.location,
+            });
+            break;
         }
       }
     });
@@ -962,6 +975,51 @@ export class PgStore extends BasePgStore {
         address: args.location.address,
         avail_balance: mintAmt, // Real minted balance
         trans_balance: 0,
+      };
+      await sql`
+        INSERT INTO brc20_balances ${sql(balance)}
+      `;
+    });
+  }
+
+  private async insertBrc20Transfer(args: {
+    transfer: Brc20Transfer;
+    inscription_id: number;
+    location: DbLocationInsert;
+  }): Promise<void> {
+    await this.sqlWriteTransaction(async sql => {
+      // Is the token deployed?
+      const token = await this.getBrc20Deploy({ ticker: args.transfer.tick });
+      if (!token) {
+        logger.debug(
+          `PgStore [BRC-20] ignoring transfer for non-deployed token ${args.transfer.tick} at block ${args.location.block_height}`
+        );
+        return;
+      }
+
+      const transfer = {
+        inscription_id: args.inscription_id,
+        brc20_deploy_id: token.id,
+        block_height: args.location.block_height,
+        tx_id: args.location.tx_id,
+        from_address: args.location.address,
+        to_address: null, // We don't know the receiver address yet
+        amount: args.transfer.amt,
+      };
+      await sql`INSERT INTO brc20_transfers ${sql(transfer)}`;
+      logger.info(
+        `PgStore [BRC-20] inserted transfer for ${args.transfer.tick} (${args.transfer.amt}) at block ${args.location.block_height}`
+      );
+
+      // Insert balance change for minting address
+      const transAmt = new BigNumber(args.transfer.amt);
+      const balance = {
+        inscription_id: args.inscription_id,
+        brc20_deploy_id: token.id,
+        block_height: args.location.block_height,
+        address: args.location.address,
+        avail_balance: transAmt.negated(),
+        trans_balance: transAmt,
       };
       await sql`
         INSERT INTO brc20_balances ${sql(balance)}
