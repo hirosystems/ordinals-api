@@ -988,11 +988,34 @@ export class PgStore extends BasePgStore {
     location: DbLocationInsert;
   }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
+      // Is the destination a valid address?
+      if (!args.location.address) {
+        logger.debug(
+          `PgStore [BRC-20] ignoring transfer spent as fee for ${args.transfer.tick} at block ${args.location.block_height}`
+        );
+        return;
+      }
       // Is the token deployed?
       const token = await this.getBrc20Deploy({ ticker: args.transfer.tick });
       if (!token) {
         logger.debug(
           `PgStore [BRC-20] ignoring transfer for non-deployed token ${args.transfer.tick} at block ${args.location.block_height}`
+        );
+        return;
+      }
+      // Get balance for this address and this token
+      const balanceResult = await this.getBrc20Balances({
+        address: args.location.address,
+        ticker: [args.transfer.tick],
+        limit: 1,
+        offset: 0,
+      });
+      // Do we have enough available balance to do this transfer?
+      const transAmt = new BigNumber(args.transfer.amt);
+      const available = new BigNumber(balanceResult.results[0]?.avail_balance ?? 0);
+      if (transAmt.gt(available)) {
+        logger.debug(
+          `PgStore [BRC-20] ignoring transfer for token ${args.transfer.tick} due to unavailable balance at block ${args.location.block_height}`
         );
         return;
       }
@@ -1012,8 +1035,7 @@ export class PgStore extends BasePgStore {
       );
 
       // Insert balance change for minting address
-      const transAmt = new BigNumber(args.transfer.amt);
-      const balance = {
+      const values = {
         inscription_id: args.inscription_id,
         brc20_deploy_id: token.id,
         block_height: args.location.block_height,
@@ -1022,7 +1044,7 @@ export class PgStore extends BasePgStore {
         trans_balance: transAmt,
       };
       await sql`
-        INSERT INTO brc20_balances ${sql(balance)}
+        INSERT INTO brc20_balances ${sql(values)}
       `;
     });
   }
