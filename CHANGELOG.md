@@ -1,3 +1,10 @@
+## [0.3.1](https://github.com/hirosystems/ordinals-api/compare/v0.3.0...v0.3.1) (2023-06-14)
+
+
+### Bug Fixes
+
+* automatic predicate registration ([#97](https://github.com/hirosystems/ordinals-api/issues/97)) ([73157f1](https://github.com/hirosystems/ordinals-api/commit/73157f13e8ef34b9df69701ac6e251f652f9ffbf))
+
 ## [0.3.0](https://github.com/hirosystems/ordinals-api/compare/v0.2.0...v0.3.0) (2023-06-08)
 
 
