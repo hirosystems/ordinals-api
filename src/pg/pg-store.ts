@@ -217,8 +217,10 @@ export class PgStore extends BasePgStore {
           }
         }
       }
+      await this.normalizeInscriptionLocations({
+        inscription_id: Array.from(updatedInscriptionIds),
+      });
     });
-    await this.normalizeInscriptionLocations({ inscription_id: Array.from(updatedInscriptionIds) });
     await this.refreshMaterializedView('chain_tip');
     await this.refreshMaterializedView('inscription_count');
     await this.refreshMaterializedView('mime_type_counts');
@@ -796,23 +798,27 @@ export class PgStore extends BasePgStore {
       `;
 
       // Is this a BRC-20 balance transfer? Check if we have a valid transfer inscription emitted by
-      // this address that hasn't been sent to another address before.
+      // this address that hasn't been sent to another address before. Use `LIMIT 3` as a quick way
+      // of checking if we have just inserted the first transfer for this inscription (genesis +
+      // transfer).
       const brc20Transfer = await sql<DbBrc20Transfer[]>`
         SELECT ${sql(BRC20_TRANSFERS_COLUMNS.map(c => `t.${c}`))}
         FROM locations AS l
         INNER JOIN brc20_transfers AS t ON t.inscription_id = l.inscription_id 
-        WHERE
-          l.inscription_id = ${inscription_id}
-          AND l.address = ${args.location.address}
-          AND l.genesis = TRUE
-          AND l.current = TRUE
-        LIMIT 1
+        WHERE l.inscription_id = ${inscription_id}
+        LIMIT 3
       `;
-      if (brc20Transfer.count > 0) {
+      if (brc20Transfer.count === 2) {
+        // This is the first time this BRC-20 transfer is being used. Apply the balance change.
         await this.applyBrc20BalanceTransfer({
           transfer: brc20Transfer[0],
           location: args.location,
         });
+      } else {
+        logger.debug(
+          { genesis_id: args.location.genesis_id, block_height: args.location.block_height },
+          `PgStore [BRC-20] ignoring balance change for transfer that was already used`
+        );
       }
     });
     return inscription_id;
