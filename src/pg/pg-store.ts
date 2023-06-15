@@ -722,30 +722,12 @@ export class PgStore extends BasePgStore {
           timestamp = EXCLUDED.timestamp
       `;
 
-      // Is this a BRC-20 operation?
-      // TODO: No valid action can occur via the spending of an ordinal via transaction fee.
-      const brc20 = brc20FromInscription(args.inscription);
-      if (brc20) {
-        switch (brc20.op) {
-          case 'deploy':
-            await this.insertBrc20Deploy({
-              deploy: brc20,
-              inscription_id,
-              location: args.location,
-            });
-            break;
-          case 'mint':
-            await this.insertBrc20Mint({ mint: brc20, inscription_id, location: args.location });
-            break;
-          case 'transfer':
-            await this.insertBrc20Transfer({
-              transfer: brc20,
-              inscription_id,
-              location: args.location,
-            });
-            break;
-        }
-      }
+      // Insert BRC-20 op genesis (if any).
+      await this.insertBrc20OperationGenesis({
+        inscription_id,
+        inscription: args.inscription,
+        location: args.location,
+      });
     });
     return inscription_id;
   }
@@ -797,29 +779,8 @@ export class PgStore extends BasePgStore {
           timestamp = EXCLUDED.timestamp
       `;
 
-      // Is this a BRC-20 balance transfer? Check if we have a valid transfer inscription emitted by
-      // this address that hasn't been sent to another address before. Use `LIMIT 3` as a quick way
-      // of checking if we have just inserted the first transfer for this inscription (genesis +
-      // transfer).
-      const brc20Transfer = await sql<DbBrc20Transfer[]>`
-        SELECT ${sql(BRC20_TRANSFERS_COLUMNS.map(c => `t.${c}`))}
-        FROM locations AS l
-        INNER JOIN brc20_transfers AS t ON t.inscription_id = l.inscription_id 
-        WHERE l.inscription_id = ${inscription_id}
-        LIMIT 3
-      `;
-      if (brc20Transfer.count === 2) {
-        // This is the first time this BRC-20 transfer is being used. Apply the balance change.
-        await this.applyBrc20BalanceTransfer({
-          transfer: brc20Transfer[0],
-          location: args.location,
-        });
-      } else {
-        logger.debug(
-          { genesis_id: args.location.genesis_id, block_height: args.location.block_height },
-          `PgStore [BRC-20] ignoring balance change for transfer that was already used`
-        );
-      }
+      // Insert BRC-20 balance transfers (if any).
+      await this.insertBrc20OperationTransfer({ inscription_id, location: args.location });
     });
     return inscription_id;
   }
@@ -876,6 +837,78 @@ export class PgStore extends BasePgStore {
     });
   }
 
+  private async insertBrc20OperationGenesis(args: {
+    inscription_id: number;
+    inscription: DbInscriptionInsert;
+    location: DbLocationInsert;
+  }): Promise<void> {
+    // Is this a BRC-20 operation? Is it being inscribed to a valid address?
+    const brc20 = brc20FromInscription(args.inscription);
+    if (brc20) {
+      if (args.location.address) {
+        switch (brc20.op) {
+          case 'deploy':
+            await this.insertBrc20Deploy({
+              deploy: brc20,
+              inscription_id: args.inscription_id,
+              location: args.location,
+            });
+            break;
+          case 'mint':
+            await this.insertBrc20Mint({
+              mint: brc20,
+              inscription_id: args.inscription_id,
+              location: args.location,
+            });
+            break;
+          case 'transfer':
+            await this.insertBrc20Transfer({
+              transfer: brc20,
+              inscription_id: args.inscription_id,
+              location: args.location,
+            });
+            break;
+        }
+      } else {
+        logger.debug(
+          { block_height: args.location.block_height, tick: brc20.tick },
+          `PgStore [BRC-20] ignoring operation spent as fee`
+        );
+      }
+    }
+  }
+
+  private async insertBrc20OperationTransfer(args: {
+    inscription_id: number;
+    location: DbLocationInsert;
+  }): Promise<void> {
+    // Is this a BRC-20 balance transfer? Check if we have a valid transfer inscription emitted by
+    // this address that hasn't been sent to another address before. Use `LIMIT 3` as a quick way
+    // of checking if we have just inserted the first transfer for this inscription (genesis +
+    // transfer).
+    await this.sqlWriteTransaction(async sql => {
+      const brc20Transfer = await sql<DbBrc20Transfer[]>`
+        SELECT ${sql(BRC20_TRANSFERS_COLUMNS.map(c => `t.${c}`))}
+        FROM locations AS l
+        INNER JOIN brc20_transfers AS t ON t.inscription_id = l.inscription_id 
+        WHERE l.inscription_id = ${args.inscription_id}
+        LIMIT 3
+      `;
+      if (brc20Transfer.count === 2) {
+        // This is the first time this BRC-20 transfer is being used. Apply the balance change.
+        await this.applyBrc20BalanceTransfer({
+          transfer: brc20Transfer[0],
+          location: args.location,
+        });
+      } else {
+        logger.debug(
+          { genesis_id: args.location.genesis_id, block_height: args.location.block_height },
+          `PgStore [BRC-20] ignoring balance change for transfer that was already used`
+        );
+      }
+    });
+  }
+
   private async insertBrc20Deploy(args: {
     deploy: Brc20Deploy;
     inscription_id: number;
@@ -899,7 +932,6 @@ export class PgStore extends BasePgStore {
         limit: args.deploy.lim ?? null,
         decimals: args.deploy.dec ?? '18',
       };
-      // TODO: Maximum supply cannot exceed uint64_max
       const insertion = await sql<{ id: string }[]>`
         INSERT INTO brc20_deploys ${sql(deploy)}
         ON CONFLICT (LOWER(ticker)) DO NOTHING
