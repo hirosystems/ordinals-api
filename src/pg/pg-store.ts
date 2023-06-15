@@ -27,11 +27,9 @@ import {
   DbInscriptionIndexResultCountType,
   DbInscriptionInsert,
   DbInscriptionLocationChange,
-  DbJsonContent,
   DbLocation,
   DbLocationInsert,
   DbPaginatedResult,
-  JSON_CONTENTS_COLUMNS,
   LOCATIONS_COLUMNS,
   DbBrc20EventInsert,
   BRC20_EVENTS_COLUMNS,
@@ -524,24 +522,6 @@ export class PgStore extends BasePgStore {
       total: results[0]?.total ?? 0,
       results: results ?? [],
     };
-  }
-
-  async getJsonContent(args: InscriptionIdentifier): Promise<DbJsonContent | undefined> {
-    const results = await this.sql<DbJsonContent[]>`
-      SELECT ${this.sql(JSON_CONTENTS_COLUMNS.map(c => `j.${c}`))}
-      FROM json_contents AS j
-      INNER JOIN inscriptions AS i ON j.inscription_id = i.id
-      WHERE
-        ${
-          'number' in args
-            ? this.sql`i.number = ${args.number}`
-            : this.sql`i.genesis_id = ${args.genesis_id}`
-        }
-      LIMIT 1
-    `;
-    if (results.count === 1) {
-      return results[0];
-    }
   }
 
   async getBrc20Tokens(args: { ticker?: string[] }): Promise<DbPaginatedResult<DbBrc20Token>> {

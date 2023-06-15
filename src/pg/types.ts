@@ -160,22 +160,6 @@ export const INSCRIPTIONS_COLUMNS = [
   'curse_type',
 ];
 
-export type DbJsonContent = {
-  id: string;
-  inscription_id: string;
-  p?: string;
-  op?: string;
-  content: OpJson;
-};
-
-export type DbJsonContentInsert = {
-  p: string | null;
-  op: string | null;
-  content: PgJsonb;
-};
-
-export const JSON_CONTENTS_COLUMNS = ['id', 'inscription_id', 'p', 'op', 'content'];
-
 export type DbInscriptionIndexPaging = {
   limit: number;
   offset: number;
