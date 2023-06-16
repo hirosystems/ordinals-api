@@ -51,15 +51,17 @@ export const Brc20Routes: FastifyPluginCallback<
   );
 
   fastify.get(
-    '/brc-20/balances',
+    '/brc-20/balances/:address',
     {
       schema: {
         operationId: 'getBrc20Balances',
         summary: 'BRC-20 Balances',
         description: 'Retrieves BRC-20 token balances for a Bitcoin address',
         tags: ['BRC-20'],
-        querystring: Type.Object({
+        params: Type.Object({
           address: AddressParam,
+        }),
+        querystring: Type.Object({
           ticker: Type.Optional(Brc20TickersParam),
           // Pagination
           offset: Type.Optional(OffsetParam),
@@ -76,7 +78,7 @@ export const Brc20Routes: FastifyPluginCallback<
       const balances = await fastify.db.getBrc20Balances({
         limit,
         offset,
-        address: request.query.address,
+        address: request.params.address,
         ticker: request.query.ticker,
       });
       await reply.send({

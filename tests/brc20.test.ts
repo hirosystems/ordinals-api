@@ -657,7 +657,7 @@ describe('BRC-20', () => {
 
       const response1 = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/balances?address=${address}`,
+        url: `/ordinals/brc-20/balances/${address}`,
       });
       expect(response1.statusCode).toBe(200);
       const responseJson1 = response1.json();
@@ -700,7 +700,7 @@ describe('BRC-20', () => {
 
       const response2 = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/balances?address=${address}`,
+        url: `/ordinals/brc-20/balances/${address}`,
       });
       expect(response2.statusCode).toBe(200);
       const responseJson2 = response2.json();
@@ -796,7 +796,7 @@ describe('BRC-20', () => {
 
       const response2 = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/balances?address=${address}`,
+        url: `/ordinals/brc-20/balances/${address}`,
       });
       expect(response2.statusCode).toBe(200);
       const responseJson2 = response2.json();
@@ -860,7 +860,7 @@ describe('BRC-20', () => {
 
       const response2 = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/balances?address=${address}`,
+        url: `/ordinals/brc-20/balances/${address}`,
       });
       expect(response2.statusCode).toBe(200);
       const responseJson2 = response2.json();
@@ -956,7 +956,7 @@ describe('BRC-20', () => {
 
       const response2 = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/balances?address=${address}`,
+        url: `/ordinals/brc-20/balances/${address}`,
       });
       expect(response2.statusCode).toBe(200);
       const responseJson2 = response2.json();
@@ -999,7 +999,7 @@ describe('BRC-20', () => {
 
       const response3 = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/balances?address=${address}`,
+        url: `/ordinals/brc-20/balances/${address}`,
       });
       expect(response3.statusCode).toBe(200);
       const responseJson3 = response3.json();
@@ -1036,7 +1036,7 @@ describe('BRC-20', () => {
 
       const response2 = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/balances?address=${address}`,
+        url: `/ordinals/brc-20/balances/${address}`,
       });
       expect(response2.statusCode).toBe(200);
       const responseJson2 = response2.json();
@@ -1101,7 +1101,7 @@ describe('BRC-20', () => {
 
       const response2 = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/balances?address=${address}`,
+        url: `/ordinals/brc-20/balances/${address}`,
       });
       expect(response2.statusCode).toBe(200);
       const responseJson2 = response2.json();
@@ -1195,7 +1195,7 @@ describe('BRC-20', () => {
 
       const response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/balances?address=${address}`,
+        url: `/ordinals/brc-20/balances/${address}`,
       });
       expect(response.statusCode).toBe(200);
       const json = response.json();
@@ -1241,7 +1241,7 @@ describe('BRC-20', () => {
 
       const response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/balances?address=${address}`,
+        url: `/ordinals/brc-20/balances/${address}`,
       });
       expect(response.statusCode).toBe(200);
       const json = response.json();
@@ -1303,7 +1303,7 @@ describe('BRC-20', () => {
 
       const response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/balances?address=${address}`,
+        url: `/ordinals/brc-20/balances/${address}`,
       });
       expect(response.statusCode).toBe(200);
       const json = response.json();
@@ -1373,7 +1373,7 @@ describe('BRC-20', () => {
 
       const response1 = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/balances?address=${address}`,
+        url: `/ordinals/brc-20/balances/${address}`,
       });
       expect(response1.statusCode).toBe(200);
       const json1 = response1.json();
@@ -1389,7 +1389,7 @@ describe('BRC-20', () => {
 
       const response2 = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/balances?address=${address2}`,
+        url: `/ordinals/brc-20/balances/${address2}`,
       });
       expect(response2.statusCode).toBe(200);
       const json2 = response2.json();
@@ -1485,7 +1485,7 @@ describe('BRC-20', () => {
       // Balances only reflect the first transfer.
       const response1 = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/balances?address=${address}`,
+        url: `/ordinals/brc-20/balances/${address}`,
       });
       expect(response1.statusCode).toBe(200);
       const json1 = response1.json();
@@ -1501,7 +1501,7 @@ describe('BRC-20', () => {
 
       const response2 = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/balances?address=${address2}`,
+        url: `/ordinals/brc-20/balances/${address2}`,
       });
       expect(response2.statusCode).toBe(200);
       const json2 = response2.json();
