@@ -37,6 +37,7 @@ import {
   BRC20_DEPLOYS_COLUMNS,
   BRC20_TRANSFERS_COLUMNS,
   DbBrc20Transfer,
+  DbBrc20Supply,
 } from './types';
 
 type InscriptionIdentifier = { genesis_id: string } | { number: number };
@@ -591,6 +592,35 @@ export class PgStore extends BasePgStore {
       FROM events
       INNER JOIN
     `;
+  }
+
+  async getBrc20TokenSupply(args: { ticker: string }): Promise<DbBrc20Supply | undefined> {
+    return await this.sqlTransaction(async sql => {
+      const deploy = await this.getBrc20Deploy(args);
+      if (!deploy) {
+        return;
+      }
+      const minted = await sql<{ total: string }[]>`
+        SELECT SUM(avail_balance + trans_balance) AS total
+        FROM brc20_balances
+        WHERE brc20_deploy_id = ${deploy.id}
+        GROUP BY ticker
+      `;
+      const holders = await sql<{ count: string }[]>`
+        SELECT SUM(avail_balance + trans_balance) AS balance, COUNT(*) OVER() AS count
+        FROM brc20_balances
+        WHERE brc20_deploy_id = ${deploy.id} AND balance > 0
+        GROUP BY address
+      `;
+      const supply = await sql<{ max: string }[]>`
+        SELECT max FROM brc20_deploys WHERE id = ${deploy.id}
+      `;
+      return {
+        max_supply: supply[0].max,
+        minted_supply: minted[0].total,
+        holders: holders[0].count,
+      };
+    });
   }
 
   async refreshMaterializedView(viewName: string) {

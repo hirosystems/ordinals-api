@@ -363,6 +363,22 @@ export const Brc20TokenResponseSchema = Type.Object(
 );
 export type Brc20TokenResponse = Static<typeof Brc20TokenResponseSchema>;
 
+export const Brc20SupplySchema = Type.Object({
+  max_supply: Type.String({ examples: ['21000000'] }),
+  minted_supply: Type.String({ examples: ['1000000'] }),
+  holders: Type.Integer({ examples: [240] }),
+});
+export type Brc20Supply = Static<typeof Brc20SupplySchema>;
+
+export const Brc20TokenDetailsSchema = Type.Object(
+  {
+    token: Brc20TokenResponseSchema,
+    supply: Brc20SupplySchema,
+  },
+  { title: 'BRC-20 Token Details Response' }
+);
+export type Brc20TokenDetails = Static<typeof Brc20TokenDetailsSchema>;
+
 export const NotFoundResponse = Type.Object(
   {
     error: Type.Literal('Not found'),

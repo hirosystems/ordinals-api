@@ -1,5 +1,6 @@
 import {
   DbBrc20Balance,
+  DbBrc20Supply,
   DbBrc20Token,
   DbFullyLocatedInscriptionResult,
   DbInscriptionLocationChange,
@@ -8,6 +9,7 @@ import {
 import {
   BlockInscriptionTransfer,
   Brc20BalanceResponse,
+  Brc20Supply,
   Brc20TokenResponse,
   InscriptionLocationResponse,
   InscriptionResponseType,
@@ -112,6 +114,14 @@ export function parseBrc20Tokens(items: DbBrc20Token[]): Brc20TokenResponse[] {
     mint_limit: i.limit ?? null,
     decimals: i.decimals,
   }));
+}
+
+export function parseBrc20Supply(item: DbBrc20Supply): Brc20Supply {
+  return {
+    max_supply: item.max_supply,
+    minted_supply: item.minted_supply,
+    holders: parseInt(item.holders),
+  };
 }
 
 export function parseBrc20Balances(items: DbBrc20Balance[]): Brc20BalanceResponse[] {

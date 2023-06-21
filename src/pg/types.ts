@@ -251,6 +251,12 @@ export type DbBrc20Token = {
   decimals: number;
 };
 
+export type DbBrc20Supply = {
+  max_supply: string;
+  minted_supply: string;
+  holders: string;
+};
+
 export type DbBrc20Balance = {
   ticker: string;
   avail_balance: string;
