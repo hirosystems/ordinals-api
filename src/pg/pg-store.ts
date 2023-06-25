@@ -38,6 +38,7 @@ import {
   BRC20_TRANSFERS_COLUMNS,
   DbBrc20Transfer,
   DbBrc20Supply,
+  DbBrc20Holder,
 } from './types';
 
 type InscriptionIdentifier = { genesis_id: string } | { number: number };
@@ -525,7 +526,9 @@ export class PgStore extends BasePgStore {
     };
   }
 
-  async getBrc20Tokens(args: { ticker?: string[] }): Promise<DbPaginatedResult<DbBrc20Token>> {
+  async getBrc20Tokens(
+    args: { ticker?: string[] } & DbInscriptionIndexPaging
+  ): Promise<DbPaginatedResult<DbBrc20Token>> {
     const lowerTickers = args.ticker ? args.ticker.map(t => t.toLowerCase()) : undefined;
     const results = await this.sql<(DbBrc20Token & { total: number })[]>`
       SELECT
@@ -534,6 +537,8 @@ export class PgStore extends BasePgStore {
       FROM brc20_deploys AS d
       INNER JOIN inscriptions AS i ON i.id = d.inscription_id
       ${lowerTickers ? this.sql`WHERE LOWER(d.ticker) IN ${this.sql(lowerTickers)}` : this.sql``}
+      OFFSET ${args.offset}
+      LIMIT ${args.limit}
     `;
     return {
       total: results[0]?.total ?? 0,
@@ -604,13 +609,18 @@ export class PgStore extends BasePgStore {
         SELECT SUM(avail_balance + trans_balance) AS total
         FROM brc20_balances
         WHERE brc20_deploy_id = ${deploy.id}
-        GROUP BY ticker
+        GROUP BY brc20_deploy_id
       `;
       const holders = await sql<{ count: string }[]>`
-        SELECT SUM(avail_balance + trans_balance) AS balance, COUNT(*) OVER() AS count
-        FROM brc20_balances
-        WHERE brc20_deploy_id = ${deploy.id} AND balance > 0
-        GROUP BY address
+        WITH historical_holders AS (
+          SELECT SUM(avail_balance + trans_balance) AS balance
+          FROM brc20_balances
+          WHERE brc20_deploy_id = ${deploy.id}
+          GROUP BY address
+        )
+        SELECT COUNT(*) AS count
+        FROM historical_holders
+        WHERE balance > 0
       `;
       const supply = await sql<{ max: string }[]>`
         SELECT max FROM brc20_deploys WHERE id = ${deploy.id}
@@ -619,6 +629,33 @@ export class PgStore extends BasePgStore {
         max_supply: supply[0].max,
         minted_supply: minted[0].total,
         holders: holders[0].count,
+      };
+    });
+  }
+
+  async getBrc20TokenHolders(
+    args: {
+      ticker: string;
+    } & DbInscriptionIndexPaging
+  ): Promise<DbPaginatedResult<DbBrc20Holder> | undefined> {
+    return await this.sqlTransaction(async sql => {
+      const deploy = await this.getBrc20Deploy(args);
+      if (!deploy) {
+        return;
+      }
+      const results = await this.sql<(DbBrc20Holder & { total: number })[]>`
+        SELECT
+          address, SUM(avail_balance + trans_balance) AS total_balance, COUNT(*) OVER() AS total
+        FROM brc20_balances
+        WHERE brc20_deploy_id = ${deploy.id}
+        GROUP BY address
+        ORDER BY total_balance DESC
+        LIMIT ${args.limit}
+        OFFSET ${args.offset}
+      `;
+      return {
+        total: results[0]?.total ?? 0,
+        results: results ?? [],
       };
     });
   }

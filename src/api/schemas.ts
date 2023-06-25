@@ -370,6 +370,14 @@ export const Brc20SupplySchema = Type.Object({
 });
 export type Brc20Supply = Static<typeof Brc20SupplySchema>;
 
+export const Brc20HolderResponseSchema = Type.Object({
+  address: Type.String({
+    examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
+  }),
+  overall_balance: Type.String({ examples: ['2000.00000'] }),
+});
+export type Brc20HolderResponse = Static<typeof Brc20HolderResponseSchema>;
+
 export const Brc20TokenDetailsSchema = Type.Object(
   {
     token: Brc20TokenResponseSchema,

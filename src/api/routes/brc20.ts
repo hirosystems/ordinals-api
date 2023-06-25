@@ -5,6 +5,7 @@ import { Server } from 'http';
 import {
   AddressParam,
   Brc20BalanceResponseSchema,
+  Brc20HolderResponseSchema,
   Brc20TickerParam,
   Brc20TickersParam,
   Brc20TokenDetailsSchema,
@@ -17,16 +18,20 @@ import {
 import {
   DEFAULT_API_LIMIT,
   parseBrc20Balances,
+  parseBrc20Holders,
   parseBrc20Supply,
   parseBrc20Tokens,
 } from '../util/helpers';
 import { Value } from '@sinclair/typebox/value';
+import { handleInscriptionTransfersCache } from '../util/cache';
 
 export const Brc20Routes: FastifyPluginCallback<
   Record<never, never>,
   Server,
   TypeBoxTypeProvider
 > = (fastify, options, done) => {
+  fastify.addHook('preHandler', handleInscriptionTransfersCache);
+
   fastify.get(
     '/brc-20/tokens',
     {
@@ -49,7 +54,11 @@ export const Brc20Routes: FastifyPluginCallback<
     async (request, reply) => {
       const limit = request.query.limit ?? DEFAULT_API_LIMIT;
       const offset = request.query.offset ?? 0;
-      const response = await fastify.db.getBrc20Tokens({ ticker: request.query.ticker });
+      const response = await fastify.db.getBrc20Tokens({
+        limit,
+        offset,
+        ticker: request.query.ticker,
+      });
       await reply.send({
         limit,
         offset,
@@ -78,7 +87,11 @@ export const Brc20Routes: FastifyPluginCallback<
     },
     async (request, reply) => {
       await fastify.db.sqlTransaction(async sql => {
-        const token = await fastify.db.getBrc20Tokens({ ticker: [request.params.ticker] });
+        const token = await fastify.db.getBrc20Tokens({
+          limit: 1,
+          offset: 0,
+          ticker: [request.params.ticker],
+        });
         if (!token) {
           await reply.code(404).send(Value.Create(NotFoundResponse));
           return;
@@ -92,6 +105,49 @@ export const Brc20Routes: FastifyPluginCallback<
           token: parseBrc20Tokens(token.results)[0],
           supply: parseBrc20Supply(supply),
         });
+      });
+    }
+  );
+
+  fastify.get(
+    '/brc-20/tokens/:ticker/holders',
+    {
+      schema: {
+        operationId: 'getBrc20TokenHolders',
+        summary: 'BRC-20 Token Holders',
+        description: 'Retrieves a list of holders and their balances for a BRC-20 token',
+        tags: ['BRC-20'],
+        params: Type.Object({
+          ticker: Brc20TickerParam,
+        }),
+        querystring: Type.Object({
+          // Pagination
+          offset: Type.Optional(OffsetParam),
+          limit: Type.Optional(LimitParam),
+        }),
+        response: {
+          200: PaginatedResponse(Brc20HolderResponseSchema, 'Paginated BRC-20 Holders Response'),
+          404: NotFoundResponse,
+        },
+      },
+    },
+    async (request, reply) => {
+      const limit = request.query.limit ?? DEFAULT_API_LIMIT;
+      const offset = request.query.offset ?? 0;
+      const holders = await fastify.db.getBrc20TokenHolders({
+        limit,
+        offset,
+        ticker: request.params.ticker,
+      });
+      if (!holders) {
+        await reply.code(404).send(Value.Create(NotFoundResponse));
+        return;
+      }
+      await reply.send({
+        limit,
+        offset,
+        total: holders.total,
+        results: parseBrc20Holders(holders.results),
       });
     }
   );

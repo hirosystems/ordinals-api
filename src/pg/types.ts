@@ -257,6 +257,11 @@ export type DbBrc20Supply = {
   holders: string;
 };
 
+export type DbBrc20Holder = {
+  address: string;
+  total_balance: string;
+};
+
 export type DbBrc20Balance = {
   ticker: string;
   avail_balance: string;

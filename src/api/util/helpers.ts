@@ -1,5 +1,6 @@
 import {
   DbBrc20Balance,
+  DbBrc20Holder,
   DbBrc20Supply,
   DbBrc20Token,
   DbFullyLocatedInscriptionResult,
@@ -9,6 +10,7 @@ import {
 import {
   BlockInscriptionTransfer,
   Brc20BalanceResponse,
+  Brc20HolderResponse,
   Brc20Supply,
   Brc20TokenResponse,
   InscriptionLocationResponse,
@@ -129,6 +131,13 @@ export function parseBrc20Balances(items: DbBrc20Balance[]): Brc20BalanceRespons
     ticker: i.ticker,
     available_balance: i.avail_balance,
     transferrable_balance: i.trans_balance,
+    overall_balance: i.total_balance,
+  }));
+}
+
+export function parseBrc20Holders(items: DbBrc20Holder[]): Brc20HolderResponse[] {
+  return items.map(i => ({
+    address: i.address,
     overall_balance: i.total_balance,
   }));
 }
