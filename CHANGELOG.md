@@ -1,3 +1,10 @@
+## [0.3.2](https://github.com/hirosystems/ordinals-api/compare/v0.3.1...v0.3.2) (2023-06-26)
+
+
+### Bug Fixes
+
+* remove 0x prefix from outputs ([#107](https://github.com/hirosystems/ordinals-api/issues/107)) ([07c91b9](https://github.com/hirosystems/ordinals-api/commit/07c91b971f218bfb7b9615b282cefcffe0428648))
+
 ## [0.3.1](https://github.com/hirosystems/ordinals-api/compare/v0.3.0...v0.3.1) (2023-06-14)
 
 
