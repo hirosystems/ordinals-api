@@ -335,3 +335,13 @@ export const NotFoundResponse = Type.Object(
   },
   { title: 'Not Found Response' }
 );
+
+export const InscriptionsPerBlock = Type.Object({
+  block_height: Type.Integer({ examples: [778921] }),
+  inscription_count: Type.Integer({ examples: [100] }),
+  inscription_count_total: Type.Integer({ examples: [3100] }),
+});
+export const InscriptionsPerBlockResponse = Type.Object({
+  results: Type.Array(InscriptionsPerBlock),
+});
+export type InscriptionsPerBlockResponse = Static<typeof InscriptionsPerBlockResponse>;

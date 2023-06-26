@@ -3,13 +3,15 @@ import { FastifyPluginAsync, FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import { blockParam } from '../util/helpers';
 import { Type } from '@sinclair/typebox';
-import { BlockHeightParam } from '../schemas';
+import { BlockHeightParam, InscriptionsPerBlockResponse, NotFoundResponse } from '../schemas';
+import { handleInscriptionsPerBlockCache } from '../util/cache';
 
 const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
   fastify,
   options,
   done
 ) => {
+  fastify.addHook('preHandler', handleInscriptionsPerBlockCache);
   fastify.get(
     '/stats/inscriptions',
     {
@@ -22,6 +24,10 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
           from_block_height: Type.Optional(BlockHeightParam),
           to_block_height: Type.Optional(BlockHeightParam),
         }),
+        response: {
+          200: InscriptionsPerBlockResponse,
+          404: NotFoundResponse,
+        },
       },
     },
     async (request, reply) => {

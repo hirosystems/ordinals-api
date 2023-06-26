@@ -270,6 +270,13 @@ export class PgStore extends BasePgStore {
     return result[0].max.toString();
   }
 
+  async getInscriptionsPerBlockETag(): Promise<string> {
+    const result = await this.sql<
+      { max: number }[]
+    >`SELECT MAX(block_height) FROM inscriptions_per_block`;
+    return result[0].max.toString();
+  }
+
   async getInscriptionContent(
     args: InscriptionIdentifier
   ): Promise<DbInscriptionContent | undefined> {
