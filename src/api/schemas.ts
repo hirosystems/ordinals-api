@@ -219,9 +219,11 @@ export const InscriptionResponse = Type.Object(
         examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
       })
     ),
-    genesis_address: Type.String({
-      examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
-    }),
+    genesis_address: Nullable(
+      Type.String({
+        examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
+      })
+    ),
     genesis_block_height: Type.Integer({ examples: [778921] }),
     genesis_block_hash: Type.String({
       examples: ['0000000000000000000452773967cdd62297137cdaf79950c5e8bb0c62075133'],
