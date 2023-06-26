@@ -337,9 +337,9 @@ export const NotFoundResponse = Type.Object(
 );
 
 export const InscriptionsPerBlock = Type.Object({
-  block_height: Type.Integer({ examples: [778921] }),
-  inscription_count: Type.Integer({ examples: [100] }),
-  inscription_count_accum: Type.Integer({ examples: [3100] }),
+  block_height: Type.String({ examples: ['778921'] }),
+  inscription_count: Type.String({ examples: ['100'] }),
+  inscription_count_accum: Type.String({ examples: ['3100'] }),
 });
 export const InscriptionsPerBlockResponse = Type.Object({
   results: Type.Array(InscriptionsPerBlock),
