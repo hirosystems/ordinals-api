@@ -13,7 +13,7 @@ export function up(pgm: MigrationBuilder): void {
       type: 'bigint',
       notNull: true,
     },
-    inscription_count_total: {
+    inscription_count_accum: {
       type: 'bigint',
       notNull: true,
     },

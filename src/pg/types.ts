@@ -228,5 +228,5 @@ export type DbInscriptionCountPerBlockFilters = {
 export type DbInscriptionCountPerBlock = {
   block_height: string;
   inscription_count: string;
-  inscription_count_total: string;
+  inscription_count_accum: string;
 };

@@ -24,11 +24,11 @@ describe('/stats', () => {
     describe('event processing', () => {
       const EXPECTED = {
         results: [
-          { block_height: '778010', inscription_count: '3', inscription_count_total: '9' },
-          { block_height: '778005', inscription_count: '2', inscription_count_total: '6' },
-          { block_height: '778002', inscription_count: '1', inscription_count_total: '4' },
-          { block_height: '778001', inscription_count: '1', inscription_count_total: '3' },
-          { block_height: '778000', inscription_count: '2', inscription_count_total: '2' },
+          { block_height: '778010', inscription_count: '3', inscription_count_accum: '9' },
+          { block_height: '778005', inscription_count: '2', inscription_count_accum: '6' },
+          { block_height: '778002', inscription_count: '1', inscription_count_accum: '4' },
+          { block_height: '778001', inscription_count: '1', inscription_count_accum: '3' },
+          { block_height: '778000', inscription_count: '2', inscription_count_accum: '2' },
         ],
       };
 
@@ -111,8 +111,8 @@ describe('/stats', () => {
       expect(responseFrom.statusCode).toBe(200);
       expect(responseFrom.json()).toStrictEqual({
         results: [
-          { block_height: '778010', inscription_count: '1', inscription_count_total: '6' },
-          { block_height: '778005', inscription_count: '2', inscription_count_total: '5' },
+          { block_height: '778010', inscription_count: '1', inscription_count_accum: '6' },
+          { block_height: '778005', inscription_count: '2', inscription_count_accum: '5' },
         ],
       });
 
@@ -124,9 +124,9 @@ describe('/stats', () => {
       expect(responseTo.statusCode).toBe(200);
       expect(responseTo.json()).toStrictEqual({
         results: [
-          { block_height: '778002', inscription_count: '1', inscription_count_total: '3' },
-          { block_height: '778001', inscription_count: '1', inscription_count_total: '2' },
-          { block_height: '778000', inscription_count: '1', inscription_count_total: '1' },
+          { block_height: '778002', inscription_count: '1', inscription_count_accum: '3' },
+          { block_height: '778001', inscription_count: '1', inscription_count_accum: '2' },
+          { block_height: '778000', inscription_count: '1', inscription_count_accum: '1' },
         ],
       });
 
@@ -141,8 +141,8 @@ describe('/stats', () => {
       expect(responseFromTo.statusCode).toBe(200);
       expect(responseFromTo.json()).toStrictEqual({
         results: [
-          { block_height: '778005', inscription_count: '2', inscription_count_total: '5' },
-          { block_height: '778002', inscription_count: '1', inscription_count_total: '3' },
+          { block_height: '778005', inscription_count: '2', inscription_count_accum: '5' },
+          { block_height: '778002', inscription_count: '1', inscription_count_accum: '3' },
         ],
       });
     });

@@ -762,7 +762,7 @@ export class PgStore extends BasePgStore {
         SELECT
           block_height,
           COUNT(*) AS inscription_count,
-          COALESCE((SELECT previous.inscription_count_total FROM previous), 0) + (SUM(COUNT(*)) OVER (ORDER BY block_height ASC)) AS inscription_count_total
+          COALESCE((SELECT previous.inscription_count_accum FROM previous), 0) + (SUM(COUNT(*)) OVER (ORDER BY block_height ASC)) AS inscription_count_accum
         FROM locations
         WHERE block_height >= ${args.min_block_height} AND genesis = true
         GROUP BY block_height
@@ -772,7 +772,7 @@ export class PgStore extends BasePgStore {
       SELECT * FROM updated_blocks
       ON CONFLICT (block_height) DO UPDATE SET
         inscription_count = EXCLUDED.inscription_count,
-        inscription_count_total = EXCLUDED.inscription_count_total;
+        inscription_count_accum = EXCLUDED.inscription_count_accum;
     `;
     });
   }
