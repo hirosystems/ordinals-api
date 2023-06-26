@@ -102,7 +102,7 @@ export function parseSatPoint(satpoint: string): {
   offset?: string;
 } {
   const [tx_id, vout, offset] = satpoint.split(':');
-  return { tx_id, vout: vout, offset };
+  return { tx_id: normalizedHexString(tx_id), vout: vout, offset };
 }
 
 /**
