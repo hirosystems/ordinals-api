@@ -1,3 +1,10 @@
+## [0.3.3](https://github.com/hirosystems/ordinals-api/compare/v0.3.2...v0.3.3) (2023-06-26)
+
+
+### Bug Fixes
+
+* allow genesis with null address ([#108](https://github.com/hirosystems/ordinals-api/issues/108)) ([9769028](https://github.com/hirosystems/ordinals-api/commit/9769028d9fc1366216cc858b503e27e0c6ec8b7d))
+
 ## [0.3.2](https://github.com/hirosystems/ordinals-api/compare/v0.3.1...v0.3.2) (2023-06-26)
 
 
