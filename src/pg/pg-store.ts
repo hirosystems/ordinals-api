@@ -1,11 +1,7 @@
+import { BitcoinEvent, Payload } from '@hirosystems/chainhook-client';
 import { Order, OrderBy } from '../api/schemas';
 import { normalizedHexString, parseSatPoint } from '../api/util/helpers';
 import { OrdinalSatoshi, SatoshiRarity } from '../api/util/ordinal-satoshi';
-import {
-  ChainhookPayload,
-  CursedInscriptionRevealed,
-  InscriptionRevealed,
-} from '../chainhook/schemas';
 import { ENV } from '../env';
 import { logger } from '../logger';
 import { getIndexResultCountType, inscriptionContentToJson } from './helpers';
@@ -60,10 +56,11 @@ export class PgStore extends BasePgStore {
    * chain re-orgs and materialized view refreshes.
    * @param args - Apply/Rollback Chainhook events
    */
-  async updateInscriptions(payload: ChainhookPayload): Promise<void> {
+  async updateInscriptions(payload: Payload): Promise<void> {
     const updatedInscriptionIds = new Set<number>();
     await this.sqlWriteTransaction(async sql => {
-      for (const event of payload.rollback) {
+      for (const rollbackEvent of payload.rollback) {
+        const event = rollbackEvent as BitcoinEvent;
         for (const tx of event.transactions) {
           for (const operation of tx.metadata.ordinal_operations) {
             if (operation.inscription_revealed) {
@@ -92,7 +89,8 @@ export class PgStore extends BasePgStore {
           }
         }
       }
-      for (const event of payload.apply) {
+      for (const applyEvent of payload.apply) {
+        const event = applyEvent as BitcoinEvent;
         const block_height = event.block_identifier.index;
         const block_hash = normalizedHexString(event.block_identifier.hash);
         for (const tx of event.transactions) {

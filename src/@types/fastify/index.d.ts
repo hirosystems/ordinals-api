@@ -1,5 +1,5 @@
 import fastify from 'fastify';
-import { PgStore } from '../../../pg/pg-store';
+import { PgStore } from '../../pg/pg-store';
 
 declare module 'fastify' {
   export interface FastifyInstance<
