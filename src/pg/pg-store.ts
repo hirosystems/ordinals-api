@@ -764,13 +764,13 @@ export class PgStore extends BasePgStore {
         ), updated_blocks AS (
           SELECT
             block_height,
-            block_hash,
+            MIN(block_hash),
             COUNT(*) AS inscription_count,
             COALESCE((SELECT previous.inscription_count_accum FROM previous), 0) + (SUM(COUNT(*)) OVER (ORDER BY block_height ASC)) AS inscription_count_accum,
-            timestamp
+            MIN(timestamp)
           FROM locations
           WHERE block_height >= ${args.min_block_height} AND genesis = true
-          GROUP BY block_height, block_hash, timestamp
+          GROUP BY block_height
           ORDER BY block_height ASC
         )
         INSERT INTO inscriptions_per_block
