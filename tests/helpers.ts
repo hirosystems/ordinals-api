@@ -98,3 +98,7 @@ export class TestChainhookPayloadBuilder {
     return this.payload;
   }
 }
+
+/** Generate a random hash like string for testing */
+export const randomHash = () =>
+  [...Array(64)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');

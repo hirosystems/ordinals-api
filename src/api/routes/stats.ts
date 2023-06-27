@@ -1,10 +1,10 @@
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
+import { Type } from '@sinclair/typebox';
 import { FastifyPluginAsync, FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
-import { blockParam } from '../util/helpers';
-import { Type } from '@sinclair/typebox';
 import { BlockHeightParam, InscriptionsPerBlockResponse, NotFoundResponse } from '../schemas';
 import { handleInscriptionsPerBlockCache } from '../util/cache';
+import { blockParam } from '../util/helpers';
 
 const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
   fastify,
@@ -17,7 +17,7 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
     {
       schema: {
         operationId: 'getStatsInscriptionCount',
-        summary: 'Inscription Count',
+        summary: 'Inscription Count per Block',
         description: 'Retrieves statistics on the number of inscriptions revealed per block',
         tags: ['Statistics'],
         querystring: Type.Object({

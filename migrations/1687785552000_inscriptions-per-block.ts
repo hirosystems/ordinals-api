@@ -9,12 +9,20 @@ export function up(pgm: MigrationBuilder): void {
       type: 'bigint',
       primaryKey: true,
     },
+    block_hash: {
+      type: 'text',
+      notNull: true,
+    },
     inscription_count: {
       type: 'bigint',
       notNull: true,
     },
     inscription_count_accum: {
       type: 'bigint',
+      notNull: true,
+    },
+    timestamp: {
+      type: 'timestamptz',
       notNull: true,
     },
   });

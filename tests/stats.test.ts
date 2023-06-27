@@ -1,7 +1,7 @@
 import { buildApiServer } from '../src/api/init';
 import { cycleMigrations } from '../src/pg/migrations';
 import { PgStore } from '../src/pg/pg-store';
-import { TestChainhookPayloadBuilder, TestFastifyServer } from './helpers';
+import { TestChainhookPayloadBuilder, TestFastifyServer, randomHash } from './helpers';
 
 jest.setTimeout(100_000_000);
 
@@ -21,14 +21,47 @@ describe('/stats', () => {
   });
 
   describe('/stats/inscriptions', () => {
+    const bh = '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d';
+    const ts = 1676913207000;
+
     describe('event processing', () => {
       const EXPECTED = {
         results: [
-          { block_height: '778010', inscription_count: '3', inscription_count_accum: '9' },
-          { block_height: '778005', inscription_count: '2', inscription_count_accum: '6' },
-          { block_height: '778002', inscription_count: '1', inscription_count_accum: '4' },
-          { block_height: '778001', inscription_count: '1', inscription_count_accum: '3' },
-          { block_height: '778000', inscription_count: '2', inscription_count_accum: '2' },
+          {
+            block_hash: bh,
+            block_height: '778010',
+            inscription_count: '3',
+            inscription_count_accum: '9',
+            timestamp: ts,
+          },
+          {
+            block_hash: bh,
+            block_height: '778005',
+            inscription_count: '2',
+            inscription_count_accum: '6',
+            timestamp: ts,
+          },
+          {
+            block_hash: bh,
+            block_height: '778002',
+            inscription_count: '1',
+            inscription_count_accum: '4',
+            timestamp: ts,
+          },
+          {
+            block_hash: bh,
+            block_height: '778001',
+            inscription_count: '1',
+            inscription_count_accum: '3',
+            timestamp: ts,
+          },
+          {
+            block_hash: bh,
+            block_height: '778000',
+            inscription_count: '2',
+            inscription_count_accum: '2',
+            timestamp: ts,
+          },
         ],
       };
 
@@ -111,8 +144,20 @@ describe('/stats', () => {
       expect(responseFrom.statusCode).toBe(200);
       expect(responseFrom.json()).toStrictEqual({
         results: [
-          { block_height: '778010', inscription_count: '1', inscription_count_accum: '6' },
-          { block_height: '778005', inscription_count: '2', inscription_count_accum: '5' },
+          {
+            block_height: '778010',
+            block_hash: bh,
+            inscription_count: '1',
+            inscription_count_accum: '6',
+            timestamp: ts,
+          },
+          {
+            block_height: '778005',
+            block_hash: bh,
+            inscription_count: '2',
+            inscription_count_accum: '5',
+            timestamp: ts,
+          },
         ],
       });
 
@@ -124,9 +169,27 @@ describe('/stats', () => {
       expect(responseTo.statusCode).toBe(200);
       expect(responseTo.json()).toStrictEqual({
         results: [
-          { block_height: '778002', inscription_count: '1', inscription_count_accum: '3' },
-          { block_height: '778001', inscription_count: '1', inscription_count_accum: '2' },
-          { block_height: '778000', inscription_count: '1', inscription_count_accum: '1' },
+          {
+            block_height: '778002',
+            block_hash: bh,
+            inscription_count: '1',
+            inscription_count_accum: '3',
+            timestamp: ts,
+          },
+          {
+            block_height: '778001',
+            block_hash: bh,
+            inscription_count: '1',
+            inscription_count_accum: '2',
+            timestamp: ts,
+          },
+          {
+            block_height: '778000',
+            block_hash: bh,
+            inscription_count: '1',
+            inscription_count_accum: '1',
+            timestamp: ts,
+          },
         ],
       });
 
@@ -141,8 +204,20 @@ describe('/stats', () => {
       expect(responseFromTo.statusCode).toBe(200);
       expect(responseFromTo.json()).toStrictEqual({
         results: [
-          { block_height: '778005', inscription_count: '2', inscription_count_accum: '5' },
-          { block_height: '778002', inscription_count: '1', inscription_count_accum: '3' },
+          {
+            block_height: '778005',
+            block_hash: bh,
+            inscription_count: '2',
+            inscription_count_accum: '5',
+            timestamp: ts,
+          },
+          {
+            block_height: '778002',
+            block_hash: bh,
+            inscription_count: '1',
+            inscription_count_accum: '3',
+            timestamp: ts,
+          },
         ],
       });
     });
@@ -150,7 +225,7 @@ describe('/stats', () => {
 });
 
 function testRevealApply(blockHeight: number) {
-  const randomHex = [...Array(64)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+  const randomHex = randomHash();
   return new TestChainhookPayloadBuilder()
     .apply()
     .block({

@@ -271,10 +271,13 @@ export class PgStore extends BasePgStore {
   }
 
   async getInscriptionsPerBlockETag(): Promise<string> {
-    const result = await this.sql<
-      { max: number }[]
-    >`SELECT MAX(block_height) FROM inscriptions_per_block`;
-    return result[0].max.toString();
+    const result = await this.sql<{ block_hash: string }[]>`
+      SELECT block_hash
+      FROM inscriptions_per_block
+      ORDER BY block_height DESC
+      LIMIT 1
+    `;
+    return result[0].block_hash;
   }
 
   async getInscriptionContent(
@@ -560,8 +563,8 @@ export class PgStore extends BasePgStore {
       FROM inscriptions_per_block
       ${filters.from_block_height || filters.to_block_height ? where : this.sql``}
       ORDER BY block_height DESC
-      LIMIT 10000
-    `; // roughly 70 days of blocks, assuming 10 minute block times on a full database
+      LIMIT 5000
+    `; // roughly 35 days of blocks, assuming 10 minute block times on a full database
   }
 
   async refreshMaterializedView(viewName: string) {
@@ -752,28 +755,32 @@ export class PgStore extends BasePgStore {
       // - calculates new totals for all blocks >= min_block_height
       // - inserts new totals
       await sql`
-      WITH previous AS (
-        SELECT *
-        FROM inscriptions_per_block
-        WHERE block_height < ${args.min_block_height}
-        ORDER BY block_height DESC
-        LIMIT 1
-      ), updated_blocks AS (
-        SELECT
-          block_height,
-          COUNT(*) AS inscription_count,
-          COALESCE((SELECT previous.inscription_count_accum FROM previous), 0) + (SUM(COUNT(*)) OVER (ORDER BY block_height ASC)) AS inscription_count_accum
-        FROM locations
-        WHERE block_height >= ${args.min_block_height} AND genesis = true
-        GROUP BY block_height
-        ORDER BY block_height ASC
-      )
-      INSERT INTO inscriptions_per_block
-      SELECT * FROM updated_blocks
-      ON CONFLICT (block_height) DO UPDATE SET
-        inscription_count = EXCLUDED.inscription_count,
-        inscription_count_accum = EXCLUDED.inscription_count_accum;
-    `;
+        WITH previous AS (
+          SELECT *
+          FROM inscriptions_per_block
+          WHERE block_height < ${args.min_block_height}
+          ORDER BY block_height DESC
+          LIMIT 1
+        ), updated_blocks AS (
+          SELECT
+            block_height,
+            block_hash,
+            COUNT(*) AS inscription_count,
+            COALESCE((SELECT previous.inscription_count_accum FROM previous), 0) + (SUM(COUNT(*)) OVER (ORDER BY block_height ASC)) AS inscription_count_accum,
+            timestamp
+          FROM locations
+          WHERE block_height >= ${args.min_block_height} AND genesis = true
+          GROUP BY block_height, block_hash, timestamp
+          ORDER BY block_height ASC
+        )
+        INSERT INTO inscriptions_per_block
+        SELECT * FROM updated_blocks
+        ON CONFLICT (block_height) DO UPDATE SET
+          block_hash = EXCLUDED.block_hash,
+          inscription_count = EXCLUDED.inscription_count,
+          inscription_count_accum = EXCLUDED.inscription_count_accum,
+          timestamp = EXCLUDED.timestamp;
+      `;
     });
   }
 
