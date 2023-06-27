@@ -1,3 +1,31 @@
+## [0.3.3](https://github.com/hirosystems/ordinals-api/compare/v0.3.2...v0.3.3) (2023-06-26)
+
+
+### Bug Fixes
+
+* allow genesis with null address ([#108](https://github.com/hirosystems/ordinals-api/issues/108)) ([9769028](https://github.com/hirosystems/ordinals-api/commit/9769028d9fc1366216cc858b503e27e0c6ec8b7d))
+
+## [0.3.2](https://github.com/hirosystems/ordinals-api/compare/v0.3.1...v0.3.2) (2023-06-26)
+
+
+### Bug Fixes
+
+* remove 0x prefix from outputs ([#107](https://github.com/hirosystems/ordinals-api/issues/107)) ([07c91b9](https://github.com/hirosystems/ordinals-api/commit/07c91b971f218bfb7b9615b282cefcffe0428648))
+
+## [0.3.1](https://github.com/hirosystems/ordinals-api/compare/v0.3.0...v0.3.1) (2023-06-14)
+
+
+### Bug Fixes
+
+* automatic predicate registration ([#97](https://github.com/hirosystems/ordinals-api/issues/97)) ([73157f1](https://github.com/hirosystems/ordinals-api/commit/73157f13e8ef34b9df69701ac6e251f652f9ffbf))
+
+## [0.3.0](https://github.com/hirosystems/ordinals-api/compare/v0.2.0...v0.3.0) (2023-06-08)
+
+
+### Features
+
+* support cursed inscriptions ([#85](https://github.com/hirosystems/ordinals-api/issues/85)) ([fb93474](https://github.com/hirosystems/ordinals-api/commit/fb9347452bdf261faa600c4785f67d2c99860ce8))
+
 ## [0.2.0](https://github.com/hirosystems/ordinals-api/compare/v0.1.2...v0.2.0) (2023-05-19)
 
 
