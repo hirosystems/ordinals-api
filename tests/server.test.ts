@@ -78,7 +78,7 @@ describe('EventServer', () => {
                     ordinal_block_height: 566462,
                     ordinal_offset: 0,
                     satpoint_post_inscription:
-                      '0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8:0:0',
+                      '0x0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8:0:0',
                   },
                 },
               ],

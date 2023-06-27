@@ -118,6 +118,77 @@ describe('/inscriptions', () => {
       expect(response2.json()).toStrictEqual(expected);
     });
 
+    test('shows inscription with null genesis address', async () => {
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 775617,
+            hash: '0x00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+            timestamp: 1676913207,
+          })
+          .transaction({
+            hash: '0x38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+          })
+          .inscriptionRevealed({
+            content_bytes: '0x48656C6C6F',
+            content_type: 'image/png',
+            content_length: 5,
+            inscription_number: 7,
+            inscription_fee: 2805,
+            inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+            inscription_output_value: 10000,
+            inscriber_address: null,
+            ordinal_number: 257418248345364,
+            ordinal_block_height: 51483,
+            ordinal_offset: 0,
+            satpoint_post_inscription:
+              '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+          })
+          .build()
+      );
+      const expected = {
+        address: null,
+        genesis_address: null,
+        genesis_block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+        genesis_block_height: 775617,
+        content_length: 5,
+        mime_type: 'image/png',
+        content_type: 'image/png',
+        genesis_fee: '2805',
+        id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+        offset: '0',
+        number: 7,
+        value: '10000',
+        tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+        sat_ordinal: '257418248345364',
+        sat_coinbase_height: 51483,
+        output: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0',
+        location: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+        sat_rarity: 'common',
+        timestamp: 1676913207000,
+        genesis_timestamp: 1676913207000,
+        genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+        curse_type: null,
+      };
+
+      // By inscription id
+      const response = await fastify.inject({
+        method: 'GET',
+        url: '/ordinals/v1/inscriptions/38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toStrictEqual(expected);
+
+      // By inscription number
+      const response2 = await fastify.inject({
+        method: 'GET',
+        url: '/ordinals/v1/inscriptions/7',
+      });
+      expect(response2.statusCode).toBe(200);
+      expect(response2.json()).toStrictEqual(expected);
+    });
+
     test('shows cursed inscription', async () => {
       await db.updateInscriptions(
         new TestChainhookPayloadBuilder()
