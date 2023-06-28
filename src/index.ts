@@ -3,6 +3,7 @@ import { isProdEnv } from './api/util/helpers';
 import { buildChainhookServer } from './chainhook/server';
 import { ENV } from './env';
 import { logger } from './logger';
+import { ApiMetrics } from './metrics/metrics';
 import { PgStore } from './pg/pg-store';
 import { registerShutdownConfig } from './shutdown-handler';
 
@@ -43,6 +44,7 @@ async function initApiService(db: PgStore) {
       },
     });
 
+    ApiMetrics.configure(db);
     await promServer.listen({ host: ENV.API_HOST, port: 9153 });
   }
 }
