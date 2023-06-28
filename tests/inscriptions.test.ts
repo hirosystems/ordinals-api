@@ -420,7 +420,7 @@ describe('/inscriptions', () => {
             ordinal_offset: 0,
             satpoint_post_inscription:
               '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
-            curse_type: 'p2wsh',
+            curse_type: { tag: 66 },
           })
           .build()
       );
@@ -473,7 +473,7 @@ describe('/inscriptions', () => {
         timestamp: 1678122360000,
         genesis_timestamp: 1676913207000,
         genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
-        curse_type: 'p2wsh',
+        curse_type: '{"tag":66}',
       });
 
       // Transfer 2
@@ -524,7 +524,7 @@ describe('/inscriptions', () => {
         timestamp: 1678124000000,
         genesis_timestamp: 1676913207000,
         genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
-        curse_type: 'p2wsh',
+        curse_type: '{"tag":66}',
       });
     });
   });
