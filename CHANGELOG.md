@@ -1,3 +1,15 @@
+## [0.4.0-beta.1](https://github.com/hirosystems/ordinals-api/compare/v0.3.4-beta.2...v0.4.0-beta.1) (2023-06-28)
+
+
+### Features
+
+* api ingestion metrics on prometheus ([#113](https://github.com/hirosystems/ordinals-api/issues/113)) ([10ec679](https://github.com/hirosystems/ordinals-api/commit/10ec679ca7607be849dd642178f5f170b104ff9b))
+
+
+### Bug Fixes
+
+* allow nullable and tagged curse types ([#111](https://github.com/hirosystems/ordinals-api/issues/111)) ([641a627](https://github.com/hirosystems/ordinals-api/commit/641a627453aa313c08c697c8cfa05f8277525b4c))
+
 ## [0.3.4-beta.2](https://github.com/hirosystems/ordinals-api/compare/v0.3.4-beta.1...v0.3.4-beta.2) (2023-06-28)
 
 
