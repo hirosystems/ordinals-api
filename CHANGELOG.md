@@ -1,3 +1,10 @@
+## [0.3.4-beta.1](https://github.com/hirosystems/ordinals-api/compare/v0.3.3...v0.3.4-beta.1) (2023-06-28)
+
+
+### Bug Fixes
+
+* check for prod correctly when refreshing materialized views ([#112](https://github.com/hirosystems/ordinals-api/issues/112)) ([4518043](https://github.com/hirosystems/ordinals-api/commit/45180430d20cb77278d452be21963a9e53c5e557))
+
 ## [0.3.3](https://github.com/hirosystems/ordinals-api/compare/v0.3.2...v0.3.3) (2023-06-26)
 
 
