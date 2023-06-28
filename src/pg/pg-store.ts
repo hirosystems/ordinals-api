@@ -590,7 +590,7 @@ export class PgStore extends BasePgStore {
             SELECT id FROM locations WHERE sat_ordinal = ${args.location.sat_ordinal}
           `;
           if (dup.count > 0) {
-            logger.error(
+            logger.warn(
               {
                 block_height: args.location.block_height,
                 genesis_id: args.inscription.genesis_id,
