@@ -1,11 +1,7 @@
 import { Order, OrderBy } from '../api/schemas';
-import { normalizedHexString, parseSatPoint } from '../api/util/helpers';
+import { isProdEnv, normalizedHexString, parseSatPoint } from '../api/util/helpers';
 import { OrdinalSatoshi, SatoshiRarity } from '../api/util/ordinal-satoshi';
-import {
-  ChainhookPayload,
-  CursedInscriptionRevealed,
-  InscriptionRevealed,
-} from '../chainhook/schemas';
+import { ChainhookPayload } from '../chainhook/schemas';
 import { ENV } from '../env';
 import { logger } from '../logger';
 import { getIndexResultCountType, inscriptionContentToJson } from './helpers';
@@ -531,9 +527,8 @@ export class PgStore extends BasePgStore {
   }
 
   async refreshMaterializedView(viewName: string) {
-    const isProd = process.env.NODE_ENV === 'production';
     await this.sql`REFRESH MATERIALIZED VIEW ${
-      isProd ? this.sql`CONCURRENTLY` : this.sql``
+      isProdEnv ? this.sql`CONCURRENTLY` : this.sql``
     } ${this.sql(viewName)}`;
   }
 
