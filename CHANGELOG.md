@@ -1,3 +1,17 @@
+## [0.4.0](https://github.com/hirosystems/ordinals-api/compare/v0.3.3...v0.4.0) (2023-06-29)
+
+
+### Features
+
+* api ingestion metrics on prometheus ([#113](https://github.com/hirosystems/ordinals-api/issues/113)) ([10ec679](https://github.com/hirosystems/ordinals-api/commit/10ec679ca7607be849dd642178f5f170b104ff9b))
+
+
+### Bug Fixes
+
+* allow nullable and tagged curse types ([#111](https://github.com/hirosystems/ordinals-api/issues/111)) ([641a627](https://github.com/hirosystems/ordinals-api/commit/641a627453aa313c08c697c8cfa05f8277525b4c))
+* check for prod correctly when refreshing materialized views ([#112](https://github.com/hirosystems/ordinals-api/issues/112)) ([4518043](https://github.com/hirosystems/ordinals-api/commit/45180430d20cb77278d452be21963a9e53c5e557))
+* send 500 code if payload ingestion fails ([#114](https://github.com/hirosystems/ordinals-api/issues/114)) ([0a3fee2](https://github.com/hirosystems/ordinals-api/commit/0a3fee228d29843454be81ee29284195fbbe45f1))
+
 ## [0.4.0-beta.1](https://github.com/hirosystems/ordinals-api/compare/v0.3.4-beta.2...v0.4.0-beta.1) (2023-06-28)
 
 
