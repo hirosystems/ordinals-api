@@ -1,3 +1,10 @@
+## [0.4.4](https://github.com/hirosystems/ordinals-api/compare/v0.4.3...v0.4.4) (2023-06-30)
+
+
+### Bug Fixes
+
+* don't ping chainhook node if auto predicate reg is disabled ([#119](https://github.com/hirosystems/ordinals-api/issues/119)) ([f04445e](https://github.com/hirosystems/ordinals-api/commit/f04445efa5df5876d6f22b7d616bcadfe4d95b99))
+
 ## [0.4.3](https://github.com/hirosystems/ordinals-api/compare/v0.4.2...v0.4.3) (2023-06-30)
 
 
