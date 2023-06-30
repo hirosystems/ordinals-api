@@ -76,7 +76,6 @@ export class PgStore extends BasePgStore {
               logger.info(`PgStore rollback cursed reveal #${number} (${genesis_id})`);
             }
             if (operation.inscription_transferred) {
-              const number = operation.inscription_transferred.inscription_number;
               const genesis_id = operation.inscription_transferred.inscription_id;
               const satpoint = parseSatPoint(
                 operation.inscription_transferred.satpoint_post_transfer
@@ -84,7 +83,7 @@ export class PgStore extends BasePgStore {
               const output = `${satpoint.tx_id}:${satpoint.vout}`;
               const id = await this.rollBackInscriptionTransfer({ genesis_id, output });
               if (id) updatedInscriptionIds.add(id);
-              logger.info(`PgStore rollback transfer #${number} (${genesis_id}) ${output}`);
+              logger.info(`PgStore rollback transfer ${genesis_id} ${output}`);
             }
           }
         }
@@ -197,7 +196,7 @@ export class PgStore extends BasePgStore {
               });
               if (id) updatedInscriptionIds.add(id);
               logger.info(
-                `PgStore transfer #${transfer.inscription_number} (${transfer.inscription_id}) to output ${satpoint.tx_id}:${satpoint.vout} at block ${block_height}`
+                `PgStore transfer ${transfer.inscription_id} to output ${satpoint.tx_id}:${satpoint.vout} at block ${block_height}`
               );
             }
           }
