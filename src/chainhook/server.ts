@@ -147,8 +147,8 @@ export async function buildChainhookServer(args: { db: PgStore }) {
   }).withTypeProvider<TypeBoxTypeProvider>();
 
   fastify.decorate('db', args.db);
-  fastify.addHook('onReady', waitForChainhookNode);
   if (ENV.CHAINHOOK_AUTO_PREDICATE_REGISTRATION) {
+    fastify.addHook('onReady', waitForChainhookNode);
     fastify.addHook('onReady', registerChainhookPredicates);
     fastify.addHook('onClose', removeChainhookPredicates);
   }
