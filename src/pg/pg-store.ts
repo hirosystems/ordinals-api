@@ -209,9 +209,12 @@ export class PgStore extends BasePgStore {
     });
     await this.normalizeInscriptionLocations({ inscription_id: Array.from(updatedInscriptionIds) });
     await this.refreshMaterializedView('chain_tip');
-    await this.refreshMaterializedView('inscription_count');
-    await this.refreshMaterializedView('mime_type_counts');
-    await this.refreshMaterializedView('sat_rarity_counts');
+    // Skip expensive view refreshes if we're not streaming any live blocks yet.
+    if (payload.chainhook.is_streaming_blocks) {
+      await this.refreshMaterializedView('inscription_count');
+      await this.refreshMaterializedView('mime_type_counts');
+      await this.refreshMaterializedView('sat_rarity_counts');
+    }
   }
 
   async getChainTipBlockHeight(): Promise<number> {
@@ -229,7 +232,7 @@ export class PgStore extends BasePgStore {
   async getMimeTypeInscriptionCount(mimeType?: string[]): Promise<number> {
     if (!mimeType) return 0;
     const result = await this.sql<{ count: number }[]>`
-      SELECT SUM(count) AS count
+      SELECT COALESCE(SUM(count), 0) AS count
       FROM mime_type_counts
       WHERE mime_type IN ${this.sql(mimeType)}
     `;
@@ -239,7 +242,7 @@ export class PgStore extends BasePgStore {
   async geSatRarityInscriptionCount(satRarity?: SatoshiRarity[]): Promise<number> {
     if (!satRarity) return 0;
     const result = await this.sql<{ count: number }[]>`
-      SELECT SUM(count) AS count
+      SELECT COALESCE(SUM(count), 0) AS count
       FROM sat_rarity_counts
       WHERE sat_rarity IN ${this.sql(satRarity)}
     `;

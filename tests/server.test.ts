@@ -4,6 +4,7 @@ import { ENV } from '../src/env';
 import { cycleMigrations } from '../src/pg/migrations';
 import { PgStore } from '../src/pg/pg-store';
 import { TestChainhookPayloadBuilder, TestFastifyServer } from './helpers';
+import { ChainhookPayload } from '../src/chainhook/schemas';
 
 describe('EventServer', () => {
   let db: PgStore;
@@ -149,7 +150,7 @@ describe('EventServer', () => {
       };
 
       // Apply
-      const payload1 = {
+      const payload1: ChainhookPayload = {
         apply: [reveal],
         rollback: [],
         chainhook: {
@@ -158,6 +159,7 @@ describe('EventServer', () => {
             scope: 'ordinals_protocol',
             operation: 'inscription_feed',
           },
+          is_streaming_blocks: true,
         },
       };
       const response = await fastify.inject({
@@ -208,7 +210,7 @@ describe('EventServer', () => {
       expect(inscr.value).toBe('10000');
 
       // Rollback
-      const payload2 = {
+      const payload2: ChainhookPayload = {
         apply: [],
         rollback: [reveal],
         chainhook: {
@@ -217,6 +219,7 @@ describe('EventServer', () => {
             scope: 'ordinals_protocol',
             operation: 'inscription_feed',
           },
+          is_streaming_blocks: true,
         },
       };
       const response2 = await fastify.inject({
@@ -303,7 +306,7 @@ describe('EventServer', () => {
       };
 
       // Apply
-      const payload1 = {
+      const payload1: ChainhookPayload = {
         apply: [transfer],
         rollback: [],
         chainhook: {
@@ -312,6 +315,7 @@ describe('EventServer', () => {
             scope: 'ordinals_protocol',
             operation: 'inscription_feed',
           },
+          is_streaming_blocks: true,
         },
       };
       const response = await fastify.inject({
@@ -362,7 +366,7 @@ describe('EventServer', () => {
       expect(inscr.value).toBe('10000');
 
       // Rollback
-      const payload2 = {
+      const payload2: ChainhookPayload = {
         apply: [],
         rollback: [transfer],
         chainhook: {
@@ -371,6 +375,7 @@ describe('EventServer', () => {
             scope: 'ordinals_protocol',
             operation: 'inscription_feed',
           },
+          is_streaming_blocks: true,
         },
       };
       const response2 = await fastify.inject({
@@ -435,7 +440,7 @@ describe('EventServer', () => {
       };
 
       // Apply
-      const payload1 = {
+      const payload1: ChainhookPayload = {
         apply: [reveal],
         rollback: [],
         chainhook: {
@@ -444,6 +449,7 @@ describe('EventServer', () => {
             scope: 'ordinals_protocol',
             operation: 'inscription_feed',
           },
+          is_streaming_blocks: true,
         },
       };
       const response = await fastify.inject({
