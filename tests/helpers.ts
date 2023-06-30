@@ -28,6 +28,7 @@ export class TestChainhookPayloadBuilder {
         scope: 'ordinals_protocol',
         operation: 'inscription_feed',
       },
+      is_streaming_blocks: true,
     },
   };
   private action: 'apply' | 'rollback' = 'apply';
@@ -36,6 +37,11 @@ export class TestChainhookPayloadBuilder {
   }
   private get lastBlockTx(): Transaction {
     return this.lastBlock.transactions[this.lastBlock.transactions.length - 1];
+  }
+
+  streamingBlocks(streaming: boolean): this {
+    this.payload.chainhook.is_streaming_blocks = streaming;
+    return this;
   }
 
   apply(): this {

@@ -92,6 +92,7 @@ const ChainhookPayload = Type.Object({
       scope: Type.String(),
       operation: Type.String(),
     }),
+    is_streaming_blocks: Type.Boolean(),
   }),
 });
 export type ChainhookPayload = Static<typeof ChainhookPayload>;
