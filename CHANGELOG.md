@@ -1,3 +1,10 @@
+## [0.4.3](https://github.com/hirosystems/ordinals-api/compare/v0.4.2...v0.4.3) (2023-06-30)
+
+
+### Bug Fixes
+
+* create unique indexes for views for concurrent refresh ([#118](https://github.com/hirosystems/ordinals-api/issues/118)) ([58123cb](https://github.com/hirosystems/ordinals-api/commit/58123cbec9dda2b3c8cbddd8d8beb7751bed1c2d))
+
 ## [0.4.2](https://github.com/hirosystems/ordinals-api/compare/v0.4.1...v0.4.2) (2023-06-30)
 
 
