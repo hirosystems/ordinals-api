@@ -1,3 +1,10 @@
+## [0.4.2](https://github.com/hirosystems/ordinals-api/compare/v0.4.1...v0.4.2) (2023-06-30)
+
+
+### Bug Fixes
+
+* throw error on invalid chainhook payloads ([#117](https://github.com/hirosystems/ordinals-api/issues/117)) ([e639343](https://github.com/hirosystems/ordinals-api/commit/e63934319049bf950c58ef3bc6ba0ebb0b65b9c2))
+
 ## [0.4.1](https://github.com/hirosystems/ordinals-api/compare/v0.4.0...v0.4.1) (2023-06-30)
 
 
