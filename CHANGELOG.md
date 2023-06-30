@@ -1,3 +1,10 @@
+## [0.4.1](https://github.com/hirosystems/ordinals-api/compare/v0.4.0...v0.4.1) (2023-06-30)
+
+
+### Bug Fixes
+
+* skip expensive view refreshes when not streaming new blocks ([#116](https://github.com/hirosystems/ordinals-api/issues/116)) ([baec17c](https://github.com/hirosystems/ordinals-api/commit/baec17c51e3b5c4b6cb958b13dabb8c8c3de7a71))
+
 ## [0.4.0](https://github.com/hirosystems/ordinals-api/compare/v0.3.3...v0.4.0) (2023-06-29)
 
 
