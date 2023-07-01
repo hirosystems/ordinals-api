@@ -42,9 +42,7 @@ const CursedInscriptionRevealedSchema = Type.Object({
 export type CursedInscriptionRevealed = Static<typeof CursedInscriptionRevealedSchema>;
 
 const InscriptionTransferredSchema = Type.Object({
-  inscription_number: Type.Integer(),
   inscription_id: Type.String(),
-  ordinal_number: Type.Integer(),
   updated_address: Nullable(Type.String()),
   satpoint_pre_transfer: Type.String(),
   satpoint_post_transfer: Type.String(),
