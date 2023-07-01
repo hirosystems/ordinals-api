@@ -1,3 +1,10 @@
+## [0.4.5](https://github.com/hirosystems/ordinals-api/compare/v0.4.4...v0.4.5) (2023-07-01)
+
+
+### Bug Fixes
+
+* remove inscription_number and ordinal_number from transfers ([#121](https://github.com/hirosystems/ordinals-api/issues/121)) ([a4cbeae](https://github.com/hirosystems/ordinals-api/commit/a4cbeaeab697d419a470caf9bf18229cc5dbed8a))
+
 ## [0.4.4](https://github.com/hirosystems/ordinals-api/compare/v0.4.3...v0.4.4) (2023-06-30)
 
 
