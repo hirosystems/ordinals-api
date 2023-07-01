@@ -300,9 +300,7 @@ describe('/inscriptions', () => {
             hash: '0xbdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444',
           })
           .inscriptionTransferred({
-            inscription_number: 7,
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-            ordinal_number: 257418248345364,
             updated_address: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
             satpoint_pre_transfer:
               '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
@@ -351,9 +349,7 @@ describe('/inscriptions', () => {
             hash: '0xe3af144354367de58c675e987febcb49f17d6c19e645728b833fe95408feab85',
           })
           .inscriptionTransferred({
-            inscription_number: 7,
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-            ordinal_number: 257418248345364,
             updated_address: 'bc1pkjq7cerr6h53qm86k9t3dq0gqg8lcfz5jx7z4aj2mpqrjggrnass0u7qqj',
             satpoint_pre_transfer:
               'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
@@ -434,9 +430,7 @@ describe('/inscriptions', () => {
             hash: '0xbdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444',
           })
           .inscriptionTransferred({
-            inscription_number: -7,
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-            ordinal_number: 257418248345364,
             updated_address: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
             satpoint_pre_transfer:
               '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
@@ -485,9 +479,7 @@ describe('/inscriptions', () => {
             hash: '0xe3af144354367de58c675e987febcb49f17d6c19e645728b833fe95408feab85',
           })
           .inscriptionTransferred({
-            inscription_number: -7,
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-            ordinal_number: 257418248345364,
             updated_address: 'bc1pkjq7cerr6h53qm86k9t3dq0gqg8lcfz5jx7z4aj2mpqrjggrnass0u7qqj',
             satpoint_pre_transfer:
               'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
@@ -573,9 +565,7 @@ describe('/inscriptions', () => {
             hash: '0xbdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444',
           })
           .inscriptionTransferred({
-            inscription_number: 7,
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-            ordinal_number: 257418248345364,
             updated_address: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
             satpoint_pre_transfer:
               '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
@@ -630,9 +620,7 @@ describe('/inscriptions', () => {
             hash: '0xe3af144354367de58c675e987febcb49f17d6c19e645728b833fe95408feab85',
           })
           .inscriptionTransferred({
-            inscription_number: 7,
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-            ordinal_number: 257418248345364,
             updated_address: 'bc1pkjq7cerr6h53qm86k9t3dq0gqg8lcfz5jx7z4aj2mpqrjggrnass0u7qqj',
             satpoint_pre_transfer:
               'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
@@ -757,9 +745,7 @@ describe('/inscriptions', () => {
             hash: '0xbdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444',
           })
           .inscriptionTransferred({
-            inscription_number: 7,
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-            ordinal_number: 257418248345364,
             updated_address: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
             satpoint_pre_transfer:
               '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
@@ -771,9 +757,7 @@ describe('/inscriptions', () => {
             hash: 'abe7deebd0c6bacc9b1ddd234f9442db0530180448e934f34b9cbf3d7e6d91cb',
           })
           .inscriptionTransferred({
-            inscription_number: 8,
             inscription_id: '7ac73ecd01b9da4a7eab904655416dbfe8e03f193e091761b5a63ad0963570cdi0',
-            ordinal_number: 257418248345364,
             updated_address: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
             satpoint_pre_transfer:
               '7ac73ecd01b9da4a7eab904655416dbfe8e03f193e091761b5a63ad0963570cd:0:0',
@@ -858,9 +842,7 @@ describe('/inscriptions', () => {
             hash: '5cabafe04aaf98b1f325b0c3ffcbff904dbdb6f3d2e9e451102fda36f1056b5e',
           })
           .inscriptionTransferred({
-            inscription_number: 7,
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-            ordinal_number: 257418248345364,
             updated_address: 'bc1pkx5me775s748lzchytzdsw4f0lq04wssxnyk27g8fn3gee8zhjjqsn9tfp',
             satpoint_pre_transfer:
               'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
