@@ -212,7 +212,6 @@ export class PgStore extends BasePgStore {
                   { block_height, genesis_id: transfer.inscription_id },
                   `PgStore ignoring transfer for an inscription that does not exist`
                 );
-                return;
               }
             }
           }
