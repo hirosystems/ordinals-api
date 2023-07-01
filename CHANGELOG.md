@@ -1,3 +1,10 @@
+## [0.4.6](https://github.com/hirosystems/ordinals-api/compare/v0.4.5...v0.4.6) (2023-07-01)
+
+
+### Bug Fixes
+
+* process full block even on missing genesis ([#122](https://github.com/hirosystems/ordinals-api/issues/122)) ([edbf217](https://github.com/hirosystems/ordinals-api/commit/edbf217692756f87bc17fc35618ffe37b16fb92e))
+
 ## [0.4.5](https://github.com/hirosystems/ordinals-api/compare/v0.4.4...v0.4.5) (2023-07-01)
 
 
