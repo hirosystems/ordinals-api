@@ -1,6 +1,6 @@
 import { BitcoinEvent, Payload } from '@hirosystems/chainhook-client';
 import { Order, OrderBy } from '../api/schemas';
-import { normalizedHexString, parseSatPoint } from '../api/util/helpers';
+import { isProdEnv, normalizedHexString, parseSatPoint } from '../api/util/helpers';
 import { OrdinalSatoshi, SatoshiRarity } from '../api/util/ordinal-satoshi';
 import { ENV } from '../env';
 import { logger } from '../logger';
@@ -79,7 +79,6 @@ export class PgStore extends BasePgStore {
               logger.info(`PgStore rollback cursed reveal #${number} (${genesis_id})`);
             }
             if (operation.inscription_transferred) {
-              const number = operation.inscription_transferred.inscription_number;
               const genesis_id = operation.inscription_transferred.inscription_id;
               const satpoint = parseSatPoint(
                 operation.inscription_transferred.satpoint_post_transfer
@@ -87,7 +86,7 @@ export class PgStore extends BasePgStore {
               const output = `${satpoint.tx_id}:${satpoint.vout}`;
               const id = await this.rollBackInscriptionTransfer({ genesis_id, output });
               if (id) updatedInscriptionIds.add(id);
-              logger.info(`PgStore rollback transfer #${number} (${genesis_id}) ${output}`);
+              logger.info(`PgStore rollback transfer (${genesis_id}) ${output}`);
             }
           }
         }
@@ -141,6 +140,11 @@ export class PgStore extends BasePgStore {
               const reveal = operation.cursed_inscription_revealed;
               const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
               const satpoint = parseSatPoint(reveal.satpoint_post_inscription);
+              const curse_type = reveal.curse_type
+                ? typeof reveal.curse_type === 'string'
+                  ? reveal.curse_type
+                  : JSON.stringify(reveal.curse_type)
+                : null;
               const id = await this.insertInscriptionGenesis({
                 inscription: {
                   genesis_id: reveal.inscription_id,
@@ -150,7 +154,7 @@ export class PgStore extends BasePgStore {
                   number: reveal.inscription_number,
                   content: reveal.content_bytes,
                   fee: reveal.inscription_fee.toString(),
-                  curse_type: reveal.curse_type,
+                  curse_type,
                 },
                 location: {
                   block_hash,
@@ -178,29 +182,43 @@ export class PgStore extends BasePgStore {
               const transfer = operation.inscription_transferred;
               const satpoint = parseSatPoint(transfer.satpoint_post_transfer);
               const prevSatpoint = parseSatPoint(transfer.satpoint_pre_transfer);
-              const satoshi = new OrdinalSatoshi(transfer.ordinal_number);
-              const id = await this.insertInscriptionTransfer({
-                location: {
-                  block_hash,
-                  block_height,
-                  tx_id,
-                  genesis_id: transfer.inscription_id,
-                  address: transfer.updated_address,
-                  output: `${satpoint.tx_id}:${satpoint.vout}`,
-                  offset: satpoint.offset ?? null,
-                  prev_output: `${prevSatpoint.tx_id}:${prevSatpoint.vout}`,
-                  prev_offset: prevSatpoint.offset ?? null,
-                  value: transfer.post_transfer_output_value?.toString() ?? null,
-                  timestamp: event.timestamp,
-                  sat_ordinal: transfer.ordinal_number.toString(),
-                  sat_rarity: satoshi.rarity,
-                  sat_coinbase_height: satoshi.blockHeight,
-                },
+              const genesis = await this.getInscriptionGenesis({
+                genesis_id: transfer.inscription_id,
               });
-              if (id) updatedInscriptionIds.add(id);
-              logger.info(
-                `PgStore transfer #${transfer.inscription_number} (${transfer.inscription_id}) to output ${satpoint.tx_id}:${satpoint.vout} at block ${block_height}`
-              );
+              if (genesis) {
+                const inscription_id = parseInt(genesis.inscription_id);
+                await this.insertInscriptionTransfer({
+                  inscription_id,
+                  location: {
+                    block_hash,
+                    block_height,
+                    tx_id,
+                    genesis_id: transfer.inscription_id,
+                    address: transfer.updated_address,
+                    output: `${satpoint.tx_id}:${satpoint.vout}`,
+                    offset: satpoint.offset ?? null,
+                    prev_output: `${prevSatpoint.tx_id}:${prevSatpoint.vout}`,
+                    prev_offset: prevSatpoint.offset ?? null,
+                    value: transfer.post_transfer_output_value
+                      ? transfer.post_transfer_output_value.toString()
+                      : null,
+                    timestamp: event.timestamp,
+                    // TODO: Store these fields in `inscriptions` instead of `locations`.
+                    sat_ordinal: genesis.sat_ordinal,
+                    sat_rarity: genesis.sat_rarity,
+                    sat_coinbase_height: parseInt(genesis.sat_coinbase_height),
+                  },
+                });
+                updatedInscriptionIds.add(inscription_id);
+                logger.info(
+                  `PgStore transfer (${transfer.inscription_id}) to output ${satpoint.tx_id}:${satpoint.vout} at block ${block_height}`
+                );
+              } else {
+                logger.warn(
+                  { block_height, genesis_id: transfer.inscription_id },
+                  `PgStore ignoring transfer for an inscription that does not exist`
+                );
+              }
             }
           }
         }
@@ -208,11 +226,14 @@ export class PgStore extends BasePgStore {
       }
     });
     await this.normalizeInscriptionLocations({ inscription_id: Array.from(updatedInscriptionIds) });
-    await this.normalizeInscriptionCount({ min_block_height: updatedBlockHeightMin });
     await this.refreshMaterializedView('chain_tip');
-    await this.refreshMaterializedView('inscription_count');
-    await this.refreshMaterializedView('mime_type_counts');
-    await this.refreshMaterializedView('sat_rarity_counts');
+    // Skip expensive view refreshes if we're not streaming any live blocks yet.
+    if (payload.chainhook.is_streaming_blocks) {
+      await this.normalizeInscriptionCount({ min_block_height: updatedBlockHeightMin });
+      await this.refreshMaterializedView('inscription_count');
+      await this.refreshMaterializedView('mime_type_counts');
+      await this.refreshMaterializedView('sat_rarity_counts');
+    }
   }
 
   async getChainTipBlockHeight(): Promise<number> {
@@ -230,7 +251,7 @@ export class PgStore extends BasePgStore {
   async getMimeTypeInscriptionCount(mimeType?: string[]): Promise<number> {
     if (!mimeType) return 0;
     const result = await this.sql<{ count: number }[]>`
-      SELECT SUM(count) AS count
+      SELECT COALESCE(SUM(count), 0) AS count
       FROM mime_type_counts
       WHERE mime_type IN ${this.sql(mimeType)}
     `;
@@ -240,7 +261,7 @@ export class PgStore extends BasePgStore {
   async geSatRarityInscriptionCount(satRarity?: SatoshiRarity[]): Promise<number> {
     if (!satRarity) return 0;
     const result = await this.sql<{ count: number }[]>`
-      SELECT SUM(count) AS count
+      SELECT COALESCE(SUM(count), 0) AS count
       FROM sat_rarity_counts
       WHERE sat_rarity IN ${this.sql(satRarity)}
     `;
@@ -453,6 +474,19 @@ export class PgStore extends BasePgStore {
     });
   }
 
+  async getInscriptionGenesis(args: { genesis_id: string }): Promise<DbLocation | undefined> {
+    const results = await this.sql<DbLocation[]>`
+      SELECT ${this.sql(LOCATIONS_COLUMNS.map(c => `l.${c}`))}
+      FROM locations AS l
+      INNER JOIN inscriptions AS i ON l.inscription_id = i.id
+      WHERE i.genesis_id = ${args.genesis_id} AND genesis = TRUE
+      LIMIT 1
+    `;
+    if (results.count > 0) {
+      return results[0];
+    }
+  }
+
   async getInscriptionLocations(
     args: InscriptionIdentifier & { limit: number; offset: number }
   ): Promise<DbPaginatedResult<DbLocation>> {
@@ -568,9 +602,8 @@ export class PgStore extends BasePgStore {
   }
 
   async refreshMaterializedView(viewName: string) {
-    const isProd = process.env.NODE_ENV === 'production';
     await this.sql`REFRESH MATERIALIZED VIEW ${
-      isProd ? this.sql`CONCURRENTLY` : this.sql``
+      isProdEnv ? this.sql`CONCURRENTLY` : this.sql``
     } ${this.sql(viewName)}`;
   }
 
@@ -622,7 +655,7 @@ export class PgStore extends BasePgStore {
             SELECT id FROM locations WHERE sat_ordinal = ${args.location.sat_ordinal}
           `;
           if (dup.count > 0) {
-            logger.error(
+            logger.warn(
               {
                 block_height: args.location.block_height,
                 genesis_id: args.inscription.genesis_id,
@@ -696,53 +729,39 @@ export class PgStore extends BasePgStore {
   }
 
   private async insertInscriptionTransfer(args: {
+    inscription_id: number;
     location: DbLocationInsert;
-  }): Promise<number | undefined> {
-    let inscription_id: number | undefined;
-    await this.sqlWriteTransaction(async sql => {
-      const inscription = await sql<{ id: number }[]>`
-        SELECT id FROM inscriptions WHERE genesis_id = ${args.location.genesis_id}
-      `;
-      if (inscription.count === 0) {
-        logger.warn(
-          args.location,
-          `PgStore ignoring transfer for an inscription that does not exist`
-        );
-        return;
-      }
-      inscription_id = inscription[0].id;
-      const location = {
-        inscription_id,
-        block_height: args.location.block_height,
-        block_hash: args.location.block_hash,
-        tx_id: args.location.tx_id,
-        address: args.location.address,
-        output: args.location.output,
-        offset: args.location.offset,
-        prev_output: args.location.prev_output,
-        prev_offset: args.location.prev_offset,
-        value: args.location.value,
-        sat_ordinal: args.location.sat_ordinal,
-        sat_rarity: args.location.sat_rarity,
-        sat_coinbase_height: args.location.sat_coinbase_height,
-        timestamp: sql`to_timestamp(${args.location.timestamp})`,
-      };
-      await sql`
-        INSERT INTO locations ${sql(location)}
-        ON CONFLICT ON CONSTRAINT locations_inscription_id_block_height_unique DO UPDATE SET
-          block_hash = EXCLUDED.block_hash,
-          tx_id = EXCLUDED.tx_id,
-          address = EXCLUDED.address,
-          output = EXCLUDED.output,
-          "offset" = EXCLUDED.offset,
-          value = EXCLUDED.value,
-          sat_ordinal = EXCLUDED.sat_ordinal,
-          sat_rarity = EXCLUDED.sat_rarity,
-          sat_coinbase_height = EXCLUDED.sat_coinbase_height,
-          timestamp = EXCLUDED.timestamp
-      `;
-    });
-    return inscription_id;
+  }): Promise<void> {
+    const location = {
+      inscription_id: args.inscription_id,
+      block_height: args.location.block_height,
+      block_hash: args.location.block_hash,
+      tx_id: args.location.tx_id,
+      address: args.location.address,
+      output: args.location.output,
+      offset: args.location.offset,
+      prev_output: args.location.prev_output,
+      prev_offset: args.location.prev_offset,
+      value: args.location.value,
+      sat_ordinal: args.location.sat_ordinal,
+      sat_rarity: args.location.sat_rarity,
+      sat_coinbase_height: args.location.sat_coinbase_height,
+      timestamp: this.sql`to_timestamp(${args.location.timestamp})`,
+    };
+    await this.sql`
+      INSERT INTO locations ${this.sql(location)}
+      ON CONFLICT ON CONSTRAINT locations_inscription_id_block_height_unique DO UPDATE SET
+        block_hash = EXCLUDED.block_hash,
+        tx_id = EXCLUDED.tx_id,
+        address = EXCLUDED.address,
+        output = EXCLUDED.output,
+        "offset" = EXCLUDED.offset,
+        value = EXCLUDED.value,
+        sat_ordinal = EXCLUDED.sat_ordinal,
+        sat_rarity = EXCLUDED.sat_rarity,
+        sat_coinbase_height = EXCLUDED.sat_coinbase_height,
+        timestamp = EXCLUDED.timestamp
+    `;
   }
 
   private async normalizeInscriptionCount(args: { min_block_height: number }): Promise<void> {

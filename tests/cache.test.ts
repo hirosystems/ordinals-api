@@ -155,9 +155,7 @@ describe('ETag cache', () => {
       .block({ height: 775618 })
       .transaction({ hash: '0x38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc' })
       .inscriptionTransferred({
-        inscription_number: 2,
         inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-        ordinal_number: 257418248345364,
         updated_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
         satpoint_pre_transfer:
           '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',

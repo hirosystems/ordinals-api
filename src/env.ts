@@ -34,6 +34,11 @@ const schema = Type.Object({
    * coming from the valid instance
    */
   CHAINHOOK_NODE_AUTH_TOKEN: Type.String(),
+  /**
+   * Register chainhook predicates automatically when the API is first launched. Set this to `false`
+   * if you're configuring your predicates manually for any reason.
+   */
+  CHAINHOOK_AUTO_PREDICATE_REGISTRATION: Type.Boolean({ default: true }),
 
   PGHOST: Type.String(),
   PGPORT: Type.Number({ default: 5432, minimum: 0, maximum: 65535 }),

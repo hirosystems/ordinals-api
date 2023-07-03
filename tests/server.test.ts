@@ -1,48 +1,28 @@
-import { MockAgent, setGlobalDispatcher } from 'undici';
-import { CHAINHOOK_BASE_PATH, PREDICATE_UUID, startChainhookServer } from '../src/chainhook/server';
+import { MockAgent } from 'undici';
+import { PREDICATE_UUID, startChainhookServer } from '../src/chainhook/server';
 import { ENV } from '../src/env';
 import { cycleMigrations } from '../src/pg/migrations';
 import { PgStore } from '../src/pg/pg-store';
 import { TestChainhookPayloadBuilder } from './helpers';
-import { ChainhookEventObserver } from '@hirosystems/chainhook-client';
+import { ChainhookEventObserver, Payload } from '@hirosystems/chainhook-client';
 
 describe('EventServer', () => {
   let db: PgStore;
+  let server: ChainhookEventObserver;
 
   beforeEach(async () => {
     db = await PgStore.connect({ skipMigrations: true });
     await cycleMigrations();
+    ENV.CHAINHOOK_AUTO_PREDICATE_REGISTRATION = false;
+    server = await startChainhookServer({ db });
   });
 
   afterEach(async () => {
     await db.close();
+    await server.close();
   });
 
   describe('parser', () => {
-    let server: ChainhookEventObserver;
-    let agent: MockAgent;
-
-    beforeEach(async () => {
-      agent = new MockAgent();
-      agent.disableNetConnect();
-      const interceptor = agent.get(CHAINHOOK_BASE_PATH);
-      interceptor.intercept({ path: '/ping', method: 'GET' }).reply(200);
-      interceptor.intercept({ path: '/v1/chainhooks', method: 'POST' }).reply(200).times(2);
-      interceptor
-        .intercept({
-          path: `/v1/chainhooks/bitcoin/${PREDICATE_UUID}`,
-          method: 'DELETE',
-        })
-        .reply(200);
-      setGlobalDispatcher(agent);
-      server = await startChainhookServer({ db });
-    });
-
-    afterEach(async () => {
-      await server.close();
-      await agent.close();
-    });
-
     test('parses inscription_reveal apply and rollback', async () => {
       const reveal = {
         block_identifier: {
@@ -90,7 +70,7 @@ describe('EventServer', () => {
       };
 
       // Apply
-      const payload1 = {
+      const payload1: Payload = {
         apply: [reveal],
         rollback: [],
         chainhook: {
@@ -99,6 +79,7 @@ describe('EventServer', () => {
             scope: 'ordinals_protocol',
             operation: 'inscription_feed',
           },
+          is_streaming_blocks: true,
         },
       };
       const response = await server['fastify'].inject({
@@ -149,7 +130,7 @@ describe('EventServer', () => {
       expect(inscr.value).toBe('10000');
 
       // Rollback
-      const payload2 = {
+      const payload2: Payload = {
         apply: [],
         rollback: [reveal],
         chainhook: {
@@ -158,6 +139,7 @@ describe('EventServer', () => {
             scope: 'ordinals_protocol',
             operation: 'inscription_feed',
           },
+          is_streaming_blocks: true,
         },
       };
       const response2 = await server['fastify'].inject({
@@ -244,7 +226,7 @@ describe('EventServer', () => {
       };
 
       // Apply
-      const payload1 = {
+      const payload1: Payload = {
         apply: [transfer],
         rollback: [],
         chainhook: {
@@ -253,6 +235,7 @@ describe('EventServer', () => {
             scope: 'ordinals_protocol',
             operation: 'inscription_feed',
           },
+          is_streaming_blocks: true,
         },
       };
       const response = await server['fastify'].inject({
@@ -303,7 +286,7 @@ describe('EventServer', () => {
       expect(inscr.value).toBe('10000');
 
       // Rollback
-      const payload2 = {
+      const payload2: Payload = {
         apply: [],
         rollback: [transfer],
         chainhook: {
@@ -312,6 +295,7 @@ describe('EventServer', () => {
             scope: 'ordinals_protocol',
             operation: 'inscription_feed',
           },
+          is_streaming_blocks: true,
         },
       };
       const response2 = await server['fastify'].inject({
@@ -376,7 +360,7 @@ describe('EventServer', () => {
       };
 
       // Apply
-      const payload1 = {
+      const payload1: Payload = {
         apply: [reveal],
         rollback: [],
         chainhook: {
@@ -385,6 +369,7 @@ describe('EventServer', () => {
             scope: 'ordinals_protocol',
             operation: 'inscription_feed',
           },
+          is_streaming_blocks: true,
         },
       };
       const response = await server['fastify'].inject({

@@ -1,3 +1,85 @@
+## [0.4.6](https://github.com/hirosystems/ordinals-api/compare/v0.4.5...v0.4.6) (2023-07-01)
+
+
+### Bug Fixes
+
+* process full block even on missing genesis ([#122](https://github.com/hirosystems/ordinals-api/issues/122)) ([edbf217](https://github.com/hirosystems/ordinals-api/commit/edbf217692756f87bc17fc35618ffe37b16fb92e))
+
+## [0.4.5](https://github.com/hirosystems/ordinals-api/compare/v0.4.4...v0.4.5) (2023-07-01)
+
+
+### Bug Fixes
+
+* remove inscription_number and ordinal_number from transfers ([#121](https://github.com/hirosystems/ordinals-api/issues/121)) ([a4cbeae](https://github.com/hirosystems/ordinals-api/commit/a4cbeaeab697d419a470caf9bf18229cc5dbed8a))
+
+## [0.4.4](https://github.com/hirosystems/ordinals-api/compare/v0.4.3...v0.4.4) (2023-06-30)
+
+
+### Bug Fixes
+
+* don't ping chainhook node if auto predicate reg is disabled ([#119](https://github.com/hirosystems/ordinals-api/issues/119)) ([f04445e](https://github.com/hirosystems/ordinals-api/commit/f04445efa5df5876d6f22b7d616bcadfe4d95b99))
+
+## [0.4.3](https://github.com/hirosystems/ordinals-api/compare/v0.4.2...v0.4.3) (2023-06-30)
+
+
+### Bug Fixes
+
+* create unique indexes for views for concurrent refresh ([#118](https://github.com/hirosystems/ordinals-api/issues/118)) ([58123cb](https://github.com/hirosystems/ordinals-api/commit/58123cbec9dda2b3c8cbddd8d8beb7751bed1c2d))
+
+## [0.4.2](https://github.com/hirosystems/ordinals-api/compare/v0.4.1...v0.4.2) (2023-06-30)
+
+
+### Bug Fixes
+
+* throw error on invalid chainhook payloads ([#117](https://github.com/hirosystems/ordinals-api/issues/117)) ([e639343](https://github.com/hirosystems/ordinals-api/commit/e63934319049bf950c58ef3bc6ba0ebb0b65b9c2))
+
+## [0.4.1](https://github.com/hirosystems/ordinals-api/compare/v0.4.0...v0.4.1) (2023-06-30)
+
+
+### Bug Fixes
+
+* skip expensive view refreshes when not streaming new blocks ([#116](https://github.com/hirosystems/ordinals-api/issues/116)) ([baec17c](https://github.com/hirosystems/ordinals-api/commit/baec17c51e3b5c4b6cb958b13dabb8c8c3de7a71))
+
+## [0.4.0](https://github.com/hirosystems/ordinals-api/compare/v0.3.3...v0.4.0) (2023-06-29)
+
+
+### Features
+
+* api ingestion metrics on prometheus ([#113](https://github.com/hirosystems/ordinals-api/issues/113)) ([10ec679](https://github.com/hirosystems/ordinals-api/commit/10ec679ca7607be849dd642178f5f170b104ff9b))
+
+
+### Bug Fixes
+
+* allow nullable and tagged curse types ([#111](https://github.com/hirosystems/ordinals-api/issues/111)) ([641a627](https://github.com/hirosystems/ordinals-api/commit/641a627453aa313c08c697c8cfa05f8277525b4c))
+* check for prod correctly when refreshing materialized views ([#112](https://github.com/hirosystems/ordinals-api/issues/112)) ([4518043](https://github.com/hirosystems/ordinals-api/commit/45180430d20cb77278d452be21963a9e53c5e557))
+* send 500 code if payload ingestion fails ([#114](https://github.com/hirosystems/ordinals-api/issues/114)) ([0a3fee2](https://github.com/hirosystems/ordinals-api/commit/0a3fee228d29843454be81ee29284195fbbe45f1))
+
+## [0.4.0-beta.1](https://github.com/hirosystems/ordinals-api/compare/v0.3.4-beta.2...v0.4.0-beta.1) (2023-06-28)
+
+
+### Features
+
+* api ingestion metrics on prometheus ([#113](https://github.com/hirosystems/ordinals-api/issues/113)) ([10ec679](https://github.com/hirosystems/ordinals-api/commit/10ec679ca7607be849dd642178f5f170b104ff9b))
+
+
+### Bug Fixes
+
+* allow nullable and tagged curse types ([#111](https://github.com/hirosystems/ordinals-api/issues/111)) ([641a627](https://github.com/hirosystems/ordinals-api/commit/641a627453aa313c08c697c8cfa05f8277525b4c))
+
+## [0.3.4-beta.2](https://github.com/hirosystems/ordinals-api/compare/v0.3.4-beta.1...v0.3.4-beta.2) (2023-06-28)
+
+
+### Bug Fixes
+
+* send 500 code if payload ingestion fails ([#114](https://github.com/hirosystems/ordinals-api/issues/114)) ([0a3fee2](https://github.com/hirosystems/ordinals-api/commit/0a3fee228d29843454be81ee29284195fbbe45f1))
+
+## [0.3.4-beta.1](https://github.com/hirosystems/ordinals-api/compare/v0.3.3...v0.3.4-beta.1) (2023-06-28)
+
+
+### Bug Fixes
+
+* check for prod correctly when refreshing materialized views ([#112](https://github.com/hirosystems/ordinals-api/issues/112)) ([4518043](https://github.com/hirosystems/ordinals-api/commit/45180430d20cb77278d452be21963a9e53c5e557))
+
 ## [0.3.3](https://github.com/hirosystems/ordinals-api/compare/v0.3.2...v0.3.3) (2023-06-26)
 
 
