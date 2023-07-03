@@ -271,13 +271,13 @@ export class PgStore extends BasePgStore {
   }
 
   async getInscriptionsPerBlockETag(): Promise<string> {
-    const result = await this.sql<{ block_hash: string }[]>`
-      SELECT block_hash
+    const result = await this.sql<{ block_hash: string; inscription_count: string }[]>`
+      SELECT block_hash, inscription_count
       FROM inscriptions_per_block
       ORDER BY block_height DESC
       LIMIT 1
     `;
-    return result[0].block_hash;
+    return `${result[0].block_hash}:${result[0].inscription_count}`;
   }
 
   async getInscriptionContent(
