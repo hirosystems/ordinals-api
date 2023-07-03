@@ -219,3 +219,16 @@ export enum DbInscriptionIndexResultCountType {
   /** Filtered by custom arguments */
   custom,
 }
+
+export type DbInscriptionCountPerBlockFilters = {
+  from_block_height?: number;
+  to_block_height?: number;
+};
+
+export type DbInscriptionCountPerBlock = {
+  block_height: string;
+  block_hash: string;
+  inscription_count: string;
+  inscription_count_accum: string;
+  timestamp: number;
+};

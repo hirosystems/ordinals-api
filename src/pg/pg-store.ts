@@ -11,6 +11,8 @@ import { BasePgStore } from './postgres-tools/base-pg-store';
 import {
   DbFullyLocatedInscriptionResult,
   DbInscriptionContent,
+  DbInscriptionCountPerBlock,
+  DbInscriptionCountPerBlockFilters,
   DbInscriptionIndexFilters,
   DbInscriptionIndexOrder,
   DbInscriptionIndexPaging,
@@ -58,6 +60,7 @@ export class PgStore extends BasePgStore {
    */
   async updateInscriptions(payload: Payload): Promise<void> {
     const updatedInscriptionIds = new Set<number>();
+    let updatedBlockHeightMin = Infinity;
     await this.sqlWriteTransaction(async sql => {
       for (const rollbackEvent of payload.rollback) {
         const event = rollbackEvent as BitcoinEvent;
@@ -88,6 +91,7 @@ export class PgStore extends BasePgStore {
             }
           }
         }
+        updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
       }
       for (const applyEvent of payload.apply) {
         const event = applyEvent as BitcoinEvent;
@@ -186,9 +190,7 @@ export class PgStore extends BasePgStore {
                   offset: satpoint.offset ?? null,
                   prev_output: `${prevSatpoint.tx_id}:${prevSatpoint.vout}`,
                   prev_offset: prevSatpoint.offset ?? null,
-                  value: transfer.post_transfer_output_value
-                    ? transfer.post_transfer_output_value.toString()
-                    : null,
+                  value: transfer.post_transfer_output_value?.toString() ?? null,
                   timestamp: event.timestamp,
                   sat_ordinal: transfer.ordinal_number.toString(),
                   sat_rarity: satoshi.rarity,
@@ -202,9 +204,11 @@ export class PgStore extends BasePgStore {
             }
           }
         }
+        updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
       }
     });
     await this.normalizeInscriptionLocations({ inscription_id: Array.from(updatedInscriptionIds) });
+    await this.normalizeInscriptionCount({ min_block_height: updatedBlockHeightMin });
     await this.refreshMaterializedView('chain_tip');
     await this.refreshMaterializedView('inscription_count');
     await this.refreshMaterializedView('mime_type_counts');
@@ -264,6 +268,16 @@ export class PgStore extends BasePgStore {
   async getInscriptionTransfersETag(): Promise<string> {
     const result = await this.sql<{ max: number }[]>`SELECT MAX(id) FROM locations`;
     return result[0].max.toString();
+  }
+
+  async getInscriptionsPerBlockETag(): Promise<string> {
+    const result = await this.sql<{ block_hash: string; inscription_count: string }[]>`
+      SELECT block_hash, inscription_count
+      FROM inscriptions_per_block
+      ORDER BY block_height DESC
+      LIMIT 1
+    `;
+    return `${result[0].block_hash}:${result[0].inscription_count}`;
   }
 
   async getInscriptionContent(
@@ -528,6 +542,31 @@ export class PgStore extends BasePgStore {
     }
   }
 
+  async getInscriptionCountPerBlock(
+    filters: DbInscriptionCountPerBlockFilters
+  ): Promise<DbInscriptionCountPerBlock[]> {
+    const fromCondition = filters.from_block_height
+      ? this.sql`block_height >= ${filters.from_block_height}`
+      : this.sql``;
+
+    const toCondition = filters.to_block_height
+      ? this.sql`block_height <= ${filters.to_block_height}`
+      : this.sql``;
+
+    const where =
+      filters.from_block_height && filters.to_block_height
+        ? this.sql`WHERE ${fromCondition} AND ${toCondition}`
+        : this.sql`WHERE ${fromCondition}${toCondition}`;
+
+    return await this.sql<DbInscriptionCountPerBlock[]>`
+      SELECT *
+      FROM inscriptions_per_block
+      ${filters.from_block_height || filters.to_block_height ? where : this.sql``}
+      ORDER BY block_height DESC
+      LIMIT 5000
+    `; // roughly 35 days of blocks, assuming 10 minute block times on a full database
+  }
+
   async refreshMaterializedView(viewName: string) {
     const isProd = process.env.NODE_ENV === 'production';
     await this.sql`REFRESH MATERIALIZED VIEW ${
@@ -704,6 +743,45 @@ export class PgStore extends BasePgStore {
       `;
     });
     return inscription_id;
+  }
+
+  private async normalizeInscriptionCount(args: { min_block_height: number }): Promise<void> {
+    await this.sqlWriteTransaction(async sql => {
+      await sql`
+        DELETE FROM inscriptions_per_block
+        WHERE block_height >= ${args.min_block_height}
+      `;
+      // - gets highest total for a block < min_block_height
+      // - calculates new totals for all blocks >= min_block_height
+      // - inserts new totals
+      await sql`
+        WITH previous AS (
+          SELECT *
+          FROM inscriptions_per_block
+          WHERE block_height < ${args.min_block_height}
+          ORDER BY block_height DESC
+          LIMIT 1
+        ), updated_blocks AS (
+          SELECT
+            block_height,
+            MIN(block_hash),
+            COUNT(*) AS inscription_count,
+            COALESCE((SELECT previous.inscription_count_accum FROM previous), 0) + (SUM(COUNT(*)) OVER (ORDER BY block_height ASC)) AS inscription_count_accum,
+            MIN(timestamp)
+          FROM locations
+          WHERE block_height >= ${args.min_block_height} AND genesis = true
+          GROUP BY block_height
+          ORDER BY block_height ASC
+        )
+        INSERT INTO inscriptions_per_block
+        SELECT * FROM updated_blocks
+        ON CONFLICT (block_height) DO UPDATE SET
+          block_hash = EXCLUDED.block_hash,
+          inscription_count = EXCLUDED.inscription_count,
+          inscription_count_accum = EXCLUDED.inscription_count_accum,
+          timestamp = EXCLUDED.timestamp;
+      `;
+    });
   }
 
   private async rollBackInscriptionGenesis(args: { genesis_id: string }): Promise<void> {
