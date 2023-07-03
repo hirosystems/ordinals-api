@@ -33,7 +33,7 @@ export class TestChainhookPayloadBuilder {
   };
   private action: 'apply' | 'rollback' = 'apply';
   private get lastBlock(): BitcoinEvent {
-    return this.payload[this.action][this.payload[this.action].length - 1];
+    return this.payload[this.action][this.payload[this.action].length - 1] as BitcoinEvent;
   }
   private get lastBlockTx(): BitcoinTransaction {
     return this.lastBlock.transactions[this.lastBlock.transactions.length - 1];
