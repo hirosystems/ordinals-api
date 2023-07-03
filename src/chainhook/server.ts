@@ -19,36 +19,40 @@ export const PREDICATE_UUID = randomUUID();
  * @returns ChainhookEventObserver instance
  */
 export async function startChainhookServer(args: { db: PgStore }): Promise<ChainhookEventObserver> {
-  const blockHeight = await args.db.getChainTipBlockHeight();
-  logger.info(`Ordinals predicate starting from block ${blockHeight}...`);
-  const predicate: ServerPredicate = {
-    uuid: PREDICATE_UUID,
-    name: 'inscription_feed',
-    version: 1,
-    chain: 'bitcoin',
-    networks: {
-      mainnet: {
-        start_block: blockHeight,
-        if_this: {
-          scope: 'ordinals_protocol',
-          operation: 'inscription_feed',
+  const predicates: ServerPredicate[] = [];
+  if (ENV.CHAINHOOK_AUTO_PREDICATE_REGISTRATION) {
+    const blockHeight = await args.db.getChainTipBlockHeight();
+    logger.info(`Ordinals predicate starting from block ${blockHeight}...`);
+    predicates.push({
+      uuid: PREDICATE_UUID,
+      name: 'inscription_feed',
+      version: 1,
+      chain: 'bitcoin',
+      networks: {
+        mainnet: {
+          start_block: blockHeight,
+          if_this: {
+            scope: 'ordinals_protocol',
+            operation: 'inscription_feed',
+          },
         },
       },
-    },
-  };
+    });
+  }
 
-  const eventServer: ServerOptions = {
+  const serverOpts: ServerOptions = {
     hostname: ENV.API_HOST,
     port: ENV.EVENT_PORT,
     auth_token: ENV.CHAINHOOK_NODE_AUTH_TOKEN,
     external_base_url: `http://${ENV.EXTERNAL_HOSTNAME}`,
     validate_chainhook_payloads: true,
+    body_limit: 41943040, // 40MB
   };
-  const chainhook: ChainhookNodeOptions = {
+  const chainhookOpts: ChainhookNodeOptions = {
     base_url: CHAINHOOK_BASE_PATH,
   };
-  const server = new ChainhookEventObserver(eventServer, chainhook);
-  await server.start([predicate], async (_uuid: string, payload: Payload) => {
+  const server = new ChainhookEventObserver(serverOpts, chainhookOpts);
+  await server.start(predicates, async (_uuid: string, payload: Payload) => {
     await args.db.updateInscriptions(payload);
   });
   return server;
