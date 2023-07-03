@@ -4,7 +4,7 @@ import { ENV } from '../src/env';
 import { cycleMigrations } from '../src/pg/migrations';
 import { PgStore } from '../src/pg/pg-store';
 import { TestChainhookPayloadBuilder } from './helpers';
-import { ChainhookEventObserver } from '@hirosystems/chainhook-client';
+import { ChainhookEventObserver, Payload } from '@hirosystems/chainhook-client';
 
 describe('EventServer', () => {
   let db: PgStore;
@@ -90,7 +90,7 @@ describe('EventServer', () => {
       };
 
       // Apply
-      const payload1: ChainhookPayload = {
+      const payload1: Payload = {
         apply: [reveal],
         rollback: [],
         chainhook: {
@@ -150,7 +150,7 @@ describe('EventServer', () => {
       expect(inscr.value).toBe('10000');
 
       // Rollback
-      const payload2: ChainhookPayload = {
+      const payload2: Payload = {
         apply: [],
         rollback: [reveal],
         chainhook: {
@@ -246,7 +246,7 @@ describe('EventServer', () => {
       };
 
       // Apply
-      const payload1: ChainhookPayload = {
+      const payload1: Payload = {
         apply: [transfer],
         rollback: [],
         chainhook: {
@@ -306,7 +306,7 @@ describe('EventServer', () => {
       expect(inscr.value).toBe('10000');
 
       // Rollback
-      const payload2: ChainhookPayload = {
+      const payload2: Payload = {
         apply: [],
         rollback: [transfer],
         chainhook: {
@@ -380,7 +380,7 @@ describe('EventServer', () => {
       };
 
       // Apply
-      const payload1: ChainhookPayload = {
+      const payload1: Payload = {
         apply: [reveal],
         rollback: [],
         chainhook: {
