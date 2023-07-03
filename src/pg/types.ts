@@ -43,9 +43,6 @@ export type DbLocationInsert = {
   prev_output: string | null;
   prev_offset: PgNumeric | null;
   value: PgNumeric | null;
-  sat_ordinal: PgNumeric;
-  sat_rarity: string;
-  sat_coinbase_height: number;
   timestamp: number;
 };
 
@@ -61,9 +58,6 @@ export type DbLocation = {
   prev_output: string | null;
   prev_offset: string | null;
   value: string | null;
-  sat_ordinal: string;
-  sat_rarity: string;
-  sat_coinbase_height: string;
   timestamp: Date;
   genesis: boolean;
   current: boolean;
@@ -81,9 +75,6 @@ export type DbInscriptionLocationChange = {
   from_output: string;
   from_offset: string | null;
   from_value: string | null;
-  from_sat_ordinal: string;
-  from_sat_rarity: string;
-  from_sat_coinbase_height: string;
   from_timestamp: Date;
   from_genesis: boolean;
   from_current: boolean;
@@ -96,9 +87,6 @@ export type DbInscriptionLocationChange = {
   to_output: string;
   to_offset: string | null;
   to_value: string | null;
-  to_sat_ordinal: string;
-  to_sat_rarity: string;
-  to_sat_coinbase_height: string;
   to_timestamp: Date;
   to_genesis: boolean;
   to_current: boolean;
@@ -114,9 +102,6 @@ export const LOCATIONS_COLUMNS = [
   'output',
   'offset',
   'value',
-  'sat_ordinal',
-  'sat_rarity',
-  'sat_coinbase_height',
   'timestamp',
   'genesis',
   'current',
@@ -131,6 +116,9 @@ export type DbInscriptionInsert = {
   content: PgBytea;
   fee: PgNumeric;
   curse_type: string | null;
+  sat_ordinal: PgNumeric;
+  sat_rarity: string;
+  sat_coinbase_height: number;
 };
 
 export type DbInscription = {
@@ -141,6 +129,9 @@ export type DbInscription = {
   content_type: string;
   content_length: string;
   fee: string;
+  sat_ordinal: string;
+  sat_rarity: string;
+  sat_coinbase_height: string;
 };
 
 export type DbInscriptionContent = {
@@ -158,6 +149,9 @@ export const INSCRIPTIONS_COLUMNS = [
   'content_length',
   'fee',
   'curse_type',
+  'sat_ordinal',
+  'sat_rarity',
+  'sat_coinbase_height',
 ];
 
 export type DbJsonContent = {

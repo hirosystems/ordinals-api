@@ -113,6 +113,9 @@ export class PgStore extends BasePgStore {
                   content: reveal.content_bytes,
                   fee: reveal.inscription_fee.toString(),
                   curse_type: null,
+                  sat_ordinal: reveal.ordinal_number.toString(),
+                  sat_rarity: satoshi.rarity,
+                  sat_coinbase_height: satoshi.blockHeight,
                 },
                 location: {
                   block_hash,
@@ -126,9 +129,6 @@ export class PgStore extends BasePgStore {
                   prev_offset: null,
                   value: reveal.inscription_output_value.toString(),
                   timestamp: event.timestamp,
-                  sat_ordinal: reveal.ordinal_number.toString(),
-                  sat_rarity: satoshi.rarity,
-                  sat_coinbase_height: satoshi.blockHeight,
                 },
               });
               if (id) updatedInscriptionIds.add(id);
@@ -155,6 +155,9 @@ export class PgStore extends BasePgStore {
                   content: reveal.content_bytes,
                   fee: reveal.inscription_fee.toString(),
                   curse_type,
+                  sat_ordinal: reveal.ordinal_number.toString(),
+                  sat_rarity: satoshi.rarity,
+                  sat_coinbase_height: satoshi.blockHeight,
                 },
                 location: {
                   block_hash,
@@ -168,9 +171,6 @@ export class PgStore extends BasePgStore {
                   prev_offset: null,
                   value: reveal.inscription_output_value.toString(),
                   timestamp: event.timestamp,
-                  sat_ordinal: reveal.ordinal_number.toString(),
-                  sat_rarity: satoshi.rarity,
-                  sat_coinbase_height: satoshi.blockHeight,
                 },
               });
               if (id) updatedInscriptionIds.add(id);
@@ -203,10 +203,6 @@ export class PgStore extends BasePgStore {
                       ? transfer.post_transfer_output_value.toString()
                       : null,
                     timestamp: event.timestamp,
-                    // TODO: Store these fields in `inscriptions` instead of `locations`.
-                    sat_ordinal: genesis.sat_ordinal,
-                    sat_rarity: genesis.sat_rarity,
-                    sat_coinbase_height: parseInt(genesis.sat_coinbase_height),
                   },
                 });
                 updatedInscriptionIds.add(inscription_id);
