@@ -2,13 +2,13 @@ import { FastifyBaseLogger, FastifyInstance } from 'fastify';
 import { IncomingMessage, Server, ServerResponse } from 'http';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import {
-  ChainhookPayload,
-  CursedInscriptionRevealed,
-  InscriptionEvent,
-  InscriptionRevealed,
-  InscriptionTransferred,
-  Transaction,
-} from '../src/chainhook/schemas';
+  BitcoinCursedInscriptionRevealed,
+  BitcoinEvent,
+  BitcoinInscriptionRevealed,
+  BitcoinInscriptionTransferred,
+  BitcoinTransaction,
+  Payload,
+} from '@hirosystems/chainhook-client';
 
 export type TestFastifyServer = FastifyInstance<
   Server,
@@ -19,7 +19,7 @@ export type TestFastifyServer = FastifyInstance<
 >;
 
 export class TestChainhookPayloadBuilder {
-  private payload: ChainhookPayload = {
+  private payload: Payload = {
     apply: [],
     rollback: [],
     chainhook: {
@@ -32,10 +32,10 @@ export class TestChainhookPayloadBuilder {
     },
   };
   private action: 'apply' | 'rollback' = 'apply';
-  private get lastBlock(): InscriptionEvent {
+  private get lastBlock(): BitcoinEvent {
     return this.payload[this.action][this.payload[this.action].length - 1];
   }
-  private get lastBlockTx(): Transaction {
+  private get lastBlockTx(): BitcoinTransaction {
     return this.lastBlock.transactions[this.lastBlock.transactions.length - 1];
   }
 
@@ -67,7 +67,7 @@ export class TestChainhookPayloadBuilder {
       timestamp: args.timestamp ?? 1677803510,
       transactions: [],
       metadata: {},
-    });
+    } as BitcoinEvent);
     return this;
   }
 
@@ -85,22 +85,22 @@ export class TestChainhookPayloadBuilder {
     return this;
   }
 
-  inscriptionRevealed(args: InscriptionRevealed): this {
+  inscriptionRevealed(args: BitcoinInscriptionRevealed): this {
     this.lastBlockTx.metadata.ordinal_operations.push({ inscription_revealed: args });
     return this;
   }
 
-  cursedInscriptionRevealed(args: CursedInscriptionRevealed): this {
+  cursedInscriptionRevealed(args: BitcoinCursedInscriptionRevealed): this {
     this.lastBlockTx.metadata.ordinal_operations.push({ cursed_inscription_revealed: args });
     return this;
   }
 
-  inscriptionTransferred(args: InscriptionTransferred): this {
+  inscriptionTransferred(args: BitcoinInscriptionTransferred): this {
     this.lastBlockTx.metadata.ordinal_operations.push({ inscription_transferred: args });
     return this;
   }
 
-  build(): ChainhookPayload {
+  build(): Payload {
     return this.payload;
   }
 }

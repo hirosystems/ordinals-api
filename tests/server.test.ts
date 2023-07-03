@@ -1,10 +1,10 @@
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import { buildChainhookServer, CHAINHOOK_BASE_PATH, PREDICATE_UUID } from '../src/chainhook/server';
+import { CHAINHOOK_BASE_PATH, PREDICATE_UUID, startChainhookServer } from '../src/chainhook/server';
 import { ENV } from '../src/env';
 import { cycleMigrations } from '../src/pg/migrations';
 import { PgStore } from '../src/pg/pg-store';
-import { TestChainhookPayloadBuilder, TestFastifyServer } from './helpers';
-import { ChainhookPayload } from '../src/chainhook/schemas';
+import { TestChainhookPayloadBuilder } from './helpers';
+import { ChainhookEventObserver } from '@hirosystems/chainhook-client';
 
 describe('EventServer', () => {
   let db: PgStore;
@@ -18,68 +18,8 @@ describe('EventServer', () => {
     await db.close();
   });
 
-  describe('hooks', () => {
-    test('waits for chainhooks node to be ready', async () => {
-      const agent = new MockAgent();
-      agent.disableNetConnect();
-      const interceptor = agent.get(CHAINHOOK_BASE_PATH);
-      // Fail ping 2 times
-      interceptor.intercept({ path: '/ping', method: 'GET' }).reply(503).times(2);
-      // Succeed
-      interceptor.intercept({ path: '/ping', method: 'GET' }).reply(200);
-      interceptor.intercept({ path: '/v1/chainhooks', method: 'POST' }).reply(200).times(2);
-      interceptor
-        .intercept({
-          path: `/v1/chainhooks/bitcoin/${PREDICATE_UUID}`,
-          method: 'DELETE',
-        })
-        .reply(200);
-      setGlobalDispatcher(agent);
-
-      const fastify = await buildChainhookServer({ db });
-      const payload = { test: 'value' };
-      await fastify.inject({
-        method: 'POST',
-        url: '/chainhook/inscription_feed',
-        headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
-        payload,
-      });
-
-      await fastify.close();
-      await agent.close();
-      agent.assertNoPendingInterceptors();
-    });
-
-    test('ignores unauthorized events', async () => {
-      const agent = new MockAgent();
-      agent.disableNetConnect();
-      const interceptor = agent.get(CHAINHOOK_BASE_PATH);
-      interceptor.intercept({ path: '/ping', method: 'GET' }).reply(200);
-      interceptor.intercept({ path: '/v1/chainhooks', method: 'POST' }).reply(200).times(2);
-      interceptor
-        .intercept({
-          path: `/v1/chainhooks/bitcoin/${PREDICATE_UUID}`,
-          method: 'DELETE',
-        })
-        .reply(200);
-      setGlobalDispatcher(agent);
-
-      const fastify = await buildChainhookServer({ db });
-      const payload = { test: 'value' };
-      const response = await fastify.inject({
-        method: 'POST',
-        url: '/chainhook/inscription_feed',
-        payload,
-      });
-      expect(response.statusCode).toBe(403);
-
-      await fastify.close();
-      await agent.close();
-    });
-  });
-
   describe('parser', () => {
-    let fastify: TestFastifyServer;
+    let server: ChainhookEventObserver;
     let agent: MockAgent;
 
     beforeEach(async () => {
@@ -95,11 +35,11 @@ describe('EventServer', () => {
         })
         .reply(200);
       setGlobalDispatcher(agent);
-      fastify = await buildChainhookServer({ db });
+      server = await startChainhookServer({ db });
     });
 
     afterEach(async () => {
-      await fastify.close();
+      await server.close();
       await agent.close();
     });
 
@@ -162,9 +102,9 @@ describe('EventServer', () => {
           is_streaming_blocks: true,
         },
       };
-      const response = await fastify.inject({
+      const response = await server['fastify'].inject({
         method: 'POST',
-        url: '/chainhook/inscription_feed',
+        url: `/chainhook/${PREDICATE_UUID}`,
         headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
         payload: payload1,
       });
@@ -222,9 +162,9 @@ describe('EventServer', () => {
           is_streaming_blocks: true,
         },
       };
-      const response2 = await fastify.inject({
+      const response2 = await server['fastify'].inject({
         method: 'POST',
-        url: '/chainhook/inscription_feed',
+        url: `/chainhook/${PREDICATE_UUID}`,
         headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
         payload: payload2,
       });
@@ -318,9 +258,9 @@ describe('EventServer', () => {
           is_streaming_blocks: true,
         },
       };
-      const response = await fastify.inject({
+      const response = await server['fastify'].inject({
         method: 'POST',
-        url: '/chainhook/inscription_feed',
+        url: `/chainhook/${PREDICATE_UUID}`,
         headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
         payload: payload1,
       });
@@ -378,9 +318,9 @@ describe('EventServer', () => {
           is_streaming_blocks: true,
         },
       };
-      const response2 = await fastify.inject({
+      const response2 = await server['fastify'].inject({
         method: 'POST',
-        url: '/chainhook/inscription_feed',
+        url: `/chainhook/${PREDICATE_UUID}`,
         headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
         payload: payload2,
       });
@@ -452,9 +392,9 @@ describe('EventServer', () => {
           is_streaming_blocks: true,
         },
       };
-      const response = await fastify.inject({
+      const response = await server['fastify'].inject({
         method: 'POST',
-        url: '/chainhook/inscription_feed',
+        url: `/chainhook/${PREDICATE_UUID}`,
         headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
         payload: payload1,
       });
