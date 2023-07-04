@@ -13,4 +13,5 @@ export function up(pgm: MigrationBuilder): void {
     GROUP BY sat_rarity
     `
   );
+  pgm.createIndex('sat_rarity_counts', ['sat_rarity'], { unique: true });
 }

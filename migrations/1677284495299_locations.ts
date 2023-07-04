@@ -38,6 +38,12 @@ export function up(pgm: MigrationBuilder): void {
     offset: {
       type: 'numeric',
     },
+    prev_output: {
+      type: 'text',
+    },
+    prev_offset: {
+      type: 'numeric',
+    },
     value: {
       type: 'numeric',
     },
@@ -72,4 +78,5 @@ export function up(pgm: MigrationBuilder): void {
   pgm.createIndex('locations', ['address']);
   pgm.createIndex('locations', ['output']);
   pgm.createIndex('locations', ['timestamp']);
+  pgm.createIndex('locations', ['prev_output']);
 }

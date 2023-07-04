@@ -49,6 +49,9 @@ export function up(pgm: MigrationBuilder): void {
       type: 'numeric',
       notNull: true,
     },
+    curse_type: {
+      type: 'text',
+    },
   });
   pgm.createConstraint('inscriptions', 'inscriptions_number_unique', 'UNIQUE(number)');
   pgm.createIndex('inscriptions', ['genesis_id']);
