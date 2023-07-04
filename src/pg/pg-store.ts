@@ -59,7 +59,7 @@ export class PgStore extends BasePgStore {
    * @param args - Apply/Rollback Chainhook events
    */
   async updateInscriptions(payload: Payload): Promise<void> {
-    const updatedInscriptionIds = new Set<number>();
+    const updatedGenesisIds = new Set<string>();
     let updatedBlockHeightMin = Infinity;
     await this.sqlWriteTransaction(async sql => {
       for (const rollbackEvent of payload.rollback) {
@@ -69,13 +69,13 @@ export class PgStore extends BasePgStore {
             if (operation.inscription_revealed) {
               const number = operation.inscription_revealed.inscription_number;
               const genesis_id = operation.inscription_revealed.inscription_id;
-              await this.rollBackInscriptionGenesis({ genesis_id });
+              await this.rollBackInscription({ genesis_id });
               logger.info(`PgStore rollback reveal #${number} (${genesis_id})`);
             }
             if (operation.cursed_inscription_revealed) {
               const number = operation.cursed_inscription_revealed.inscription_number;
               const genesis_id = operation.cursed_inscription_revealed.inscription_id;
-              await this.rollBackInscriptionGenesis({ genesis_id });
+              await this.rollBackInscription({ genesis_id });
               logger.info(`PgStore rollback cursed reveal #${number} (${genesis_id})`);
             }
             if (operation.inscription_transferred) {
@@ -84,8 +84,8 @@ export class PgStore extends BasePgStore {
                 operation.inscription_transferred.satpoint_post_transfer
               );
               const output = `${satpoint.tx_id}:${satpoint.vout}`;
-              const id = await this.rollBackInscriptionTransfer({ genesis_id, output });
-              if (id) updatedInscriptionIds.add(id);
+              await this.rollBackLocation({ genesis_id, output });
+              updatedGenesisIds.add(genesis_id);
               logger.info(`PgStore rollback transfer (${genesis_id}) ${output}`);
             }
           }
@@ -103,7 +103,7 @@ export class PgStore extends BasePgStore {
               const reveal = operation.inscription_revealed;
               const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
               const satpoint = parseSatPoint(reveal.satpoint_post_inscription);
-              const id = await this.insertInscriptionGenesis({
+              await this.insertInscription({
                 inscription: {
                   genesis_id: reveal.inscription_id,
                   mime_type: reveal.content_type.split(';')[0],
@@ -131,10 +131,7 @@ export class PgStore extends BasePgStore {
                   timestamp: event.timestamp,
                 },
               });
-              if (id) updatedInscriptionIds.add(id);
-              logger.info(
-                `PgStore reveal #${reveal.inscription_number} (${reveal.inscription_id}) at block ${block_height}`
-              );
+              updatedGenesisIds.add(reveal.inscription_id);
             }
             if (operation.cursed_inscription_revealed) {
               const reveal = operation.cursed_inscription_revealed;
@@ -145,7 +142,7 @@ export class PgStore extends BasePgStore {
                   ? reveal.curse_type
                   : JSON.stringify(reveal.curse_type)
                 : null;
-              const id = await this.insertInscriptionGenesis({
+              await this.insertInscription({
                 inscription: {
                   genesis_id: reveal.inscription_id,
                   mime_type: reveal.content_type.split(';')[0],
@@ -173,55 +170,37 @@ export class PgStore extends BasePgStore {
                   timestamp: event.timestamp,
                 },
               });
-              if (id) updatedInscriptionIds.add(id);
-              logger.info(
-                `PgStore cursed reveal #${reveal.inscription_number} (${reveal.inscription_id}) at block ${block_height}`
-              );
+              updatedGenesisIds.add(reveal.inscription_id);
             }
             if (operation.inscription_transferred) {
               const transfer = operation.inscription_transferred;
               const satpoint = parseSatPoint(transfer.satpoint_post_transfer);
               const prevSatpoint = parseSatPoint(transfer.satpoint_pre_transfer);
-              const genesis = await this.getInscriptionGenesis({
-                genesis_id: transfer.inscription_id,
+              await this.insertLocation({
+                location: {
+                  block_hash,
+                  block_height,
+                  tx_id,
+                  genesis_id: transfer.inscription_id,
+                  address: transfer.updated_address,
+                  output: `${satpoint.tx_id}:${satpoint.vout}`,
+                  offset: satpoint.offset ?? null,
+                  prev_output: `${prevSatpoint.tx_id}:${prevSatpoint.vout}`,
+                  prev_offset: prevSatpoint.offset ?? null,
+                  value: transfer.post_transfer_output_value
+                    ? transfer.post_transfer_output_value.toString()
+                    : null,
+                  timestamp: event.timestamp,
+                },
               });
-              if (genesis) {
-                const inscription_id = parseInt(genesis.inscription_id);
-                await this.insertInscriptionTransfer({
-                  inscription_id,
-                  location: {
-                    block_hash,
-                    block_height,
-                    tx_id,
-                    genesis_id: transfer.inscription_id,
-                    address: transfer.updated_address,
-                    output: `${satpoint.tx_id}:${satpoint.vout}`,
-                    offset: satpoint.offset ?? null,
-                    prev_output: `${prevSatpoint.tx_id}:${prevSatpoint.vout}`,
-                    prev_offset: prevSatpoint.offset ?? null,
-                    value: transfer.post_transfer_output_value
-                      ? transfer.post_transfer_output_value.toString()
-                      : null,
-                    timestamp: event.timestamp,
-                  },
-                });
-                updatedInscriptionIds.add(inscription_id);
-                logger.info(
-                  `PgStore transfer (${transfer.inscription_id}) to output ${satpoint.tx_id}:${satpoint.vout} at block ${block_height}`
-                );
-              } else {
-                logger.warn(
-                  { block_height, genesis_id: transfer.inscription_id },
-                  `PgStore ignoring transfer for an inscription that does not exist`
-                );
-              }
+              updatedGenesisIds.add(transfer.inscription_id);
             }
           }
         }
         updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
       }
     });
-    await this.normalizeInscriptionLocations({ inscription_id: Array.from(updatedInscriptionIds) });
+    await this.normalizeInscriptionLocations({ genesis_id: Array.from(updatedGenesisIds) });
     await this.refreshMaterializedView('chain_tip');
     // Skip expensive view refreshes if we're not streaming any live blocks yet.
     if (payload.chainhook.is_streaming_blocks) {
@@ -344,10 +323,10 @@ export class PgStore extends BasePgStore {
       let orderBy = sql`gen.block_height`;
       switch (sort?.order_by) {
         case OrderBy.ordinal:
-          orderBy = sql`loc.sat_ordinal`;
+          orderBy = sql`i.sat_ordinal`;
           break;
         case OrderBy.rarity:
-          orderBy = sql`ARRAY_POSITION(ARRAY['common','uncommon','rare','epic','legendary','mythic'], loc.sat_rarity)`;
+          orderBy = sql`ARRAY_POSITION(ARRAY['common','uncommon','rare','epic','legendary','mythic'], i.sat_rarity)`;
           break;
       }
       // `ORDER` statement
@@ -361,6 +340,9 @@ export class PgStore extends BasePgStore {
           i.content_length,
           i.fee AS genesis_fee,
           i.curse_type,
+          i.sat_ordinal,
+          i.sat_rarity,
+          i.sat_coinbase_height,
           gen.block_height AS genesis_block_height,
           gen.block_hash AS genesis_block_hash,
           gen.tx_id AS genesis_tx_id,
@@ -370,11 +352,8 @@ export class PgStore extends BasePgStore {
           loc.address,
           loc.output,
           loc.offset,
-          loc.sat_ordinal,
-          loc.sat_rarity,
           loc.timestamp,
           loc.value,
-          loc.sat_coinbase_height,
           ${
             countType === DbInscriptionIndexResultCountType.custom
               ? sql`COUNT(*) OVER() as total`
@@ -411,12 +390,12 @@ export class PgStore extends BasePgStore {
           }
           ${
             filters?.from_sat_coinbase_height
-              ? sql`AND loc.sat_coinbase_height >= ${filters.from_sat_coinbase_height}`
+              ? sql`AND i.sat_coinbase_height >= ${filters.from_sat_coinbase_height}`
               : sql``
           }
           ${
             filters?.to_sat_coinbase_height
-              ? sql`AND loc.sat_coinbase_height <= ${filters.to_sat_coinbase_height}`
+              ? sql`AND i.sat_coinbase_height <= ${filters.to_sat_coinbase_height}`
               : sql``
           }
           ${
@@ -431,10 +410,10 @@ export class PgStore extends BasePgStore {
           }
           ${
             filters?.from_sat_ordinal
-              ? sql`AND loc.sat_ordinal >= ${filters.from_sat_ordinal}`
+              ? sql`AND i.sat_ordinal >= ${filters.from_sat_ordinal}`
               : sql``
           }
-          ${filters?.to_sat_ordinal ? sql`AND loc.sat_ordinal <= ${filters.to_sat_ordinal}` : sql``}
+          ${filters?.to_sat_ordinal ? sql`AND i.sat_ordinal <= ${filters.to_sat_ordinal}` : sql``}
           ${filters?.number?.length ? sql`AND i.number IN ${sql(filters.number)}` : sql``}
           ${filters?.from_number ? sql`AND i.number >= ${filters.from_number}` : sql``}
           ${filters?.to_number ? sql`AND i.number <= ${filters.to_number}` : sql``}
@@ -443,10 +422,10 @@ export class PgStore extends BasePgStore {
           ${filters?.output ? sql`AND loc.output = ${filters.output}` : sql``}
           ${
             filters?.sat_rarity?.length
-              ? sql`AND loc.sat_rarity IN ${sql(filters.sat_rarity)}`
+              ? sql`AND i.sat_rarity IN ${sql(filters.sat_rarity)}`
               : sql``
           }
-          ${filters?.sat_ordinal ? sql`AND loc.sat_ordinal = ${filters.sat_ordinal}` : sql``}
+          ${filters?.sat_ordinal ? sql`AND i.sat_ordinal = ${filters.sat_ordinal}` : sql``}
         ORDER BY ${orderBy} ${order}
         LIMIT ${page.limit}
         OFFSET ${page.offset}
@@ -468,19 +447,6 @@ export class PgStore extends BasePgStore {
         results: results ?? [],
       };
     });
-  }
-
-  async getInscriptionGenesis(args: { genesis_id: string }): Promise<DbLocation | undefined> {
-    const results = await this.sql<DbLocation[]>`
-      SELECT ${this.sql(LOCATIONS_COLUMNS.map(c => `l.${c}`))}
-      FROM locations AS l
-      INNER JOIN inscriptions AS i ON l.inscription_id = i.id
-      WHERE i.genesis_id = ${args.genesis_id} AND genesis = TRUE
-      LIMIT 1
-    `;
-    if (results.count > 0) {
-      return results[0];
-    }
   }
 
   async getInscriptionLocations(
@@ -603,65 +569,15 @@ export class PgStore extends BasePgStore {
     } ${this.sql(viewName)}`;
   }
 
-  private async insertInscriptionGenesis(args: {
+  private async insertInscription(args: {
     inscription: DbInscriptionInsert;
     location: DbLocationInsert;
   }): Promise<number | undefined> {
     let inscription_id: number | undefined;
     await this.sqlWriteTransaction(async sql => {
-      // Are we upserting?
       const prevInscription = await sql<{ id: number }[]>`
         SELECT id FROM inscriptions WHERE number = ${args.inscription.number}
       `;
-      if (prevInscription.count !== 0) {
-        logger.warn(
-          {
-            block_height: args.location.block_height,
-            genesis_id: args.inscription.genesis_id,
-          },
-          `PgStore upserting inscription genesis #${args.inscription.number}`
-        );
-      } else {
-        // Is this a sequential genesis insert?
-        if (args.inscription.number < 0) {
-          // Is it a cursed inscription?
-          const maxCursed = await this.getMaxCursedInscriptionNumber();
-          if (maxCursed !== undefined && maxCursed - 1 !== args.inscription.number) {
-            logger.warn(
-              {
-                block_height: args.location.block_height,
-                genesis_id: args.inscription.genesis_id,
-              },
-              `PgStore inserting out-of-order cursed inscription genesis #${args.inscription.number}, current max is #${maxCursed}`
-            );
-          }
-        } else {
-          const maxNumber = await this.getMaxInscriptionNumber();
-          if (maxNumber !== undefined && maxNumber + 1 !== args.inscription.number) {
-            logger.warn(
-              {
-                block_height: args.location.block_height,
-                genesis_id: args.inscription.genesis_id,
-              },
-              `PgStore inserting out-of-order inscription genesis #${args.inscription.number}, current max is #${maxNumber}`
-            );
-          }
-          // Is this a blessed inscription in a duplicate sat?
-          const dup = await sql<{ id: number }[]>`
-            SELECT id FROM locations WHERE sat_ordinal = ${args.location.sat_ordinal}
-          `;
-          if (dup.count > 0) {
-            logger.warn(
-              {
-                block_height: args.location.block_height,
-                genesis_id: args.inscription.genesis_id,
-              },
-              `PgStore inserting duplicate blessed inscription in satoshi ${args.location.sat_ordinal}`
-            );
-          }
-        }
-      }
-
       const inscription = await sql<{ id: number }[]>`
         INSERT INTO inscriptions ${sql(args.inscription)}
         ON CONFLICT ON CONSTRAINT inscriptions_number_unique DO UPDATE SET
@@ -670,12 +586,16 @@ export class PgStore extends BasePgStore {
           content_type = EXCLUDED.content_type,
           content_length = EXCLUDED.content_length,
           content = EXCLUDED.content,
-          fee = EXCLUDED.fee
+          fee = EXCLUDED.fee,
+          sat_ordinal = EXCLUDED.sat_ordinal,
+          sat_rarity = EXCLUDED.sat_rarity,
+          sat_coinbase_height = EXCLUDED.sat_coinbase_height
         RETURNING id
       `;
       inscription_id = inscription[0].id;
       const location = {
         inscription_id,
+        genesis_id: args.location.genesis_id,
         block_height: args.location.block_height,
         block_hash: args.location.block_hash,
         tx_id: args.location.tx_id,
@@ -685,23 +605,18 @@ export class PgStore extends BasePgStore {
         prev_output: args.location.prev_output,
         prev_offset: args.location.prev_offset,
         value: args.location.value,
-        sat_ordinal: args.location.sat_ordinal,
-        sat_rarity: args.location.sat_rarity,
-        sat_coinbase_height: args.location.sat_coinbase_height,
         timestamp: sql`to_timestamp(${args.location.timestamp})`,
       };
       await sql<DbLocation[]>`
         INSERT INTO locations ${sql(location)}
-        ON CONFLICT ON CONSTRAINT locations_inscription_id_block_height_unique DO UPDATE SET
+        ON CONFLICT ON CONSTRAINT locations_genesis_id_block_height_unique DO UPDATE SET
+          inscription_id = EXCLUDED.inscription_id,
           block_hash = EXCLUDED.block_hash,
           tx_id = EXCLUDED.tx_id,
           address = EXCLUDED.address,
           output = EXCLUDED.output,
           "offset" = EXCLUDED.offset,
           value = EXCLUDED.value,
-          sat_ordinal = EXCLUDED.sat_ordinal,
-          sat_rarity = EXCLUDED.sat_rarity,
-          sat_coinbase_height = EXCLUDED.sat_coinbase_height,
           timestamp = EXCLUDED.timestamp
       `;
       const json = inscriptionContentToJson(args.inscription);
@@ -720,44 +635,60 @@ export class PgStore extends BasePgStore {
             content = EXCLUDED.content
         `;
       }
+      if (prevInscription.count !== 0) {
+        logger.warn(
+          `PgStore upsert reveal #${args.inscription.number} (${args.inscription.genesis_id}) at block ${args.location.block_height}`
+        );
+      } else {
+        logger.info(
+          `PgStore reveal #${args.inscription.number} (${args.inscription.genesis_id}) at block ${args.location.block_height}`
+        );
+      }
     });
     return inscription_id;
   }
 
-  private async insertInscriptionTransfer(args: {
-    inscription_id: number;
-    location: DbLocationInsert;
-  }): Promise<void> {
-    const location = {
-      inscription_id: args.inscription_id,
-      block_height: args.location.block_height,
-      block_hash: args.location.block_hash,
-      tx_id: args.location.tx_id,
-      address: args.location.address,
-      output: args.location.output,
-      offset: args.location.offset,
-      prev_output: args.location.prev_output,
-      prev_offset: args.location.prev_offset,
-      value: args.location.value,
-      sat_ordinal: args.location.sat_ordinal,
-      sat_rarity: args.location.sat_rarity,
-      sat_coinbase_height: args.location.sat_coinbase_height,
-      timestamp: this.sql`to_timestamp(${args.location.timestamp})`,
-    };
-    await this.sql`
-      INSERT INTO locations ${this.sql(location)}
-      ON CONFLICT ON CONSTRAINT locations_inscription_id_block_height_unique DO UPDATE SET
-        block_hash = EXCLUDED.block_hash,
-        tx_id = EXCLUDED.tx_id,
-        address = EXCLUDED.address,
-        output = EXCLUDED.output,
-        "offset" = EXCLUDED.offset,
-        value = EXCLUDED.value,
-        sat_ordinal = EXCLUDED.sat_ordinal,
-        sat_rarity = EXCLUDED.sat_rarity,
-        sat_coinbase_height = EXCLUDED.sat_coinbase_height,
-        timestamp = EXCLUDED.timestamp
-    `;
+  private async insertLocation(args: { location: DbLocationInsert }): Promise<void> {
+    await this.sqlWriteTransaction(async sql => {
+      const prevLocation = await sql<{ id: number }[]>`
+        SELECT id FROM locations
+        WHERE genesis_id = ${args.location.genesis_id}
+        AND block_height = ${args.location.block_height}
+      `;
+      const location = {
+        genesis_id: args.location.genesis_id,
+        block_height: args.location.block_height,
+        block_hash: args.location.block_hash,
+        tx_id: args.location.tx_id,
+        address: args.location.address,
+        output: args.location.output,
+        offset: args.location.offset,
+        prev_output: args.location.prev_output,
+        prev_offset: args.location.prev_offset,
+        value: args.location.value,
+        timestamp: this.sql`to_timestamp(${args.location.timestamp})`,
+      };
+      await this.sql`
+        INSERT INTO locations ${this.sql(location)}
+        ON CONFLICT ON CONSTRAINT locations_genesis_id_block_height_unique DO UPDATE SET
+          block_hash = EXCLUDED.block_hash,
+          tx_id = EXCLUDED.tx_id,
+          address = EXCLUDED.address,
+          output = EXCLUDED.output,
+          "offset" = EXCLUDED.offset,
+          value = EXCLUDED.value,
+          timestamp = EXCLUDED.timestamp
+      `;
+      if (prevLocation.count !== 0) {
+        logger.warn(
+          `PgStore upsert transfer (${args.location.genesis_id}) at block ${args.location.block_height}`
+        );
+      } else {
+        logger.info(
+          `PgStore transfer (${args.location.genesis_id}) at block ${args.location.block_height}`
+        );
+      }
+    });
   }
 
   private async normalizeInscriptionCount(args: { min_block_height: number }): Promise<void> {
@@ -799,12 +730,12 @@ export class PgStore extends BasePgStore {
     });
   }
 
-  private async rollBackInscriptionGenesis(args: { genesis_id: string }): Promise<void> {
+  private async rollBackInscription(args: { genesis_id: string }): Promise<void> {
     // This will cascade into dependent tables.
     await this.sql`DELETE FROM inscriptions WHERE genesis_id = ${args.genesis_id}`;
   }
 
-  private async rollBackInscriptionTransfer(args: {
+  private async rollBackLocation(args: {
     genesis_id: string;
     output: string;
   }): Promise<number | undefined> {
@@ -826,25 +757,30 @@ export class PgStore extends BasePgStore {
     return inscription_id;
   }
 
-  private async normalizeInscriptionLocations(args: { inscription_id: number[] }): Promise<void> {
+  private async normalizeInscriptionLocations(args: { genesis_id: string[] }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
-      for (const id of args.inscription_id) {
+      for (const genesis_id of args.genesis_id) {
         await sql`
           WITH i_genesis AS (
             SELECT id FROM locations
-            WHERE inscription_id = ${id}
+            WHERE genesis_id = ${genesis_id}
             ORDER BY block_height ASC
             LIMIT 1
           ), i_current AS (
             SELECT id FROM locations
-            WHERE inscription_id = ${id}
+            WHERE genesis_id = ${genesis_id}
             ORDER BY block_height DESC
+            LIMIT 1
+          ), i_id AS (
+            SELECT id FROM inscriptions
+            WHERE genesis_id = ${genesis_id}
             LIMIT 1
           )
           UPDATE locations SET
+            inscription_id = (SELECT id FROM i_id),
             current = (CASE WHEN id = (SELECT id FROM i_current) THEN TRUE ELSE FALSE END),
             genesis = (CASE WHEN id = (SELECT id FROM i_genesis) THEN TRUE ELSE FALSE END)
-          WHERE inscription_id = ${id}
+          WHERE genesis_id = ${genesis_id}
         `;
       }
     });

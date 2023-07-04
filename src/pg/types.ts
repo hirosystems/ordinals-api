@@ -48,7 +48,8 @@ export type DbLocationInsert = {
 
 export type DbLocation = {
   id: string;
-  inscription_id: string;
+  inscription_id: string | null;
+  genesis_id: string;
   block_height: string;
   block_hash: string;
   tx_id: string;
@@ -95,6 +96,7 @@ export type DbInscriptionLocationChange = {
 export const LOCATIONS_COLUMNS = [
   'id',
   'inscription_id',
+  'genesis_id',
   'block_height',
   'block_hash',
   'tx_id',
