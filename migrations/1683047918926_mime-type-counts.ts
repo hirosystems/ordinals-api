@@ -9,4 +9,5 @@ export function up(pgm: MigrationBuilder): void {
     { data: true },
     `SELECT mime_type, COUNT(*) AS count FROM inscriptions GROUP BY mime_type`
   );
+  pgm.createIndex('mime_type_counts', ['mime_type'], { unique: true });
 }

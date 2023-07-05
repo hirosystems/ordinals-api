@@ -10,9 +10,8 @@ export function up(pgm: MigrationBuilder): void {
     `
     SELECT sat_rarity, COUNT(*) AS count
     FROM inscriptions AS i
-    INNER JOIN locations AS loc ON loc.inscription_id = i.id
-    WHERE loc.current = TRUE
     GROUP BY sat_rarity
     `
   );
+  pgm.createIndex('sat_rarity_counts', ['sat_rarity'], { unique: true });
 }
