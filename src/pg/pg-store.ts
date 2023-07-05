@@ -575,7 +575,7 @@ export class PgStore extends BasePgStore {
   }): Promise<number | undefined> {
     let inscription_id: number | undefined;
     await this.sqlWriteTransaction(async sql => {
-      const prevInscription = await sql<{ id: number }[]>`
+      const upsert = await sql<{ id: number }[]>`
         SELECT id FROM inscriptions WHERE number = ${args.inscription.number}
       `;
       const inscription = await sql<{ id: number }[]>`
@@ -635,22 +635,26 @@ export class PgStore extends BasePgStore {
             content = EXCLUDED.content
         `;
       }
-      if (prevInscription.count !== 0) {
-        logger.warn(
-          `PgStore upsert reveal #${args.inscription.number} (${args.inscription.genesis_id}) at block ${args.location.block_height}`
-        );
-      } else {
-        logger.info(
-          `PgStore reveal #${args.inscription.number} (${args.inscription.genesis_id}) at block ${args.location.block_height}`
-        );
-      }
+      logger.info(
+        `PgStore${upsert.count > 0 ? ' upsert ' : ' '}reveal #${args.inscription.number} (${
+          args.location.genesis_id
+        }) at block ${args.location.block_height}`
+      );
     });
     return inscription_id;
   }
 
   private async insertLocation(args: { location: DbLocationInsert }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
-      const prevLocation = await sql<{ id: number }[]>`
+      const genesis = await sql`
+        SELECT id FROM inscriptions WHERE genesis_id = ${args.location.genesis_id}
+      `;
+      if (genesis.count === 0) {
+        logger.warn(
+          `PgStore inserting transfer for missing inscription (${args.location.genesis_id}) at block ${args.location.block_height}`
+        );
+      }
+      const upsert = await sql`
         SELECT id FROM locations
         WHERE genesis_id = ${args.location.genesis_id}
         AND block_height = ${args.location.block_height}
@@ -679,15 +683,11 @@ export class PgStore extends BasePgStore {
           value = EXCLUDED.value,
           timestamp = EXCLUDED.timestamp
       `;
-      if (prevLocation.count !== 0) {
-        logger.warn(
-          `PgStore upsert transfer (${args.location.genesis_id}) at block ${args.location.block_height}`
-        );
-      } else {
-        logger.info(
-          `PgStore transfer (${args.location.genesis_id}) at block ${args.location.block_height}`
-        );
-      }
+      logger.info(
+        `PgStore${upsert.count > 0 ? ' upsert ' : ' '}transfer (${
+          args.location.genesis_id
+        }) at block ${args.location.block_height}`
+      );
     });
   }
 
