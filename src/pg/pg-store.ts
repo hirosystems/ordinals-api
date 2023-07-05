@@ -64,19 +64,18 @@ export class PgStore extends BasePgStore {
     await this.sqlWriteTransaction(async sql => {
       for (const rollbackEvent of payload.rollback) {
         const event = rollbackEvent as BitcoinEvent;
+        const block_height = event.block_identifier.index;
         for (const tx of event.transactions) {
           for (const operation of tx.metadata.ordinal_operations) {
             if (operation.inscription_revealed) {
               const number = operation.inscription_revealed.inscription_number;
               const genesis_id = operation.inscription_revealed.inscription_id;
-              await this.rollBackInscription({ genesis_id });
-              logger.info(`PgStore rollback reveal #${number} (${genesis_id})`);
+              await this.rollBackInscription({ genesis_id, number, block_height });
             }
             if (operation.cursed_inscription_revealed) {
               const number = operation.cursed_inscription_revealed.inscription_number;
               const genesis_id = operation.cursed_inscription_revealed.inscription_id;
-              await this.rollBackInscription({ genesis_id });
-              logger.info(`PgStore rollback cursed reveal #${number} (${genesis_id})`);
+              await this.rollBackInscription({ genesis_id, number, block_height });
             }
             if (operation.inscription_transferred) {
               const genesis_id = operation.inscription_transferred.inscription_id;
@@ -84,9 +83,8 @@ export class PgStore extends BasePgStore {
                 operation.inscription_transferred.satpoint_post_transfer
               );
               const output = `${satpoint.tx_id}:${satpoint.vout}`;
-              await this.rollBackLocation({ genesis_id, output });
+              await this.rollBackLocation({ genesis_id, output, block_height });
               updatedGenesisIds.add(genesis_id);
-              logger.info(`PgStore rollback transfer (${genesis_id}) ${output}`);
             }
           }
         }
@@ -646,6 +644,7 @@ export class PgStore extends BasePgStore {
 
   private async insertLocation(args: { location: DbLocationInsert }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
+      // Does the inscription exist? Warn if it doesn't.
       const genesis = await sql`
         SELECT id FROM inscriptions WHERE genesis_id = ${args.location.genesis_id}
       `;
@@ -653,6 +652,17 @@ export class PgStore extends BasePgStore {
         logger.warn(
           `PgStore inserting transfer for missing inscription (${args.location.genesis_id}) at block ${args.location.block_height}`
         );
+      }
+      // Do we have the location from `prev_output`? Warn if we don't.
+      if (args.location.prev_output) {
+        const prev = await sql`
+          SELECT id FROM locations WHERE prev_output = ${args.location.prev_output}
+        `;
+        if (prev.count === 0) {
+          logger.warn(
+            `PgStore inserting transfer (${args.location.genesis_id}) superceding a missing prev_output ${args.location.prev_output} at block ${args.location.block_height}`
+          );
+        }
       }
       const upsert = await sql`
         SELECT id FROM locations
@@ -730,31 +740,30 @@ export class PgStore extends BasePgStore {
     });
   }
 
-  private async rollBackInscription(args: { genesis_id: string }): Promise<void> {
+  private async rollBackInscription(args: {
+    genesis_id: string;
+    number: number;
+    block_height: number;
+  }): Promise<void> {
     // This will cascade into dependent tables.
     await this.sql`DELETE FROM inscriptions WHERE genesis_id = ${args.genesis_id}`;
+    logger.info(
+      `PgStore rollback reveal #${args.number} (${args.genesis_id}) at block ${args.block_height}`
+    );
   }
 
   private async rollBackLocation(args: {
     genesis_id: string;
     output: string;
-  }): Promise<number | undefined> {
-    let inscription_id: number | undefined;
-    await this.sqlWriteTransaction(async sql => {
-      const inscription = await sql<{ id: number }[]>`
-        SELECT id FROM inscriptions WHERE genesis_id = ${args.genesis_id}
-      `;
-      if (inscription.count === 0) {
-        logger.warn(args, `PgStore ignoring rollback for a transfer that does not exist`);
-        return;
-      }
-      inscription_id = inscription[0].id;
-      await sql`
-        DELETE FROM locations
-        WHERE inscription_id = ${inscription_id} AND output = ${args.output}
-      `;
-    });
-    return inscription_id;
+    block_height: number;
+  }): Promise<void> {
+    await this.sql`
+      DELETE FROM locations
+      WHERE genesis_id = ${args.genesis_id} AND output = ${args.output}
+    `;
+    logger.info(
+      `PgStore rollback transfer (${args.genesis_id}) on output ${args.output} at block ${args.block_height}`
+    );
   }
 
   private async normalizeInscriptionLocations(args: { genesis_id: string[] }): Promise<void> {
