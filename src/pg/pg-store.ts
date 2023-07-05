@@ -656,7 +656,9 @@ export class PgStore extends BasePgStore {
       // Do we have the location from `prev_output`? Warn if we don't.
       if (args.location.prev_output) {
         const prev = await sql`
-          SELECT id FROM locations WHERE prev_output = ${args.location.prev_output}
+          SELECT id FROM locations
+          WHERE genesis_id = ${args.location.genesis_id}
+            AND prev_output = ${args.location.prev_output}
         `;
         if (prev.count === 0) {
           logger.warn(
