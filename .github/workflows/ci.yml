@@ -6,6 +6,7 @@ on:
       - master
       - develop
       - beta
+      - '[0-9]*.x'
     tags-ignore:
       - '**'
     paths-ignore:
