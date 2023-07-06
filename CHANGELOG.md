@@ -1,3 +1,10 @@
+## [0.2.2](https://github.com/hirosystems/ordinals-api/compare/v0.2.1...v0.2.2) (2023-07-06)
+
+
+### Bug Fixes
+
+* allow null inscriber_address on reveal ([c3f80ef](https://github.com/hirosystems/ordinals-api/commit/c3f80eff62a33efe23a3b7fc9a42ce34c1f4f3c3))
+
 ## [0.2.1](https://github.com/hirosystems/ordinals-api/compare/v0.2.0...v0.2.1) (2023-07-06)
 
 
