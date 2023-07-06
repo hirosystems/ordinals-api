@@ -1,3 +1,10 @@
+## [0.2.1](https://github.com/hirosystems/ordinals-api/compare/v0.2.0...v0.2.1) (2023-07-06)
+
+
+### Bug Fixes
+
+* apply auto predicate registration env ([a80ab3a](https://github.com/hirosystems/ordinals-api/commit/a80ab3a8d716a003eef4347610e2bc1fde29076c))
+
 ## [0.2.0](https://github.com/hirosystems/ordinals-api/compare/v0.1.2...v0.2.0) (2023-05-19)
 
 
