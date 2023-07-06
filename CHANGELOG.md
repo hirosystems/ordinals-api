@@ -1,3 +1,10 @@
+## [0.4.7](https://github.com/hirosystems/ordinals-api/compare/v0.4.6...v0.4.7) (2023-07-03)
+
+
+### Bug Fixes
+
+* expect any and stringify for curse_type ([#127](https://github.com/hirosystems/ordinals-api/issues/127)) ([0459115](https://github.com/hirosystems/ordinals-api/commit/0459115d44a4ad7143c08eb2a0225d2b1123769d))
+
 ## [0.4.6](https://github.com/hirosystems/ordinals-api/compare/v0.4.5...v0.4.6) (2023-07-01)
 
 

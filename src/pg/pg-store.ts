@@ -135,11 +135,6 @@ export class PgStore extends BasePgStore {
               const reveal = operation.cursed_inscription_revealed;
               const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
               const satpoint = parseSatPoint(reveal.satpoint_post_inscription);
-              const curse_type = reveal.curse_type
-                ? typeof reveal.curse_type === 'string'
-                  ? reveal.curse_type
-                  : JSON.stringify(reveal.curse_type)
-                : null;
               await this.insertInscription({
                 inscription: {
                   genesis_id: reveal.inscription_id,
@@ -149,7 +144,7 @@ export class PgStore extends BasePgStore {
                   number: reveal.inscription_number,
                   content: reveal.content_bytes,
                   fee: reveal.inscription_fee.toString(),
-                  curse_type,
+                  curse_type: JSON.stringify(reveal.curse_type),
                   sat_ordinal: reveal.ordinal_number.toString(),
                   sat_rarity: satoshi.rarity,
                   sat_coinbase_height: satoshi.blockHeight,
