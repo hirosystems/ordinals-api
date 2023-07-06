@@ -4,52 +4,41 @@ import { Value } from '@sinclair/typebox/value';
 import { FastifyPluginAsync, FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import {
+  AddressesParam,
+  BlockHeightParam,
+  BlockInscriptionTransferSchema,
+  BlockParam,
+  InscriptionIdParamCType,
+  InscriptionIdentifierParam,
+  InscriptionIdsParam,
+  InscriptionLocationResponseSchema,
+  InscriptionNumberParam,
+  InscriptionNumbersParam,
   InscriptionResponse,
   LimitParam,
+  MimeTypesParam,
   NotFoundResponse,
   OffsetParam,
-  PaginatedResponse,
-  MimeTypesParam,
-  SatoshiRaritiesParam,
-  OutputParam,
+  Order,
+  OrderBy,
   OrderByParam,
   OrderParam,
-  OrderBy,
-  Order,
-  InscriptionIdentifierParam,
-  BlockHashParamCType,
-  BlockHeightParamCType,
-  InscriptionIdParamCType,
-  BlockHeightParam,
-  BlockParam,
   OrdinalParam,
-  InscriptionNumberParam,
+  OutputParam,
+  PaginatedResponse,
+  SatoshiRaritiesParam,
   TimestampParam,
-  AddressesParam,
-  InscriptionIdsParam,
-  InscriptionNumbersParam,
-  InscriptionLocationResponseSchema,
-  BlockInscriptionTransferSchema,
 } from '../schemas';
 import { handleInscriptionCache, handleInscriptionTransfersCache } from '../util/cache';
 import {
   DEFAULT_API_LIMIT,
+  blockParam,
   hexToBuffer,
   parseBlockTransfers,
   parseDbInscription,
   parseDbInscriptions,
   parseInscriptionLocations,
 } from '../util/helpers';
-
-function blockParam(param: string | undefined, name: string) {
-  const out: Record<string, string> = {};
-  if (BlockHashParamCType.Check(param)) {
-    out[`${name}_hash`] = param;
-  } else if (BlockHeightParamCType.Check(param)) {
-    out[`${name}_height`] = param;
-  }
-  return out;
-}
 
 function inscriptionIdArrayParam(param: string | number) {
   return InscriptionIdParamCType.Check(param) ? { genesis_id: [param] } : { number: [param] };

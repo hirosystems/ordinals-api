@@ -6,15 +6,18 @@ export const shorthands: ColumnDefinitions | undefined = undefined;
 export function up(pgm: MigrationBuilder): void {
   pgm.createTable('locations', {
     id: {
-      type: 'serial',
+      type: 'bigserial',
       primaryKey: true,
     },
     inscription_id: {
-      type: 'int',
+      type: 'bigint',
+    },
+    genesis_id: {
+      type: 'text',
       notNull: true,
     },
     block_height: {
-      type: 'int',
+      type: 'bigint',
       notNull: true,
     },
     block_hash: {
@@ -35,20 +38,14 @@ export function up(pgm: MigrationBuilder): void {
     offset: {
       type: 'numeric',
     },
+    prev_output: {
+      type: 'text',
+    },
+    prev_offset: {
+      type: 'numeric',
+    },
     value: {
       type: 'numeric',
-    },
-    sat_ordinal: {
-      type: 'numeric',
-      notNull: true,
-    },
-    sat_rarity: {
-      type: 'text',
-      notNull: true,
-    },
-    sat_coinbase_height: {
-      type: 'int',
-      notNull: true,
     },
     timestamp: {
       type: 'timestamptz',
@@ -72,15 +69,14 @@ export function up(pgm: MigrationBuilder): void {
   );
   pgm.createConstraint(
     'locations',
-    'locations_inscription_id_block_height_unique',
-    'UNIQUE(inscription_id, block_height)'
+    'locations_genesis_id_block_height_unique',
+    'UNIQUE(genesis_id, block_height)'
   );
+  pgm.createIndex('locations', ['genesis_id']);
   pgm.createIndex('locations', ['block_height']);
   pgm.createIndex('locations', ['block_hash']);
   pgm.createIndex('locations', ['address']);
   pgm.createIndex('locations', ['output']);
-  pgm.createIndex('locations', ['sat_ordinal']);
-  pgm.createIndex('locations', ['sat_rarity']);
-  pgm.createIndex('locations', ['sat_coinbase_height']);
   pgm.createIndex('locations', ['timestamp']);
+  pgm.createIndex('locations', ['prev_output']);
 }

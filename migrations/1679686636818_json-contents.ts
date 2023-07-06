@@ -6,11 +6,11 @@ export const shorthands: ColumnDefinitions | undefined = undefined;
 export function up(pgm: MigrationBuilder): void {
   pgm.createTable('json_contents', {
     id: {
-      type: 'serial',
+      type: 'bigserial',
       primaryKey: true,
     },
     inscription_id: {
-      type: 'int',
+      type: 'bigint',
       notNull: true,
     },
     p: {
