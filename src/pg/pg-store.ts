@@ -205,7 +205,7 @@ export class PgStore extends BasePgStore {
               } else {
                 logger.warn(
                   { block_height, genesis_id: transfer.inscription_id },
-                  `PgStore ignoring transfer for an inscription that does not exist`
+                  `PgStore ignoring transfer for an inscription that does not exist (${transfer.inscription_id})`
                 );
               }
             }
@@ -570,7 +570,7 @@ export class PgStore extends BasePgStore {
         SELECT id FROM inscriptions WHERE number = ${args.inscription.number}
       `;
       if (prevInscription.count !== 0) {
-        logger.warn(
+        logger.info(
           {
             block_height: args.location.block_height,
             genesis_id: args.inscription.genesis_id,
@@ -583,7 +583,7 @@ export class PgStore extends BasePgStore {
           // Is it a cursed inscription?
           const maxCursed = await this.getMaxCursedInscriptionNumber();
           if (maxCursed !== undefined && maxCursed - 1 !== args.inscription.number) {
-            logger.warn(
+            logger.info(
               {
                 block_height: args.location.block_height,
                 genesis_id: args.inscription.genesis_id,
@@ -594,7 +594,7 @@ export class PgStore extends BasePgStore {
         } else {
           const maxNumber = await this.getMaxInscriptionNumber();
           if (maxNumber !== undefined && maxNumber + 1 !== args.inscription.number) {
-            logger.warn(
+            logger.info(
               {
                 block_height: args.location.block_height,
                 genesis_id: args.inscription.genesis_id,
@@ -607,7 +607,7 @@ export class PgStore extends BasePgStore {
             SELECT id FROM locations WHERE sat_ordinal = ${args.location.sat_ordinal}
           `;
           if (dup.count > 0) {
-            logger.warn(
+            logger.info(
               {
                 block_height: args.location.block_height,
                 genesis_id: args.inscription.genesis_id,
@@ -648,12 +648,12 @@ export class PgStore extends BasePgStore {
       };
       await sql<DbLocation[]>`
         INSERT INTO locations ${sql(location)}
-        ON CONFLICT ON CONSTRAINT locations_inscription_id_block_height_unique DO UPDATE SET
+        ON CONFLICT ON CONSTRAINT locations_output_offset_unique DO UPDATE SET
+          inscription_id = EXCLUDED.inscription_id,
+          block_height = EXCLUDED.block_height,
           block_hash = EXCLUDED.block_hash,
           tx_id = EXCLUDED.tx_id,
           address = EXCLUDED.address,
-          output = EXCLUDED.output,
-          "offset" = EXCLUDED.offset,
           value = EXCLUDED.value,
           sat_ordinal = EXCLUDED.sat_ordinal,
           sat_rarity = EXCLUDED.sat_rarity,
@@ -702,12 +702,12 @@ export class PgStore extends BasePgStore {
     };
     await this.sql`
       INSERT INTO locations ${this.sql(location)}
-      ON CONFLICT ON CONSTRAINT locations_inscription_id_block_height_unique DO UPDATE SET
+      ON CONFLICT ON CONSTRAINT locations_output_offset_unique DO UPDATE SET
+        inscription_id = EXCLUDED.inscription_id,
+        block_height = EXCLUDED.block_height,
         block_hash = EXCLUDED.block_hash,
         tx_id = EXCLUDED.tx_id,
         address = EXCLUDED.address,
-        output = EXCLUDED.output,
-        "offset" = EXCLUDED.offset,
         value = EXCLUDED.value,
         sat_ordinal = EXCLUDED.sat_ordinal,
         sat_rarity = EXCLUDED.sat_rarity,
@@ -731,7 +731,10 @@ export class PgStore extends BasePgStore {
         SELECT id FROM inscriptions WHERE genesis_id = ${args.genesis_id}
       `;
       if (inscription.count === 0) {
-        logger.warn(args, `PgStore ignoring rollback for a transfer that does not exist`);
+        logger.warn(
+          args,
+          `PgStore ignoring rollback for a transfer that does not exist (${args.genesis_id})`
+        );
         return;
       }
       inscription_id = inscription[0].id;
