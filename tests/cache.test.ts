@@ -162,6 +162,7 @@ describe('ETag cache', () => {
         satpoint_post_transfer:
           'ae9d273a10e899f0d2cad47ee2b0e77ab8a9addd9dd5bb5e4b03d6971c060d52:0:0',
         post_transfer_output_value: 100,
+        ordinal_number: null,
       })
       .build();
     await db.updateInscriptions(block3);
