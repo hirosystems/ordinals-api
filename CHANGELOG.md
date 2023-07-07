@@ -1,3 +1,10 @@
+## [0.4.8](https://github.com/hirosystems/ordinals-api/compare/v0.4.7...v0.4.8) (2023-07-07)
+
+
+### Bug Fixes
+
+* allow multiple transfers per inscription per block ([#131](https://github.com/hirosystems/ordinals-api/issues/131)) ([9fee5ac](https://github.com/hirosystems/ordinals-api/commit/9fee5acb8185681fc95f0b85e9ae02810cf8b473))
+
 ## [0.4.7](https://github.com/hirosystems/ordinals-api/compare/v0.4.6...v0.4.7) (2023-07-03)
 
 
