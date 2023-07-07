@@ -171,11 +171,27 @@ export class PgStore extends BasePgStore {
               const transfer = operation.inscription_transferred;
               const satpoint = parseSatPoint(transfer.satpoint_post_transfer);
               const prevSatpoint = parseSatPoint(transfer.satpoint_pre_transfer);
-              const genesis = await this.getInscriptionGenesis({
-                genesis_id: transfer.inscription_id,
-              });
-              if (genesis) {
-                const inscription_id = parseInt(genesis.inscription_id);
+              const inscriptionId = await sql<{ id: string }[]>`
+                SELECT id FROM inscriptions WHERE genesis_id = ${transfer.inscription_id}
+              `;
+              if (inscriptionId.count) {
+                const inscription_id = parseInt(inscriptionId[0].id);
+                let sat_ordinal: string;
+                let sat_rarity: string;
+                let sat_coinbase_height: number;
+                if (transfer.ordinal_number) {
+                  const satoshi = new OrdinalSatoshi(transfer.ordinal_number);
+                  sat_ordinal = satoshi.ordinal.toString();
+                  sat_rarity = satoshi.rarity;
+                  sat_coinbase_height = satoshi.blockHeight;
+                } else {
+                  const genesis = await this.getInscriptionGenesis({
+                    genesis_id: transfer.inscription_id,
+                  });
+                  sat_ordinal = genesis?.sat_ordinal ?? '0';
+                  sat_rarity = genesis?.sat_rarity ?? 'common';
+                  sat_coinbase_height = parseInt(genesis?.sat_coinbase_height ?? '767430');
+                }
                 await this.insertInscriptionTransfer({
                   inscription_id,
                   location: {
@@ -193,9 +209,9 @@ export class PgStore extends BasePgStore {
                       : null,
                     timestamp: event.timestamp,
                     // TODO: Store these fields in `inscriptions` instead of `locations`.
-                    sat_ordinal: genesis.sat_ordinal,
-                    sat_rarity: genesis.sat_rarity,
-                    sat_coinbase_height: parseInt(genesis.sat_coinbase_height),
+                    sat_ordinal,
+                    sat_rarity,
+                    sat_coinbase_height,
                   },
                 });
                 updatedInscriptionIds.add(inscription_id);

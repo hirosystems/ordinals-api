@@ -47,6 +47,7 @@ const InscriptionTransferredSchema = Type.Object({
   satpoint_pre_transfer: Type.String(),
   satpoint_post_transfer: Type.String(),
   post_transfer_output_value: Nullable(Type.Integer()),
+  ordinal_number: Nullable(Type.Integer()),
 });
 export type InscriptionTransferred = Static<typeof InscriptionTransferredSchema>;
 

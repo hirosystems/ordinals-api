@@ -307,6 +307,7 @@ describe('/inscriptions', () => {
             satpoint_post_transfer:
               'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
             post_transfer_output_value: 9000,
+            ordinal_number: null,
           })
           .build()
       );
@@ -356,6 +357,7 @@ describe('/inscriptions', () => {
             satpoint_post_transfer:
               'e3af144354367de58c675e987febcb49f17d6c19e645728b833fe95408feab85:0:0',
             post_transfer_output_value: 8000,
+            ordinal_number: null,
           })
           .build()
       );
@@ -437,6 +439,7 @@ describe('/inscriptions', () => {
             satpoint_post_transfer:
               'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
             post_transfer_output_value: 9000,
+            ordinal_number: null,
           })
           .build()
       );
@@ -486,6 +489,7 @@ describe('/inscriptions', () => {
             satpoint_post_transfer:
               'e3af144354367de58c675e987febcb49f17d6c19e645728b833fe95408feab85:0:0',
             post_transfer_output_value: 8000,
+            ordinal_number: null,
           })
           .build()
       );
@@ -572,6 +576,7 @@ describe('/inscriptions', () => {
             satpoint_post_transfer:
               'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
             post_transfer_output_value: 9000,
+            ordinal_number: null,
           })
           .build()
       );
@@ -627,6 +632,7 @@ describe('/inscriptions', () => {
             satpoint_post_transfer:
               'e3af144354367de58c675e987febcb49f17d6c19e645728b833fe95408feab85:0:0',
             post_transfer_output_value: 8000,
+            ordinal_number: null,
           })
           .build()
       );
@@ -752,6 +758,7 @@ describe('/inscriptions', () => {
             satpoint_post_transfer:
               'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
             post_transfer_output_value: 9000,
+            ordinal_number: null,
           })
           .transaction({
             hash: 'abe7deebd0c6bacc9b1ddd234f9442db0530180448e934f34b9cbf3d7e6d91cb',
@@ -764,6 +771,7 @@ describe('/inscriptions', () => {
             satpoint_post_transfer:
               'abe7deebd0c6bacc9b1ddd234f9442db0530180448e934f34b9cbf3d7e6d91cb:0:0',
             post_transfer_output_value: 9000,
+            ordinal_number: null,
           })
           .build()
       );
@@ -849,6 +857,7 @@ describe('/inscriptions', () => {
             satpoint_post_transfer:
               '5cabafe04aaf98b1f325b0c3ffcbff904dbdb6f3d2e9e451102fda36f1056b5e:0:0',
             post_transfer_output_value: 8000,
+            ordinal_number: null,
           })
           .build()
       );
