@@ -1,3 +1,10 @@
+## [1.0.0-beta.2](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.1...v1.0.0-beta.2) (2023-07-07)
+
+
+### Bug Fixes
+
+* allow multiple transfers of an inscription in one block ([#132](https://github.com/hirosystems/ordinals-api/issues/132)) ([bc545f0](https://github.com/hirosystems/ordinals-api/commit/bc545f0c1d06ea54ceb5d6ba30a9031d04c7e01e))
+
 ## [1.0.0-beta.1](https://github.com/hirosystems/ordinals-api/compare/v0.4.7...v1.0.0-beta.1) (2023-07-06)
 
 
