@@ -1,3 +1,10 @@
+## [0.4.9](https://github.com/hirosystems/ordinals-api/compare/v0.4.8...v0.4.9) (2023-07-07)
+
+
+### Bug Fixes
+
+* patch ordinal number for transfers replay ([#134](https://github.com/hirosystems/ordinals-api/issues/134)) ([8d3fb5b](https://github.com/hirosystems/ordinals-api/commit/8d3fb5b23ad57e33ba22dea12afa33cb146de558))
+
 ## [0.4.8](https://github.com/hirosystems/ordinals-api/compare/v0.4.7...v0.4.8) (2023-07-07)
 
 
