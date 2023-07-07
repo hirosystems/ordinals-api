@@ -67,11 +67,7 @@ export function up(pgm: MigrationBuilder): void {
     'locations_inscription_id_fk',
     'FOREIGN KEY(inscription_id) REFERENCES inscriptions(id) ON DELETE CASCADE'
   );
-  pgm.createConstraint(
-    'locations',
-    'locations_genesis_id_block_height_unique',
-    'UNIQUE(genesis_id, block_height)'
-  );
+  pgm.createConstraint('locations', 'locations_output_offset_unique', 'UNIQUE(output, "offset")');
   pgm.createIndex('locations', ['genesis_id']);
   pgm.createIndex('locations', ['block_height']);
   pgm.createIndex('locations', ['block_hash']);

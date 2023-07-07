@@ -602,13 +602,13 @@ export class PgStore extends BasePgStore {
       };
       await sql<DbLocation[]>`
         INSERT INTO locations ${sql(location)}
-        ON CONFLICT ON CONSTRAINT locations_genesis_id_block_height_unique DO UPDATE SET
+        ON CONFLICT ON CONSTRAINT locations_output_offset_unique DO UPDATE SET
           inscription_id = EXCLUDED.inscription_id,
+          genesis_id = EXCLUDED.genesis_id,
+          block_height = EXCLUDED.block_height,
           block_hash = EXCLUDED.block_hash,
           tx_id = EXCLUDED.tx_id,
           address = EXCLUDED.address,
-          output = EXCLUDED.output,
-          "offset" = EXCLUDED.offset,
           value = EXCLUDED.value,
           timestamp = EXCLUDED.timestamp
       `;
@@ -681,12 +681,13 @@ export class PgStore extends BasePgStore {
       };
       await this.sql`
         INSERT INTO locations ${this.sql(location)}
-        ON CONFLICT ON CONSTRAINT locations_genesis_id_block_height_unique DO UPDATE SET
+        ON CONFLICT ON CONSTRAINT locations_output_offset_unique DO UPDATE SET
+          inscription_id = EXCLUDED.inscription_id,
+          genesis_id = EXCLUDED.genesis_id,
+          block_height = EXCLUDED.block_height,
           block_hash = EXCLUDED.block_hash,
           tx_id = EXCLUDED.tx_id,
           address = EXCLUDED.address,
-          output = EXCLUDED.output,
-          "offset" = EXCLUDED.offset,
           value = EXCLUDED.value,
           timestamp = EXCLUDED.timestamp
       `;
