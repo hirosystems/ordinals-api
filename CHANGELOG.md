@@ -1,3 +1,10 @@
+## [0.4.10](https://github.com/hirosystems/ordinals-api/compare/v0.4.9...v0.4.10) (2023-07-08)
+
+
+### Bug Fixes
+
+* skip normalization for now ([#136](https://github.com/hirosystems/ordinals-api/issues/136)) ([85de25f](https://github.com/hirosystems/ordinals-api/commit/85de25f8c14288f426063da08bfb935d8ffb2aad))
+
 ## [0.4.9](https://github.com/hirosystems/ordinals-api/compare/v0.4.8...v0.4.9) (2023-07-07)
 
 
