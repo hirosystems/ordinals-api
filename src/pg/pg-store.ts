@@ -229,10 +229,12 @@ export class PgStore extends BasePgStore {
         }
       }
     });
-    await this.normalizeInscriptionLocations({ inscription_id: Array.from(updatedInscriptionIds) });
     await this.refreshMaterializedView('chain_tip');
     // Skip expensive view refreshes if we're not streaming any live blocks yet.
     if (payload.chainhook.is_streaming_blocks) {
+      await this.normalizeInscriptionLocations({
+        inscription_id: Array.from(updatedInscriptionIds),
+      });
       await this.refreshMaterializedView('inscription_count');
       await this.refreshMaterializedView('mime_type_counts');
       await this.refreshMaterializedView('sat_rarity_counts');
@@ -472,7 +474,8 @@ export class PgStore extends BasePgStore {
       SELECT ${this.sql(LOCATIONS_COLUMNS.map(c => `l.${c}`))}
       FROM locations AS l
       INNER JOIN inscriptions AS i ON l.inscription_id = i.id
-      WHERE i.genesis_id = ${args.genesis_id} AND genesis = TRUE
+      WHERE i.genesis_id = ${args.genesis_id}
+      ORDER BY l.block_height ASC
       LIMIT 1
     `;
     if (results.count > 0) {
