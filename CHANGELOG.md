@@ -1,3 +1,10 @@
+## [0.4.12](https://github.com/hirosystems/ordinals-api/compare/v0.4.11...v0.4.12) (2023-07-09)
+
+
+### Bug Fixes
+
+* move to many-to-many genesis and current table ([#139](https://github.com/hirosystems/ordinals-api/issues/139)) ([2b6b6ec](https://github.com/hirosystems/ordinals-api/commit/2b6b6eccd95bc24aa1e0e82a06d3ca36ddc2298f))
+
 ## [0.4.11](https://github.com/hirosystems/ordinals-api/compare/v0.4.10...v0.4.11) (2023-07-09)
 
 
