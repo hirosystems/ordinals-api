@@ -21,3 +21,10 @@ export function up(pgm: MigrationBuilder): void {
   );
   pgm.createIndex('current_locations', ['inscription_id'], { unique: true });
 }
+
+export function down(pgm: MigrationBuilder): void {
+  pgm.createIndex('locations', ['output']);
+  pgm.dropIndex('locations', ['inscription_id']);
+  pgm.dropMaterializedView('genesis_locations');
+  pgm.dropMaterializedView('current_locations');
+}
