@@ -686,22 +686,22 @@ export class PgStore extends BasePgStore {
         location_id: locationRes[0].id,
         block_height: args.location.block_height,
       });
-      const json = inscriptionContentToJson(args.inscription);
-      if (json) {
-        const values = {
-          inscription_id,
-          p: json.p,
-          op: json.op,
-          content: json,
-        };
-        await sql`
-          INSERT INTO json_contents ${sql(values)}
-          ON CONFLICT ON CONSTRAINT json_contents_inscription_id_unique DO UPDATE SET
-            p = EXCLUDED.p,
-            op = EXCLUDED.op,
-            content = EXCLUDED.content
-        `;
-      }
+      // const json = inscriptionContentToJson(args.inscription);
+      // if (json) {
+      //   const values = {
+      //     inscription_id,
+      //     p: json.p,
+      //     op: json.op,
+      //     content: json,
+      //   };
+      //   await sql`
+      //     INSERT INTO json_contents ${sql(values)}
+      //     ON CONFLICT ON CONSTRAINT json_contents_inscription_id_unique DO UPDATE SET
+      //       p = EXCLUDED.p,
+      //       op = EXCLUDED.op,
+      //       content = EXCLUDED.content
+      //   `;
+      // }
     });
     return inscription_id;
   }
