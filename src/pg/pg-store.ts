@@ -57,7 +57,6 @@ export class PgStore extends BasePgStore {
    * @param args - Apply/Rollback Chainhook events
    */
   async updateInscriptions(payload: ChainhookPayload): Promise<void> {
-    const updatedInscriptionIds = new Set<number>();
     await this.sqlWriteTransaction(async sql => {
       for (const event of payload.rollback) {
         for (const tx of event.transactions) {
@@ -81,7 +80,6 @@ export class PgStore extends BasePgStore {
               );
               const output = `${satpoint.tx_id}:${satpoint.vout}`;
               const id = await this.rollBackInscriptionTransfer({ genesis_id, output });
-              if (id) updatedInscriptionIds.add(id);
               logger.info(`PgStore rollback transfer (${genesis_id}) ${output}`);
             }
           }
@@ -97,7 +95,7 @@ export class PgStore extends BasePgStore {
               const reveal = operation.inscription_revealed;
               const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
               const satpoint = parseSatPoint(reveal.satpoint_post_inscription);
-              const id = await this.insertInscriptionGenesis({
+              await this.insertInscriptionGenesis({
                 inscription: {
                   genesis_id: reveal.inscription_id,
                   mime_type: reveal.content_type.split(';')[0],
@@ -125,7 +123,6 @@ export class PgStore extends BasePgStore {
                   sat_coinbase_height: satoshi.blockHeight,
                 },
               });
-              if (id) updatedInscriptionIds.add(id);
               logger.info(
                 `PgStore reveal #${reveal.inscription_number} (${reveal.inscription_id}) at block ${block_height}`
               );
@@ -134,7 +131,7 @@ export class PgStore extends BasePgStore {
               const reveal = operation.cursed_inscription_revealed;
               const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
               const satpoint = parseSatPoint(reveal.satpoint_post_inscription);
-              const id = await this.insertInscriptionGenesis({
+              await this.insertInscriptionGenesis({
                 inscription: {
                   genesis_id: reveal.inscription_id,
                   mime_type: reveal.content_type.split(';')[0],
@@ -162,7 +159,6 @@ export class PgStore extends BasePgStore {
                   sat_coinbase_height: satoshi.blockHeight,
                 },
               });
-              if (id) updatedInscriptionIds.add(id);
               logger.info(
                 `PgStore cursed reveal #${reveal.inscription_number} (${reveal.inscription_id}) at block ${block_height}`
               );
@@ -214,7 +210,6 @@ export class PgStore extends BasePgStore {
                     sat_coinbase_height,
                   },
                 });
-                updatedInscriptionIds.add(inscription_id);
                 logger.info(
                   `PgStore transfer (${transfer.inscription_id}) to output ${satpoint.tx_id}:${satpoint.vout} at block ${block_height}`
                 );
@@ -232,9 +227,8 @@ export class PgStore extends BasePgStore {
     await this.refreshMaterializedView('chain_tip');
     // Skip expensive view refreshes if we're not streaming any live blocks yet.
     if (payload.chainhook.is_streaming_blocks) {
-      await this.normalizeInscriptionLocations({
-        inscription_id: Array.from(updatedInscriptionIds),
-      });
+      await this.refreshMaterializedView('genesis_locations');
+      await this.refreshMaterializedView('current_locations');
       await this.refreshMaterializedView('inscription_count');
       await this.refreshMaterializedView('mime_type_counts');
       await this.refreshMaterializedView('sat_rarity_counts');
@@ -380,9 +374,9 @@ export class PgStore extends BasePgStore {
               : sql`0 as total`
           }
         FROM inscriptions AS i
-        INNER JOIN locations AS loc ON loc.inscription_id = i.id
-        INNER JOIN locations AS gen ON gen.inscription_id = i.id
-        WHERE loc.current = TRUE AND gen.genesis = TRUE
+        INNER JOIN current_locations AS loc ON loc.inscription_id = i.id
+        INNER JOIN genesis_locations AS gen ON gen.inscription_id = i.id
+        WHERE TRUE
           ${
             filters?.genesis_id?.length
               ? sql`AND i.genesis_id IN ${sql(filters.genesis_id)}`
@@ -529,12 +523,13 @@ export class PgStore extends BasePgStore {
         FROM locations AS l
         INNER JOIN inscriptions AS i ON l.inscription_id = i.id
         WHERE
+          NOT EXISTS (SELECT id FROM genesis_locations WHERE id = l.id)
+          AND
           ${
             'block_height' in args
               ? this.sql`l.block_height = ${args.block_height}`
               : this.sql`l.block_hash = ${args.block_hash}`
           }
-          AND l.genesis = FALSE
         LIMIT ${args.limit}
         OFFSET ${args.offset}
       )
@@ -763,29 +758,5 @@ export class PgStore extends BasePgStore {
       `;
     });
     return inscription_id;
-  }
-
-  private async normalizeInscriptionLocations(args: { inscription_id: number[] }): Promise<void> {
-    await this.sqlWriteTransaction(async sql => {
-      for (const id of args.inscription_id) {
-        await sql`
-          WITH i_genesis AS (
-            SELECT id FROM locations
-            WHERE inscription_id = ${id}
-            ORDER BY block_height ASC
-            LIMIT 1
-          ), i_current AS (
-            SELECT id FROM locations
-            WHERE inscription_id = ${id}
-            ORDER BY block_height DESC
-            LIMIT 1
-          )
-          UPDATE locations SET
-            current = (CASE WHEN id = (SELECT id FROM i_current) THEN TRUE ELSE FALSE END),
-            genesis = (CASE WHEN id = (SELECT id FROM i_genesis) THEN TRUE ELSE FALSE END)
-          WHERE inscription_id = ${id}
-        `;
-      }
-    });
   }
 }

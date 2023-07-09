@@ -2422,7 +2422,7 @@ describe('/inscriptions', () => {
         expect(response1.statusCode).toBe(200);
         const responseJson1 = response1.json();
         expect(responseJson1.total).toBe(0);
-        expect(responseJson1.results.length).toBeGreaterThan(0);
+        expect(responseJson1.results.length).toBe(0);
 
         const response2 = await fastify.inject({
           method: 'GET',
@@ -2431,7 +2431,7 @@ describe('/inscriptions', () => {
         expect(response2.statusCode).toBe(200);
         const responseJson2 = response2.json();
         expect(responseJson2.total).toBe(0);
-        expect(responseJson2.results.length).toBeGreaterThan(0);
+        expect(responseJson2.results.length).toBe(0);
 
         const response3 = await fastify.inject({
           method: 'GET',
@@ -2440,7 +2440,7 @@ describe('/inscriptions', () => {
         expect(response3.statusCode).toBe(200);
         const responseJson3 = response3.json();
         expect(responseJson3.total).toBe(0);
-        expect(responseJson3.results.length).toBeGreaterThan(0);
+        expect(responseJson3.results.length).toBe(0);
       });
     });
   });
