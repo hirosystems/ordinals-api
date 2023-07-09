@@ -1,3 +1,10 @@
+## [0.4.13](https://github.com/hirosystems/ordinals-api/compare/v0.4.12...v0.4.13) (2023-07-09)
+
+
+### Bug Fixes
+
+* ignore json content for current build ([#140](https://github.com/hirosystems/ordinals-api/issues/140)) ([909f79f](https://github.com/hirosystems/ordinals-api/commit/909f79f43b9c0a359c62c09858b244b8cba58c75))
+
 ## [0.4.12](https://github.com/hirosystems/ordinals-api/compare/v0.4.11...v0.4.12) (2023-07-09)
 
 
