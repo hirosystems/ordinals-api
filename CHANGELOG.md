@@ -1,3 +1,10 @@
+## [0.4.11](https://github.com/hirosystems/ordinals-api/compare/v0.4.10...v0.4.11) (2023-07-09)
+
+
+### Bug Fixes
+
+* genesis and current locations using materialized view ([#138](https://github.com/hirosystems/ordinals-api/issues/138)) ([88edee4](https://github.com/hirosystems/ordinals-api/commit/88edee44586880f54c2e7d1c16f31d2b583ce216))
+
 ## [0.4.10](https://github.com/hirosystems/ordinals-api/compare/v0.4.9...v0.4.10) (2023-07-08)
 
 
