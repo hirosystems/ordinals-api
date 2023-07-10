@@ -92,7 +92,10 @@ jobs:
           npm run testenv:logs -- --no-color &> docker-compose-logs.txt &
 
       - name: Run tests
-        run: npm run test
+        run: npm run test -- --coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
 
       - name: Print integration environment logs
         run: cat docker-compose-logs.txt

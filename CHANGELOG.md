@@ -40,6 +40,34 @@
 
 * allow multiple transfers per inscription per block ([#131](https://github.com/hirosystems/ordinals-api/issues/131)) ([9fee5ac](https://github.com/hirosystems/ordinals-api/commit/9fee5acb8185681fc95f0b85e9ae02810cf8b473))
 
+## [1.0.0-beta.2](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.1...v1.0.0-beta.2) (2023-07-07)
+
+
+### Bug Fixes
+
+* allow multiple transfers of an inscription in one block ([#132](https://github.com/hirosystems/ordinals-api/issues/132)) ([bc545f0](https://github.com/hirosystems/ordinals-api/commit/bc545f0c1d06ea54ceb5d6ba30a9031d04c7e01e))
+
+## [1.0.0-beta.1](https://github.com/hirosystems/ordinals-api/compare/v0.4.7...v1.0.0-beta.1) (2023-07-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* optimize transfer replay capability (#129)
+
+### Features
+
+* add stats endpoint for inscription counts ([#70](https://github.com/hirosystems/ordinals-api/issues/70)) ([ac18e62](https://github.com/hirosystems/ordinals-api/commit/ac18e621ed7e8ea2fc5a5e536d59a152c3a1f345))
+* optimize transfer replay capability ([#129](https://github.com/hirosystems/ordinals-api/issues/129)) ([97874cc](https://github.com/hirosystems/ordinals-api/commit/97874cc1461d4e321d5143c70d68927ace62eec5))
+
+
+### Bug Fixes
+
+* auto predicate registration option ([e1ed7c7](https://github.com/hirosystems/ordinals-api/commit/e1ed7c773dfba99f0b098debb3d865da46d8d10e))
+* build event server using chainhook client library ([#105](https://github.com/hirosystems/ordinals-api/issues/105)) ([ab4c795](https://github.com/hirosystems/ordinals-api/commit/ab4c795d1621078950e4defa3330ae597f46d6ac))
+* chainhook client upgrades ([9a96492](https://github.com/hirosystems/ordinals-api/commit/9a9649251dd449d6784aa4f6cd448c6f1b6cb687))
+* upgrade chainhook client ([cbbb951](https://github.com/hirosystems/ordinals-api/commit/cbbb9512734f83c27da91b57fd5825b22c510c33))
+* upgrade chainhook client to 1.3.3 ([ee66f93](https://github.com/hirosystems/ordinals-api/commit/ee66f93a1d06c786c2eb7ce415df28c7fa8d0032))
+
 ## [0.4.7](https://github.com/hirosystems/ordinals-api/compare/v0.4.6...v0.4.7) (2023-07-03)
 
 

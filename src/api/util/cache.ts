@@ -5,6 +5,7 @@ import { InscriptionIdParamCType, InscriptionNumberParamCType } from '../schemas
 export enum ETagType {
   inscriptionTransfers,
   inscription,
+  inscriptionsPerBlock,
 }
 
 /**
@@ -26,6 +27,13 @@ export async function handleInscriptionTransfersCache(
   return handleCache(ETagType.inscriptionTransfers, request, reply);
 }
 
+export async function handleInscriptionsPerBlockCache(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  return handleCache(ETagType.inscriptionsPerBlock, request, reply);
+}
+
 async function handleCache(type: ETagType, request: FastifyRequest, reply: FastifyReply) {
   const ifNoneMatch = parseIfNoneMatchHeader(request.headers['if-none-match']);
   let etag: string | undefined;
@@ -35,6 +43,9 @@ async function handleCache(type: ETagType, request: FastifyRequest, reply: Fasti
       break;
     case ETagType.inscriptionTransfers:
       etag = await getInscriptionTransfersEtag(request);
+      break;
+    case ETagType.inscriptionsPerBlock:
+      etag = await request.server.db.getInscriptionsPerBlockETag();
       break;
   }
   if (etag) {
