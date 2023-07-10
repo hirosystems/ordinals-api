@@ -4,7 +4,7 @@ import { MigrationBuilder, ColumnDefinitions } from 'node-pg-migrate';
 export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export function up(pgm: MigrationBuilder): void {
-  pgm.createTable('genesis', {
+  pgm.createTable('genesis_locations', {
     inscription_id: {
       type: 'bigint',
       notNull: true,
@@ -18,6 +18,10 @@ export function up(pgm: MigrationBuilder): void {
       notNull: true,
     },
   });
-  pgm.createConstraint('genesis', 'genesis_inscription_id_unique', 'UNIQUE(inscription_id)');
-  pgm.createIndex('genesis', ['location_id']);
+  pgm.createConstraint(
+    'genesis_locations',
+    'genesis_locations_inscription_id_unique',
+    'UNIQUE(inscription_id)'
+  );
+  pgm.createIndex('genesis_locations', ['location_id']);
 }

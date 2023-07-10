@@ -284,7 +284,7 @@ export class PgStore extends BasePgStore {
     const result = await this.sql<{ etag: string }[]>`
       SELECT date_part('epoch', l.timestamp)::text AS etag
       FROM locations AS l
-      INNER JOIN current AS c ON l.id = c.location_id
+      INNER JOIN current_locations AS c ON l.id = c.location_id
       INNER JOIN inscriptions AS i ON l.inscription_id = i.id
       WHERE ${
         'genesis_id' in args
@@ -321,11 +321,11 @@ export class PgStore extends BasePgStore {
       const results = await sql<({ total: number } & DbFullyLocatedInscriptionResult)[]>`
         WITH gen_locations AS (
           SELECT l.* FROM locations AS l
-          INNER JOIN genesis AS g ON l.id = g.location_id
+          INNER JOIN genesis_locations AS g ON l.id = g.location_id
         ),
         cur_locations AS (
           SELECT l.* FROM locations AS l
-          INNER JOIN current AS c ON l.id = c.location_id
+          INNER JOIN current_locations AS c ON l.id = c.location_id
         )
         SELECT
           i.genesis_id,
@@ -490,7 +490,7 @@ export class PgStore extends BasePgStore {
         FROM locations AS l
         INNER JOIN inscriptions AS i ON l.inscription_id = i.id
         WHERE
-          NOT EXISTS (SELECT location_id FROM genesis WHERE location_id = l.id)
+          NOT EXISTS (SELECT location_id FROM genesis_locations WHERE location_id = l.id)
           AND
           ${
             'block_height' in args
@@ -728,7 +728,7 @@ export class PgStore extends BasePgStore {
             COALESCE((SELECT previous.inscription_count_accum FROM previous), 0) + (SUM(COUNT(*)) OVER (ORDER BY l.block_height ASC)) AS inscription_count_accum,
             MIN(l.timestamp)
           FROM locations AS l
-          INNER JOIN genesis AS g ON g.location_id = l.id
+          INNER JOIN genesis_locations AS g ON g.location_id = l.id
           WHERE l.block_height >= ${args.min_block_height}
           GROUP BY l.block_height
           ORDER BY l.block_height ASC
@@ -784,18 +784,18 @@ export class PgStore extends BasePgStore {
         block_height: args.block_height,
       };
       await sql`
-        INSERT INTO genesis ${sql(pointer)}
-        ON CONFLICT ON CONSTRAINT genesis_inscription_id_unique DO UPDATE SET
+        INSERT INTO genesis_locations ${sql(pointer)}
+        ON CONFLICT ON CONSTRAINT genesis_locations_inscription_id_unique DO UPDATE SET
           location_id = EXCLUDED.location_id,
           block_height = EXCLUDED.block_height
-        WHERE EXCLUDED.block_height < genesis.block_height
+        WHERE EXCLUDED.block_height < genesis_locations.block_height
       `;
       await sql`
-        INSERT INTO current ${sql(pointer)}
-        ON CONFLICT ON CONSTRAINT current_inscription_id_unique DO UPDATE SET
+        INSERT INTO current_locations ${sql(pointer)}
+        ON CONFLICT ON CONSTRAINT current_locations_inscription_id_unique DO UPDATE SET
           location_id = EXCLUDED.location_id,
           block_height = EXCLUDED.block_height
-        WHERE EXCLUDED.block_height > current.block_height
+        WHERE EXCLUDED.block_height > current_locations.block_height
       `;
       // Backfill orphan locations for this inscription, if any.
       await sql`
