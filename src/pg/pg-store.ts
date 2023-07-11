@@ -375,7 +375,7 @@ export class PgStore extends BasePgStore {
           loc.value,
           loc.sat_coinbase_height,
           ${
-            countType === DbInscriptionIndexResultCountType.custom
+            countType === DbInscriptionIndexResultCountType.singleResult
               ? sql`COUNT(*) OVER() as total`
               : sql`0 as total`
           }
