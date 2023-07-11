@@ -351,3 +351,14 @@ export const InscriptionsPerBlockResponse = Type.Object({
   results: Type.Array(InscriptionsPerBlock),
 });
 export type InscriptionsPerBlockResponse = Static<typeof InscriptionsPerBlockResponse>;
+
+export const BlockHeightResponse = Type.String({ examples: ['778921'] });
+export type BlockHeightResponse = Static<typeof BlockHeightResponse>;
+
+export const BlockHashResponse = Type.String({
+  examples: ['0000000000000000000452773967cdd62297137cdaf79950c5e8bb0c62075133'],
+});
+export type BlockHashResponse = Static<typeof BlockHashResponse>;
+
+export const BlockTimestampResponse = Type.String({ examples: ['1677733170000'] });
+export type BlockTimestampResponse = Static<typeof BlockTimestampResponse>;

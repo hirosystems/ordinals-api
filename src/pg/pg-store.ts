@@ -1,4 +1,6 @@
+import { BasePgStore, connectPostgres, logger, runMigrations } from '@hirosystems/api-toolkit';
 import { BitcoinEvent, Payload } from '@hirosystems/chainhook-client';
+import * as path from 'path';
 import { Order, OrderBy } from '../api/schemas';
 import { isProdEnv, isTestEnv, normalizedHexString, parseSatPoint } from '../api/util/helpers';
 import { OrdinalSatoshi, SatoshiRarity } from '../api/util/ordinal-satoshi';
@@ -21,8 +23,6 @@ import {
   DbPaginatedResult,
   LOCATIONS_COLUMNS,
 } from './types';
-import { BasePgStore, connectPostgres, logger, runMigrations } from '@hirosystems/api-toolkit';
-import * as path from 'path';
 
 export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 
@@ -210,6 +210,36 @@ export class PgStore extends BasePgStore {
   async getChainTipBlockHeight(): Promise<number> {
     const result = await this.sql<{ block_height: string }[]>`SELECT block_height FROM chain_tip`;
     return parseInt(result[0].block_height);
+  }
+
+  /**
+   * Returns the block hash of the latest block, or the block hash of the block
+   * at the given height.
+   * @param blockHeight - optional block height (defaults to latest block)
+   */
+  async getBlockHash(blockHeight?: string): Promise<string> {
+    const clause = blockHeight
+      ? this.sql`WHERE block_height = ${blockHeight}`
+      : this.sql`
+        ORDER BY block_height DESC
+        LIMIT 1
+      `;
+
+    const result = await this.sql<{ block_hash: string }[]>`
+      SELECT block_hash FROM inscriptions_per_block
+      ${clause}
+    `;
+
+    return result[0]?.block_hash;
+  }
+
+  async getBlockTimestamp(): Promise<string> {
+    const result = await this.sql<{ timestamp: string }[]>`
+      SELECT ROUND(EXTRACT(EPOCH FROM timestamp)) as timestamp FROM inscriptions_per_block
+      ORDER BY block_height DESC
+      LIMIT 1
+    `;
+    return result[0]?.timestamp;
   }
 
   async getChainTipInscriptionCount(): Promise<number> {
