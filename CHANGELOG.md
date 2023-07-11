@@ -1,3 +1,10 @@
+## [0.4.14](https://github.com/hirosystems/ordinals-api/compare/v0.4.13...v0.4.14) (2023-07-11)
+
+
+### Bug Fixes
+
+* mark intractable `/inscriptions` result counts as 0 to avoid DB bottlenecks ([#142](https://github.com/hirosystems/ordinals-api/issues/142)) ([2d1fa8f](https://github.com/hirosystems/ordinals-api/commit/2d1fa8f6b6062494ecd7900c5d74cd12abe7e32f))
+
 ## [0.4.13](https://github.com/hirosystems/ordinals-api/compare/v0.4.12...v0.4.13) (2023-07-09)
 
 
