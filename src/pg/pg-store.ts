@@ -350,7 +350,7 @@ export class PgStore extends BasePgStore {
           loc.timestamp,
           loc.value,
           ${
-            countType === DbInscriptionIndexResultCountType.custom
+            countType === DbInscriptionIndexResultCountType.singleResult
               ? sql`COUNT(*) OVER() as total`
               : sql`0 as total`
           }

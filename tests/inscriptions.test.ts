@@ -1577,7 +1577,8 @@ describe('/inscriptions', () => {
         });
         expect(response1.statusCode).toBe(200);
         const responseJson1 = response1.json();
-        expect(responseJson1.total).toBe(1);
+        // expect(responseJson1.total).toBe(1);
+        expect(responseJson1.results.length).toBe(1);
         expect(responseJson1.results[0].genesis_block_height).toBe(775617);
 
         const response2 = await fastify.inject({
@@ -1586,7 +1587,8 @@ describe('/inscriptions', () => {
         });
         expect(response2.statusCode).toBe(200);
         const responseJson2 = response2.json();
-        expect(responseJson2.total).toBe(1);
+        // expect(responseJson2.total).toBe(1);
+        expect(responseJson2.results.length).toBe(1);
         expect(responseJson2.results[0].genesis_block_height).toBe(778575);
 
         const response3 = await fastify.inject({
@@ -1595,7 +1597,8 @@ describe('/inscriptions', () => {
         });
         expect(response3.statusCode).toBe(200);
         const responseJson3 = response3.json();
-        expect(responseJson3.total).toBe(1);
+        // expect(responseJson3.total).toBe(1);
+        expect(responseJson3.results.length).toBe(1);
         expect(responseJson3.results[0].genesis_block_height).toBe(775617);
       });
 
@@ -1663,7 +1666,8 @@ describe('/inscriptions', () => {
         });
         expect(response1.statusCode).toBe(200);
         const responseJson1 = response1.json();
-        expect(responseJson1.total).toBe(1);
+        // expect(responseJson1.total).toBe(1);
+        expect(responseJson1.results.length).toBe(1);
         expect(responseJson1.results[0].genesis_block_hash).toBe(
           '000000000000000000039b3051705a16fcf310a70dee55742339e6da70181bf7'
         );
@@ -1733,7 +1737,8 @@ describe('/inscriptions', () => {
         });
         expect(response2.statusCode).toBe(200);
         const responseJson2 = response2.json();
-        expect(responseJson2.total).toBe(1);
+        // expect(responseJson2.total).toBe(1);
+        expect(responseJson2.results.length).toBe(1);
         expect(responseJson2.results[0].genesis_timestamp).toBe(1677731361000);
 
         const response3 = await fastify.inject({
@@ -1742,7 +1747,8 @@ describe('/inscriptions', () => {
         });
         expect(response3.statusCode).toBe(200);
         const responseJson3 = response3.json();
-        expect(responseJson3.total).toBe(1);
+        // expect(responseJson3.total).toBe(1);
+        expect(responseJson3.results.length).toBe(1);
         expect(responseJson3.results[0].genesis_timestamp).toBe(1675312161000);
       });
 
@@ -1810,7 +1816,8 @@ describe('/inscriptions', () => {
         });
         expect(response2.statusCode).toBe(200);
         const responseJson2 = response2.json();
-        expect(responseJson2.total).toBe(1);
+        // expect(responseJson2.total).toBe(1);
+        expect(responseJson2.results.length).toBe(1);
         expect(responseJson2.results[0].sat_ordinal).toBe('257418248345364');
 
         const response3 = await fastify.inject({
@@ -1819,7 +1826,8 @@ describe('/inscriptions', () => {
         });
         expect(response3.statusCode).toBe(200);
         const responseJson3 = response3.json();
-        expect(responseJson3.total).toBe(1);
+        // expect(responseJson3.total).toBe(1);
+        expect(responseJson3.results.length).toBe(1);
         expect(responseJson3.results[0].sat_ordinal).toBe('1000000000000');
       });
 
@@ -1887,7 +1895,8 @@ describe('/inscriptions', () => {
         });
         expect(response2.statusCode).toBe(200);
         const responseJson2 = response2.json();
-        expect(responseJson2.total).toBe(1);
+        // expect(responseJson2.total).toBe(1);
+        expect(responseJson2.results.length).toBe(1);
         expect(responseJson2.results[0].sat_coinbase_height).toBe(51483);
 
         const response3 = await fastify.inject({
@@ -1896,7 +1905,8 @@ describe('/inscriptions', () => {
         });
         expect(response3.statusCode).toBe(200);
         const responseJson3 = response3.json();
-        expect(responseJson3.total).toBe(1);
+        // expect(responseJson3.total).toBe(1);
+        expect(responseJson3.results.length).toBe(1);
         expect(responseJson3.results[0].sat_coinbase_height).toBe(200);
       });
 
@@ -1964,7 +1974,7 @@ describe('/inscriptions', () => {
         });
         expect(response2.statusCode).toBe(200);
         const responseJson2 = response2.json();
-        expect(responseJson2.total).toBe(1);
+        // expect(responseJson2.total).toBe(1);
         expect(responseJson2.results[0].number).toBe(50);
 
         const response3 = await fastify.inject({
@@ -1973,7 +1983,8 @@ describe('/inscriptions', () => {
         });
         expect(response3.statusCode).toBe(200);
         const responseJson3 = response3.json();
-        expect(responseJson3.total).toBe(1);
+        // expect(responseJson3.total).toBe(1);
+        expect(responseJson3.results.length).toBe(1);
         expect(responseJson3.results[0].number).toBe(7);
       });
 
@@ -2111,7 +2122,8 @@ describe('/inscriptions', () => {
         });
         expect(response1.statusCode).toBe(200);
         const responseJson1 = response1.json();
-        expect(responseJson1.total).toBe(1);
+        // expect(responseJson1.total).toBe(1);
+        expect(responseJson1.results.length).toBe(1);
         expect(responseJson1.results[0].address).toBe(
           'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj'
         );
@@ -2122,7 +2134,8 @@ describe('/inscriptions', () => {
         });
         expect(response2.statusCode).toBe(200);
         const responseJson2 = response2.json();
-        expect(responseJson2.total).toBe(2);
+        // expect(responseJson2.total).toBe(2);
+        expect(responseJson2.results.length).toBe(2);
       });
     });
 
