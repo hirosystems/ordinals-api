@@ -17,6 +17,10 @@ export function up(pgm: MigrationBuilder): void {
       type: 'bigint',
       notNull: true,
     },
+    tx_index: {
+      type: 'bigint',
+      notNull: true,
+    },
   });
   pgm.createConstraint(
     'current_locations',
@@ -24,4 +28,5 @@ export function up(pgm: MigrationBuilder): void {
     'UNIQUE(inscription_id)'
   );
   pgm.createIndex('current_locations', ['location_id']);
+  pgm.createIndex('current_locations', ['block_height']);
 }

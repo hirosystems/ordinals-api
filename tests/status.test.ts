@@ -51,6 +51,9 @@ describe('Status', () => {
           ordinal_offset: 0,
           satpoint_post_inscription:
             '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+          inscription_input_index: 0,
+          transfers_pre_inscription: 0,
+          tx_index: 0,
         })
         .build()
     );
@@ -74,6 +77,9 @@ describe('Status', () => {
           satpoint_post_inscription:
             'a98d7055a77fa0b96cc31e30bb8bacf777382d1b67f1b7eca6f2014e961591c8:0:0',
           curse_type: 'p2wsh',
+          inscription_input_index: 0,
+          transfers_pre_inscription: 0,
+          tx_index: 0,
         })
         .build()
     );

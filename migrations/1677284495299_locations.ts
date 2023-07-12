@@ -28,6 +28,10 @@ export function up(pgm: MigrationBuilder): void {
       type: 'text',
       notNull: true,
     },
+    tx_index: {
+      type: 'bigint',
+      notNull: true,
+    },
     address: {
       type: 'text',
     },
@@ -59,7 +63,11 @@ export function up(pgm: MigrationBuilder): void {
   );
   pgm.createConstraint('locations', 'locations_output_offset_unique', 'UNIQUE(output, "offset")');
   pgm.createIndex('locations', ['inscription_id']);
-  pgm.createIndex('locations', ['genesis_id']);
+  pgm.createIndex('locations', [
+    'genesis_id',
+    { name: 'block_height', sort: 'DESC' },
+    { name: 'tx_index', sort: 'DESC' },
+  ]);
   pgm.createIndex('locations', ['block_height']);
   pgm.createIndex('locations', ['block_hash']);
   pgm.createIndex('locations', ['address']);

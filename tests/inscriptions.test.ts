@@ -45,6 +45,9 @@ describe('/inscriptions', () => {
             ordinal_offset: 0,
             satpoint_post_inscription:
               '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+            tx_index: 0,
+            inscription_input_index: 0,
+            transfers_pre_inscription: 0,
           })
           .build()
       );
@@ -73,6 +76,9 @@ describe('/inscriptions', () => {
             ordinal_offset: 0,
             satpoint_post_inscription:
               '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+            inscription_input_index: 0,
+            transfers_pre_inscription: 0,
+            tx_index: 0,
           })
           .build()
       );
@@ -144,6 +150,9 @@ describe('/inscriptions', () => {
             ordinal_offset: 0,
             satpoint_post_inscription:
               '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+            inscription_input_index: 0,
+            transfers_pre_inscription: 0,
+            tx_index: 0,
           })
           .build()
       );
@@ -216,6 +225,9 @@ describe('/inscriptions', () => {
             satpoint_post_inscription:
               '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
             curse_type: 88,
+            inscription_input_index: 0,
+            transfers_pre_inscription: 0,
+            tx_index: 0,
           })
           .build()
       );
@@ -287,6 +299,9 @@ describe('/inscriptions', () => {
             ordinal_offset: 0,
             satpoint_post_inscription:
               '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+            inscription_input_index: 0,
+            transfers_pre_inscription: 0,
+            tx_index: 0,
           })
           .build()
       );
@@ -307,6 +322,7 @@ describe('/inscriptions', () => {
             satpoint_post_transfer:
               'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
             post_transfer_output_value: 9000,
+            tx_index: 0,
           })
           .build()
       );
@@ -356,6 +372,7 @@ describe('/inscriptions', () => {
             satpoint_post_transfer:
               'e3af144354367de58c675e987febcb49f17d6c19e645728b833fe95408feab85:0:0',
             post_transfer_output_value: 8000,
+            tx_index: 0,
           })
           .build()
       );
@@ -416,6 +433,9 @@ describe('/inscriptions', () => {
             ordinal_offset: 0,
             satpoint_post_inscription:
               '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+            inscription_input_index: 0,
+            transfers_pre_inscription: 0,
+            tx_index: 0,
           })
           .build()
       );
@@ -466,6 +486,7 @@ describe('/inscriptions', () => {
             satpoint_post_transfer:
               'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
             post_transfer_output_value: 9000,
+            tx_index: 0,
           })
           .build()
       );
@@ -527,6 +548,9 @@ describe('/inscriptions', () => {
             satpoint_post_inscription:
               '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
             curse_type: { tag: 66 },
+            inscription_input_index: 0,
+            transfers_pre_inscription: 0,
+            tx_index: 0,
           })
           .build()
       );
@@ -547,6 +571,7 @@ describe('/inscriptions', () => {
             satpoint_post_transfer:
               'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
             post_transfer_output_value: 9000,
+            tx_index: 0,
           })
           .build()
       );
@@ -596,6 +621,7 @@ describe('/inscriptions', () => {
             satpoint_post_transfer:
               'e3af144354367de58c675e987febcb49f17d6c19e645728b833fe95408feab85:0:0',
             post_transfer_output_value: 8000,
+            tx_index: 0,
           })
           .build()
       );
@@ -658,6 +684,9 @@ describe('/inscriptions', () => {
             ordinal_offset: 0,
             satpoint_post_inscription:
               '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+            inscription_input_index: 0,
+            transfers_pre_inscription: 0,
+            tx_index: 0,
           })
           .build()
       );
@@ -682,6 +711,7 @@ describe('/inscriptions', () => {
             satpoint_post_transfer:
               'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
             post_transfer_output_value: 9000,
+            tx_index: 0,
           })
           .build()
       );
@@ -737,6 +767,7 @@ describe('/inscriptions', () => {
             satpoint_post_transfer:
               'e3af144354367de58c675e987febcb49f17d6c19e645728b833fe95408feab85:0:0',
             post_transfer_output_value: 8000,
+            tx_index: 0,
           })
           .build()
       );
@@ -810,6 +841,9 @@ describe('/inscriptions', () => {
             ordinal_offset: 0,
             satpoint_post_inscription:
               '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+            inscription_input_index: 0,
+            transfers_pre_inscription: 0,
+            tx_index: 0,
           })
           .transaction({
             hash: '7ac73ecd01b9da4a7eab904655416dbfe8e03f193e091761b5a63ad0963570cd',
@@ -828,6 +862,9 @@ describe('/inscriptions', () => {
             ordinal_offset: 0,
             satpoint_post_inscription:
               '7ac73ecd01b9da4a7eab904655416dbfe8e03f193e091761b5a63ad0963570cd:0:0',
+            inscription_input_index: 0,
+            transfers_pre_inscription: 0,
+            tx_index: 0,
           })
           .build()
       );
@@ -862,6 +899,7 @@ describe('/inscriptions', () => {
             satpoint_post_transfer:
               'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
             post_transfer_output_value: 9000,
+            tx_index: 0,
           })
           .transaction({
             hash: 'abe7deebd0c6bacc9b1ddd234f9442db0530180448e934f34b9cbf3d7e6d91cb',
@@ -874,6 +912,7 @@ describe('/inscriptions', () => {
             satpoint_post_transfer:
               'abe7deebd0c6bacc9b1ddd234f9442db0530180448e934f34b9cbf3d7e6d91cb:0:0',
             post_transfer_output_value: 9000,
+            tx_index: 0,
           })
           .build()
       );
@@ -959,6 +998,7 @@ describe('/inscriptions', () => {
             satpoint_post_transfer:
               '5cabafe04aaf98b1f325b0c3ffcbff904dbdb6f3d2e9e451102fda36f1056b5e:0:0',
             post_transfer_output_value: 8000,
+            tx_index: 0,
           })
           .build()
       );
@@ -1027,6 +1067,9 @@ describe('/inscriptions', () => {
             ordinal_offset: 0,
             satpoint_post_inscription:
               '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+            inscription_input_index: 0,
+            transfers_pre_inscription: 0,
+            tx_index: 0,
           })
           .build()
       );
@@ -1055,6 +1098,9 @@ describe('/inscriptions', () => {
             ordinal_offset: 0,
             satpoint_post_inscription:
               '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+            inscription_input_index: 0,
+            transfers_pre_inscription: 0,
+            tx_index: 0,
           })
           .build()
       );
@@ -1145,6 +1191,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -1173,6 +1222,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -1280,6 +1332,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -1308,6 +1363,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -1365,6 +1423,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -1393,6 +1454,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -1454,6 +1518,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -1482,6 +1549,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -1539,6 +1609,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -1567,6 +1640,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -1628,6 +1704,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -1656,6 +1735,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -1699,6 +1781,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -1727,6 +1812,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -1778,6 +1866,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -1806,6 +1897,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -1857,6 +1951,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -1885,6 +1982,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -1936,6 +2036,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -1964,6 +2067,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -2014,6 +2120,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -2042,6 +2151,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -2084,6 +2196,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -2112,6 +2227,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -2166,6 +2284,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -2194,6 +2315,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -2222,6 +2346,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '567c7605439dfdc3a289d13fd2132237852f4a56e784b9364ba94499d5f9baf1:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -2275,6 +2402,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -2303,6 +2433,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -2331,6 +2464,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '567c7605439dfdc3a289d13fd2132237852f4a56e784b9364ba94499d5f9baf1:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -2384,6 +2520,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -2412,6 +2551,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -2440,6 +2582,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '567c7605439dfdc3a289d13fd2132237852f4a56e784b9364ba94499d5f9baf1:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -2496,6 +2641,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
@@ -2525,6 +2673,9 @@ describe('/inscriptions', () => {
               ordinal_offset: 0,
               satpoint_post_inscription:
                 '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
             })
             .build()
         );
