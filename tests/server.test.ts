@@ -94,7 +94,7 @@ describe('EventServer', () => {
       expect(inscr.genesis_id).toBe(
         '0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8i0'
       );
-      expect(inscr.genesis_timestamp.toISOString()).toBe('2023-03-03T00:31:50.000Z');
+      expect(inscr.genesis_timestamp.toISOString()).toBe('2023-02-20T17:13:27.000Z');
       expect(inscr.genesis_tx_id).toBe(
         '0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8'
       );
@@ -107,7 +107,7 @@ describe('EventServer', () => {
       expect(inscr.sat_coinbase_height).toBe('25069');
       expect(inscr.sat_ordinal).toBe('125348773618236');
       expect(inscr.sat_rarity).toBe('common');
-      expect(inscr.timestamp.toISOString()).toBe('2023-03-03T00:31:50.000Z');
+      expect(inscr.timestamp.toISOString()).toBe('2023-02-20T17:13:27.000Z');
       expect(inscr.value).toBe('10000');
 
       // Rollback
@@ -237,7 +237,7 @@ describe('EventServer', () => {
       expect(inscr.sat_coinbase_height).toBe('0');
       expect(inscr.sat_ordinal).toBe('5');
       expect(inscr.sat_rarity).toBe('common');
-      expect(inscr.timestamp.toISOString()).toBe('2023-03-03T00:31:50.000Z');
+      expect(inscr.timestamp.toISOString()).toBe('2023-02-20T17:13:27.000Z');
       expect(inscr.value).toBe('10000');
 
       // Rollback

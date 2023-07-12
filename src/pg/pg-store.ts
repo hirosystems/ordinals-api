@@ -777,19 +777,23 @@ export class PgStore extends BasePgStore {
         INSERT INTO genesis_locations ${sql(pointer)}
         ON CONFLICT ON CONSTRAINT genesis_locations_inscription_id_unique DO UPDATE SET
           location_id = EXCLUDED.location_id,
-          block_height = EXCLUDED.block_height
+          block_height = EXCLUDED.block_height,
+          tx_index = EXCLUDED.tx_index
         WHERE
-          EXCLUDED.block_height <= genesis_locations.block_height AND
-          EXCLUDED.tx_index < genesis_locations.tx_index
+          EXCLUDED.block_height < genesis_locations.block_height OR
+          (EXCLUDED.block_height = genesis_locations.block_height AND
+            EXCLUDED.tx_index < genesis_locations.tx_index)
       `;
       await sql`
         INSERT INTO current_locations ${sql(pointer)}
         ON CONFLICT ON CONSTRAINT current_locations_inscription_id_unique DO UPDATE SET
           location_id = EXCLUDED.location_id,
-          block_height = EXCLUDED.block_height
+          block_height = EXCLUDED.block_height,
+          tx_index = EXCLUDED.tx_index
         WHERE
-          EXCLUDED.block_height >= current_locations.block_height AND
-          EXCLUDED.tx_index > current_locations.tx_index
+          EXCLUDED.block_height > current_locations.block_height OR
+          (EXCLUDED.block_height = current_locations.block_height AND
+            EXCLUDED.tx_index > current_locations.tx_index)
       `;
       // Backfill orphan locations for this inscription, if any.
       await sql`
