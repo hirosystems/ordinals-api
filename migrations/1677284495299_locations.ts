@@ -51,16 +51,6 @@ export function up(pgm: MigrationBuilder): void {
       type: 'timestamptz',
       notNull: true,
     },
-    genesis: {
-      type: 'boolean',
-      default: true,
-      notNull: true,
-    },
-    current: {
-      type: 'boolean',
-      default: true,
-      notNull: true,
-    },
   });
   pgm.createConstraint(
     'locations',
@@ -68,11 +58,11 @@ export function up(pgm: MigrationBuilder): void {
     'FOREIGN KEY(inscription_id) REFERENCES inscriptions(id) ON DELETE CASCADE'
   );
   pgm.createConstraint('locations', 'locations_output_offset_unique', 'UNIQUE(output, "offset")');
+  pgm.createIndex('locations', ['inscription_id']);
   pgm.createIndex('locations', ['genesis_id']);
   pgm.createIndex('locations', ['block_height']);
   pgm.createIndex('locations', ['block_hash']);
   pgm.createIndex('locations', ['address']);
-  pgm.createIndex('locations', ['output']);
   pgm.createIndex('locations', ['timestamp']);
   pgm.createIndex('locations', ['prev_output']);
 }

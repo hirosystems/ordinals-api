@@ -60,8 +60,6 @@ export type DbLocation = {
   prev_offset: string | null;
   value: string | null;
   timestamp: Date;
-  genesis: boolean;
-  current: boolean;
 };
 
 export type DbInscriptionLocationChange = {
@@ -105,8 +103,6 @@ export const LOCATIONS_COLUMNS = [
   'offset',
   'value',
   'timestamp',
-  'genesis',
-  'current',
 ];
 
 export type DbInscriptionInsert = {
@@ -212,8 +208,10 @@ export enum DbInscriptionIndexResultCountType {
   mimeType,
   /** Filtered by sat rarity */
   satRarity,
-  /** Filtered by custom arguments */
-  custom,
+  /** Filtered by some param that yields a single result (easy to count) */
+  singleResult,
+  /** Filtered by custom arguments (very hard to count) */
+  intractable,
 }
 
 export type DbInscriptionCountPerBlockFilters = {
