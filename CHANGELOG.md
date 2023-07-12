@@ -1,3 +1,10 @@
+## [1.0.0-beta.4](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.3...v1.0.0-beta.4) (2023-07-12)
+
+
+### Bug Fixes
+
+* save tx_index on locations to support transfers on same block ([#145](https://github.com/hirosystems/ordinals-api/issues/145)) ([30a9635](https://github.com/hirosystems/ordinals-api/commit/30a96358c2b7c4c40f908e116478e3ddd83d8857))
+
 ## [1.0.0-beta.3](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.2...v1.0.0-beta.3) (2023-07-12)
 
 
