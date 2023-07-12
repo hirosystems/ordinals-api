@@ -1,10 +1,13 @@
-import { MockAgent } from 'undici';
 import { PREDICATE_UUID, startChainhookServer } from '../src/chainhook/server';
 import { ENV } from '../src/env';
 import { cycleMigrations } from '../src/pg/migrations';
 import { PgStore } from '../src/pg/pg-store';
 import { TestChainhookPayloadBuilder, TestFastifyServer } from './helpers';
-import { ChainhookEventObserver, Payload } from '@hirosystems/chainhook-client';
+import {
+  BitcoinInscriptionRevealed,
+  BitcoinInscriptionTransferred,
+  ChainhookEventObserver,
+} from '@hirosystems/chainhook-client';
 import { buildApiServer } from '../src/api/init';
 
 describe('EventServer', () => {
@@ -28,64 +31,38 @@ describe('EventServer', () => {
 
   describe('parser', () => {
     test('parses inscription_reveal apply and rollback', async () => {
-      const reveal = {
-        block_identifier: {
-          index: 107,
-          hash: '0x163de66dc9c0949905bfe8e148bde04600223cf88d19f26fdbeba1d6e6fa0f88',
-        },
-        parent_block_identifier: {
-          index: 106,
-          hash: '0x117374e7078440835a744b6b1b13dd2c48c4eff8c58dde07162241a8f15d1e03',
-        },
-        timestamp: 1677803510,
-        transactions: [
-          {
-            transaction_identifier: {
-              hash: '0x0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8',
-            },
-            operations: [],
-            metadata: {
-              ordinal_operations: [
-                {
-                  inscription_revealed: {
-                    content_bytes: '0x303030303030303030303030',
-                    content_type: 'text/plain;charset=utf-8',
-                    content_length: 12,
-                    inscription_number: 100,
-                    inscription_fee: 3425,
-                    inscription_output_value: 10000,
-                    inscription_id:
-                      '0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8i0',
-                    inscriber_address:
-                      'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-                    ordinal_number: 125348773618236,
-                    ordinal_block_height: 566462,
-                    ordinal_offset: 0,
-                    satpoint_post_inscription:
-                      '0x0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8:0:0',
-                  },
-                },
-              ],
-              proof: '0x12341234',
-            },
-          },
-        ],
-        metadata: {},
+      const reveal: BitcoinInscriptionRevealed = {
+        content_bytes: '0x303030303030303030303030',
+        content_type: 'text/plain;charset=utf-8',
+        content_length: 12,
+        inscription_number: 100,
+        inscription_fee: 3425,
+        inscription_output_value: 10000,
+        inscription_id: '0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8i0',
+        inscriber_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+        ordinal_number: 125348773618236,
+        ordinal_block_height: 566462,
+        ordinal_offset: 0,
+        satpoint_post_inscription:
+          '0x0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8:0:0',
+        inscription_input_index: 0,
+        transfers_pre_inscription: 0,
+        tx_index: 0,
       };
 
       // Apply
-      const payload1: Payload = {
-        apply: [reveal],
-        rollback: [],
-        chainhook: {
-          uuid: '1',
-          predicate: {
-            scope: 'ordinals_protocol',
-            operation: 'inscription_feed',
-          },
-          is_streaming_blocks: true,
-        },
-      };
+      const payload1 = new TestChainhookPayloadBuilder()
+        .apply()
+        .block({
+          height: 107,
+          hash: '0x163de66dc9c0949905bfe8e148bde04600223cf88d19f26fdbeba1d6e6fa0f88',
+          timestamp: 1676913207,
+        })
+        .transaction({
+          hash: '0x0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8',
+        })
+        .inscriptionRevealed(reveal)
+        .build();
       const response = await server['fastify'].inject({
         method: 'POST',
         url: `/chainhook/${PREDICATE_UUID}`,
@@ -117,7 +94,7 @@ describe('EventServer', () => {
       expect(inscr.genesis_id).toBe(
         '0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8i0'
       );
-      expect(inscr.genesis_timestamp.toISOString()).toBe('2023-03-03T00:31:50.000Z');
+      expect(inscr.genesis_timestamp.toISOString()).toBe('2023-02-20T17:13:27.000Z');
       expect(inscr.genesis_tx_id).toBe(
         '0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8'
       );
@@ -130,22 +107,22 @@ describe('EventServer', () => {
       expect(inscr.sat_coinbase_height).toBe('25069');
       expect(inscr.sat_ordinal).toBe('125348773618236');
       expect(inscr.sat_rarity).toBe('common');
-      expect(inscr.timestamp.toISOString()).toBe('2023-03-03T00:31:50.000Z');
+      expect(inscr.timestamp.toISOString()).toBe('2023-02-20T17:13:27.000Z');
       expect(inscr.value).toBe('10000');
 
       // Rollback
-      const payload2: Payload = {
-        apply: [],
-        rollback: [reveal],
-        chainhook: {
-          uuid: '1',
-          predicate: {
-            scope: 'ordinals_protocol',
-            operation: 'inscription_feed',
-          },
-          is_streaming_blocks: true,
-        },
-      };
+      const payload2 = new TestChainhookPayloadBuilder()
+        .rollback()
+        .block({
+          height: 107,
+          hash: '0x163de66dc9c0949905bfe8e148bde04600223cf88d19f26fdbeba1d6e6fa0f88',
+          timestamp: 1676913207,
+        })
+        .transaction({
+          hash: '0x0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8',
+        })
+        .inscriptionRevealed(reveal)
+        .build();
       const response2 = await server['fastify'].inject({
         method: 'POST',
         url: `/chainhook/${PREDICATE_UUID}`,
@@ -185,63 +162,37 @@ describe('EventServer', () => {
             ordinal_offset: 0,
             satpoint_post_inscription:
               '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+            inscription_input_index: 0,
+            transfers_pre_inscription: 0,
+            tx_index: 0,
           })
           .build()
       );
-      const transfer = {
-        block_identifier: {
-          index: 775618,
-          hash: '0x163de66dc9c0949905bfe8e148bde04600223cf88d19f26fdbeba1d6e6fa0f88',
-        },
-        parent_block_identifier: {
-          index: 775617,
-          hash: '0x00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
-        },
-        timestamp: 1677803510,
-        transactions: [
-          {
-            transaction_identifier: {
-              hash: '0x0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8',
-            },
-            operations: [],
-            metadata: {
-              ordinal_operations: [
-                {
-                  inscription_transferred: {
-                    inscription_number: 7,
-                    inscription_id:
-                      '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-                    ordinal_number: 5,
-                    updated_address:
-                      'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf00000',
-                    satpoint_pre_transfer:
-                      '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
-                    satpoint_post_transfer:
-                      '0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8:0:5000',
-                    post_transfer_output_value: 10000,
-                  },
-                },
-              ],
-              proof: '0x12341234',
-            },
-          },
-        ],
-        metadata: {},
+
+      const transfer: BitcoinInscriptionTransferred = {
+        inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+        updated_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf00000',
+        satpoint_pre_transfer:
+          '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+        satpoint_post_transfer:
+          '0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8:0:5000',
+        post_transfer_output_value: 10000,
+        tx_index: 0,
       };
 
       // Apply
-      const payload1: Payload = {
-        apply: [transfer],
-        rollback: [],
-        chainhook: {
-          uuid: '1',
-          predicate: {
-            scope: 'ordinals_protocol',
-            operation: 'inscription_feed',
-          },
-          is_streaming_blocks: true,
-        },
-      };
+      const payload1 = new TestChainhookPayloadBuilder()
+        .apply()
+        .block({
+          height: 775618,
+          hash: '0x163de66dc9c0949905bfe8e148bde04600223cf88d19f26fdbeba1d6e6fa0f88',
+          timestamp: 1676913207,
+        })
+        .transaction({
+          hash: '0x0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8',
+        })
+        .inscriptionTransferred(transfer)
+        .build();
       const response = await server['fastify'].inject({
         method: 'POST',
         url: `/chainhook/${PREDICATE_UUID}`,
@@ -286,22 +237,22 @@ describe('EventServer', () => {
       expect(inscr.sat_coinbase_height).toBe('0');
       expect(inscr.sat_ordinal).toBe('5');
       expect(inscr.sat_rarity).toBe('common');
-      expect(inscr.timestamp.toISOString()).toBe('2023-03-03T00:31:50.000Z');
+      expect(inscr.timestamp.toISOString()).toBe('2023-02-20T17:13:27.000Z');
       expect(inscr.value).toBe('10000');
 
       // Rollback
-      const payload2: Payload = {
-        apply: [],
-        rollback: [transfer],
-        chainhook: {
-          uuid: '1',
-          predicate: {
-            scope: 'ordinals_protocol',
-            operation: 'inscription_feed',
-          },
-          is_streaming_blocks: true,
-        },
-      };
+      const payload2 = new TestChainhookPayloadBuilder()
+        .rollback()
+        .block({
+          height: 775618,
+          hash: '0x163de66dc9c0949905bfe8e148bde04600223cf88d19f26fdbeba1d6e6fa0f88',
+          timestamp: 1676913207,
+        })
+        .transaction({
+          hash: '0x0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8',
+        })
+        .inscriptionTransferred(transfer)
+        .build();
       const response2 = await server['fastify'].inject({
         method: 'POST',
         url: `/chainhook/${PREDICATE_UUID}`,
@@ -336,6 +287,7 @@ describe('EventServer', () => {
             satpoint_post_transfer:
               '9e2414153b1893f799477f7e1a00a52fafc235de72fd215cb3321f253c4464ac:0:0',
             post_transfer_output_value: 9000,
+            tx_index: 0,
           })
           .build()
       );
@@ -358,6 +310,7 @@ describe('EventServer', () => {
             satpoint_post_transfer:
               '2fa1640d61f04a699833f0f6a884f543c835fc60f0fd4da8627ebb857acdce84:0:0',
             post_transfer_output_value: 8000,
+            tx_index: 0,
           })
           .build()
       );
@@ -406,6 +359,9 @@ describe('EventServer', () => {
             ordinal_offset: 0,
             satpoint_post_inscription:
               '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+            inscription_input_index: 0,
+            transfers_pre_inscription: 0,
+            tx_index: 0,
           })
           .build()
       );

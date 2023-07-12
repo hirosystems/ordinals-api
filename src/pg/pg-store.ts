@@ -4,7 +4,7 @@ import { isProdEnv, normalizedHexString, parseSatPoint } from '../api/util/helpe
 import { OrdinalSatoshi, SatoshiRarity } from '../api/util/ordinal-satoshi';
 import { ENV } from '../env';
 import { logger } from '../logger';
-import { getIndexResultCountType, inscriptionContentToJson } from './helpers';
+import { getIndexResultCountType } from './helpers';
 import { runMigrations } from './migrations';
 import { connectPostgres } from './postgres-tools';
 import { BasePgStore } from './postgres-tools/base-pg-store';
@@ -19,11 +19,10 @@ import {
   DbInscriptionIndexResultCountType,
   DbInscriptionInsert,
   DbInscriptionLocationChange,
-  DbJsonContent,
   DbLocation,
   DbLocationInsert,
+  DbLocationPointerInsert,
   DbPaginatedResult,
-  JSON_CONTENTS_COLUMNS,
   LOCATIONS_COLUMNS,
 } from './types';
 
@@ -117,6 +116,7 @@ export class PgStore extends BasePgStore {
                   block_hash,
                   block_height,
                   tx_id,
+                  tx_index: reveal.tx_index,
                   genesis_id: reveal.inscription_id,
                   address: reveal.inscriber_address,
                   output: `${satpoint.tx_id}:${satpoint.vout}`,
@@ -150,6 +150,7 @@ export class PgStore extends BasePgStore {
                   block_hash,
                   block_height,
                   tx_id,
+                  tx_index: reveal.tx_index,
                   genesis_id: reveal.inscription_id,
                   address: reveal.inscriber_address,
                   output: `${satpoint.tx_id}:${satpoint.vout}`,
@@ -170,6 +171,7 @@ export class PgStore extends BasePgStore {
                   block_hash,
                   block_height,
                   tx_id,
+                  tx_index: transfer.tx_index,
                   genesis_id: transfer.inscription_id,
                   address: transfer.updated_address,
                   output: `${satpoint.tx_id}:${satpoint.vout}`,
@@ -448,16 +450,18 @@ export class PgStore extends BasePgStore {
     args: InscriptionIdentifier & { limit: number; offset: number }
   ): Promise<DbPaginatedResult<DbLocation>> {
     const results = await this.sql<({ total: number } & DbLocation)[]>`
-      SELECT ${this.sql(LOCATIONS_COLUMNS.map(c => `l.${c}`))}, COUNT(*) OVER() as total
-      FROM locations AS l
-      INNER JOIN inscriptions AS i ON l.inscription_id = i.id
-      WHERE
-        ${
+      SELECT ${this.sql(LOCATIONS_COLUMNS)}, COUNT(*) OVER() as total
+      FROM locations
+      WHERE genesis_id = (
+        SELECT genesis_id FROM inscriptions
+        WHERE ${
           'number' in args
-            ? this.sql`i.number = ${args.number}`
-            : this.sql`i.genesis_id = ${args.genesis_id}`
+            ? this.sql`number = ${args.number}`
+            : this.sql`genesis_id = ${args.genesis_id}`
         }
-      ORDER BY l.block_height DESC
+        LIMIT 1
+      )
+      ORDER BY block_height DESC, tx_index DESC
       LIMIT ${args.limit}
       OFFSET ${args.offset}
     `;
@@ -514,24 +518,6 @@ export class PgStore extends BasePgStore {
       total: results[0]?.total ?? 0,
       results: results ?? [],
     };
-  }
-
-  async getJsonContent(args: InscriptionIdentifier): Promise<DbJsonContent | undefined> {
-    const results = await this.sql<DbJsonContent[]>`
-      SELECT ${this.sql(JSON_CONTENTS_COLUMNS.map(c => `j.${c}`))}
-      FROM json_contents AS j
-      INNER JOIN inscriptions AS i ON j.inscription_id = i.id
-      WHERE
-        ${
-          'number' in args
-            ? this.sql`i.number = ${args.number}`
-            : this.sql`i.genesis_id = ${args.genesis_id}`
-        }
-      LIMIT 1
-    `;
-    if (results.count === 1) {
-      return results[0];
-    }
   }
 
   async getInscriptionCountPerBlock(
@@ -595,6 +581,7 @@ export class PgStore extends BasePgStore {
         block_height: args.location.block_height,
         block_hash: args.location.block_hash,
         tx_id: args.location.tx_id,
+        tx_index: args.location.tx_index,
         address: args.location.address,
         output: args.location.output,
         offset: args.location.offset,
@@ -603,7 +590,7 @@ export class PgStore extends BasePgStore {
         value: args.location.value,
         timestamp: sql`to_timestamp(${args.location.timestamp})`,
       };
-      const locationRes = await sql<{ id: string }[]>`
+      const locationRes = await sql<{ id: number }[]>`
         INSERT INTO locations ${sql(location)}
         ON CONFLICT ON CONSTRAINT locations_output_offset_unique DO UPDATE SET
           inscription_id = EXCLUDED.inscription_id,
@@ -611,6 +598,7 @@ export class PgStore extends BasePgStore {
           block_height = EXCLUDED.block_height,
           block_hash = EXCLUDED.block_hash,
           tx_id = EXCLUDED.tx_id,
+          tx_index = EXCLUDED.tx_index,
           address = EXCLUDED.address,
           value = EXCLUDED.value,
           timestamp = EXCLUDED.timestamp
@@ -621,6 +609,7 @@ export class PgStore extends BasePgStore {
         genesis_id: args.inscription.genesis_id,
         location_id: locationRes[0].id,
         block_height: args.location.block_height,
+        tx_index: args.location.tx_index,
       });
       logger.info(
         `PgStore${upsert.count > 0 ? ' upsert ' : ' '}reveal #${args.inscription.number} (${
@@ -667,6 +656,7 @@ export class PgStore extends BasePgStore {
         block_height: args.location.block_height,
         block_hash: args.location.block_hash,
         tx_id: args.location.tx_id,
+        tx_index: args.location.tx_index,
         address: args.location.address,
         output: args.location.output,
         offset: args.location.offset,
@@ -675,7 +665,7 @@ export class PgStore extends BasePgStore {
         value: args.location.value,
         timestamp: this.sql`to_timestamp(${args.location.timestamp})`,
       };
-      const locationRes = await sql<{ id: string }[]>`
+      const locationRes = await sql<{ id: number }[]>`
         INSERT INTO locations ${sql(location)}
         ON CONFLICT ON CONSTRAINT locations_output_offset_unique DO UPDATE SET
           inscription_id = EXCLUDED.inscription_id,
@@ -683,6 +673,7 @@ export class PgStore extends BasePgStore {
           block_height = EXCLUDED.block_height,
           block_hash = EXCLUDED.block_hash,
           tx_id = EXCLUDED.tx_id,
+          tx_index = EXCLUDED.tx_index,
           address = EXCLUDED.address,
           value = EXCLUDED.value,
           timestamp = EXCLUDED.timestamp
@@ -694,6 +685,7 @@ export class PgStore extends BasePgStore {
           genesis_id: args.location.genesis_id,
           location_id: locationRes[0].id,
           block_height: args.location.block_height,
+          tx_index: args.location.tx_index,
         });
       }
       logger.info(
@@ -770,32 +762,38 @@ export class PgStore extends BasePgStore {
     );
   }
 
-  private async updateInscriptionLocationPointers(args: {
-    inscription_id: number;
-    genesis_id: string;
-    location_id: string;
-    block_height: number;
-  }): Promise<void> {
+  private async updateInscriptionLocationPointers(
+    args: DbLocationPointerInsert & { genesis_id: string }
+  ): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
       // Update genesis and current location pointers for this inscription.
-      const pointer = {
+      const pointer: DbLocationPointerInsert = {
         inscription_id: args.inscription_id,
         location_id: args.location_id,
         block_height: args.block_height,
+        tx_index: args.tx_index,
       };
       await sql`
         INSERT INTO genesis_locations ${sql(pointer)}
         ON CONFLICT ON CONSTRAINT genesis_locations_inscription_id_unique DO UPDATE SET
           location_id = EXCLUDED.location_id,
-          block_height = EXCLUDED.block_height
-        WHERE EXCLUDED.block_height < genesis_locations.block_height
+          block_height = EXCLUDED.block_height,
+          tx_index = EXCLUDED.tx_index
+        WHERE
+          EXCLUDED.block_height < genesis_locations.block_height OR
+          (EXCLUDED.block_height = genesis_locations.block_height AND
+            EXCLUDED.tx_index < genesis_locations.tx_index)
       `;
       await sql`
         INSERT INTO current_locations ${sql(pointer)}
         ON CONFLICT ON CONSTRAINT current_locations_inscription_id_unique DO UPDATE SET
           location_id = EXCLUDED.location_id,
-          block_height = EXCLUDED.block_height
-        WHERE EXCLUDED.block_height > current_locations.block_height
+          block_height = EXCLUDED.block_height,
+          tx_index = EXCLUDED.tx_index
+        WHERE
+          EXCLUDED.block_height > current_locations.block_height OR
+          (EXCLUDED.block_height = current_locations.block_height AND
+            EXCLUDED.tx_index > current_locations.tx_index)
       `;
       // Backfill orphan locations for this inscription, if any.
       await sql`
