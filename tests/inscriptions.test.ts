@@ -2336,7 +2336,7 @@ describe('/inscriptions', () => {
         });
         expect(response1.statusCode).toBe(200);
         const responseJson1 = response1.json();
-        // expect(responseJson1.total).toBe(1);
+        expect(responseJson1.total).toBe(1);
         expect(responseJson1.results.length).toBe(1);
         expect(responseJson1.results[0].address).toBe(
           'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj'
@@ -2348,7 +2348,7 @@ describe('/inscriptions', () => {
         });
         expect(response2.statusCode).toBe(200);
         const responseJson2 = response2.json();
-        // expect(responseJson2.total).toBe(2);
+        expect(responseJson2.total).toBe(2);
         expect(responseJson2.results.length).toBe(2);
       });
     });

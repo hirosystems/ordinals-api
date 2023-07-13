@@ -195,6 +195,7 @@ export class PgStore extends BasePgStore {
     if (payload.chainhook.is_streaming_blocks) {
       await this.normalizeInscriptionCount({ min_block_height: updatedBlockHeightMin });
       await this.refreshMaterializedView('inscription_count');
+      await this.refreshMaterializedView('address_counts');
       await this.refreshMaterializedView('mime_type_counts');
       await this.refreshMaterializedView('sat_rarity_counts');
     }
@@ -222,12 +223,22 @@ export class PgStore extends BasePgStore {
     return result[0].count;
   }
 
-  async geSatRarityInscriptionCount(satRarity?: SatoshiRarity[]): Promise<number> {
+  async getSatRarityInscriptionCount(satRarity?: SatoshiRarity[]): Promise<number> {
     if (!satRarity) return 0;
     const result = await this.sql<{ count: number }[]>`
       SELECT COALESCE(SUM(count), 0) AS count
       FROM sat_rarity_counts
       WHERE sat_rarity IN ${this.sql(satRarity)}
+    `;
+    return result[0].count;
+  }
+
+  async getAddressInscriptionCount(address?: string[]): Promise<number> {
+    if (!address) return 0;
+    const result = await this.sql<{ count: number }[]>`
+      SELECT COALESCE(SUM(count), 0) AS count
+      FROM address_counts
+      WHERE address IN ${this.sql(address)}
     `;
     return result[0].count;
   }
@@ -436,7 +447,10 @@ export class PgStore extends BasePgStore {
           total = await this.getMimeTypeInscriptionCount(filters?.mime_type);
           break;
         case DbInscriptionIndexResultCountType.satRarity:
-          total = await this.geSatRarityInscriptionCount(filters?.sat_rarity);
+          total = await this.getSatRarityInscriptionCount(filters?.sat_rarity);
+          break;
+        case DbInscriptionIndexResultCountType.address:
+          total = await this.getAddressInscriptionCount(filters?.address);
           break;
       }
       return {
