@@ -16,6 +16,7 @@
 
 ## [0.4.15](https://github.com/hirosystems/ordinals-api/compare/v0.4.14...v0.4.15) (2023-07-13)
 
+
 ### Bug Fixes
 
 * introduce materialized view to count address inscriptions ([#147](https://github.com/hirosystems/ordinals-api/issues/147)) ([2e79311](https://github.com/hirosystems/ordinals-api/commit/2e793117afcafbd5f7578bc6b2435af7f33e7dd7))
@@ -40,7 +41,6 @@
 * patch ordinal number for transfers replay ([#134](https://github.com/hirosystems/ordinals-api/issues/134)) ([8d3fb5b](https://github.com/hirosystems/ordinals-api/commit/8d3fb5b23ad57e33ba22dea12afa33cb146de558))
 * rename location pointer tables ([b84d27e](https://github.com/hirosystems/ordinals-api/commit/b84d27e3624737e59c949906cafa8d76a329c0a0))
 * skip normalization for now ([#136](https://github.com/hirosystems/ordinals-api/issues/136)) ([85de25f](https://github.com/hirosystems/ordinals-api/commit/85de25f8c14288f426063da08bfb935d8ffb2aad))
-=======
 
 
 ## [0.4.14](https://github.com/hirosystems/ordinals-api/compare/v0.4.13...v0.4.14) (2023-07-11)
