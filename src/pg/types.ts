@@ -69,6 +69,7 @@ export type DbLocationPointerInsert = {
   location_id: number;
   block_height: number;
   tx_index: number;
+  address: string | null;
 };
 
 export type DbInscriptionLocationChange = {

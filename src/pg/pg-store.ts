@@ -624,6 +624,7 @@ export class PgStore extends BasePgStore {
         location_id: locationRes[0].id,
         block_height: args.location.block_height,
         tx_index: args.location.tx_index,
+        address: args.location.address,
       });
       logger.info(
         `PgStore${upsert.count > 0 ? ' upsert ' : ' '}reveal #${args.inscription.number} (${
@@ -700,6 +701,7 @@ export class PgStore extends BasePgStore {
           location_id: locationRes[0].id,
           block_height: args.location.block_height,
           tx_index: args.location.tx_index,
+          address: args.location.address,
         });
       }
       logger.info(
@@ -786,13 +788,15 @@ export class PgStore extends BasePgStore {
         location_id: args.location_id,
         block_height: args.block_height,
         tx_index: args.tx_index,
+        address: args.address,
       };
       await sql`
         INSERT INTO genesis_locations ${sql(pointer)}
         ON CONFLICT ON CONSTRAINT genesis_locations_inscription_id_unique DO UPDATE SET
           location_id = EXCLUDED.location_id,
           block_height = EXCLUDED.block_height,
-          tx_index = EXCLUDED.tx_index
+          tx_index = EXCLUDED.tx_index,
+          address = EXCLUDED.address
         WHERE
           EXCLUDED.block_height < genesis_locations.block_height OR
           (EXCLUDED.block_height = genesis_locations.block_height AND
@@ -803,7 +807,8 @@ export class PgStore extends BasePgStore {
         ON CONFLICT ON CONSTRAINT current_locations_inscription_id_unique DO UPDATE SET
           location_id = EXCLUDED.location_id,
           block_height = EXCLUDED.block_height,
-          tx_index = EXCLUDED.tx_index
+          tx_index = EXCLUDED.tx_index,
+          address = EXCLUDED.address
         WHERE
           EXCLUDED.block_height > current_locations.block_height OR
           (EXCLUDED.block_height = current_locations.block_height AND
