@@ -1,6 +1,6 @@
+import { cycleMigrations } from '@hirosystems/api-toolkit';
 import { buildApiServer } from '../src/api/init';
-import { cycleMigrations } from '../src/pg/migrations';
-import { PgStore } from '../src/pg/pg-store';
+import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
 import { TestChainhookPayloadBuilder, TestFastifyServer, randomHash } from './helpers';
 
 jest.setTimeout(100_000_000);
@@ -12,7 +12,7 @@ describe('/stats', () => {
   beforeEach(async () => {
     db = await PgStore.connect({ skipMigrations: true });
     fastify = await buildApiServer({ db });
-    await cycleMigrations();
+    await cycleMigrations(MIGRATIONS_DIR);
   });
 
   afterEach(async () => {
