@@ -195,6 +195,7 @@ export class PgStore extends BasePgStore {
     if (payload.chainhook.is_streaming_blocks) {
       await this.normalizeInscriptionCount({ min_block_height: updatedBlockHeightMin });
       await this.refreshMaterializedView('inscription_count');
+      await this.refreshMaterializedView('address_counts');
       await this.refreshMaterializedView('mime_type_counts');
       await this.refreshMaterializedView('sat_rarity_counts');
     }
@@ -222,12 +223,22 @@ export class PgStore extends BasePgStore {
     return result[0].count;
   }
 
-  async geSatRarityInscriptionCount(satRarity?: SatoshiRarity[]): Promise<number> {
+  async getSatRarityInscriptionCount(satRarity?: SatoshiRarity[]): Promise<number> {
     if (!satRarity) return 0;
     const result = await this.sql<{ count: number }[]>`
       SELECT COALESCE(SUM(count), 0) AS count
       FROM sat_rarity_counts
       WHERE sat_rarity IN ${this.sql(satRarity)}
+    `;
+    return result[0].count;
+  }
+
+  async getAddressInscriptionCount(address?: string[]): Promise<number> {
+    if (!address) return 0;
+    const result = await this.sql<{ count: number }[]>`
+      SELECT COALESCE(SUM(count), 0) AS count
+      FROM address_counts
+      WHERE address IN ${this.sql(address)}
     `;
     return result[0].count;
   }
@@ -436,7 +447,10 @@ export class PgStore extends BasePgStore {
           total = await this.getMimeTypeInscriptionCount(filters?.mime_type);
           break;
         case DbInscriptionIndexResultCountType.satRarity:
-          total = await this.geSatRarityInscriptionCount(filters?.sat_rarity);
+          total = await this.getSatRarityInscriptionCount(filters?.sat_rarity);
+          break;
+        case DbInscriptionIndexResultCountType.address:
+          total = await this.getAddressInscriptionCount(filters?.address);
           break;
       }
       return {
@@ -610,6 +624,7 @@ export class PgStore extends BasePgStore {
         location_id: locationRes[0].id,
         block_height: args.location.block_height,
         tx_index: args.location.tx_index,
+        address: args.location.address,
       });
       logger.info(
         `PgStore${upsert.count > 0 ? ' upsert ' : ' '}reveal #${args.inscription.number} (${
@@ -686,6 +701,7 @@ export class PgStore extends BasePgStore {
           location_id: locationRes[0].id,
           block_height: args.location.block_height,
           tx_index: args.location.tx_index,
+          address: args.location.address,
         });
       }
       logger.info(
@@ -772,13 +788,15 @@ export class PgStore extends BasePgStore {
         location_id: args.location_id,
         block_height: args.block_height,
         tx_index: args.tx_index,
+        address: args.address,
       };
       await sql`
         INSERT INTO genesis_locations ${sql(pointer)}
         ON CONFLICT ON CONSTRAINT genesis_locations_inscription_id_unique DO UPDATE SET
           location_id = EXCLUDED.location_id,
           block_height = EXCLUDED.block_height,
-          tx_index = EXCLUDED.tx_index
+          tx_index = EXCLUDED.tx_index,
+          address = EXCLUDED.address
         WHERE
           EXCLUDED.block_height < genesis_locations.block_height OR
           (EXCLUDED.block_height = genesis_locations.block_height AND
@@ -789,7 +807,8 @@ export class PgStore extends BasePgStore {
         ON CONFLICT ON CONSTRAINT current_locations_inscription_id_unique DO UPDATE SET
           location_id = EXCLUDED.location_id,
           block_height = EXCLUDED.block_height,
-          tx_index = EXCLUDED.tx_index
+          tx_index = EXCLUDED.tx_index,
+          address = EXCLUDED.address
         WHERE
           EXCLUDED.block_height > current_locations.block_height OR
           (EXCLUDED.block_height = current_locations.block_height AND

@@ -21,6 +21,9 @@ export function up(pgm: MigrationBuilder): void {
       type: 'bigint',
       notNull: true,
     },
+    address: {
+      type: 'text',
+    },
   });
   pgm.createConstraint(
     'current_locations',
@@ -29,4 +32,5 @@ export function up(pgm: MigrationBuilder): void {
   );
   pgm.createIndex('current_locations', ['location_id']);
   pgm.createIndex('current_locations', ['block_height']);
+  pgm.createIndex('current_locations', ['address']);
 }

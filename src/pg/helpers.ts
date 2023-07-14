@@ -59,6 +59,7 @@ export function getIndexResultCountType(
     case 1:
       if (filters.mime_type) return DbInscriptionIndexResultCountType.mimeType;
       if (filters.sat_rarity) return DbInscriptionIndexResultCountType.satRarity;
+      if (filters.address) return DbInscriptionIndexResultCountType.address;
       if (filters.number || filters.genesis_id || filters.output || filters.sat_ordinal)
         return DbInscriptionIndexResultCountType.singleResult;
       return DbInscriptionIndexResultCountType.intractable;

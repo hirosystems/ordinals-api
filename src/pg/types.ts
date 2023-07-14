@@ -69,6 +69,7 @@ export type DbLocationPointerInsert = {
   location_id: number;
   block_height: number;
   tx_index: number;
+  address: string | null;
 };
 
 export type DbInscriptionLocationChange = {
@@ -202,6 +203,8 @@ export enum DbInscriptionIndexResultCountType {
   mimeType,
   /** Filtered by sat rarity */
   satRarity,
+  /** Filtered by address */
+  address,
   /** Filtered by some param that yields a single result (easy to count) */
   singleResult,
   /** Filtered by custom arguments (very hard to count) */
