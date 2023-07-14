@@ -1,3 +1,11 @@
+## [1.0.0-beta.5](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.4...v1.0.0-beta.5) (2023-07-14)
+
+
+### Bug Fixes
+
+* add address column to genesis and current ([d71e1d4](https://github.com/hirosystems/ordinals-api/commit/d71e1d49dece39df1c19c0bb35a43129ef1a31e9))
+* introduce materialized view to count address inscriptions ([#147](https://github.com/hirosystems/ordinals-api/issues/147)) ([09a95d5](https://github.com/hirosystems/ordinals-api/commit/09a95d55276be8b52ea19c90d0e7fa8bca73cfc7))
+
 ## [0.4.15](https://github.com/hirosystems/ordinals-api/compare/v0.4.14...v0.4.15) (2023-07-13)
 
 ### Bug Fixes
