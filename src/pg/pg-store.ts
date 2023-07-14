@@ -3,7 +3,6 @@ import { Order, OrderBy } from '../api/schemas';
 import { isProdEnv, normalizedHexString, parseSatPoint } from '../api/util/helpers';
 import { OrdinalSatoshi, SatoshiRarity } from '../api/util/ordinal-satoshi';
 import { ENV } from '../env';
-import { logger } from '../logger';
 import { getIndexResultCountType } from './helpers';
 import {
   DbFullyLocatedInscriptionResult,
@@ -22,7 +21,7 @@ import {
   DbPaginatedResult,
   LOCATIONS_COLUMNS,
 } from './types';
-import { BasePgStore, connectPostgres, runMigrations } from '@hirosystems/api-toolkit';
+import { BasePgStore, connectPostgres, logger, runMigrations } from '@hirosystems/api-toolkit';
 import * as path from 'path';
 
 export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
