@@ -15,7 +15,7 @@
     "lint:prettier": "prettier --check src/**/*.ts tests/**/*.ts migrations/**/*.ts",
     "generate:openapi": "rimraf ./tmp && node -r ts-node/register ./util/openapi-generator.ts",
     "generate:docs": "redoc-cli build --output ./tmp/index.html ./tmp/openapi.yaml",
-    "generate:git-info": "rimraf .git-info && node ./git-info-generator.mjs",
+    "generate:git-info": "rimraf .git-info && node_modules/.bin/api-toolkit-git-info",
     "generate:vercel": "npm run generate:git-info && npm run generate:openapi && npm run generate:docs",
     "testenv:run": "docker-compose -f docker/docker-compose.dev.postgres.yml up",
     "testenv:stop": "docker-compose -f docker/docker-compose.dev.postgres.yml down -v -t 0",
