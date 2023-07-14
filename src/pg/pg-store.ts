@@ -3,11 +3,7 @@ import { Order, OrderBy } from '../api/schemas';
 import { isProdEnv, normalizedHexString, parseSatPoint } from '../api/util/helpers';
 import { OrdinalSatoshi, SatoshiRarity } from '../api/util/ordinal-satoshi';
 import { ENV } from '../env';
-import { logger } from '../logger';
 import { getIndexResultCountType } from './helpers';
-import { runMigrations } from './migrations';
-import { connectPostgres } from './postgres-tools';
-import { BasePgStore } from './postgres-tools/base-pg-store';
 import {
   DbFullyLocatedInscriptionResult,
   DbInscriptionContent,
@@ -25,6 +21,10 @@ import {
   DbPaginatedResult,
   LOCATIONS_COLUMNS,
 } from './types';
+import { BasePgStore, connectPostgres, logger, runMigrations } from '@hirosystems/api-toolkit';
+import * as path from 'path';
+
+export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 
 type InscriptionIdentifier = { genesis_id: string } | { number: number };
 
@@ -47,7 +47,7 @@ export class PgStore extends BasePgStore {
       },
     });
     if (opts?.skipMigrations !== true) {
-      await runMigrations('up');
+      await runMigrations(MIGRATIONS_DIR, 'up');
     }
     return new PgStore(sql);
   }

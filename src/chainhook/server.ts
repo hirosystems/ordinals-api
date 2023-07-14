@@ -1,6 +1,5 @@
 import { randomUUID } from 'crypto';
 import { ENV } from '../env';
-import { logger } from '../logger';
 import { PgStore } from '../pg/pg-store';
 import {
   ChainhookEventObserver,
@@ -9,6 +8,7 @@ import {
   ServerOptions,
   ServerPredicate,
 } from '@hirosystems/chainhook-client';
+import { logger } from '@hirosystems/api-toolkit';
 
 export const CHAINHOOK_BASE_PATH = `http://${ENV.CHAINHOOK_NODE_RPC_HOST}:${ENV.CHAINHOOK_NODE_RPC_PORT}`;
 export const PREDICATE_UUID = randomUUID();

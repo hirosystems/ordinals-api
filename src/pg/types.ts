@@ -1,6 +1,6 @@
+import { PgNumeric, PgBytea } from '@hirosystems/api-toolkit';
 import { Order, OrderBy } from '../api/schemas';
 import { SatoshiRarity } from '../api/util/ordinal-satoshi';
-import { PgBytea, PgNumeric } from './postgres-tools/types';
 
 export type DbPaginatedResult<T> = {
   total: number;

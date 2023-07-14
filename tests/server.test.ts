@@ -1,7 +1,6 @@
 import { PREDICATE_UUID, startChainhookServer } from '../src/chainhook/server';
 import { ENV } from '../src/env';
-import { cycleMigrations } from '../src/pg/migrations';
-import { PgStore } from '../src/pg/pg-store';
+import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
 import { TestChainhookPayloadBuilder, TestFastifyServer } from './helpers';
 import {
   BitcoinInscriptionRevealed,
@@ -9,6 +8,7 @@ import {
   ChainhookEventObserver,
 } from '@hirosystems/chainhook-client';
 import { buildApiServer } from '../src/api/init';
+import { cycleMigrations } from '@hirosystems/api-toolkit';
 
 describe('EventServer', () => {
   let db: PgStore;
@@ -17,7 +17,7 @@ describe('EventServer', () => {
 
   beforeEach(async () => {
     db = await PgStore.connect({ skipMigrations: true });
-    await cycleMigrations();
+    await cycleMigrations(MIGRATIONS_DIR);
     ENV.CHAINHOOK_AUTO_PREDICATE_REGISTRATION = false;
     server = await startChainhookServer({ db });
     fastify = await buildApiServer({ db });
