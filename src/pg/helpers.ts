@@ -52,14 +52,18 @@ export function getIndexResultCountType(
       filters[key as keyof DbInscriptionIndexFilters] === undefined &&
       delete filters[key as keyof DbInscriptionIndexFilters]
   );
+  // How many filters do we have?
   switch (Object.keys(filters).length) {
     case 0:
       return DbInscriptionIndexResultCountType.all;
     case 1:
       if (filters.mime_type) return DbInscriptionIndexResultCountType.mimeType;
       if (filters.sat_rarity) return DbInscriptionIndexResultCountType.satRarity;
-      return DbInscriptionIndexResultCountType.custom;
+      if (filters.address) return DbInscriptionIndexResultCountType.address;
+      if (filters.number || filters.genesis_id || filters.output || filters.sat_ordinal)
+        return DbInscriptionIndexResultCountType.singleResult;
+      return DbInscriptionIndexResultCountType.intractable;
     default:
-      return DbInscriptionIndexResultCountType.custom;
+      return DbInscriptionIndexResultCountType.intractable;
   }
 }

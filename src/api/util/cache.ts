@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { logger } from '../../logger';
 import { InscriptionIdParamCType, InscriptionNumberParamCType } from '../schemas';
+import { logger } from '@hirosystems/api-toolkit';
 
 export enum ETagType {
   inscriptionTransfers,

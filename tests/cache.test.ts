@@ -1,6 +1,6 @@
+import { cycleMigrations } from '@hirosystems/api-toolkit';
 import { buildApiServer } from '../src/api/init';
-import { cycleMigrations } from '../src/pg/migrations';
-import { PgStore } from '../src/pg/pg-store';
+import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
 import { TestChainhookPayloadBuilder, TestFastifyServer, randomHash } from './helpers';
 
 describe('ETag cache', () => {
@@ -10,7 +10,7 @@ describe('ETag cache', () => {
   beforeEach(async () => {
     db = await PgStore.connect({ skipMigrations: true });
     fastify = await buildApiServer({ db });
-    await cycleMigrations();
+    await cycleMigrations(MIGRATIONS_DIR);
   });
 
   afterEach(async () => {
@@ -37,6 +37,9 @@ describe('ETag cache', () => {
         ordinal_offset: 0,
         satpoint_post_inscription:
           '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+        inscription_input_index: 0,
+        transfers_pre_inscription: 0,
+        tx_index: 0,
       })
       .build();
     await db.updateInscriptions(block);
@@ -107,6 +110,9 @@ describe('ETag cache', () => {
         ordinal_offset: 0,
         satpoint_post_inscription:
           '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+        inscription_input_index: 0,
+        transfers_pre_inscription: 0,
+        tx_index: 0,
       })
       .build();
     await db.updateInscriptions(block1);
@@ -128,6 +134,9 @@ describe('ETag cache', () => {
         ordinal_offset: 0,
         satpoint_post_inscription:
           '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+        inscription_input_index: 0,
+        transfers_pre_inscription: 0,
+        tx_index: 0,
       })
       .build();
     await db.updateInscriptions(block2);
@@ -153,15 +162,16 @@ describe('ETag cache', () => {
     const block3 = new TestChainhookPayloadBuilder()
       .apply()
       .block({ height: 775618 })
-      .transaction({ hash: '0x38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc' })
+      .transaction({ hash: 'ae9d273a10e899f0d2cad47ee2b0e77ab8a9addd9dd5bb5e4b03d6971c060d52' })
       .inscriptionTransferred({
         inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
         updated_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
         satpoint_pre_transfer:
           '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
         satpoint_post_transfer:
-          '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
-        post_transfer_output_value: 102,
+          'ae9d273a10e899f0d2cad47ee2b0e77ab8a9addd9dd5bb5e4b03d6971c060d52:0:0',
+        post_transfer_output_value: 100,
+        tx_index: 0,
       })
       .build();
     await db.updateInscriptions(block3);
@@ -192,6 +202,9 @@ describe('ETag cache', () => {
         ordinal_offset: 0,
         satpoint_post_inscription:
           '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+        inscription_input_index: 0,
+        transfers_pre_inscription: 0,
+        tx_index: 0,
       })
       .build();
     await db.updateInscriptions(block1);
@@ -232,6 +245,9 @@ describe('ETag cache', () => {
         ordinal_offset: 0,
         satpoint_post_inscription:
           '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+        inscription_input_index: 0,
+        transfers_pre_inscription: 0,
+        tx_index: 0,
       })
       .build();
     await db.updateInscriptions(block2);

@@ -1,6 +1,6 @@
+import { cycleMigrations } from '@hirosystems/api-toolkit';
 import { buildApiServer } from '../src/api/init';
-import { cycleMigrations } from '../src/pg/migrations';
-import { PgStore } from '../src/pg/pg-store';
+import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
 import { TestChainhookPayloadBuilder, TestFastifyServer, randomHash } from './helpers';
 
 jest.setTimeout(100_000_000);
@@ -12,7 +12,7 @@ describe('/stats', () => {
   beforeEach(async () => {
     db = await PgStore.connect({ skipMigrations: true });
     fastify = await buildApiServer({ db });
-    await cycleMigrations();
+    await cycleMigrations(MIGRATIONS_DIR);
   });
 
   afterEach(async () => {
@@ -240,15 +240,18 @@ function testRevealApply(blockHeight: number) {
       content_bytes: '0x48656C6C6F',
       content_type: 'image/png',
       content_length: 5,
-      inscription_number: Math.floor(Math.random() * 100_000),
+      inscription_number: Math.floor(Math.random() * 100000),
       inscription_fee: 2805,
       inscription_id: `${randomHex}i0`,
       inscription_output_value: 10000,
       inscriber_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-      ordinal_number: Math.floor(Math.random() * 1_000_000),
-      ordinal_block_height: Math.floor(Math.random() * 777_000),
+      ordinal_number: Math.floor(Math.random() * 1000000),
+      ordinal_block_height: Math.floor(Math.random() * 777000),
       ordinal_offset: 0,
       satpoint_post_inscription: `${randomHex}:0:0`,
+      inscription_input_index: 0,
+      transfers_pre_inscription: 0,
+      tx_index: 0,
     })
     .build();
 }

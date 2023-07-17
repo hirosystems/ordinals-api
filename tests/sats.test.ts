@@ -1,6 +1,6 @@
+import { cycleMigrations } from '@hirosystems/api-toolkit';
 import { buildApiServer } from '../src/api/init';
-import { cycleMigrations } from '../src/pg/migrations';
-import { PgStore } from '../src/pg/pg-store';
+import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
 import { TestChainhookPayloadBuilder, TestFastifyServer } from './helpers';
 
 describe('/sats', () => {
@@ -10,7 +10,7 @@ describe('/sats', () => {
   beforeEach(async () => {
     db = await PgStore.connect({ skipMigrations: true });
     fastify = await buildApiServer({ db });
-    await cycleMigrations();
+    await cycleMigrations(MIGRATIONS_DIR);
   });
 
   afterEach(async () => {
@@ -58,6 +58,9 @@ describe('/sats', () => {
           ordinal_offset: 0,
           satpoint_post_inscription:
             '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+          inscription_input_index: 0,
+          transfers_pre_inscription: 0,
+          tx_index: 0,
         })
         .build()
     );
@@ -92,6 +95,9 @@ describe('/sats', () => {
           satpoint_post_inscription:
             '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
           curse_type: 'p2wsh',
+          inscription_input_index: 0,
+          transfers_pre_inscription: 0,
+          tx_index: 0,
         })
         .build()
     );
@@ -121,6 +127,9 @@ describe('/sats', () => {
           satpoint_post_inscription:
             'b9cd9489fe30b81d007f753663d12766f1368721a87f4c69056c8215caa57993:0:0',
           curse_type: 'p2wsh',
+          inscription_input_index: 0,
+          transfers_pre_inscription: 0,
+          tx_index: 0,
         })
         .build()
     );

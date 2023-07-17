@@ -1,7 +1,6 @@
+import { PgNumeric, PgBytea } from '@hirosystems/api-toolkit';
 import { Order, OrderBy } from '../api/schemas';
 import { SatoshiRarity } from '../api/util/ordinal-satoshi';
-import { OpJson } from './helpers';
-import { PgBytea, PgJsonb, PgNumeric } from './postgres-tools/types';
 
 export type DbPaginatedResult<T> = {
   total: number;
@@ -19,6 +18,7 @@ export type DbFullyLocatedInscriptionResult = {
   number: string;
   address: string | null;
   tx_id: string;
+  tx_index: number;
   output: string;
   offset: string | null;
   value: string | null;
@@ -37,6 +37,7 @@ export type DbLocationInsert = {
   block_height: number;
   block_hash: string;
   tx_id: string;
+  tx_index: number;
   address: string | null;
   output: string;
   offset: PgNumeric | null;
@@ -53,6 +54,7 @@ export type DbLocation = {
   block_height: string;
   block_hash: string;
   tx_id: string;
+  tx_index: number;
   address: string | null;
   output: string;
   offset: string | null;
@@ -60,8 +62,14 @@ export type DbLocation = {
   prev_offset: string | null;
   value: string | null;
   timestamp: Date;
-  genesis: boolean;
-  current: boolean;
+};
+
+export type DbLocationPointerInsert = {
+  inscription_id: number;
+  location_id: number;
+  block_height: number;
+  tx_index: number;
+  address: string | null;
 };
 
 export type DbInscriptionLocationChange = {
@@ -100,13 +108,12 @@ export const LOCATIONS_COLUMNS = [
   'block_height',
   'block_hash',
   'tx_id',
+  'tx_index',
   'address',
   'output',
   'offset',
   'value',
   'timestamp',
-  'genesis',
-  'current',
 ];
 
 export type DbInscriptionInsert = {
@@ -156,22 +163,6 @@ export const INSCRIPTIONS_COLUMNS = [
   'sat_coinbase_height',
 ];
 
-export type DbJsonContent = {
-  id: string;
-  inscription_id: string;
-  p?: string;
-  op?: string;
-  content: OpJson;
-};
-
-export type DbJsonContentInsert = {
-  p: string | null;
-  op: string | null;
-  content: PgJsonb;
-};
-
-export const JSON_CONTENTS_COLUMNS = ['id', 'inscription_id', 'p', 'op', 'content'];
-
 export type DbInscriptionIndexPaging = {
   limit: number;
   offset: number;
@@ -212,8 +203,12 @@ export enum DbInscriptionIndexResultCountType {
   mimeType,
   /** Filtered by sat rarity */
   satRarity,
-  /** Filtered by custom arguments */
-  custom,
+  /** Filtered by address */
+  address,
+  /** Filtered by some param that yields a single result (easy to count) */
+  singleResult,
+  /** Filtered by custom arguments (very hard to count) */
+  intractable,
 }
 
 export type DbInscriptionCountPerBlockFilters = {
