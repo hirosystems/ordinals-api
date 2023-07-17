@@ -312,6 +312,25 @@ export class PgStore extends BasePgStore {
     return `${result[0].block_hash}:${result[0].inscription_count}`;
   }
 
+  async getBlockHashETag(): Promise<string> {
+    const result = await this.sql<{ block_hash: string }[]>`
+      SELECT block_hash
+      FROM inscriptions_per_block
+      ORDER BY block_height DESC
+      LIMIT 1
+    `;
+    return result[0].block_hash;
+  }
+
+  async getBlockHeightETag(args: { block_height: string }): Promise<string> {
+    const result = await this.sql<{ block_hash: string }[]>`
+      SELECT block_hash
+      FROM inscriptions_per_block
+      WHERE block_height = ${args.block_height}
+    `;
+    return result[0].block_hash;
+  }
+
   async getInscriptionContent(
     args: InscriptionIdentifier
   ): Promise<DbInscriptionContent | undefined> {

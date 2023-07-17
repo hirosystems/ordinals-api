@@ -9,14 +9,14 @@ import {
   BlockTimestampResponse,
   NotFoundResponse,
 } from '../schemas';
+import { handleBlockHashCache, handleBlockHeightCache } from '../util/cache';
 
 const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
   fastify,
   options,
   done
 ) => {
-  // todo: add blockheight cache? or re-use the inscriptions per block cache (since that would invalidate on gaps as well)
-  // fastify.addHook('preHandler', handleInscriptionTransfersCache);
+  fastify.addHook('preHandler', handleBlockHashCache);
 
   fastify.get(
     '/blockheight',
@@ -90,8 +90,7 @@ const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTyp
   options,
   done
 ) => {
-  // todo: add blockheight cache? or re-use the inscriptions per block cache (since that would invalidate on gaps as well)
-  // fastify.addHook('preHandler', handleInscriptionCache);
+  fastify.addHook('preHandler', handleBlockHeightCache);
 
   fastify.get(
     '/blockhash/:block_height',

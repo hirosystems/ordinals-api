@@ -1,11 +1,17 @@
-import { FastifyReply, FastifyRequest } from 'fastify';
-import { InscriptionIdParamCType, InscriptionNumberParamCType } from '../schemas';
 import { logger } from '@hirosystems/api-toolkit';
+import { FastifyReply, FastifyRequest } from 'fastify';
+import {
+  BlockHeightParamCType,
+  InscriptionIdParamCType,
+  InscriptionNumberParamCType,
+} from '../schemas';
 
 export enum ETagType {
   inscriptionTransfers,
   inscription,
   inscriptionsPerBlock,
+  blockHash,
+  blockHeight,
 }
 
 /**
@@ -34,6 +40,14 @@ export async function handleInscriptionsPerBlockCache(
   return handleCache(ETagType.inscriptionsPerBlock, request, reply);
 }
 
+export async function handleBlockHashCache(request: FastifyRequest, reply: FastifyReply) {
+  return handleCache(ETagType.blockHash, request, reply);
+}
+
+export async function handleBlockHeightCache(request: FastifyRequest, reply: FastifyReply) {
+  return handleCache(ETagType.blockHeight, request, reply);
+}
+
 async function handleCache(type: ETagType, request: FastifyRequest, reply: FastifyReply) {
   const ifNoneMatch = parseIfNoneMatchHeader(request.headers['if-none-match']);
   let etag: string | undefined;
@@ -47,9 +61,15 @@ async function handleCache(type: ETagType, request: FastifyRequest, reply: Fasti
     case ETagType.inscriptionsPerBlock:
       etag = await request.server.db.getInscriptionsPerBlockETag();
       break;
+    case ETagType.blockHash:
+      etag = await request.server.db.getBlockHashETag();
+      break;
+    case ETagType.blockHeight:
+      etag = await getBlockHeightEtag(request);
+      break;
   }
   if (etag) {
-    if (ifNoneMatch && ifNoneMatch.includes(etag)) {
+    if (ifNoneMatch?.includes(etag)) {
       await reply.header('Cache-Control', CACHE_CONTROL_MUST_REVALIDATE).code(304).send();
     } else {
       void reply.headers({ 'Cache-Control': CACHE_CONTROL_MUST_REVALIDATE, ETag: `"${etag}"` });
@@ -63,6 +83,20 @@ export function setReplyNonCacheable(reply: FastifyReply) {
 }
 
 /**
+ * Retrieve the blockheight's blockhash so we can use it as the response ETag.
+ * @param request - Fastify request
+ * @returns Etag string
+ */
+async function getBlockHeightEtag(request: FastifyRequest): Promise<string | undefined> {
+  const blockHeightParam = request.url.split('/').find(p => BlockHeightParamCType.Check(p));
+  return blockHeightParam
+    ? await request.server.db
+        .getBlockHeightETag({ block_height: blockHeightParam })
+        .catch(_ => undefined) // fallback
+    : undefined;
+}
+
+/**
  * Retrieve the inscriptions's location timestamp as a UNIX epoch so we can use it as the response
  * ETag.
  * @param request - Fastify request
@@ -73,7 +107,7 @@ async function getInscriptionLocationEtag(request: FastifyRequest): Promise<stri
     const components = request.url.split('/');
     do {
       const lastElement = components.pop();
-      if (lastElement && lastElement.length) {
+      if (lastElement?.length) {
         if (InscriptionIdParamCType.Check(lastElement)) {
           return await request.server.db.getInscriptionETag({ genesis_id: lastElement });
         } else if (InscriptionNumberParamCType.Check(parseInt(lastElement))) {

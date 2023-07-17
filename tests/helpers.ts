@@ -135,10 +135,13 @@ export function testRevealApply(
       inscription_id: `${randomHex}i0`,
       inscription_output_value: 10000,
       inscriber_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+      satpoint_post_inscription: `${randomHex}:0:0`,
       ordinal_number: Math.floor(Math.random() * 1_000_000),
       ordinal_block_height: Math.floor(Math.random() * 777_000),
       ordinal_offset: 0,
-      satpoint_post_inscription: `${randomHex}:0:0`,
+      inscription_input_index: 0,
+      transfers_pre_inscription: 0,
+      tx_index: 0,
     })
     .build();
 }
