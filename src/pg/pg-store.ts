@@ -1,6 +1,6 @@
 import { BitcoinEvent, Payload } from '@hirosystems/chainhook-client';
 import { Order, OrderBy } from '../api/schemas';
-import { isProdEnv, normalizedHexString, parseSatPoint } from '../api/util/helpers';
+import { isProdEnv, isTestEnv, normalizedHexString, parseSatPoint } from '../api/util/helpers';
 import { OrdinalSatoshi, SatoshiRarity } from '../api/util/ordinal-satoshi';
 import { ENV } from '../env';
 import { getIndexResultCountType } from './helpers';
@@ -191,13 +191,19 @@ export class PgStore extends BasePgStore {
       }
     });
     await this.refreshMaterializedView('chain_tip');
-    // Skip expensive view refreshes if we're not streaming any live blocks yet.
+    // Skip expensive view refreshes if we're not streaming live blocks.
     if (payload.chainhook.is_streaming_blocks) {
-      await this.normalizeInscriptionCount({ min_block_height: updatedBlockHeightMin });
-      await this.refreshMaterializedView('inscription_count');
-      await this.refreshMaterializedView('address_counts');
-      await this.refreshMaterializedView('mime_type_counts');
-      await this.refreshMaterializedView('sat_rarity_counts');
+      // We'll issue materialized view refreshes in parallel. We will not wait for them to finish so
+      // we can respond to the chainhook node with a `200` HTTP code as soon as possible.
+      const viewRefresh = Promise.allSettled([
+        this.normalizeInscriptionCount({ min_block_height: updatedBlockHeightMin }),
+        this.refreshMaterializedView('inscription_count'),
+        this.refreshMaterializedView('address_counts'),
+        this.refreshMaterializedView('mime_type_counts'),
+        this.refreshMaterializedView('sat_rarity_counts'),
+      ]);
+      // Only wait for these on tests.
+      if (isTestEnv) await viewRefresh;
     }
   }
 
