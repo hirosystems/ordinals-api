@@ -64,4 +64,5 @@ export function up(pgm: MigrationBuilder): void {
   pgm.createIndex('inscriptions', ['sat_ordinal']);
   pgm.createIndex('inscriptions', ['sat_rarity']);
   pgm.createIndex('inscriptions', ['sat_coinbase_height']);
+  pgm.createIndex('inscriptions', [{ name: 'updated_at', sort: 'DESC' }]);
 }

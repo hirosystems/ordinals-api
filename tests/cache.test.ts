@@ -210,7 +210,7 @@ describe('ETag cache', () => {
     });
     expect(cached.statusCode).toBe(304);
 
-    // Simulate new location
+    // New location
     const block3 = new TestChainhookPayloadBuilder()
       .apply()
       .block({ height: 775618 })
@@ -233,6 +233,39 @@ describe('ETag cache', () => {
       headers: { 'if-none-match': etag },
     });
     expect(cached2.statusCode).toBe(200);
+    const etag2 = cached2.headers.etag;
+
+    // Upsert genesis location
+    const block4 = new TestChainhookPayloadBuilder()
+      .apply()
+      .block({ height: 778575 })
+      .transaction({ hash: '0x9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201' })
+      .inscriptionRevealed({
+        content_bytes: '0x48656C6C6F',
+        content_type: 'text/plain',
+        content_length: 5,
+        inscription_number: 7,
+        inscription_fee: 705,
+        inscription_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
+        inscription_output_value: 10000,
+        inscriber_address: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+        ordinal_number: 257418248345364,
+        ordinal_block_height: 650000,
+        ordinal_offset: 0,
+        satpoint_post_inscription:
+          '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+        inscription_input_index: 0,
+        transfers_pre_inscription: 0,
+        tx_index: 0,
+      })
+      .build();
+    await db.updateInscriptions(block4);
+    const cached3 = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions',
+      headers: { 'if-none-match': etag2 },
+    });
+    expect(cached3.statusCode).toBe(200);
   });
 
   test('inscriptions stats per block cache control', async () => {

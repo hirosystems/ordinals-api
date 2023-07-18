@@ -267,9 +267,11 @@ export class PgStore extends BasePgStore {
     }
   }
 
-  async getInscriptionTransfersETag(): Promise<string> {
-    const result = await this.sql<{ max: number }[]>`SELECT MAX(id) FROM locations`;
-    return result[0].max.toString();
+  async getInscriptionsIndexETag(): Promise<string> {
+    const result = await this.sql<{ etag: string }[]>`
+      SELECT date_part('epoch', MAX(updated_at))::text AS etag FROM inscriptions
+    `;
+    return result[0].etag;
   }
 
   async getInscriptionsPerBlockETag(): Promise<string> {
