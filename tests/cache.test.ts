@@ -49,7 +49,7 @@ describe('ETag cache', () => {
     });
     expect(response.statusCode).toBe(200);
     expect(response.headers.etag).not.toBeUndefined();
-    const etag = response.headers.etag;
+    const etag1 = response.headers.etag;
 
     // Check on numbered id too
     const nResponse = await fastify.inject({
@@ -59,36 +59,88 @@ describe('ETag cache', () => {
     expect(nResponse.statusCode).toBe(200);
     expect(nResponse.headers.etag).not.toBeUndefined();
     const nEtag = nResponse.headers.etag;
-    expect(nEtag).toBe(etag);
+    expect(nEtag).toBe(etag1);
 
     // Cached response
     const cached = await fastify.inject({
       method: 'GET',
       url: '/ordinals/v1/inscriptions/38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-      headers: { 'if-none-match': etag },
+      headers: { 'if-none-match': etag1 },
     });
     expect(cached.statusCode).toBe(304);
     const nCached = await fastify.inject({
       method: 'GET',
       url: '/ordinals/v1/inscriptions/7',
-      headers: { 'if-none-match': etag },
+      headers: { 'if-none-match': etag1 },
     });
     expect(nCached.statusCode).toBe(304);
 
-    // Simulate modified location and check status code
-    await db.sql`UPDATE locations SET timestamp = NOW() WHERE true`;
+    // Perform transfer and check cache
+    await db.updateInscriptions(
+      new TestChainhookPayloadBuilder()
+        .apply()
+        .block({ height: 775700, timestamp: 1678122360 })
+        .transaction({
+          hash: '0xbdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444',
+        })
+        .inscriptionTransferred({
+          inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+          updated_address: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+          satpoint_pre_transfer:
+            'da2da520f055e9fadaf1a78b3e01bc53596dcbb88e9c9f53bcb61b98310b1006:0:0',
+          satpoint_post_transfer:
+            'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
+          post_transfer_output_value: 8000,
+          tx_index: 0,
+        })
+        .build()
+    );
     const cached2 = await fastify.inject({
       method: 'GET',
       url: '/ordinals/v1/inscriptions/38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-      headers: { 'if-none-match': etag },
+      headers: { 'if-none-match': etag1 },
     });
     expect(cached2.statusCode).toBe(200);
     const nCached2 = await fastify.inject({
       method: 'GET',
       url: '/ordinals/v1/inscriptions/7',
-      headers: { 'if-none-match': etag },
+      headers: { 'if-none-match': etag1 },
     });
     expect(nCached2.statusCode).toBe(200);
+    const etag2 = cached2.headers.etag;
+
+    // Perform transfer GAP FILL and check cache
+    await db.updateInscriptions(
+      new TestChainhookPayloadBuilder()
+        .apply()
+        .block({ height: 775690, timestamp: 1678122360 })
+        .transaction({
+          hash: 'bebb1357c97d2348eb8ef24e1d8639ff79c8847bf12999ca7fef463489b40f0f',
+        })
+        .inscriptionTransferred({
+          inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+          updated_address: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+          satpoint_pre_transfer:
+            '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+          satpoint_post_transfer:
+            'da2da520f055e9fadaf1a78b3e01bc53596dcbb88e9c9f53bcb61b98310b1006:0:0',
+          post_transfer_output_value: 8000,
+          tx_index: 0,
+        })
+        .build()
+    );
+    const cached3 = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions/38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+      headers: { 'if-none-match': etag2 },
+    });
+    expect(cached3.statusCode).toBe(200);
+    const nCached3 = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions/7',
+      headers: { 'if-none-match': etag2 },
+    });
+    expect(nCached3.statusCode).toBe(200);
   });
 
   test('inscriptions index cache control', async () => {

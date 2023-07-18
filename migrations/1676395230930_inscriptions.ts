@@ -52,6 +52,11 @@ export function up(pgm: MigrationBuilder): void {
     curse_type: {
       type: 'text',
     },
+    updated_at: {
+      type: 'timestamptz',
+      default: pgm.func('(NOW())'),
+      notNull: true,
+    },
   });
   pgm.createConstraint('inscriptions', 'inscriptions_number_unique', 'UNIQUE(number)');
   pgm.createIndex('inscriptions', ['genesis_id']);
