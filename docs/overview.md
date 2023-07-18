@@ -2,25 +2,20 @@
 Title: Overview
 ---
 
-# Ordinals API Overview
+The Ordinals API is a protocol that allows for Bitcoin inscriptions based on Ordinal theory. It provides a service that indexes Bitcoin Ordinals data and offers a REST API to access and query this data.
 
-Ordinals is a new protocol that enables Bitcoin inscriptions based on Ordinal theory. The ordinal theory is based on Satoshis(the atomic, native currency of Bitcoin), numbered in the order of the users to enjoy digital artifacts on Bitcoin. [Ordinals API](https://github.com/hirosystems/ordinals-api) is a service that indexes Bitcoin Ordinals data and exposes it via REST API endpoints.
+Here are the key features of the [Ordinals API](https://github.com/hirosystems/ordinals-api):
 
-You can query ordinal inscriptions and get JSON responses with inscription data, blocks, and addresses.
+**Ordinal Inscription Ingestion**: The API helps with the complete ingestion of ordinal inscriptions. This includes information about the Genesis block, transactions, timestamps, and the history of inscriptions associated with each transaction. It also provides location and ownership information.
 
-## Features
+**Satoshi Ordinal Notation Endpoints**: The API offers endpoints to retrieve ordinal information using Satoshi ordinal notation. This allows you to query specific ordinals and obtain relevant data.
 
-- Ordinals API helps you with complete ordinal inscription ingestion that includes:
-  - Genesis block and transaction information with timestamp
-  - history of the inscriptions that went through the transaction
-  - Location and ownership information
-- Satoshi ordinal notation endpoints that retrieve ordinal information
-- Easy to use REST JSON endpoints with ETag caching
-  - You can provide endpoints and cache the responses based on inscriptions
-- Supports auto-scale server configurations
-  - this service supports three run modes specified by the `RUN_MODE` environment variable
-    - `default`: Runs all background jobs and the API server. Use this when you're running the service only on one instance. It is the default mode.
-    - `readonly`: Runs only the API server. Use this in an auto-scaled cluster with multiple readonly instances and just one `writeonly` instance. This mode needs a `writeonly` instance to continue populating the DB.
-    - `writeonly`: Use one of these in an auto-scaled environment to continue consuming new inscriptions. Use in conjunction with multiple `readonly` instances, as explained above.
+**REST JSON Endpoints with ETag Caching**: The API provides easy-to-use REST endpoints that return responses in JSON format. It also supports *ETag caching*, which allows you to cache responses based on inscriptions. This helps optimize performance and reduce unnecessary requests.
 
-Refer to [Ordinals API reference](https://docs.hiro.so/ordinals) for more information.
+**Auto-Scale Server Configurations**: The Ordinals API supports three run modes based on the `RUN_MODE` environment variable:
+
+- `default`: This mode runs all background jobs and the API server. It is suitable for running the service on a single instance.
+- `readonly`: In this mode, only the API server runs. It is designed for auto-scaled clusters with multiple `readonly` instances and a single `writeonly` instance. The `writeonly` instance is responsible for populating the database.
+- `writeonly`: This mode is used in an auto-scaled environment to consume new inscriptions. It works in conjunction with multiple `readonly` instances, as explained above.
+
+For more detailed information and documentation, you can refer to the [Ordinals API reference](https://docs.hiro.so/ordinals).
