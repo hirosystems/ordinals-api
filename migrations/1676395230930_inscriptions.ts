@@ -52,6 +52,11 @@ export function up(pgm: MigrationBuilder): void {
     curse_type: {
       type: 'text',
     },
+    updated_at: {
+      type: 'timestamptz',
+      default: pgm.func('(NOW())'),
+      notNull: true,
+    },
   });
   pgm.createConstraint('inscriptions', 'inscriptions_number_unique', 'UNIQUE(number)');
   pgm.createIndex('inscriptions', ['genesis_id']);
@@ -59,4 +64,5 @@ export function up(pgm: MigrationBuilder): void {
   pgm.createIndex('inscriptions', ['sat_ordinal']);
   pgm.createIndex('inscriptions', ['sat_rarity']);
   pgm.createIndex('inscriptions', ['sat_coinbase_height']);
+  pgm.createIndex('inscriptions', [{ name: 'updated_at', sort: 'DESC' }]);
 }

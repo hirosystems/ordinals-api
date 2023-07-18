@@ -267,9 +267,11 @@ export class PgStore extends BasePgStore {
     }
   }
 
-  async getInscriptionTransfersETag(): Promise<string> {
-    const result = await this.sql<{ max: number }[]>`SELECT MAX(id) FROM locations`;
-    return result[0].max.toString();
+  async getInscriptionsIndexETag(): Promise<string> {
+    const result = await this.sql<{ etag: string }[]>`
+      SELECT date_part('epoch', MAX(updated_at))::text AS etag FROM inscriptions
+    `;
+    return result[0].etag;
   }
 
   async getInscriptionsPerBlockETag(): Promise<string> {
@@ -301,14 +303,12 @@ export class PgStore extends BasePgStore {
 
   async getInscriptionETag(args: InscriptionIdentifier): Promise<string | undefined> {
     const result = await this.sql<{ etag: string }[]>`
-      SELECT date_part('epoch', l.timestamp)::text AS etag
-      FROM locations AS l
-      INNER JOIN current_locations AS c ON l.id = c.location_id
-      INNER JOIN inscriptions AS i ON l.inscription_id = i.id
+      SELECT date_part('epoch', updated_at)::text AS etag
+      FROM inscriptions
       WHERE ${
         'genesis_id' in args
-          ? this.sql`i.genesis_id = ${args.genesis_id}`
-          : this.sql`i.number = ${args.number}`
+          ? this.sql`genesis_id = ${args.genesis_id}`
+          : this.sql`number = ${args.number}`
       }
     `;
     if (result.count > 0) {
@@ -591,7 +591,8 @@ export class PgStore extends BasePgStore {
           fee = EXCLUDED.fee,
           sat_ordinal = EXCLUDED.sat_ordinal,
           sat_rarity = EXCLUDED.sat_rarity,
-          sat_coinbase_height = EXCLUDED.sat_coinbase_height
+          sat_coinbase_height = EXCLUDED.sat_coinbase_height,
+          updated_at = NOW()
         RETURNING id
       `;
       inscription_id = inscription[0].id;
@@ -825,6 +826,10 @@ export class PgStore extends BasePgStore {
         UPDATE locations
         SET inscription_id = ${args.inscription_id}
         WHERE genesis_id = ${args.genesis_id} AND inscription_id IS NULL
+      `;
+      // Update the inscription's `updated_at` timestamp for caching purposes.
+      await sql`
+        UPDATE inscriptions SET updated_at = NOW() WHERE genesis_id = ${args.genesis_id}
       `;
     });
   }
