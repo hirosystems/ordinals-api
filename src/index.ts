@@ -1,10 +1,10 @@
+import { logger, registerShutdownConfig } from '@hirosystems/api-toolkit';
 import { buildApiServer, buildPromServer } from './api/init';
 import { isProdEnv } from './api/util/helpers';
 import { startChainhookServer } from './chainhook/server';
 import { ENV } from './env';
-import { logger } from './logger';
+import { ApiMetrics } from './metrics/metrics';
 import { PgStore } from './pg/pg-store';
-import { registerShutdownConfig } from './shutdown-handler';
 
 async function initBackgroundServices(db: PgStore) {
   logger.info('Initializing background services...');
@@ -41,6 +41,7 @@ async function initApiService(db: PgStore) {
       },
     });
 
+    ApiMetrics.configure(db);
     await promServer.listen({ host: ENV.API_HOST, port: 9153 });
   }
 }

@@ -2,7 +2,7 @@ import { SwaggerOptions } from '@fastify/swagger';
 import { Static, TSchema, Type } from '@sinclair/typebox';
 import { TypeCompiler } from '@sinclair/typebox/compiler';
 import { SatoshiRarity, SAT_SUPPLY } from './util/ordinal-satoshi';
-import { SERVER_VERSION } from '../server-version';
+import { SERVER_VERSION } from '@hirosystems/api-toolkit';
 
 export const OpenApiSchemaOptions: SwaggerOptions = {
   openapi: {
@@ -34,6 +34,10 @@ export const OpenApiSchemaOptions: SwaggerOptions = {
       {
         name: 'BRC-20',
         description: 'Endpoints to query BRC-20 token balances and events',
+      },
+      {
+        name: 'Statistics',
+        description: 'Endpoints to query statistics on ordinal inscription data',
       },
     ],
   },
@@ -395,3 +399,17 @@ export const NotFoundResponse = Type.Object(
   },
   { title: 'Not Found Response' }
 );
+
+export const InscriptionsPerBlock = Type.Object({
+  block_height: Type.String({ examples: ['778921'] }),
+  block_hash: Type.String({
+    examples: ['0000000000000000000452773967cdd62297137cdaf79950c5e8bb0c62075133'],
+  }),
+  inscription_count: Type.String({ examples: ['100'] }),
+  inscription_count_accum: Type.String({ examples: ['3100'] }),
+  timestamp: Type.Integer({ examples: [1677733170000] }),
+});
+export const InscriptionsPerBlockResponse = Type.Object({
+  results: Type.Array(InscriptionsPerBlock),
+});
+export type InscriptionsPerBlockResponse = Static<typeof InscriptionsPerBlockResponse>;

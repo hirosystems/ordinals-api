@@ -1,15 +1,16 @@
+import FastifyCors from '@fastify/cors';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import Fastify, { FastifyPluginAsync } from 'fastify';
-import { Server } from 'http';
-import FastifyCors from '@fastify/cors';
-import { PINO_CONFIG } from '../logger';
-import { InscriptionsRoutes } from './routes/inscriptions';
-import { PgStore } from '../pg/pg-store';
-import { SatRoutes } from './routes/sats';
-import { StatusRoutes } from './routes/status';
-import { Brc20Routes } from './routes/brc20';
 import FastifyMetrics, { IFastifyMetrics } from 'fastify-metrics';
+import { Server } from 'http';
+import { PgStore } from '../pg/pg-store';
+import { InscriptionsRoutes } from './routes/inscriptions';
+import { SatRoutes } from './routes/sats';
+import { StatsRoutes } from './routes/stats';
+import { StatusRoutes } from './routes/status';
 import { isProdEnv } from './util/helpers';
+import { PINO_LOGGER_CONFIG } from '@hirosystems/api-toolkit';
+import { Brc20Routes } from './routes/brc20';
 
 export const Api: FastifyPluginAsync<
   Record<never, never>,
@@ -20,12 +21,13 @@ export const Api: FastifyPluginAsync<
   await fastify.register(InscriptionsRoutes);
   await fastify.register(SatRoutes);
   await fastify.register(Brc20Routes);
+  await fastify.register(StatsRoutes);
 };
 
 export async function buildApiServer(args: { db: PgStore }) {
   const fastify = Fastify({
     trustProxy: true,
-    logger: PINO_CONFIG,
+    logger: PINO_LOGGER_CONFIG,
   }).withTypeProvider<TypeBoxTypeProvider>();
 
   fastify.decorate('db', args.db);
@@ -42,7 +44,7 @@ export async function buildApiServer(args: { db: PgStore }) {
 export async function buildPromServer(args: { metrics: IFastifyMetrics }) {
   const promServer = Fastify({
     trustProxy: true,
-    logger: PINO_CONFIG,
+    logger: PINO_LOGGER_CONFIG,
   });
 
   promServer.route({

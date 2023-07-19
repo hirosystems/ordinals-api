@@ -6,7 +6,7 @@ export const shorthands: ColumnDefinitions | undefined = undefined;
 export function up(pgm: MigrationBuilder): void {
   pgm.createTable('inscriptions', {
     id: {
-      type: 'serial',
+      type: 'bigserial',
       primaryKey: true,
     },
     genesis_id: {
@@ -14,7 +14,19 @@ export function up(pgm: MigrationBuilder): void {
       notNull: true,
     },
     number: {
-      type: 'int',
+      type: 'bigint',
+      notNull: true,
+    },
+    sat_ordinal: {
+      type: 'numeric',
+      notNull: true,
+    },
+    sat_rarity: {
+      type: 'text',
+      notNull: true,
+    },
+    sat_coinbase_height: {
+      type: 'bigint',
       notNull: true,
     },
     mime_type: {
@@ -26,7 +38,7 @@ export function up(pgm: MigrationBuilder): void {
       notNull: true,
     },
     content_length: {
-      type: 'int',
+      type: 'bigint',
       notNull: true,
     },
     content: {
@@ -37,8 +49,20 @@ export function up(pgm: MigrationBuilder): void {
       type: 'numeric',
       notNull: true,
     },
+    curse_type: {
+      type: 'text',
+    },
+    updated_at: {
+      type: 'timestamptz',
+      default: pgm.func('(NOW())'),
+      notNull: true,
+    },
   });
   pgm.createConstraint('inscriptions', 'inscriptions_number_unique', 'UNIQUE(number)');
   pgm.createIndex('inscriptions', ['genesis_id']);
   pgm.createIndex('inscriptions', ['mime_type']);
+  pgm.createIndex('inscriptions', ['sat_ordinal']);
+  pgm.createIndex('inscriptions', ['sat_rarity']);
+  pgm.createIndex('inscriptions', ['sat_coinbase_height']);
+  pgm.createIndex('inscriptions', [{ name: 'updated_at', sort: 'DESC' }]);
 }

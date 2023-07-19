@@ -29,14 +29,20 @@ export class TestChainhookPayloadBuilder {
         scope: 'ordinals_protocol',
         operation: 'inscription_feed',
       },
+      is_streaming_blocks: true,
     },
   };
   private action: 'apply' | 'rollback' = 'apply';
   private get lastBlock(): BitcoinEvent {
-    return this.payload[this.action][this.payload[this.action].length - 1];
+    return this.payload[this.action][this.payload[this.action].length - 1] as BitcoinEvent;
   }
   private get lastBlockTx(): BitcoinTransaction {
     return this.lastBlock.transactions[this.lastBlock.transactions.length - 1];
+  }
+
+  streamingBlocks(streaming: boolean): this {
+    this.payload.chainhook.is_streaming_blocks = streaming;
+    return this;
   }
 
   apply(): this {
@@ -107,7 +113,7 @@ export function brc20Reveal(args: {
   tx_id: string;
 }): BitcoinInscriptionRevealed {
   const content = Buffer.from(JSON.stringify(args.json), 'utf-8');
-  return {
+  const reveal: BitcoinInscriptionRevealed = {
     content_bytes: `0x${content.toString('hex')}`,
     content_type: 'text/plain;charset=utf-8',
     content_length: content.length,
@@ -120,5 +126,13 @@ export function brc20Reveal(args: {
     ordinal_block_height: 0,
     ordinal_offset: 0,
     satpoint_post_inscription: `${args.tx_id}:0:0`,
+    inscription_input_index: 0,
+    transfers_pre_inscription: 0,
+    tx_index: 0,
   };
+  return reveal;
 }
+
+/** Generate a random hash like string for testing */
+export const randomHash = () =>
+  [...Array(64)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');

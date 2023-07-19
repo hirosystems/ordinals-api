@@ -1,7 +1,6 @@
+import { PgNumeric, PgBytea } from '@hirosystems/api-toolkit';
 import { Order, OrderBy } from '../api/schemas';
 import { SatoshiRarity } from '../api/util/ordinal-satoshi';
-import { OpJson } from './helpers';
-import { PgBytea, PgJsonb, PgNumeric } from './postgres-tools/types';
 
 export type DbPaginatedResult<T> = {
   total: number;
@@ -19,6 +18,7 @@ export type DbFullyLocatedInscriptionResult = {
   number: string;
   address: string | null;
   tx_id: string;
+  tx_index: number;
   output: string;
   offset: string | null;
   value: string | null;
@@ -37,36 +37,39 @@ export type DbLocationInsert = {
   block_height: number;
   block_hash: string;
   tx_id: string;
+  tx_index: number;
   address: string | null;
   output: string;
   offset: PgNumeric | null;
   prev_output: string | null;
   prev_offset: PgNumeric | null;
   value: PgNumeric | null;
-  sat_ordinal: PgNumeric;
-  sat_rarity: string;
-  sat_coinbase_height: number;
   timestamp: number;
 };
 
 export type DbLocation = {
   id: string;
-  inscription_id: string;
+  inscription_id: string | null;
+  genesis_id: string;
   block_height: string;
   block_hash: string;
   tx_id: string;
+  tx_index: number;
   address: string | null;
   output: string;
   offset: string | null;
   prev_output: string | null;
   prev_offset: string | null;
   value: string | null;
-  sat_ordinal: string;
-  sat_rarity: string;
-  sat_coinbase_height: string;
   timestamp: Date;
-  genesis: boolean;
-  current: boolean;
+};
+
+export type DbLocationPointerInsert = {
+  inscription_id: number;
+  location_id: number;
+  block_height: number;
+  tx_index: number;
+  address: string | null;
 };
 
 export type DbInscriptionLocationChange = {
@@ -81,9 +84,6 @@ export type DbInscriptionLocationChange = {
   from_output: string;
   from_offset: string | null;
   from_value: string | null;
-  from_sat_ordinal: string;
-  from_sat_rarity: string;
-  from_sat_coinbase_height: string;
   from_timestamp: Date;
   from_genesis: boolean;
   from_current: boolean;
@@ -96,9 +96,6 @@ export type DbInscriptionLocationChange = {
   to_output: string;
   to_offset: string | null;
   to_value: string | null;
-  to_sat_ordinal: string;
-  to_sat_rarity: string;
-  to_sat_coinbase_height: string;
   to_timestamp: Date;
   to_genesis: boolean;
   to_current: boolean;
@@ -107,19 +104,16 @@ export type DbInscriptionLocationChange = {
 export const LOCATIONS_COLUMNS = [
   'id',
   'inscription_id',
+  'genesis_id',
   'block_height',
   'block_hash',
   'tx_id',
+  'tx_index',
   'address',
   'output',
   'offset',
   'value',
-  'sat_ordinal',
-  'sat_rarity',
-  'sat_coinbase_height',
   'timestamp',
-  'genesis',
-  'current',
 ];
 
 export type DbInscriptionInsert = {
@@ -131,6 +125,9 @@ export type DbInscriptionInsert = {
   content: PgBytea;
   fee: PgNumeric;
   curse_type: string | null;
+  sat_ordinal: PgNumeric;
+  sat_rarity: string;
+  sat_coinbase_height: number;
 };
 
 export type DbInscription = {
@@ -141,6 +138,9 @@ export type DbInscription = {
   content_type: string;
   content_length: string;
   fee: string;
+  sat_ordinal: string;
+  sat_rarity: string;
+  sat_coinbase_height: string;
 };
 
 export type DbInscriptionContent = {
@@ -158,6 +158,9 @@ export const INSCRIPTIONS_COLUMNS = [
   'content_length',
   'fee',
   'curse_type',
+  'sat_ordinal',
+  'sat_rarity',
+  'sat_coinbase_height',
 ];
 
 export type DbInscriptionIndexPaging = {
@@ -200,8 +203,12 @@ export enum DbInscriptionIndexResultCountType {
   mimeType,
   /** Filtered by sat rarity */
   satRarity,
-  /** Filtered by custom arguments */
-  custom,
+  /** Filtered by address */
+  address,
+  /** Filtered by some param that yields a single result (easy to count) */
+  singleResult,
+  /** Filtered by custom arguments (very hard to count) */
+  intractable,
 }
 
 export type DbBrc20DeployInsert = {
@@ -308,3 +315,16 @@ export const BRC20_EVENTS_COLUMNS = [
   'mint_id',
   'transfer_id',
 ];
+
+export type DbInscriptionCountPerBlockFilters = {
+  from_block_height?: number;
+  to_block_height?: number;
+};
+
+export type DbInscriptionCountPerBlock = {
+  block_height: string;
+  block_hash: string;
+  inscription_count: string;
+  inscription_count_accum: string;
+  timestamp: number;
+};

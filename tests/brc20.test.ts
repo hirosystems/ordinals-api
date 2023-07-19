@@ -1,7 +1,7 @@
+import { cycleMigrations } from '@hirosystems/api-toolkit';
 import { buildApiServer } from '../src/api/init';
 import { brc20FromInscription } from '../src/pg/helpers';
-import { cycleMigrations } from '../src/pg/migrations';
-import { PgStore } from '../src/pg/pg-store';
+import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
 import { DbInscriptionInsert } from '../src/pg/types';
 import { TestChainhookPayloadBuilder, TestFastifyServer, brc20Reveal } from './helpers';
 
@@ -12,7 +12,7 @@ describe('BRC-20', () => {
   beforeEach(async () => {
     db = await PgStore.connect({ skipMigrations: true });
     fastify = await buildApiServer({ db });
-    await cycleMigrations();
+    await cycleMigrations(MIGRATIONS_DIR);
   });
 
   afterEach(async () => {
@@ -23,7 +23,7 @@ describe('BRC-20', () => {
   describe('token standard validation', () => {
     const testInsert = (json: any): DbInscriptionInsert => {
       const content = Buffer.from(JSON.stringify(json), 'utf-8');
-      return {
+      const insert: DbInscriptionInsert = {
         genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
         number: 1,
         mime_type: 'application/json',
@@ -32,7 +32,11 @@ describe('BRC-20', () => {
         content: `0x${content.toString('hex')}`,
         fee: '200',
         curse_type: null,
+        sat_ordinal: '2000000',
+        sat_rarity: 'common',
+        sat_coinbase_height: 110,
       };
+      return insert;
     };
 
     test('ignores incorrect MIME type', () => {
@@ -54,6 +58,9 @@ describe('BRC-20', () => {
         content: `0x${content.toString('hex')}`,
         fee: '200',
         curse_type: null,
+        sat_ordinal: '2000000',
+        sat_rarity: 'common',
+        sat_coinbase_height: 110,
       };
       expect(brc20FromInscription(insert)).toBeUndefined();
       insert.content_type = 'application/json';
@@ -78,6 +85,9 @@ describe('BRC-20', () => {
         content: `0x${content.toString('hex')}`,
         fee: '200',
         curse_type: null,
+        sat_ordinal: '2000000',
+        sat_rarity: 'common',
+        sat_coinbase_height: 110,
       };
       expect(brc20FromInscription(insert)).toBeUndefined();
     });
@@ -1358,15 +1368,14 @@ describe('BRC-20', () => {
             hash: '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac',
           })
           .inscriptionTransferred({
-            inscription_number: 7,
             inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
-            ordinal_number: 0,
             updated_address: address2,
             satpoint_pre_transfer:
               'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a:0:0',
             satpoint_post_transfer:
               '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac:0:0',
             post_transfer_output_value: null,
+            tx_index: 0,
           })
           .build()
       );
@@ -1444,15 +1453,14 @@ describe('BRC-20', () => {
             hash: '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac',
           })
           .inscriptionTransferred({
-            inscription_number: 7,
             inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
-            ordinal_number: 0,
             updated_address: address2,
             satpoint_pre_transfer:
               'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a:0:0',
             satpoint_post_transfer:
               '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac:0:0',
             post_transfer_output_value: null,
+            tx_index: 0,
           })
           .build()
       );
@@ -1469,15 +1477,14 @@ describe('BRC-20', () => {
             hash: '55bec906eadc9f5c120cc39555ba46e85e562eacd6217e4dd0b8552783286d0e',
           })
           .inscriptionTransferred({
-            inscription_number: 7,
             inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
-            ordinal_number: 0,
             updated_address: address,
             satpoint_pre_transfer:
               '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac:0:0',
             satpoint_post_transfer:
               '55bec906eadc9f5c120cc39555ba46e85e562eacd6217e4dd0b8552783286d0e:0:0',
             post_transfer_output_value: null,
+            tx_index: 0,
           })
           .build()
       );
