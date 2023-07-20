@@ -44,6 +44,8 @@ export function up(pgm: MigrationBuilder): void {
     'brc20_mints_brc20_deploy_id_fk',
     'FOREIGN KEY(brc20_deploy_id) REFERENCES brc20_deploys(id) ON DELETE CASCADE'
   );
+  pgm.createIndex('brc20_mints', ['inscription_id']);
+  pgm.createIndex('brc20_mints', ['brc20_deploy_id']);
   pgm.createIndex('brc20_mints', ['block_height']);
   pgm.createIndex('brc20_mints', ['address']);
 }
