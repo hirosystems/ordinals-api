@@ -29,7 +29,7 @@ import {
   runMigrations,
 } from '@hirosystems/api-toolkit';
 import * as path from 'path';
-import { Brc20PgStore } from './brc20-pg-store';
+import { Brc20PgStore } from './brc20/brc20-pg-store';
 
 export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 
@@ -639,6 +639,12 @@ export class PgStore extends BasePgStore {
           timestamp = EXCLUDED.timestamp
         RETURNING id
       `;
+      await this.brc20.insertOperation({
+        inscription_id,
+        location_id: locationRes[0].id,
+        inscription: args.inscription,
+        location: args.location,
+      });
       await this.updateInscriptionLocationPointers({
         inscription_id,
         genesis_id: args.inscription.genesis_id,
@@ -646,12 +652,6 @@ export class PgStore extends BasePgStore {
         block_height: args.location.block_height,
         tx_index: args.location.tx_index,
         address: args.location.address,
-      });
-      // Insert BRC-20 op genesis (if any).
-      await this.brc20.insertOperationGenesis({
-        inscription_id,
-        inscription: args.inscription,
-        location: args.location,
       });
       logger.info(
         `PgStore${upsert.count > 0 ? ' upsert ' : ' '}reveal #${args.inscription.number} (${
@@ -730,9 +730,11 @@ export class PgStore extends BasePgStore {
           tx_index: args.location.tx_index,
           address: args.location.address,
         });
-
-        // Insert BRC-20 balance transfers (if any).
-        await this.brc20.insertOperationTransfer({ inscription_id, location: args.location });
+        await this.brc20.insertOperationTransfer({
+          inscription_id,
+          location_id: locationRes[0].id,
+          location: args.location,
+        });
       }
       logger.info(
         `PgStore${upsert.count > 0 ? ' upsert ' : ' '}transfer (${

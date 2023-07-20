@@ -1,7 +1,6 @@
 import { FastifyBaseLogger, FastifyInstance } from 'fastify';
 import { IncomingMessage, Server, ServerResponse } from 'http';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
-import { Brc20 } from '../src/pg/helpers';
 import {
   BitcoinCursedInscriptionRevealed,
   BitcoinEvent,
@@ -10,6 +9,7 @@ import {
   BitcoinTransaction,
   Payload,
 } from '@hirosystems/chainhook-client';
+import { Brc20 } from '../src/pg/brc20/helpers';
 
 export type TestFastifyServer = FastifyInstance<
   Server,

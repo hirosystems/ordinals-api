@@ -1,8 +1,5 @@
+import { DbBrc20Token, DbBrc20Supply, DbBrc20Balance, DbBrc20Holder } from '../../pg/brc20/types';
 import {
-  DbBrc20Balance,
-  DbBrc20Holder,
-  DbBrc20Supply,
-  DbBrc20Token,
   DbFullyLocatedInscriptionResult,
   DbInscriptionLocationChange,
   DbLocation,

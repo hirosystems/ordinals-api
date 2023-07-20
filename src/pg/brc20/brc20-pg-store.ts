@@ -1,23 +1,25 @@
 import { PgSqlClient, logger } from '@hirosystems/api-toolkit';
-import { PgStore } from './pg-store';
+import { PgStore } from '../pg-store';
 import {
   DbInscriptionIndexPaging,
   DbPaginatedResult,
-  DbBrc20Token,
-  BRC20_EVENTS_COLUMNS,
-  DbBrc20Balance,
-  DbBrc20Holder,
-  DbBrc20Supply,
-  BRC20_DEPLOYS_COLUMNS,
-  BRC20_TRANSFERS_COLUMNS,
-  DbBrc20Deploy,
-  DbBrc20DeployInsert,
-  DbBrc20EventInsert,
-  DbBrc20Transfer,
   DbInscriptionInsert,
   DbLocationInsert,
-} from './types';
+} from '../types';
 import BigNumber from 'bignumber.js';
+import {
+  DbBrc20Token,
+  DbBrc20Balance,
+  BRC20_EVENTS_COLUMNS,
+  DbBrc20Supply,
+  DbBrc20Holder,
+  DbBrc20Transfer,
+  BRC20_TRANSFERS_COLUMNS,
+  DbBrc20DeployInsert,
+  DbBrc20EventInsert,
+  DbBrc20Deploy,
+  BRC20_DEPLOYS_COLUMNS,
+} from './types';
 import { brc20FromInscription, Brc20Deploy, Brc20Mint, Brc20Transfer } from './helpers';
 
 export class Brc20PgStore {
@@ -165,8 +167,9 @@ export class Brc20PgStore {
     });
   }
 
-  async insertOperationGenesis(args: {
+  async insertOperation(args: {
     inscription_id: number;
+    location_id: number;
     inscription: DbInscriptionInsert;
     location: DbLocationInsert;
   }): Promise<void> {
@@ -186,6 +189,7 @@ export class Brc20PgStore {
             await this.insertMint({
               mint: brc20,
               inscription_id: args.inscription_id,
+              location_id: args.location_id,
               location: args.location,
             });
             break;
@@ -193,6 +197,7 @@ export class Brc20PgStore {
             await this.insertTransfer({
               transfer: brc20,
               inscription_id: args.inscription_id,
+              location_id: args.location_id,
               location: args.location,
             });
             break;
@@ -208,6 +213,7 @@ export class Brc20PgStore {
 
   async insertOperationTransfer(args: {
     inscription_id: number;
+    location_id: number;
     location: DbLocationInsert;
   }): Promise<void> {
     // Is this a BRC-20 balance transfer? Check if we have a valid transfer inscription emitted by
@@ -223,11 +229,36 @@ export class Brc20PgStore {
         LIMIT 3
       `;
       if (brc20Transfer.count === 2) {
+        const transfer = brc20Transfer[0];
         // This is the first time this BRC-20 transfer is being used. Apply the balance change.
-        await this.applyBalanceTransfer({
-          transfer: brc20Transfer[0],
-          location: args.location,
-        });
+        const amount = new BigNumber(transfer.amount);
+        const changes = [
+          {
+            inscription_id: transfer.inscription_id,
+            location_id: args.location_id,
+            brc20_deploy_id: transfer.brc20_deploy_id,
+            address: transfer.from_address,
+            avail_balance: 0,
+            trans_balance: amount.negated(),
+          },
+          {
+            inscription_id: transfer.inscription_id,
+            location_id: args.location_id,
+            brc20_deploy_id: transfer.brc20_deploy_id,
+            address: args.location.address,
+            avail_balance: amount,
+            trans_balance: 0,
+          },
+        ];
+        await sql`
+          INSERT INTO brc20_balances ${sql(changes)}
+        `;
+        // Keep the new valid owner of the transfer inscription
+        await sql`
+          UPDATE brc20_transfers
+          SET to_address = ${args.location.address}
+          WHERE id = ${transfer.id}
+        `;
       } else {
         logger.debug(
           { genesis_id: args.location.genesis_id, block_height: args.location.block_height },
@@ -300,6 +331,7 @@ export class Brc20PgStore {
   private async insertMint(args: {
     mint: Brc20Mint;
     inscription_id: number;
+    location_id: number;
     location: DbLocationInsert;
   }): Promise<void> {
     await this.parent.sqlWriteTransaction(async sql => {
@@ -359,8 +391,8 @@ export class Brc20PgStore {
       // Insert balance change for minting address
       const balance = {
         inscription_id: args.inscription_id,
+        location_id: args.location_id,
         brc20_deploy_id: token.id,
-        block_height: args.location.block_height,
         address: args.location.address,
         avail_balance: mintAmt, // Real minted balance
         trans_balance: 0,
@@ -374,6 +406,7 @@ export class Brc20PgStore {
   private async insertTransfer(args: {
     transfer: Brc20Transfer;
     inscription_id: number;
+    location_id: number;
     location: DbLocationInsert;
   }): Promise<void> {
     await this.parent.sqlWriteTransaction(async sql => {
@@ -426,51 +459,14 @@ export class Brc20PgStore {
       // Insert balance change for minting address
       const values = {
         inscription_id: args.inscription_id,
+        location_id: args.location_id,
         brc20_deploy_id: token.id,
-        block_height: args.location.block_height,
         address: args.location.address,
         avail_balance: transAmt.negated(),
         trans_balance: transAmt,
       };
       await sql`
         INSERT INTO brc20_balances ${sql(values)}
-      `;
-    });
-  }
-
-  private async applyBalanceTransfer(args: {
-    transfer: DbBrc20Transfer;
-    location: DbLocationInsert;
-  }): Promise<void> {
-    await this.parent.sqlWriteTransaction(async sql => {
-      // Reflect balance transfer
-      const amount = new BigNumber(args.transfer.amount);
-      const changes = [
-        {
-          inscription_id: args.transfer.inscription_id,
-          brc20_deploy_id: args.transfer.brc20_deploy_id,
-          block_height: args.location.block_height,
-          address: args.transfer.from_address,
-          avail_balance: 0,
-          trans_balance: amount.negated(),
-        },
-        {
-          inscription_id: args.transfer.inscription_id,
-          brc20_deploy_id: args.transfer.brc20_deploy_id,
-          block_height: args.location.block_height,
-          address: args.location.address,
-          avail_balance: amount,
-          trans_balance: 0,
-        },
-      ];
-      await sql`
-        INSERT INTO brc20_balances ${sql(changes)}
-      `;
-      // Keep the new valid owner of the transfer inscription
-      await sql`
-        UPDATE brc20_transfers
-        SET to_address = ${args.location.address}
-        WHERE id = ${args.transfer.id}
       `;
     });
   }
