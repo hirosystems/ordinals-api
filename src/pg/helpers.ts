@@ -8,16 +8,6 @@ import {
 } from './types';
 import BigNumber from 'bignumber.js';
 
-const OpJsonSchema = Type.Object(
-  {
-    p: Type.String(),
-    op: Type.String(),
-  },
-  { additionalProperties: true }
-);
-const OpJsonC = TypeCompiler.Compile(OpJsonSchema);
-export type OpJson = Static<typeof OpJsonSchema>;
-
 const Brc20TickerSchema = Type.String({ minLength: 1 });
 const Brc20NumberSchema = Type.RegEx(/^((\d+)|(\d*\.?\d+))$/);
 
