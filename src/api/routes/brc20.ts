@@ -54,7 +54,7 @@ export const Brc20Routes: FastifyPluginCallback<
     async (request, reply) => {
       const limit = request.query.limit ?? DEFAULT_API_LIMIT;
       const offset = request.query.offset ?? 0;
-      const response = await fastify.db.getBrc20Tokens({
+      const response = await fastify.db.brc20.getTokens({
         limit,
         offset,
         ticker: request.query.ticker,
@@ -87,7 +87,7 @@ export const Brc20Routes: FastifyPluginCallback<
     },
     async (request, reply) => {
       await fastify.db.sqlTransaction(async sql => {
-        const token = await fastify.db.getBrc20Tokens({
+        const token = await fastify.db.brc20.getTokens({
           limit: 1,
           offset: 0,
           ticker: [request.params.ticker],
@@ -96,7 +96,7 @@ export const Brc20Routes: FastifyPluginCallback<
           await reply.code(404).send(Value.Create(NotFoundResponse));
           return;
         }
-        const supply = await fastify.db.getBrc20TokenSupply({ ticker: request.params.ticker });
+        const supply = await fastify.db.brc20.getTokenSupply({ ticker: request.params.ticker });
         if (!supply) {
           await reply.code(404).send(Value.Create(NotFoundResponse));
           return;
@@ -134,7 +134,7 @@ export const Brc20Routes: FastifyPluginCallback<
     async (request, reply) => {
       const limit = request.query.limit ?? DEFAULT_API_LIMIT;
       const offset = request.query.offset ?? 0;
-      const holders = await fastify.db.getBrc20TokenHolders({
+      const holders = await fastify.db.brc20.getTokenHolders({
         limit,
         offset,
         ticker: request.params.ticker,
@@ -177,7 +177,7 @@ export const Brc20Routes: FastifyPluginCallback<
     async (request, reply) => {
       const limit = request.query.limit ?? DEFAULT_API_LIMIT;
       const offset = request.query.offset ?? 0;
-      const balances = await fastify.db.getBrc20Balances({
+      const balances = await fastify.db.brc20.getBalances({
         limit,
         offset,
         address: request.params.address,
