@@ -1,3 +1,11 @@
+## [1.0.0-beta.6](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.5...v1.0.0-beta.6) (2023-07-21)
+
+
+### Bug Fixes
+
+* make etag calculation sensitive to inscription location gap fills and upserts ([#156](https://github.com/hirosystems/ordinals-api/issues/156)) ([5648c9e](https://github.com/hirosystems/ordinals-api/commit/5648c9ea72ee09df4a224937a08f662e78d06edd))
+* refresh views in parallel ([#154](https://github.com/hirosystems/ordinals-api/issues/154)) ([a7674a9](https://github.com/hirosystems/ordinals-api/commit/a7674a92efcb580b67c3510a2bf09ffb752e2ef0))
+
 ## [1.0.0-beta.5](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.4...v1.0.0-beta.5) (2023-07-14)
 
 
