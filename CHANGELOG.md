@@ -21,7 +21,6 @@
 
 * introduce materialized view to count address inscriptions ([#147](https://github.com/hirosystems/ordinals-api/issues/147)) ([2e79311](https://github.com/hirosystems/ordinals-api/commit/2e793117afcafbd5f7578bc6b2435af7f33e7dd7))
 
-
 ## [1.0.0-beta.4](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.3...v1.0.0-beta.4) (2023-07-12)
 
 ### Bug Fixes
