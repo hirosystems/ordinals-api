@@ -1,3 +1,10 @@
+## [1.0.0-beta.8](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.7...v1.0.0-beta.8) (2023-07-21)
+
+
+### Bug Fixes
+
+* skip db migrations during readonly mode ([d5157f0](https://github.com/hirosystems/ordinals-api/commit/d5157f02646ceb6c58b73575d8ff4afc8833b97e))
+
 ## [1.0.0-beta.7](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.6...v1.0.0-beta.7) (2023-07-21)
 
 
