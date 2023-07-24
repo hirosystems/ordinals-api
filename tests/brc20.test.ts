@@ -940,7 +940,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 amt: '1000',
               },
-              number: 6,
+              number: 7,
               tx_id: '7e09bda2cba34bca648cca6d79a074940d39b6137150d3a3edcf80c0e01419a5',
               address: address,
             })
@@ -1562,15 +1562,15 @@ describe('BRC-20', () => {
             hash: '00000000000000000003feae13d107f0f2c4fb4dd08fb2a8b1ab553512e77f03',
           })
           .transaction({
-            hash: '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac',
+            hash: 'ce32d47452a4dfae6510fd283e1cec587c5cac217dec09ac4b01541adc86cd34',
           })
           .inscriptionTransferred({
             inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
             updated_address: address2,
             satpoint_pre_transfer:
-              'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a:0:0',
-            satpoint_post_transfer:
               '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac:0:0',
+            satpoint_post_transfer:
+              'ce32d47452a4dfae6510fd283e1cec587c5cac217dec09ac4b01541adc86cd34:0:0',
             post_transfer_output_value: null,
             tx_index: 0,
           })
@@ -1645,25 +1645,18 @@ describe('BRC-20', () => {
           transferrable_balance: '0',
         },
       ]);
+      // No movements at all for this address.
       const response2b = await fastify.inject({
         method: 'GET',
         url: `/ordinals/brc-20/balances/${address2}`,
       });
       expect(response2b.statusCode).toBe(200);
       const json2b = response2b.json();
-      expect(json2b.total).toBe(1);
-      expect(json2b.results).toStrictEqual([
-        {
-          available_balance: '0',
-          overall_balance: '0',
-          ticker: 'PEPE',
-          transferrable_balance: '0',
-        },
-      ]);
+      expect(json2b.total).toBe(0);
       // This address is the one that should have the balance.
       const response3 = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/balances/${address2}`,
+        url: `/ordinals/brc-20/balances/bc1q6uwuet65rm6xvlz7ztw2gvdmmay5uaycu03mqz`,
       });
       expect(response3.statusCode).toBe(200);
       const json3 = response3.json();

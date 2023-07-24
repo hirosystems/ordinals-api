@@ -19,6 +19,8 @@ import {
   DbBrc20EventInsert,
   DbBrc20Deploy,
   BRC20_DEPLOYS_COLUMNS,
+  DbBrc20BalanceInsert,
+  DbBrc20BalanceTypeId,
 } from './types';
 import { brc20FromInscription, Brc20Deploy, Brc20Mint, Brc20Transfer } from './helpers';
 
@@ -226,32 +228,41 @@ export class Brc20PgStore {
         FROM locations AS l
         INNER JOIN brc20_transfers AS t ON t.inscription_id = l.inscription_id 
         WHERE l.inscription_id = ${args.inscription_id}
+          AND l.block_height <= ${args.location.block_height}
         LIMIT 3
       `;
       if (brc20Transfer.count === 2) {
         const transfer = brc20Transfer[0];
         // This is the first time this BRC-20 transfer is being used. Apply the balance change.
         const amount = new BigNumber(transfer.amount);
-        const changes = [
+        const changes: DbBrc20BalanceInsert[] = [
           {
             inscription_id: transfer.inscription_id,
             location_id: args.location_id,
             brc20_deploy_id: transfer.brc20_deploy_id,
             address: transfer.from_address,
-            avail_balance: 0,
-            trans_balance: amount.negated(),
+            avail_balance: '0',
+            trans_balance: amount.negated().toString(),
+            type: DbBrc20BalanceTypeId.transferFrom,
           },
           {
             inscription_id: transfer.inscription_id,
             location_id: args.location_id,
             brc20_deploy_id: transfer.brc20_deploy_id,
             address: args.location.address,
-            avail_balance: amount,
-            trans_balance: 0,
+            avail_balance: amount.toString(),
+            trans_balance: '0',
+            type: DbBrc20BalanceTypeId.transferTo,
           },
         ];
         await sql`
           INSERT INTO brc20_balances ${sql(changes)}
+          ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO UPDATE SET
+            location_id = EXCLUDED.location_id,
+            brc20_deploy_id = EXCLUDED.brc20_deploy_id,
+            address = EXCLUDED.address,
+            avail_balance = EXCLUDED.avail_balance,
+            trans_balance = EXCLUDED.trans_balance
         `;
         // Keep the new valid owner of the transfer inscription
         await sql`
@@ -389,13 +400,14 @@ export class Brc20PgStore {
       );
 
       // Insert balance change for minting address
-      const balance = {
+      const balance: DbBrc20BalanceInsert = {
         inscription_id: args.inscription_id,
         location_id: args.location_id,
-        brc20_deploy_id: token.id,
+        brc20_deploy_id: parseInt(token.id),
         address: args.location.address,
-        avail_balance: mintAmt, // Real minted balance
-        trans_balance: 0,
+        avail_balance: mintAmt.toString(),
+        trans_balance: '0',
+        type: DbBrc20BalanceTypeId.mint,
       };
       await sql`
         INSERT INTO brc20_balances ${sql(balance)}
@@ -457,13 +469,14 @@ export class Brc20PgStore {
       );
 
       // Insert balance change for minting address
-      const values = {
+      const values: DbBrc20BalanceInsert = {
         inscription_id: args.inscription_id,
         location_id: args.location_id,
-        brc20_deploy_id: token.id,
+        brc20_deploy_id: parseInt(token.id),
         address: args.location.address,
-        avail_balance: transAmt.negated(),
-        trans_balance: transAmt,
+        avail_balance: transAmt.negated().toString(),
+        trans_balance: transAmt.toString(),
+        type: DbBrc20BalanceTypeId.transferIntent,
       };
       await sql`
         INSERT INTO brc20_balances ${sql(values)}

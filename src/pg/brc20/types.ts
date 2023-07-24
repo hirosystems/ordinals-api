@@ -1,3 +1,5 @@
+import { PgNumeric } from '@hirosystems/api-toolkit';
+
 export type DbBrc20DeployInsert = {
   inscription_id: number;
   block_height: number;
@@ -61,6 +63,23 @@ export type DbBrc20Balance = {
   avail_balance: string;
   trans_balance: string;
   total_balance: string;
+};
+
+export enum DbBrc20BalanceTypeId {
+  mint = 0,
+  transferIntent = 1,
+  transferFrom = 2,
+  transferTo = 3,
+}
+
+export type DbBrc20BalanceInsert = {
+  inscription_id: number;
+  location_id: number;
+  brc20_deploy_id: number;
+  address: string | null;
+  avail_balance: PgNumeric;
+  trans_balance: PgNumeric;
+  type: DbBrc20BalanceTypeId;
 };
 
 export type DbBrc20EventInsert = {
