@@ -447,6 +447,7 @@ export class PgStore extends BasePgStore {
               : sql``
           }
           ${filters?.sat_ordinal ? sql`AND i.sat_ordinal = ${filters.sat_ordinal}` : sql``}
+          ${filters?.recursive !== undefined ? sql`AND i.recursive = ${filters.recursive}` : sql``}
         ORDER BY ${orderBy} ${order}
         LIMIT ${page.limit}
         OFFSET ${page.offset}

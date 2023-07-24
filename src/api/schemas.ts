@@ -165,6 +165,12 @@ export const OutputParam = Type.RegEx(/^[a-fA-F0-9]{64}:[0-9]+$/, {
   examples: ['8f46f0d4ef685e650727e6faf7e30f23b851a7709714ec774f7909b3fb5e604c:0'],
 });
 
+export const RecursiveParam = Type.Boolean({
+  title: 'Recursive',
+  description: 'Whether or not the inscription is recursive',
+  examples: [false],
+});
+
 export const OffsetParam = Type.Integer({
   minimum: 0,
   title: 'Offset',
