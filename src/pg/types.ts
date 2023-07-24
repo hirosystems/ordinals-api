@@ -30,6 +30,8 @@ export type DbFullyLocatedInscriptionResult = {
   content_length: string;
   timestamp: Date;
   curse_type: string | null;
+  recursive: boolean;
+  recursion_refs: string | null;
 };
 
 export type DbLocationInsert = {
