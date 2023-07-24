@@ -48,7 +48,7 @@ async function initApiService(db: PgStore) {
 
 async function initApp() {
   logger.info(`Initializing in ${ENV.RUN_MODE} run mode...`);
-  const db = await PgStore.connect({ skipMigrations: false });
+  const db = await PgStore.connect({ skipMigrations: ENV.RUN_MODE === 'readonly' });
 
   if (['default', 'writeonly'].includes(ENV.RUN_MODE)) {
     await initBackgroundServices(db);
