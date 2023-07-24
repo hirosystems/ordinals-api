@@ -105,6 +105,8 @@ describe('/inscriptions', () => {
         genesis_timestamp: 1676913207000,
         genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
         curse_type: null,
+        recursive: false,
+        recursion_refs: null,
       };
 
       // By inscription id
@@ -288,6 +290,8 @@ describe('/inscriptions', () => {
         genesis_timestamp: 1676913207000,
         genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
         curse_type: null,
+        recursive: false,
+        recursion_refs: null,
       };
 
       // By inscription id
@@ -363,6 +367,8 @@ describe('/inscriptions', () => {
         genesis_timestamp: 1676913207000,
         genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
         curse_type: '88',
+        recursive: false,
+        recursion_refs: null,
       };
 
       // By inscription id
@@ -463,6 +469,8 @@ describe('/inscriptions', () => {
         genesis_timestamp: 1676913207000,
         genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
         curse_type: null,
+        recursive: false,
+        recursion_refs: null,
       });
 
       // Transfer 2
@@ -513,6 +521,8 @@ describe('/inscriptions', () => {
         genesis_timestamp: 1676913207000,
         genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
         curse_type: null,
+        recursive: false,
+        recursion_refs: null,
       });
     });
 
@@ -577,6 +587,8 @@ describe('/inscriptions', () => {
         genesis_timestamp: 1676913207000,
         genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
         curse_type: null,
+        recursive: false,
+        recursion_refs: null,
       });
 
       // Insert real genesis
@@ -627,6 +639,8 @@ describe('/inscriptions', () => {
         genesis_timestamp: 1678122360000,
         genesis_tx_id: 'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444',
         curse_type: null,
+        recursive: false,
+        recursion_refs: null,
       });
     });
 
@@ -723,6 +737,8 @@ describe('/inscriptions', () => {
         genesis_timestamp: 1676913207000,
         genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
         curse_type: null,
+        recursive: false,
+        recursion_refs: null,
       });
     });
 
@@ -808,6 +824,8 @@ describe('/inscriptions', () => {
         genesis_timestamp: 1676913207000,
         genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
         curse_type: '{"tag":66}',
+        recursive: false,
+        recursion_refs: null,
       });
 
       // Transfer 2
@@ -858,6 +876,8 @@ describe('/inscriptions', () => {
         genesis_timestamp: 1676913207000,
         genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
         curse_type: '{"tag":66}',
+        recursive: false,
+        recursion_refs: null,
       });
     });
   });
@@ -1341,6 +1361,8 @@ describe('/inscriptions', () => {
           genesis_timestamp: 1676913207000,
           genesis_tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
           curse_type: null,
+          recursive: false,
+          recursion_refs: null,
         },
         {
           address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
@@ -1365,6 +1387,8 @@ describe('/inscriptions', () => {
           genesis_timestamp: 1676913207000,
           genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           curse_type: null,
+          recursive: false,
+          recursion_refs: null,
         },
       ]);
     });
@@ -1464,6 +1488,8 @@ describe('/inscriptions', () => {
           genesis_timestamp: 1676913207000,
           genesis_tx_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
           curse_type: null,
+          recursive: false,
+          recursion_refs: null,
         };
         expect(responseJson1.results[0]).toStrictEqual(result1);
 
@@ -1497,6 +1523,8 @@ describe('/inscriptions', () => {
           genesis_timestamp: 1676913207000,
           genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           curse_type: null,
+          recursive: false,
+          recursion_refs: null,
         };
         expect(responseJson2.results[0]).toStrictEqual(result2);
 
