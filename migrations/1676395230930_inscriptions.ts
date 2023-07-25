@@ -52,10 +52,6 @@ export function up(pgm: MigrationBuilder): void {
     curse_type: {
       type: 'text',
     },
-    recursive: {
-      type: 'boolean',
-      default: false,
-    },
     updated_at: {
       type: 'timestamptz',
       default: pgm.func('(NOW())'),
@@ -68,6 +64,5 @@ export function up(pgm: MigrationBuilder): void {
   pgm.createIndex('inscriptions', ['sat_ordinal']);
   pgm.createIndex('inscriptions', ['sat_rarity']);
   pgm.createIndex('inscriptions', ['sat_coinbase_height']);
-  pgm.createIndex('inscriptions', ['recursive'], { where: 'recursive = TRUE' });
   pgm.createIndex('inscriptions', [{ name: 'updated_at', sort: 'DESC' }]);
 }

@@ -34,4 +34,13 @@ export function up(pgm: MigrationBuilder): void {
     'UNIQUE(inscription_id, ref_inscription_id)'
   );
   pgm.createIndex('inscription_recursions', ['ref_inscription_id']);
+
+  // Add columns to `inscriptions` table.
+  pgm.addColumn('inscriptions', {
+    recursive: {
+      type: 'boolean',
+      default: false,
+    },
+  });
+  pgm.createIndex('inscriptions', ['recursive'], { where: 'recursive = TRUE' });
 }
