@@ -47,6 +47,8 @@ export function parseDbInscriptions(
     content_length: parseInt(i.content_length),
     timestamp: i.timestamp.valueOf(),
     curse_type: i.curse_type,
+    recursive: i.recursive,
+    recursion_refs: i.recursion_refs?.split(',') ?? null,
   }));
 }
 export function parseDbInscription(item: DbFullyLocatedInscriptionResult): InscriptionResponseType {

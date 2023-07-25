@@ -26,6 +26,7 @@ import {
   OrdinalParam,
   OutputParam,
   PaginatedResponse,
+  RecursiveParam,
   SatoshiRaritiesParam,
   TimestampParam,
 } from '../schemas';
@@ -84,6 +85,7 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
           address: Type.Optional(AddressesParam),
           mime_type: Type.Optional(MimeTypesParam),
           rarity: Type.Optional(SatoshiRaritiesParam),
+          recursive: Type.Optional(RecursiveParam),
           // Pagination
           offset: Type.Optional(OffsetParam),
           limit: Type.Optional(LimitParam),
@@ -120,6 +122,7 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
           address: request.query.address,
           mime_type: request.query.mime_type,
           sat_rarity: request.query.rarity,
+          recursive: request.query.recursive,
         },
         {
           order_by: request.query.order_by ?? OrderBy.genesis_block_height,

@@ -3,7 +3,7 @@ import { Order, OrderBy } from '../api/schemas';
 import { isProdEnv, isTestEnv, normalizedHexString, parseSatPoint } from '../api/util/helpers';
 import { OrdinalSatoshi, SatoshiRarity } from '../api/util/ordinal-satoshi';
 import { ENV } from '../env';
-import { getIndexResultCountType } from './helpers';
+import { getIndexResultCountType, getInscriptionRecursion } from './helpers';
 import {
   DbFullyLocatedInscriptionResult,
   DbInscriptionContent,
@@ -360,6 +360,13 @@ export class PgStore extends BasePgStore {
           i.sat_ordinal,
           i.sat_rarity,
           i.sat_coinbase_height,
+          i.recursive,
+          (
+            SELECT STRING_AGG(ii.genesis_id, ',')
+            FROM inscription_recursions AS ir
+            INNER JOIN inscriptions AS ii ON ii.id = ir.ref_inscription_id
+            WHERE ir.inscription_id = i.id
+          ) AS recursion_refs,
           gen.block_height AS genesis_block_height,
           gen.block_hash AS genesis_block_hash,
           gen.tx_id AS genesis_tx_id,
@@ -443,6 +450,7 @@ export class PgStore extends BasePgStore {
               : sql``
           }
           ${filters?.sat_ordinal ? sql`AND i.sat_ordinal = ${filters.sat_ordinal}` : sql``}
+          ${filters?.recursive !== undefined ? sql`AND i.recursive = ${filters.recursive}` : sql``}
         ORDER BY ${orderBy} ${order}
         LIMIT ${page.limit}
         OFFSET ${page.offset}
@@ -583,8 +591,13 @@ export class PgStore extends BasePgStore {
       const upsert = await sql<{ id: number }[]>`
         SELECT id FROM inscriptions WHERE number = ${args.inscription.number}
       `;
+      const recursion = getInscriptionRecursion(args.inscription.content);
+      const data = {
+        ...args.inscription,
+        recursive: recursion.length > 0,
+      };
       const inscription = await sql<{ id: number }[]>`
-        INSERT INTO inscriptions ${sql(args.inscription)}
+        INSERT INTO inscriptions ${sql(data)}
         ON CONFLICT ON CONSTRAINT inscriptions_number_unique DO UPDATE SET
           genesis_id = EXCLUDED.genesis_id,
           mime_type = EXCLUDED.mime_type,
@@ -600,18 +613,8 @@ export class PgStore extends BasePgStore {
       `;
       inscription_id = inscription[0].id;
       const location = {
+        ...args.location,
         inscription_id,
-        genesis_id: args.location.genesis_id,
-        block_height: args.location.block_height,
-        block_hash: args.location.block_hash,
-        tx_id: args.location.tx_id,
-        tx_index: args.location.tx_index,
-        address: args.location.address,
-        output: args.location.output,
-        offset: args.location.offset,
-        prev_output: args.location.prev_output,
-        prev_offset: args.location.prev_offset,
-        value: args.location.value,
         timestamp: sql`to_timestamp(${args.location.timestamp})`,
       };
       const locationRes = await sql<{ id: number }[]>`
@@ -636,6 +639,7 @@ export class PgStore extends BasePgStore {
         tx_index: args.location.tx_index,
         address: args.location.address,
       });
+      await this.updateInscriptionRecursion({ inscription_id, ref_genesis_ids: recursion });
       logger.info(
         `PgStore${upsert.count > 0 ? ' upsert ' : ' '}reveal #${args.inscription.number} (${
           args.location.genesis_id
@@ -834,6 +838,27 @@ export class PgStore extends BasePgStore {
       await sql`
         UPDATE inscriptions SET updated_at = NOW() WHERE genesis_id = ${args.genesis_id}
       `;
+    });
+  }
+
+  private async updateInscriptionRecursion(args: {
+    inscription_id: number;
+    ref_genesis_ids: string[];
+  }): Promise<void> {
+    await this.sqlWriteTransaction(async sql => {
+      const validated = await sql<{ id: string }[]>`
+        SELECT id FROM inscriptions WHERE genesis_id IN ${this.sql(args.ref_genesis_ids)}
+      `;
+      if (validated.count > 0) {
+        const values = validated.map(i => ({
+          inscription_id: args.inscription_id,
+          ref_inscription_id: i.id,
+        }));
+        await this.sql`
+          INSERT INTO inscription_recursions ${sql(values)}
+          ON CONFLICT ON CONSTRAINT inscriptions_inscription_id_ref_inscription_id_unique DO NOTHING
+        `;
+      }
     });
   }
 }

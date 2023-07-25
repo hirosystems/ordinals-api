@@ -165,6 +165,12 @@ export const OutputParam = Type.RegEx(/^[a-fA-F0-9]{64}:[0-9]+$/, {
   examples: ['8f46f0d4ef685e650727e6faf7e30f23b851a7709714ec774f7909b3fb5e604c:0'],
 });
 
+export const RecursiveParam = Type.Boolean({
+  title: 'Recursive',
+  description: 'Whether or not the inscription is recursive',
+  examples: [false],
+});
+
 export const OffsetParam = Type.Integer({
   minimum: 0,
   title: 'Offset',
@@ -257,6 +263,17 @@ export const InscriptionResponse = Type.Object(
     content_length: Type.Integer({ examples: [59] }),
     timestamp: Type.Integer({ examples: [1677733170000] }),
     curse_type: Nullable(Type.String({ examples: ['p2wsh'] })),
+    recursive: Type.Boolean({ examples: [true] }),
+    recursion_refs: Nullable(
+      Type.Array(
+        Type.String({
+          examples: [
+            '1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218i0',
+            '541076e29e1b63460412d3087b37130c9a14abd0beeb4e9b2b805d2072c84dedi0',
+          ],
+        })
+      )
+    ),
   },
   { title: 'Inscription Response' }
 );
