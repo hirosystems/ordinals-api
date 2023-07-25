@@ -179,6 +179,7 @@ export const LimitParam = Type.Integer({
 });
 
 export enum OrderBy {
+  number = 'number',
   genesis_block_height = 'genesis_block_height',
   ordinal = 'ordinal',
   rarity = 'rarity',
