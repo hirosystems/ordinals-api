@@ -326,8 +326,11 @@ export class PgStore extends BasePgStore {
       // materialized views to speed up these queries.
       const countType = getIndexResultCountType(filters);
       // `ORDER BY` statement
-      let orderBy = sql`gen.block_height`;
+      let orderBy = sql`i.number`;
       switch (sort?.order_by) {
+        case OrderBy.genesis_block_height:
+          orderBy = sql`gen.block_height`;
+          break;
         case OrderBy.ordinal:
           orderBy = sql`i.sat_ordinal`;
           break;
