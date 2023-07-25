@@ -1,3 +1,10 @@
+## [1.0.0-beta.9](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.8...v1.0.0-beta.9) (2023-07-25)
+
+
+### Features
+
+* add inscription number sort option ([#168](https://github.com/hirosystems/ordinals-api/issues/168)) ([9f4cdbc](https://github.com/hirosystems/ordinals-api/commit/9f4cdbc96f2efa4610e771df74b11951803cb8a6))
+
 ## [1.0.0-beta.8](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.7...v1.0.0-beta.8) (2023-07-21)
 
 
