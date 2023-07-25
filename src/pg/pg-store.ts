@@ -665,8 +665,7 @@ export class PgStore extends BasePgStore {
       if (args.location.prev_output) {
         const prev = await sql`
           SELECT id FROM locations
-          WHERE genesis_id = ${args.location.genesis_id}
-            AND prev_output = ${args.location.prev_output}
+          WHERE genesis_id = ${args.location.genesis_id} AND output = ${args.location.prev_output}
         `;
         if (prev.count === 0) {
           logger.warn(
