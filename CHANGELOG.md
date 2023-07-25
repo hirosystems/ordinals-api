@@ -1,3 +1,10 @@
+## [1.0.0-beta.10](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.9...v1.0.0-beta.10) (2023-07-25)
+
+
+### Features
+
+* detect and tag recursive inscriptions ([#167](https://github.com/hirosystems/ordinals-api/issues/167)) ([fb36285](https://github.com/hirosystems/ordinals-api/commit/fb362857c2c3cf4c098f6604b49d77efa6f95d8b))
+
 ## [1.0.0-beta.9](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.8...v1.0.0-beta.9) (2023-07-25)
 
 
