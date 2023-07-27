@@ -2,6 +2,8 @@
 Title: Overview
 ---
 
+# Ordinals API Overview
+
 The Ordinals API is a protocol that allows for Bitcoin inscriptions based on Ordinal theory. It provides a service that indexes Bitcoin Ordinals data and offers a REST API to access and query this data.
 
 Here are the key features of the [Ordinals API](https://github.com/hirosystems/ordinals-api):
