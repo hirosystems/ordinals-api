@@ -2487,6 +2487,48 @@ describe('/inscriptions', () => {
         const responseJson2 = response2.json();
         expect(responseJson2.total).toBe(2);
         expect(responseJson2.results.length).toBe(2);
+
+        // Transfers affect result totals correctly
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({
+              height: 775618,
+              hash: '000000000000000000032ef6c45a69c0496456b3cae84ee9f2899f636d03c5ac',
+              timestamp: 1675312161,
+            })
+            .transaction({
+              hash: 'c586b6996f937ba6213dfee4d35d875930e5384206c6daf60de3e8c44fdee550',
+            })
+            .inscriptionTransferred({
+              inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+              updated_address: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+              satpoint_pre_transfer:
+                '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+              satpoint_post_transfer:
+                'c586b6996f937ba6213dfee4d35d875930e5384206c6daf60de3e8c44fdee550:0:0',
+              post_transfer_output_value: 9000,
+              tx_index: 0,
+            })
+            .build()
+        );
+        const response3 = await fastify.inject({
+          method: 'GET',
+          url: '/ordinals/v1/inscriptions?address=bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+        });
+        expect(response3.statusCode).toBe(200);
+        const responseJson3 = response3.json();
+        expect(responseJson3.total).toBe(2);
+        expect(responseJson3.results.length).toBe(2);
+
+        const response4 = await fastify.inject({
+          method: 'GET',
+          url: '/ordinals/v1/inscriptions?address=bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+        });
+        expect(response4.statusCode).toBe(200);
+        const responseJson4 = response4.json();
+        expect(responseJson4.total).toBe(0);
+        expect(responseJson4.results.length).toBe(0);
       });
 
       test('index filtered by recursive', async () => {
