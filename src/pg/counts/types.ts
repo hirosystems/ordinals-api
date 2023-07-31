@@ -8,11 +8,14 @@ export enum DbInscriptionIndexResultCountType {
   satRarity,
   /** Filtered by address */
   address,
+  /** Filtered by block height */
   blockHeight,
   fromblockHeight,
   toblockHeight,
   blockHeightRange,
-  /** Filtered by some param that yields a single result (easy to count) */
+  /** Filtered by block hash */
+  blockHash,
+  /** Filtered by some other param that yields a single result (easy to count) */
   singleResult,
   /** Filtered by custom arguments (very hard to count) */
   intractable,

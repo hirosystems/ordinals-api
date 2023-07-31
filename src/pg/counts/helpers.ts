@@ -28,6 +28,7 @@ export function getIndexResultCountType(
       if (filters.from_genesis_block_height)
         return DbInscriptionIndexResultCountType.fromblockHeight;
       if (filters.to_genesis_block_height) return DbInscriptionIndexResultCountType.toblockHeight;
+      if (filters.genesis_block_hash) return DbInscriptionIndexResultCountType.blockHash;
       if (filters.number || filters.genesis_id || filters.output || filters.sat_ordinal)
         return DbInscriptionIndexResultCountType.singleResult;
       return DbInscriptionIndexResultCountType.intractable;

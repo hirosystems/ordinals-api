@@ -52,6 +52,8 @@ export class CountsPgStore {
           filters?.from_genesis_block_height,
           filters?.to_genesis_block_height
         );
+      case DbInscriptionIndexResultCountType.blockHash:
+        return await this.getBlockHashCount(filters?.genesis_block_hash);
     }
   }
 
@@ -149,6 +151,16 @@ export class CountsPgStore {
       WHERE TRUE
         ${from !== undefined ? this.sql`AND block_height >= ${from}` : this.sql``}
         ${to !== undefined ? this.sql`AND block_height <= ${to}` : this.sql``}
+    `;
+    return result[0].count;
+  }
+
+  private async getBlockHashCount(hash?: string): Promise<number> {
+    if (!hash) return 0;
+    const result = await this.sql<{ count: number }[]>`
+      SELECT COALESCE(SUM(inscription_count), 0) AS count
+      FROM inscriptions_per_block
+      WHERE block_hash = ${hash}
     `;
     return result[0].count;
   }
