@@ -6,10 +6,7 @@ import {
   DbInscriptionIndexFilters,
   DbInscriptionInsert,
   DbInscriptionType,
-  DbLocation,
-  DbLocationInsert,
   DbLocationPointer,
-  INSCRIPTIONS_COLUMNS,
 } from '../types';
 import { DbInscriptionIndexResultCountType } from './types';
 
@@ -41,6 +38,20 @@ export class CountsPgStore {
         return await this.getSatRarityCount(filters?.sat_rarity);
       case DbInscriptionIndexResultCountType.address:
         return await this.getAddressCount(filters?.address);
+      case DbInscriptionIndexResultCountType.blockHeight:
+        return await this.getBlockCount(
+          filters?.genesis_block_height,
+          filters?.genesis_block_height
+        );
+      case DbInscriptionIndexResultCountType.fromblockHeight:
+        return await this.getBlockCount(filters?.from_genesis_block_height);
+      case DbInscriptionIndexResultCountType.toblockHeight:
+        return await this.getBlockCount(undefined, filters?.to_genesis_block_height);
+      case DbInscriptionIndexResultCountType.blockHeightRange:
+        return await this.getBlockCount(
+          filters?.from_genesis_block_height,
+          filters?.to_genesis_block_height
+        );
     }
   }
 
@@ -128,6 +139,18 @@ export class CountsPgStore {
         `;
       }
     });
+  }
+
+  private async getBlockCount(from?: number, to?: number): Promise<number> {
+    if (from === undefined && to === undefined) return 0;
+    const result = await this.sql<{ count: number }[]>`
+      SELECT COALESCE(SUM(inscription_count), 0) AS count
+      FROM inscriptions_per_block
+      WHERE TRUE
+        ${from !== undefined ? this.sql`AND block_height >= ${from}` : this.sql``}
+        ${to !== undefined ? this.sql`AND block_height <= ${to}` : this.sql``}
+    `;
+    return result[0].count;
   }
 
   private async getInscriptionCount(type?: DbInscriptionType): Promise<number> {

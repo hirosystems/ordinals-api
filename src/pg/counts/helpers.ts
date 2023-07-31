@@ -24,8 +24,16 @@ export function getIndexResultCountType(
       if (filters.mime_type) return DbInscriptionIndexResultCountType.mimeType;
       if (filters.sat_rarity) return DbInscriptionIndexResultCountType.satRarity;
       if (filters.address) return DbInscriptionIndexResultCountType.address;
+      if (filters.genesis_block_height) return DbInscriptionIndexResultCountType.blockHeight;
+      if (filters.from_genesis_block_height)
+        return DbInscriptionIndexResultCountType.fromblockHeight;
+      if (filters.to_genesis_block_height) return DbInscriptionIndexResultCountType.toblockHeight;
       if (filters.number || filters.genesis_id || filters.output || filters.sat_ordinal)
         return DbInscriptionIndexResultCountType.singleResult;
+      return DbInscriptionIndexResultCountType.intractable;
+    case 2:
+      if (filters.from_genesis_block_height && filters.to_genesis_block_height)
+        return DbInscriptionIndexResultCountType.blockHeightRange;
       return DbInscriptionIndexResultCountType.intractable;
     default:
       return DbInscriptionIndexResultCountType.intractable;
