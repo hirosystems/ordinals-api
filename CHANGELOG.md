@@ -1,3 +1,10 @@
+## [1.0.0-beta.12](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.11...v1.0.0-beta.12) (2023-07-31)
+
+
+### Bug Fixes
+
+* rollback location pointers ([#174](https://github.com/hirosystems/ordinals-api/issues/174)) ([3c9d7f0](https://github.com/hirosystems/ordinals-api/commit/3c9d7f07d14aed2bad1c07d69f7170d74a85d575))
+
 ## [1.0.0-beta.11](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.10...v1.0.0-beta.11) (2023-07-25)
 
 
