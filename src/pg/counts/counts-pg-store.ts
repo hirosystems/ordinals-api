@@ -2,11 +2,14 @@ import { PgSqlClient } from '@hirosystems/api-toolkit';
 import { PgStore } from '../pg-store';
 import { SatoshiRarity } from '../../api/util/ordinal-satoshi';
 import {
+  DbInscription,
   DbInscriptionIndexFilters,
   DbInscriptionInsert,
   DbInscriptionType,
+  DbLocation,
   DbLocationInsert,
   DbLocationPointer,
+  INSCRIPTIONS_COLUMNS,
 } from '../types';
 import { DbInscriptionIndexResultCountType } from './types';
 
@@ -60,13 +63,34 @@ export class CountsPgStore {
     });
   }
 
+  async rollBackInscription(args: { inscription: DbInscription }): Promise<void> {
+    await this.parent.sqlWriteTransaction(async sql => {
+      await sql`
+        UPDATE counts_by_mime_type SET count = count - 1 WHERE mime_type = ${args.inscription.mime_type}
+      `;
+      await sql`
+        UPDATE counts_by_sat_rarity SET count = count - 1 WHERE sat_rarity = ${args.inscription.sat_rarity}
+      `;
+      await sql`
+        UPDATE counts_by_type SET count = count - 1 WHERE type = ${
+          parseInt(args.inscription.number) < 0
+            ? DbInscriptionType.cursed
+            : DbInscriptionType.blessed
+        }
+      `;
+      await sql`
+        UPDATE counts_by_address SET count = count - 1 WHERE address = (
+          SELECT address FROM current_locations WHERE inscription_id = ${args.inscription.id}
+        )
+      `;
+    });
+  }
+
   async applyGenesisLocation(args: {
     prev?: DbLocationPointer;
     next: DbLocationPointer;
   }): Promise<void> {
-    await this.parent.sqlWriteTransaction(async sql => {
-      //
-    });
+    // Nothing yet.
   }
 
   async applyCurrentLocation(args: {
@@ -74,18 +98,35 @@ export class CountsPgStore {
     next: DbLocationPointer;
   }): Promise<void> {
     await this.parent.sqlWriteTransaction(async sql => {
-      if (args.prev) {
+      if (args.prev && args.prev.address) {
         await sql`
           UPDATE counts_by_address SET count = count - 1 WHERE address = ${args.prev.address}
         `;
+      }
+      if (args.next.address) {
         await sql`
-          DELETE FROM counts_by_address WHERE address = ${args.prev.address} AND count = 0
+          INSERT INTO counts_by_address ${sql({ address: args.next.address })}
+          ON CONFLICT (address) DO UPDATE SET count = counts_by_address.count + 1
         `;
       }
-      await sql`
-        INSERT INTO counts_by_address ${sql({ address: args.next.address })}
-        ON CONFLICT (address) DO UPDATE SET count = counts_by_address.count + 1
-      `;
+    });
+  }
+
+  async rollBackCurrentLocation(args: {
+    curr: DbLocationPointer;
+    prev: DbLocationPointer;
+  }): Promise<void> {
+    await this.parent.sqlWriteTransaction(async sql => {
+      if (args.curr.address) {
+        await sql`
+          UPDATE counts_by_address SET count = count - 1 WHERE address = ${args.curr.address}
+        `;
+      }
+      if (args.prev.address) {
+        await sql`
+          UPDATE counts_by_address SET count = count + 1 WHERE address = ${args.prev.address}
+        `;
+      }
     });
   }
 
