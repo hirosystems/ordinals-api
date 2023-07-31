@@ -8,7 +8,6 @@ export function up(pgm: MigrationBuilder): void {
     inscription_id: {
       type: 'bigint',
       notNull: true,
-      primaryKey: true,
     },
     location_id: {
       type: 'bigint',
@@ -28,13 +27,8 @@ export function up(pgm: MigrationBuilder): void {
   });
   pgm.createConstraint(
     'genesis_locations',
-    'genesis_locations_inscription_id_fk',
-    'FOREIGN KEY(inscription_id) REFERENCES inscriptions(id) ON DELETE CASCADE'
-  );
-  pgm.createConstraint(
-    'genesis_locations',
-    'genesis_locations_location_id_fk',
-    'FOREIGN KEY(location_id) REFERENCES locations(id) ON DELETE CASCADE'
+    'genesis_locations_inscription_id_unique',
+    'UNIQUE(inscription_id)'
   );
   pgm.createIndex('genesis_locations', ['location_id']);
   pgm.createIndex('genesis_locations', ['block_height']);
