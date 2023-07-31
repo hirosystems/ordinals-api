@@ -17,6 +17,7 @@ import {
   DbInscriptionLocationChange,
   DbLocation,
   DbLocationInsert,
+  DbLocationPointer,
   DbLocationPointerInsert,
   DbPaginatedResult,
   LOCATIONS_COLUMNS,
@@ -582,6 +583,19 @@ export class PgStore extends BasePgStore {
     } ${this.sql(viewName)}`;
   }
 
+  private async getLocation(args: {
+    genesis_id: string;
+    output: string;
+  }): Promise<DbLocation | undefined> {
+    const query = await this.sql<DbLocation[]>`
+      SELECT ${this.sql(LOCATIONS_COLUMNS)}
+      FROM locations
+      WHERE genesis_id = ${args.genesis_id} AND output = ${args.output}
+    `;
+    if (query.count === 0) return;
+    return query[0];
+  }
+
   private async insertInscription(args: {
     inscription: DbInscriptionInsert;
     location: DbLocationInsert;
@@ -782,13 +796,15 @@ export class PgStore extends BasePgStore {
     output: string;
     block_height: number;
   }): Promise<void> {
-    await this.sql`
-      DELETE FROM locations
-      WHERE genesis_id = ${args.genesis_id} AND output = ${args.output}
-    `;
-    logger.info(
-      `PgStore rollback transfer (${args.genesis_id}) on output ${args.output} at block ${args.block_height}`
-    );
+    const location = await this.getLocation({ genesis_id: args.genesis_id, output: args.output });
+    if (!location) return;
+    await this.sqlWriteTransaction(async sql => {
+      await this.recalculateCurrentLocationPointerFromLocationRollBack({ location });
+      await sql`DELETE FROM locations WHERE id = ${location.id}`;
+      logger.info(
+        `PgStore rollback transfer (${args.genesis_id}) on output ${args.output} at block ${args.block_height}`
+      );
+    });
   }
 
   private async updateInscriptionLocationPointers(
@@ -805,7 +821,7 @@ export class PgStore extends BasePgStore {
       };
       await sql`
         INSERT INTO genesis_locations ${sql(pointer)}
-        ON CONFLICT ON CONSTRAINT genesis_locations_inscription_id_unique DO UPDATE SET
+        ON CONFLICT (inscription_id) DO UPDATE SET
           location_id = EXCLUDED.location_id,
           block_height = EXCLUDED.block_height,
           tx_index = EXCLUDED.tx_index,
@@ -817,7 +833,7 @@ export class PgStore extends BasePgStore {
       `;
       await sql`
         INSERT INTO current_locations ${sql(pointer)}
-        ON CONFLICT ON CONSTRAINT current_locations_inscription_id_unique DO UPDATE SET
+        ON CONFLICT (inscription_id) DO UPDATE SET
           location_id = EXCLUDED.location_id,
           block_height = EXCLUDED.block_height,
           tx_index = EXCLUDED.tx_index,
@@ -837,6 +853,35 @@ export class PgStore extends BasePgStore {
       await sql`
         UPDATE inscriptions SET updated_at = NOW() WHERE genesis_id = ${args.genesis_id}
       `;
+    });
+  }
+
+  private async recalculateCurrentLocationPointerFromLocationRollBack(args: {
+    location: DbLocation;
+  }): Promise<void> {
+    await this.sqlWriteTransaction(async sql => {
+      // Is the location we're rolling back *the* current location?
+      const current = await sql<DbLocationPointer[]>`
+        SELECT * FROM current_locations WHERE location_id = ${args.location.id}
+      `;
+      if (current.count > 0) {
+        await sql`
+          WITH prev AS (
+            SELECT id, block_height, tx_index, address
+            FROM locations
+            WHERE inscription_id = ${args.location.inscription_id} AND id <> ${args.location.id}
+            ORDER BY block_height DESC, tx_index DESC
+            LIMIT 1
+          )
+          UPDATE current_locations AS c SET
+            location_id = prev.id,
+            block_height = prev.block_height,
+            tx_index = prev.tx_index,
+            address = prev.address
+          FROM prev
+          WHERE c.inscription_id = ${args.location.inscription_id}
+        `;
+      }
     });
   }
 

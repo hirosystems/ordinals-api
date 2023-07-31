@@ -66,6 +66,14 @@ export type DbLocation = {
   timestamp: Date;
 };
 
+export type DbLocationPointer = {
+  inscription_id: number;
+  location_id: number;
+  block_height: number;
+  tx_index: number;
+  address: string | null;
+};
+
 export type DbLocationPointerInsert = {
   inscription_id: number;
   location_id: number;
