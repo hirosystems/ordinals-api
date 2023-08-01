@@ -181,9 +181,9 @@ export type DbInscriptionIndexPaging = {
 export type DbInscriptionIndexFilters = {
   genesis_id?: string[];
   genesis_block_height?: number;
-  genesis_block_hash?: string;
   from_genesis_block_height?: number;
   to_genesis_block_height?: number;
+  genesis_block_hash?: string;
   from_genesis_timestamp?: number;
   to_genesis_timestamp?: number;
   from_sat_coinbase_height?: number;
@@ -192,6 +192,7 @@ export type DbInscriptionIndexFilters = {
   from_number?: number;
   to_number?: number;
   address?: string[];
+  genesis_address?: string[];
   mime_type?: string[];
   output?: string;
   sat_rarity?: SatoshiRarity[];
@@ -199,6 +200,7 @@ export type DbInscriptionIndexFilters = {
   from_sat_ordinal?: bigint;
   to_sat_ordinal?: bigint;
   recursive?: boolean;
+  cursed?: boolean;
 };
 
 export type DbInscriptionIndexOrder = {
@@ -206,20 +208,9 @@ export type DbInscriptionIndexOrder = {
   order?: Order;
 };
 
-/** Type of row count required for an inscription index endpoint call */
-export enum DbInscriptionIndexResultCountType {
-  /** All inscriptions */
-  all,
-  /** Filtered by mime type */
-  mimeType,
-  /** Filtered by sat rarity */
-  satRarity,
-  /** Filtered by address */
-  address,
-  /** Filtered by some param that yields a single result (easy to count) */
-  singleResult,
-  /** Filtered by custom arguments (very hard to count) */
-  intractable,
+export enum DbInscriptionType {
+  blessed = 'blessed',
+  cursed = 'cursed',
 }
 
 export type DbInscriptionCountPerBlockFilters = {

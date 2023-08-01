@@ -171,6 +171,12 @@ export const RecursiveParam = Type.Boolean({
   examples: [false],
 });
 
+export const CursedParam = Type.Boolean({
+  title: 'Cursed',
+  description: 'Whether or not the inscription is cursed',
+  examples: [false],
+});
+
 export const OffsetParam = Type.Integer({
   minimum: 0,
   title: 'Offset',

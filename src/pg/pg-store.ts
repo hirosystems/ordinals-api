@@ -1,18 +1,18 @@
 import { BitcoinEvent, Payload } from '@hirosystems/chainhook-client';
 import { Order, OrderBy } from '../api/schemas';
 import { isProdEnv, isTestEnv, normalizedHexString, parseSatPoint } from '../api/util/helpers';
-import { OrdinalSatoshi, SatoshiRarity } from '../api/util/ordinal-satoshi';
+import { OrdinalSatoshi } from '../api/util/ordinal-satoshi';
 import { ENV } from '../env';
-import { getIndexResultCountType, getInscriptionRecursion } from './helpers';
+import { getInscriptionRecursion } from './helpers';
 import {
   DbFullyLocatedInscriptionResult,
+  DbInscription,
   DbInscriptionContent,
   DbInscriptionCountPerBlock,
   DbInscriptionCountPerBlockFilters,
   DbInscriptionIndexFilters,
   DbInscriptionIndexOrder,
   DbInscriptionIndexPaging,
-  DbInscriptionIndexResultCountType,
   DbInscriptionInsert,
   DbInscriptionLocationChange,
   DbLocation,
@@ -20,16 +20,28 @@ import {
   DbLocationPointer,
   DbLocationPointerInsert,
   DbPaginatedResult,
+  INSCRIPTIONS_COLUMNS,
   LOCATIONS_COLUMNS,
 } from './types';
-import { BasePgStore, connectPostgres, logger, runMigrations } from '@hirosystems/api-toolkit';
+import {
+  BasePgStore,
+  PgSqlClient,
+  connectPostgres,
+  logger,
+  runMigrations,
+} from '@hirosystems/api-toolkit';
 import * as path from 'path';
+import { CountsPgStore } from './counts/counts-pg-store';
+import { getIndexResultCountType } from './counts/helpers';
+import * as postgres from 'postgres';
 
 export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 
 type InscriptionIdentifier = { genesis_id: string } | { number: number };
 
 export class PgStore extends BasePgStore {
+  readonly counts: CountsPgStore;
+
   static async connect(opts?: { skipMigrations: boolean }): Promise<PgStore> {
     const pgConfig = {
       host: ENV.PGHOST,
@@ -51,6 +63,11 @@ export class PgStore extends BasePgStore {
       await runMigrations(MIGRATIONS_DIR, 'up');
     }
     return new PgStore(sql);
+  }
+
+  constructor(sql: PgSqlClient) {
+    super(sql);
+    this.counts = new CountsPgStore(this);
   }
 
   /**
@@ -198,10 +215,6 @@ export class PgStore extends BasePgStore {
       // we can respond to the chainhook node with a `200` HTTP code as soon as possible.
       const viewRefresh = Promise.allSettled([
         this.normalizeInscriptionCount({ min_block_height: updatedBlockHeightMin }),
-        this.refreshMaterializedView('inscription_count'),
-        this.refreshMaterializedView('address_counts'),
-        this.refreshMaterializedView('mime_type_counts'),
-        this.refreshMaterializedView('sat_rarity_counts'),
       ]);
       // Only wait for these on tests.
       if (isTestEnv) await viewRefresh;
@@ -211,43 +224,6 @@ export class PgStore extends BasePgStore {
   async getChainTipBlockHeight(): Promise<number> {
     const result = await this.sql<{ block_height: string }[]>`SELECT block_height FROM chain_tip`;
     return parseInt(result[0].block_height);
-  }
-
-  async getChainTipInscriptionCount(): Promise<number> {
-    const result = await this.sql<{ count: number }[]>`
-      SELECT count FROM inscription_count
-    `;
-    return result[0].count;
-  }
-
-  async getMimeTypeInscriptionCount(mimeType?: string[]): Promise<number> {
-    if (!mimeType) return 0;
-    const result = await this.sql<{ count: number }[]>`
-      SELECT COALESCE(SUM(count), 0) AS count
-      FROM mime_type_counts
-      WHERE mime_type IN ${this.sql(mimeType)}
-    `;
-    return result[0].count;
-  }
-
-  async getSatRarityInscriptionCount(satRarity?: SatoshiRarity[]): Promise<number> {
-    if (!satRarity) return 0;
-    const result = await this.sql<{ count: number }[]>`
-      SELECT COALESCE(SUM(count), 0) AS count
-      FROM sat_rarity_counts
-      WHERE sat_rarity IN ${this.sql(satRarity)}
-    `;
-    return result[0].count;
-  }
-
-  async getAddressInscriptionCount(address?: string[]): Promise<number> {
-    if (!address) return 0;
-    const result = await this.sql<{ count: number }[]>`
-      SELECT COALESCE(SUM(count), 0) AS count
-      FROM address_counts
-      WHERE address IN ${this.sql(address)}
-    `;
-    return result[0].count;
   }
 
   async getMaxInscriptionNumber(): Promise<number | undefined> {
@@ -323,9 +299,6 @@ export class PgStore extends BasePgStore {
     sort?: DbInscriptionIndexOrder
   ): Promise<DbPaginatedResult<DbFullyLocatedInscriptionResult>> {
     return await this.sqlTransaction(async sql => {
-      // Do we need a filtered `COUNT(*)`? If so, try to use the pre-calculated counts we have in
-      // materialized views to speed up these queries.
-      const countType = getIndexResultCountType(filters);
       // `ORDER BY` statement
       let orderBy = sql`i.number`;
       switch (sort?.order_by) {
@@ -341,7 +314,11 @@ export class PgStore extends BasePgStore {
       }
       // `ORDER` statement
       const order = sort?.order === Order.asc ? sql`ASC` : sql`DESC`;
-      const results = await sql<({ total: number } & DbFullyLocatedInscriptionResult)[]>`
+      // This function will generate a query to be used for getting results or total counts.
+      const query = (
+        columns: postgres.PendingQuery<postgres.Row[]>,
+        sorting: postgres.PendingQuery<postgres.Row[]>
+      ) => sql`
         WITH gen_locations AS (
           SELECT l.* FROM locations AS l
           INNER JOIN genesis_locations AS g ON l.id = g.location_id
@@ -350,40 +327,7 @@ export class PgStore extends BasePgStore {
           SELECT l.* FROM locations AS l
           INNER JOIN current_locations AS c ON l.id = c.location_id
         )
-        SELECT
-          i.genesis_id,
-          i.number,
-          i.mime_type,
-          i.content_type,
-          i.content_length,
-          i.fee AS genesis_fee,
-          i.curse_type,
-          i.sat_ordinal,
-          i.sat_rarity,
-          i.sat_coinbase_height,
-          i.recursive,
-          (
-            SELECT STRING_AGG(ii.genesis_id, ',')
-            FROM inscription_recursions AS ir
-            INNER JOIN inscriptions AS ii ON ii.id = ir.ref_inscription_id
-            WHERE ir.inscription_id = i.id
-          ) AS recursion_refs,
-          gen.block_height AS genesis_block_height,
-          gen.block_hash AS genesis_block_hash,
-          gen.tx_id AS genesis_tx_id,
-          gen.timestamp AS genesis_timestamp,
-          gen.address AS genesis_address,
-          loc.tx_id,
-          loc.address,
-          loc.output,
-          loc.offset,
-          loc.timestamp,
-          loc.value,
-          ${
-            countType === DbInscriptionIndexResultCountType.singleResult
-              ? sql`COUNT(*) OVER() as total`
-              : sql`0 as total`
-          }
+        SELECT ${columns}
         FROM inscriptions AS i
         INNER JOIN cur_locations AS loc ON loc.inscription_id = i.id
         INNER JOIN gen_locations AS gen ON gen.inscription_id = i.id
@@ -452,24 +396,56 @@ export class PgStore extends BasePgStore {
           }
           ${filters?.sat_ordinal ? sql`AND i.sat_ordinal = ${filters.sat_ordinal}` : sql``}
           ${filters?.recursive !== undefined ? sql`AND i.recursive = ${filters.recursive}` : sql``}
-        ORDER BY ${orderBy} ${order}
-        LIMIT ${page.limit}
-        OFFSET ${page.offset}
+          ${filters?.cursed === true ? sql`AND i.number < 0` : sql``}
+          ${filters?.cursed === false ? sql`AND i.number >= 0` : sql``}
+          ${
+            filters?.genesis_address?.length
+              ? sql`AND gen.address IN ${sql(filters.genesis_address)}`
+              : sql``
+          }
+        ${sorting}
       `;
-      let total = results[0]?.total ?? 0;
-      switch (countType) {
-        case DbInscriptionIndexResultCountType.all:
-          total = await this.getChainTipInscriptionCount();
-          break;
-        case DbInscriptionIndexResultCountType.mimeType:
-          total = await this.getMimeTypeInscriptionCount(filters?.mime_type);
-          break;
-        case DbInscriptionIndexResultCountType.satRarity:
-          total = await this.getSatRarityInscriptionCount(filters?.sat_rarity);
-          break;
-        case DbInscriptionIndexResultCountType.address:
-          total = await this.getAddressInscriptionCount(filters?.address);
-          break;
+      const results = await sql<DbFullyLocatedInscriptionResult[]>`${query(
+        sql`
+          i.genesis_id,
+          i.number,
+          i.mime_type,
+          i.content_type,
+          i.content_length,
+          i.fee AS genesis_fee,
+          i.curse_type,
+          i.sat_ordinal,
+          i.sat_rarity,
+          i.sat_coinbase_height,
+          i.recursive,
+          (
+            SELECT STRING_AGG(ii.genesis_id, ',')
+            FROM inscription_recursions AS ir
+            INNER JOIN inscriptions AS ii ON ii.id = ir.ref_inscription_id
+            WHERE ir.inscription_id = i.id
+          ) AS recursion_refs,
+          gen.block_height AS genesis_block_height,
+          gen.block_hash AS genesis_block_hash,
+          gen.tx_id AS genesis_tx_id,
+          gen.timestamp AS genesis_timestamp,
+          gen.address AS genesis_address,
+          loc.tx_id,
+          loc.address,
+          loc.output,
+          loc.offset,
+          loc.timestamp,
+          loc.value
+        `,
+        sql`ORDER BY ${orderBy} ${order} LIMIT ${page.limit} OFFSET ${page.offset}`
+      )}`;
+      // Do we need a filtered `COUNT(*)`? If so, try to use the pre-calculated counts we have in
+      // cached tables to speed up these queries.
+      const countType = getIndexResultCountType(filters);
+      let total = await this.counts.fromResults(countType, filters);
+      if (total === undefined) {
+        // If the count is more complex, attempt it with a separate query.
+        const count = await sql<{ total: number }[]>`${query(sql`COUNT(*) AS total`, sql``)}`;
+        total = count[0].total;
       }
       return {
         total,
@@ -583,6 +559,16 @@ export class PgStore extends BasePgStore {
     } ${this.sql(viewName)}`;
   }
 
+  private async getInscription(args: { genesis_id: string }): Promise<DbInscription | undefined> {
+    const query = await this.sql<DbInscription[]>`
+      SELECT ${this.sql(INSCRIPTIONS_COLUMNS)}
+      FROM inscriptions
+      WHERE genesis_id = ${args.genesis_id}
+    `;
+    if (query.count === 0) return;
+    return query[0];
+  }
+
   private async getLocation(args: {
     genesis_id: string;
     output: string;
@@ -654,6 +640,7 @@ export class PgStore extends BasePgStore {
         address: args.location.address,
       });
       await this.updateInscriptionRecursion({ inscription_id, ref_genesis_ids: recursion });
+      await this.counts.applyInscription({ inscription: args.inscription });
       logger.info(
         `PgStore${upsert.count > 0 ? ' upsert ' : ' '}reveal #${args.inscription.number} (${
           args.location.genesis_id
@@ -784,11 +771,15 @@ export class PgStore extends BasePgStore {
     number: number;
     block_height: number;
   }): Promise<void> {
-    // This will cascade into dependent tables.
-    await this.sql`DELETE FROM inscriptions WHERE genesis_id = ${args.genesis_id}`;
-    logger.info(
-      `PgStore rollback reveal #${args.number} (${args.genesis_id}) at block ${args.block_height}`
-    );
+    const inscription = await this.getInscription({ genesis_id: args.genesis_id });
+    if (!inscription) return;
+    await this.sqlWriteTransaction(async sql => {
+      await this.counts.rollBackInscription({ inscription });
+      await sql`DELETE FROM inscriptions WHERE id = ${inscription.id}`;
+      logger.info(
+        `PgStore rollback reveal #${args.number} (${args.genesis_id}) at block ${args.block_height}`
+      );
+    });
   }
 
   private async rollBackLocation(args: {
@@ -819,7 +810,11 @@ export class PgStore extends BasePgStore {
         tx_index: args.tx_index,
         address: args.address,
       };
-      await sql`
+
+      const genesis = await sql<DbLocationPointer[]>`
+        SELECT * FROM genesis_locations WHERE inscription_id = ${args.inscription_id}
+      `;
+      const genesisRes = await sql`
         INSERT INTO genesis_locations ${sql(pointer)}
         ON CONFLICT (inscription_id) DO UPDATE SET
           location_id = EXCLUDED.location_id,
@@ -831,7 +826,15 @@ export class PgStore extends BasePgStore {
           (EXCLUDED.block_height = genesis_locations.block_height AND
             EXCLUDED.tx_index < genesis_locations.tx_index)
       `;
-      await sql`
+      // Affect genesis counts only if we have an update.
+      if (genesisRes.count > 0) {
+        await this.counts.applyGenesisLocation({ old: genesis[0], new: pointer });
+      }
+
+      const current = await sql<DbLocationPointer[]>`
+        SELECT * FROM current_locations WHERE inscription_id = ${args.inscription_id}
+      `;
+      const currentRes = await sql`
         INSERT INTO current_locations ${sql(pointer)}
         ON CONFLICT (inscription_id) DO UPDATE SET
           location_id = EXCLUDED.location_id,
@@ -843,6 +846,11 @@ export class PgStore extends BasePgStore {
           (EXCLUDED.block_height = current_locations.block_height AND
             EXCLUDED.tx_index > current_locations.tx_index)
       `;
+      // Affect current location counts only if we have an update.
+      if (currentRes.count > 0) {
+        await this.counts.applyCurrentLocation({ old: current[0], new: pointer });
+      }
+
       // Backfill orphan locations for this inscription, if any.
       await sql`
         UPDATE locations
@@ -865,7 +873,7 @@ export class PgStore extends BasePgStore {
         SELECT * FROM current_locations WHERE location_id = ${args.location.id}
       `;
       if (current.count > 0) {
-        await sql`
+        const update = await sql<DbLocationPointer[]>`
           WITH prev AS (
             SELECT id, block_height, tx_index, address
             FROM locations
@@ -880,7 +888,9 @@ export class PgStore extends BasePgStore {
             address = prev.address
           FROM prev
           WHERE c.inscription_id = ${args.location.inscription_id}
+          RETURNING *
         `;
+        await this.counts.rollBackCurrentLocation({ curr: current[0], prev: update[0] });
       }
     });
   }
