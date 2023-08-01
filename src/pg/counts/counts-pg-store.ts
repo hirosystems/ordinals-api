@@ -42,6 +42,8 @@ export class CountsPgStore {
         return await this.getSatRarityCount(filters?.sat_rarity);
       case DbInscriptionIndexResultCountType.address:
         return await this.getAddressCount(filters?.address);
+      case DbInscriptionIndexResultCountType.genesisAddress:
+        return await this.getGenesisAddressCount(filters?.genesis_address);
       case DbInscriptionIndexResultCountType.blockHeight:
         return await this.getBlockCount(
           filters?.genesis_block_height,
@@ -104,25 +106,37 @@ export class CountsPgStore {
   }
 
   async applyGenesisLocation(args: {
-    prev?: DbLocationPointer;
-    next: DbLocationPointer;
+    old?: DbLocationPointer;
+    new: DbLocationPointer;
   }): Promise<void> {
-    // Nothing yet.
+    await this.parent.sqlWriteTransaction(async sql => {
+      if (args.old && args.old.address) {
+        await sql`
+          UPDATE counts_by_genesis_address SET count = count - 1 WHERE address = ${args.old.address}
+        `;
+      }
+      if (args.new.address) {
+        await sql`
+          INSERT INTO counts_by_genesis_address ${sql({ address: args.new.address })}
+          ON CONFLICT (address) DO UPDATE SET count = counts_by_genesis_address.count + 1
+        `;
+      }
+    });
   }
 
   async applyCurrentLocation(args: {
-    prev?: DbLocationPointer;
-    next: DbLocationPointer;
+    old?: DbLocationPointer;
+    new: DbLocationPointer;
   }): Promise<void> {
     await this.parent.sqlWriteTransaction(async sql => {
-      if (args.prev && args.prev.address) {
+      if (args.old && args.old.address) {
         await sql`
-          UPDATE counts_by_address SET count = count - 1 WHERE address = ${args.prev.address}
+          UPDATE counts_by_address SET count = count - 1 WHERE address = ${args.old.address}
         `;
       }
-      if (args.next.address) {
+      if (args.new.address) {
         await sql`
-          INSERT INTO counts_by_address ${sql({ address: args.next.address })}
+          INSERT INTO counts_by_address ${sql({ address: args.new.address })}
           ON CONFLICT (address) DO UPDATE SET count = counts_by_address.count + 1
         `;
       }
@@ -206,6 +220,16 @@ export class CountsPgStore {
       SELECT COALESCE(SUM(count), 0) AS count
       FROM counts_by_address
       WHERE address IN ${this.sql(address)}
+    `;
+    return result[0].count;
+  }
+
+  private async getGenesisAddressCount(genesisAddress?: string[]): Promise<number> {
+    if (!genesisAddress) return 0;
+    const result = await this.sql<{ count: number }[]>`
+      SELECT COALESCE(SUM(count), 0) AS count
+      FROM counts_by_genesis_address
+      WHERE address IN ${this.sql(genesisAddress)}
     `;
     return result[0].count;
   }

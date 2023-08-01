@@ -398,6 +398,11 @@ export class PgStore extends BasePgStore {
           ${filters?.recursive !== undefined ? sql`AND i.recursive = ${filters.recursive}` : sql``}
           ${filters?.cursed === true ? sql`AND i.number < 0` : sql``}
           ${filters?.cursed === false ? sql`AND i.number >= 0` : sql``}
+          ${
+            filters?.genesis_address?.length
+              ? sql`AND gen.address IN ${sql(filters.genesis_address)}`
+              : sql``
+          }
         ${sorting}
       `;
       const results = await sql<DbFullyLocatedInscriptionResult[]>`${query(
@@ -823,7 +828,7 @@ export class PgStore extends BasePgStore {
       `;
       // Affect genesis counts only if we have an update.
       if (genesisRes.count > 0) {
-        await this.counts.applyGenesisLocation({ prev: genesis[0], next: pointer });
+        await this.counts.applyGenesisLocation({ old: genesis[0], new: pointer });
       }
 
       const current = await sql<DbLocationPointer[]>`
@@ -843,7 +848,7 @@ export class PgStore extends BasePgStore {
       `;
       // Affect current location counts only if we have an update.
       if (currentRes.count > 0) {
-        await this.counts.applyCurrentLocation({ prev: current[0], next: pointer });
+        await this.counts.applyCurrentLocation({ old: current[0], new: pointer });
       }
 
       // Backfill orphan locations for this inscription, if any.

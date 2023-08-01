@@ -61,6 +61,24 @@ export function up(pgm: MigrationBuilder): void {
     )
   `);
 
+  pgm.createTable('counts_by_genesis_address', {
+    address: {
+      type: 'text',
+      notNull: true,
+      primaryKey: true,
+    },
+    count: {
+      type: 'bigint',
+      notNull: true,
+      default: 1,
+    },
+  });
+  pgm.sql(`
+    INSERT INTO counts_by_genesis_address (
+      SELECT address, COUNT(*) AS count FROM genesis_locations GROUP BY address
+    )
+  `);
+
   pgm.dropMaterializedView('inscription_count');
   pgm.createTable('counts_by_type', {
     type: {
@@ -126,4 +144,6 @@ export function down(pgm: MigrationBuilder): void {
   pgm.createIndex('inscription_count', ['count'], { unique: true });
 
   pgm.dropIndex('inscriptions_per_block', ['block_hash']);
+
+  pgm.dropTable('counts_by_genesis_address');
 }

@@ -24,6 +24,7 @@ export function getIndexResultCountType(
       if (filters.mime_type) return DbInscriptionIndexResultCountType.mimeType;
       if (filters.sat_rarity) return DbInscriptionIndexResultCountType.satRarity;
       if (filters.address) return DbInscriptionIndexResultCountType.address;
+      if (filters.genesis_address) return DbInscriptionIndexResultCountType.genesisAddress;
       if (filters.genesis_block_height) return DbInscriptionIndexResultCountType.blockHeight;
       if (filters.from_genesis_block_height)
         return DbInscriptionIndexResultCountType.fromblockHeight;

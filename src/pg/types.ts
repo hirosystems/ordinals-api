@@ -192,6 +192,7 @@ export type DbInscriptionIndexFilters = {
   from_number?: number;
   to_number?: number;
   address?: string[];
+  genesis_address?: string[];
   mime_type?: string[];
   output?: string;
   sat_rarity?: SatoshiRarity[];

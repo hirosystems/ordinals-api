@@ -10,6 +10,7 @@ export enum DbInscriptionIndexResultCountType {
   satRarity,
   /** Filtered by address */
   address,
+  genesisAddress,
   /** Filtered by block height */
   blockHeight,
   fromblockHeight,
