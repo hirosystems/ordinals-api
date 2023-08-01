@@ -1,3 +1,10 @@
+## [1.0.0-beta.13](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.12...v1.0.0-beta.13) (2023-08-01)
+
+
+### Bug Fixes
+
+* optimize COUNT calculations via the use of count tables ([#175](https://github.com/hirosystems/ordinals-api/issues/175)) ([31498bd](https://github.com/hirosystems/ordinals-api/commit/31498bdb57203bd6c28eccac4446a9d169a3fe18))
+
 ## [1.0.0-beta.12](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.11...v1.0.0-beta.12) (2023-07-31)
 
 
