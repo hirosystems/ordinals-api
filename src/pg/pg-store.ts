@@ -33,7 +33,7 @@ import {
 import * as path from 'path';
 import { CountsPgStore } from './counts/counts-pg-store';
 import { getIndexResultCountType } from './counts/helpers';
-import { DbInscriptionIndexResultCountType } from './counts/types';
+import * as postgres from 'postgres';
 
 export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 
@@ -299,9 +299,6 @@ export class PgStore extends BasePgStore {
     sort?: DbInscriptionIndexOrder
   ): Promise<DbPaginatedResult<DbFullyLocatedInscriptionResult>> {
     return await this.sqlTransaction(async sql => {
-      // Do we need a filtered `COUNT(*)`? If so, try to use the pre-calculated counts we have in
-      // materialized views to speed up these queries.
-      const countType = getIndexResultCountType(filters);
       // `ORDER BY` statement
       let orderBy = sql`i.number`;
       switch (sort?.order_by) {
@@ -317,7 +314,11 @@ export class PgStore extends BasePgStore {
       }
       // `ORDER` statement
       const order = sort?.order === Order.asc ? sql`ASC` : sql`DESC`;
-      const results = await sql<({ total: number } & DbFullyLocatedInscriptionResult)[]>`
+      // This function will generate a query to be used for getting results or total counts.
+      const query = (
+        columns: postgres.PendingQuery<postgres.Row[]>,
+        sorting: postgres.PendingQuery<postgres.Row[]>
+      ) => sql`
         WITH gen_locations AS (
           SELECT l.* FROM locations AS l
           INNER JOIN genesis_locations AS g ON l.id = g.location_id
@@ -326,40 +327,7 @@ export class PgStore extends BasePgStore {
           SELECT l.* FROM locations AS l
           INNER JOIN current_locations AS c ON l.id = c.location_id
         )
-        SELECT
-          i.genesis_id,
-          i.number,
-          i.mime_type,
-          i.content_type,
-          i.content_length,
-          i.fee AS genesis_fee,
-          i.curse_type,
-          i.sat_ordinal,
-          i.sat_rarity,
-          i.sat_coinbase_height,
-          i.recursive,
-          (
-            SELECT STRING_AGG(ii.genesis_id, ',')
-            FROM inscription_recursions AS ir
-            INNER JOIN inscriptions AS ii ON ii.id = ir.ref_inscription_id
-            WHERE ir.inscription_id = i.id
-          ) AS recursion_refs,
-          gen.block_height AS genesis_block_height,
-          gen.block_hash AS genesis_block_hash,
-          gen.tx_id AS genesis_tx_id,
-          gen.timestamp AS genesis_timestamp,
-          gen.address AS genesis_address,
-          loc.tx_id,
-          loc.address,
-          loc.output,
-          loc.offset,
-          loc.timestamp,
-          loc.value,
-          ${
-            countType === DbInscriptionIndexResultCountType.singleResult
-              ? sql`COUNT(*) OVER() as total`
-              : sql`0 as total`
-          }
+        SELECT ${columns}
         FROM inscriptions AS i
         INNER JOIN cur_locations AS loc ON loc.inscription_id = i.id
         INNER JOIN gen_locations AS gen ON gen.inscription_id = i.id
@@ -428,12 +396,52 @@ export class PgStore extends BasePgStore {
           }
           ${filters?.sat_ordinal ? sql`AND i.sat_ordinal = ${filters.sat_ordinal}` : sql``}
           ${filters?.recursive !== undefined ? sql`AND i.recursive = ${filters.recursive}` : sql``}
-        ORDER BY ${orderBy} ${order}
-        LIMIT ${page.limit}
-        OFFSET ${page.offset}
+        ${sorting}
       `;
+      const results = await sql<DbFullyLocatedInscriptionResult[]>`${query(
+        sql`
+          i.genesis_id,
+          i.number,
+          i.mime_type,
+          i.content_type,
+          i.content_length,
+          i.fee AS genesis_fee,
+          i.curse_type,
+          i.sat_ordinal,
+          i.sat_rarity,
+          i.sat_coinbase_height,
+          i.recursive,
+          (
+            SELECT STRING_AGG(ii.genesis_id, ',')
+            FROM inscription_recursions AS ir
+            INNER JOIN inscriptions AS ii ON ii.id = ir.ref_inscription_id
+            WHERE ir.inscription_id = i.id
+          ) AS recursion_refs,
+          gen.block_height AS genesis_block_height,
+          gen.block_hash AS genesis_block_hash,
+          gen.tx_id AS genesis_tx_id,
+          gen.timestamp AS genesis_timestamp,
+          gen.address AS genesis_address,
+          loc.tx_id,
+          loc.address,
+          loc.output,
+          loc.offset,
+          loc.timestamp,
+          loc.value
+        `,
+        sql`ORDER BY ${orderBy} ${order} LIMIT ${page.limit} OFFSET ${page.offset}`
+      )}`;
+      // Do we need a filtered `COUNT(*)`? If so, try to use the pre-calculated counts we have in
+      // cached tables to speed up these queries.
+      const countType = getIndexResultCountType(filters);
+      let total = await this.counts.fromResults(countType, filters);
+      if (total === undefined) {
+        // If the count is more complex, attempt it with a separate query.
+        const count = await sql<{ total: number }[]>`${query(sql`COUNT(*) AS total`, sql``)}`;
+        total = count[0].total;
+      }
       return {
-        total: (await this.counts.fromResults(countType, filters)) ?? results[0]?.total ?? 0,
+        total,
         results: results ?? [],
       };
     });

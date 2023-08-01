@@ -31,12 +31,9 @@ export function getIndexResultCountType(
       if (filters.genesis_block_hash) return DbInscriptionIndexResultCountType.blockHash;
       if (filters.number || filters.genesis_id || filters.output || filters.sat_ordinal)
         return DbInscriptionIndexResultCountType.singleResult;
-      return DbInscriptionIndexResultCountType.intractable;
     case 2:
       if (filters.from_genesis_block_height && filters.to_genesis_block_height)
         return DbInscriptionIndexResultCountType.blockHeightRange;
-      return DbInscriptionIndexResultCountType.intractable;
-    default:
-      return DbInscriptionIndexResultCountType.intractable;
   }
+  return DbInscriptionIndexResultCountType.custom;
 }

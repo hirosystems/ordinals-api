@@ -17,6 +17,6 @@ export enum DbInscriptionIndexResultCountType {
   blockHash,
   /** Filtered by some other param that yields a single result (easy to count) */
   singleResult,
-  /** Filtered by custom arguments (very hard to count) */
-  intractable,
+  /** Filtered by custom arguments (tough to count) */
+  custom,
 }

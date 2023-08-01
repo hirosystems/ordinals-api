@@ -84,6 +84,8 @@ export function up(pgm: MigrationBuilder): void {
       SELECT 'cursed' AS type, COUNT(*) AS count FROM inscriptions WHERE number < 0
     )
   `);
+
+  pgm.createIndex('inscriptions_per_block', ['block_hash']);
 }
 
 export function down(pgm: MigrationBuilder): void {
@@ -122,4 +124,6 @@ export function down(pgm: MigrationBuilder): void {
     `SELECT COUNT(*) AS count FROM inscriptions`
   );
   pgm.createIndex('inscription_count', ['count'], { unique: true });
+
+  pgm.dropIndex('inscriptions_per_block', ['block_hash']);
 }
