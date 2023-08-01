@@ -2,6 +2,8 @@
 export enum DbInscriptionIndexResultCountType {
   /** All inscriptions */
   all,
+  /** Filtered by cursed or blessed */
+  cursed,
   /** Filtered by mime type */
   mimeType,
   /** Filtered by sat rarity */

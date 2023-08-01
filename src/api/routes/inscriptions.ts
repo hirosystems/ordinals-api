@@ -8,6 +8,7 @@ import {
   BlockHeightParam,
   BlockInscriptionTransferSchema,
   BlockParam,
+  CursedParam,
   InscriptionIdParamCType,
   InscriptionIdentifierParam,
   InscriptionIdsParam,
@@ -86,6 +87,7 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
           mime_type: Type.Optional(MimeTypesParam),
           rarity: Type.Optional(SatoshiRaritiesParam),
           recursive: Type.Optional(RecursiveParam),
+          cursed: Type.Optional(CursedParam),
           // Pagination
           offset: Type.Optional(OffsetParam),
           limit: Type.Optional(LimitParam),
@@ -123,6 +125,7 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
           mime_type: request.query.mime_type,
           sat_rarity: request.query.rarity,
           recursive: request.query.recursive,
+          cursed: request.query.cursed,
         },
         {
           order_by: request.query.order_by ?? OrderBy.genesis_block_height,

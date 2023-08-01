@@ -32,6 +32,10 @@ export class CountsPgStore {
     switch (countType) {
       case DbInscriptionIndexResultCountType.all:
         return await this.getInscriptionCount();
+      case DbInscriptionIndexResultCountType.cursed:
+        return await this.getInscriptionCount(
+          filters?.cursed === true ? DbInscriptionType.cursed : DbInscriptionType.blessed
+        );
       case DbInscriptionIndexResultCountType.mimeType:
         return await this.getMimeTypeCount(filters?.mime_type);
       case DbInscriptionIndexResultCountType.satRarity:
@@ -166,7 +170,8 @@ export class CountsPgStore {
   }
 
   private async getInscriptionCount(type?: DbInscriptionType): Promise<number> {
-    const types = type ?? [DbInscriptionType.blessed, DbInscriptionType.cursed];
+    const types =
+      type !== undefined ? [type] : [DbInscriptionType.blessed, DbInscriptionType.cursed];
     const result = await this.sql<{ count: number }[]>`
       SELECT COALESCE(SUM(count), 0) AS count
       FROM counts_by_type

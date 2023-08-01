@@ -396,6 +396,8 @@ export class PgStore extends BasePgStore {
           }
           ${filters?.sat_ordinal ? sql`AND i.sat_ordinal = ${filters.sat_ordinal}` : sql``}
           ${filters?.recursive !== undefined ? sql`AND i.recursive = ${filters.recursive}` : sql``}
+          ${filters?.cursed === true ? sql`AND i.number < 0` : sql``}
+          ${filters?.cursed === false ? sql`AND i.number >= 0` : sql``}
         ${sorting}
       `;
       const results = await sql<DbFullyLocatedInscriptionResult[]>`${query(

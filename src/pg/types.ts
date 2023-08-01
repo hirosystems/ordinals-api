@@ -199,6 +199,7 @@ export type DbInscriptionIndexFilters = {
   from_sat_ordinal?: bigint;
   to_sat_ordinal?: bigint;
   recursive?: boolean;
+  cursed?: boolean;
 };
 
 export type DbInscriptionIndexOrder = {
