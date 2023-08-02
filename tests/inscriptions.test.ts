@@ -3376,6 +3376,53 @@ describe('/inscriptions', () => {
         expect(responseJson2.results[0].genesis_block_height).toStrictEqual(778583);
         expect(responseJson2.results[1].genesis_block_height).toStrictEqual(778575);
         expect(responseJson2.results[2].genesis_block_height).toStrictEqual(775617);
+
+        // Same genesis block items should be sorted by number
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({
+              height: 778583,
+              hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+              timestamp: 1676913207,
+            })
+            .transaction({
+              hash: '907f66261909f40e6b892b7ac574fd9e8661262c83b48be7488194b66523abbd',
+            })
+            .inscriptionRevealed({
+              content_bytes: '0x48656C6C6F',
+              content_type: 'image/png',
+              content_length: 5,
+              inscription_number: 43,
+              inscription_fee: 2805,
+              inscription_id: '907f66261909f40e6b892b7ac574fd9e8661262c83b48be7488194b66523abbdi0',
+              inscription_output_value: 10000,
+              inscriber_address: 'bc1pxq6t85qp57aw8yf8eh9t7vsgd9zm5a8372rdll5jzrmc3cxqdpmqfucdry',
+              ordinal_number: 0,
+              ordinal_block_height: 0,
+              ordinal_offset: 0,
+              satpoint_post_inscription:
+                '907f66261909f40e6b892b7ac574fd9e8661262c83b48be7488194b66523abbd:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
+            })
+            .build()
+        );
+
+        const response3 = await fastify.inject({
+          method: 'GET',
+          url: '/ordinals/v1/inscriptions?order_by=genesis_block_height&order=desc',
+        });
+        expect(response3.statusCode).toBe(200);
+        const responseJson3 = response3.json();
+        expect(responseJson3.total).toBe(4);
+        expect(responseJson3.results[0].genesis_block_height).toStrictEqual(778583);
+        expect(responseJson3.results[0].number).toStrictEqual(43);
+        expect(responseJson3.results[1].genesis_block_height).toStrictEqual(778583);
+        expect(responseJson3.results[1].number).toStrictEqual(9);
+        expect(responseJson3.results[2].genesis_block_height).toStrictEqual(778575);
+        expect(responseJson3.results[3].genesis_block_height).toStrictEqual(775617);
       });
     });
   });
