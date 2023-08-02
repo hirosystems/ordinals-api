@@ -1,3 +1,10 @@
+## [1.0.0-beta.14](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.13...v1.0.0-beta.14) (2023-08-02)
+
+
+### Bug Fixes
+
+* add secondary sorting by inscription number ([#177](https://github.com/hirosystems/ordinals-api/issues/177)) ([99959df](https://github.com/hirosystems/ordinals-api/commit/99959dfe6ec3de9288ce47bd8ef4d72535c19468))
+
 ## [1.0.0-beta.13](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.12...v1.0.0-beta.13) (2023-08-01)
 
 
