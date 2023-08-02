@@ -299,21 +299,19 @@ export class PgStore extends BasePgStore {
     sort?: DbInscriptionIndexOrder
   ): Promise<DbPaginatedResult<DbFullyLocatedInscriptionResult>> {
     return await this.sqlTransaction(async sql => {
-      // `ORDER BY` statement
-      let orderBy = sql`i.number`;
+      const order = sort?.order === Order.asc ? sql`ASC` : sql`DESC`;
+      let orderBy = sql`i.number ${order}`;
       switch (sort?.order_by) {
         case OrderBy.genesis_block_height:
-          orderBy = sql`gen.block_height`;
+          orderBy = sql`gen.block_height ${order}, i.number DESC`;
           break;
         case OrderBy.ordinal:
-          orderBy = sql`i.sat_ordinal`;
+          orderBy = sql`i.sat_ordinal ${order}`;
           break;
         case OrderBy.rarity:
-          orderBy = sql`ARRAY_POSITION(ARRAY['common','uncommon','rare','epic','legendary','mythic'], i.sat_rarity)`;
+          orderBy = sql`ARRAY_POSITION(ARRAY['common','uncommon','rare','epic','legendary','mythic'], i.sat_rarity) ${order}, i.number DESC`;
           break;
       }
-      // `ORDER` statement
-      const order = sort?.order === Order.asc ? sql`ASC` : sql`DESC`;
       // This function will generate a query to be used for getting results or total counts.
       const query = (
         columns: postgres.PendingQuery<postgres.Row[]>,
@@ -436,7 +434,7 @@ export class PgStore extends BasePgStore {
           loc.timestamp,
           loc.value
         `,
-        sql`ORDER BY ${orderBy} ${order} LIMIT ${page.limit} OFFSET ${page.offset}`
+        sql`ORDER BY ${orderBy} LIMIT ${page.limit} OFFSET ${page.offset}`
       )}`;
       // Do we need a filtered `COUNT(*)`? If so, try to use the pre-calculated counts we have in
       // cached tables to speed up these queries.
