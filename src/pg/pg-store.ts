@@ -674,8 +674,7 @@ export class PgStore extends BasePgStore {
       }
       const upsert = await sql`
         SELECT id FROM locations
-        WHERE genesis_id = ${args.location.genesis_id}
-        AND block_height = ${args.location.block_height}
+        WHERE output = ${args.location.output} AND offset = ${args.location.offset}
       `;
       const location = {
         inscription_id,
