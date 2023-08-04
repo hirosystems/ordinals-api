@@ -492,7 +492,10 @@ export class PgStore extends BasePgStore {
             FROM locations AS ll
             WHERE
               ll.inscription_id = i.id
-              AND ll.block_height < l.block_height
+              AND (
+                ll.block_height < l.block_height OR
+                (ll.block_height = l.block_height AND ll.tx_index < l.tx_index)
+              )
             ORDER BY ll.block_height DESC
             LIMIT 1
           ) AS from_id,
@@ -519,6 +522,7 @@ export class PgStore extends BasePgStore {
       FROM transfers AS t
       INNER JOIN locations AS lf ON t.from_id = lf.id
       INNER JOIN locations AS lt ON t.to_id = lt.id
+      ORDER BY to_tx_index DESC
     `;
     return {
       total: results[0]?.total ?? 0,
@@ -674,8 +678,7 @@ export class PgStore extends BasePgStore {
       }
       const upsert = await sql`
         SELECT id FROM locations
-        WHERE genesis_id = ${args.location.genesis_id}
-        AND block_height = ${args.location.block_height}
+        WHERE output = ${args.location.output} AND "offset" = ${args.location.offset}
       `;
       const location = {
         inscription_id,
