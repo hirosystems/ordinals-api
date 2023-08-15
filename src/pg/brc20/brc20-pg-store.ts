@@ -38,7 +38,7 @@ export class Brc20PgStore {
   async getTokens(
     args: { ticker?: string[] } & DbInscriptionIndexPaging
   ): Promise<DbPaginatedResult<DbBrc20Token>> {
-    const lowerTickers = args.ticker ? args.ticker.map(t => t.toLowerCase()) : undefined;
+    const lowerTickers = args.ticker?.map(t => t.toLowerCase());
     const results = await this.sql<(DbBrc20Token & { total: number })[]>`
       SELECT
         d.id, i.genesis_id, i.number, d.block_height, d.tx_id, d.address, d.ticker, d.max, d.limit,
@@ -68,7 +68,7 @@ export class Brc20PgStore {
       block_height?: number;
     } & DbInscriptionIndexPaging
   ): Promise<DbPaginatedResult<DbBrc20Balance>> {
-    const lowerTickers = args.ticker ? args.ticker.map(t => t.toLowerCase()) : undefined;
+    const lowerTickers = args.ticker?.map(t => t.toLowerCase());
     const results = await this.sql<(DbBrc20Balance & { total: number })[]>`
       SELECT
         d.ticker,
@@ -234,7 +234,7 @@ export class Brc20PgStore {
       const brc20Transfer = await sql<DbBrc20Transfer[]>`
         SELECT ${sql(BRC20_TRANSFERS_COLUMNS.map(c => `t.${c}`))}
         FROM locations AS l
-        INNER JOIN brc20_transfers AS t ON t.inscription_id = l.inscription_id 
+        INNER JOIN brc20_transfers AS t ON t.inscription_id = l.inscription_id
         WHERE l.inscription_id = ${args.inscription_id}
           AND l.block_height <= ${args.location.block_height}
         LIMIT 3
