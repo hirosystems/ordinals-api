@@ -2,7 +2,7 @@ import { cycleMigrations } from '@hirosystems/api-toolkit';
 import { buildApiServer } from '../src/api/init';
 import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
 import { DbInscriptionInsert } from '../src/pg/types';
-import { TestChainhookPayloadBuilder, TestFastifyServer, brc20Reveal } from './helpers';
+import { TestChainhookPayloadBuilder, TestFastifyServer, brc20Reveal, randomHash } from './helpers';
 import { brc20FromInscription } from '../src/pg/brc20/helpers';
 
 describe('BRC-20', () => {
@@ -403,6 +403,7 @@ describe('BRC-20', () => {
           .block({
             height: 775617,
             hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+            timestamp: 1677811111,
           })
           .transaction({
             hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
@@ -440,6 +441,7 @@ describe('BRC-20', () => {
           max_supply: '21000000',
           ticker: 'PEPE',
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+          deploy_timestamp: 1677811111000,
         },
       ]);
     });
@@ -513,6 +515,7 @@ describe('BRC-20', () => {
           number: 5,
           ticker: 'PEPE',
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+          deploy_timestamp: 1677803510000,
         },
       ]);
     });
@@ -586,6 +589,7 @@ describe('BRC-20', () => {
           number: 5,
           ticker: 'PEPE',
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+          deploy_timestamp: 1677803510000,
         },
       ]);
       const response2 = await fastify.inject({
@@ -606,6 +610,7 @@ describe('BRC-20', () => {
           number: 5,
           ticker: 'PEPE',
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+          deploy_timestamp: 1677803510000,
         },
       ]);
     });

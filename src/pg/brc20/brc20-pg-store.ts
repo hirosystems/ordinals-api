@@ -42,9 +42,11 @@ export class Brc20PgStore {
     const results = await this.sql<(DbBrc20Token & { total: number })[]>`
       SELECT
         d.id, i.genesis_id, i.number, d.block_height, d.tx_id, d.address, d.ticker, d.max, d.limit,
-        d.decimals, COUNT(*) OVER() as total
+        d.decimals, l.timestamp as deploy_timestamp, COUNT(*) OVER() as total
       FROM brc20_deploys AS d
       INNER JOIN inscriptions AS i ON i.id = d.inscription_id
+      INNER JOIN genesis_locations AS g ON g.inscription_id = d.inscription_id
+      INNER JOIN locations AS l ON l.id = g.location_id
       ${lowerTickers ? this.sql`WHERE LOWER(d.ticker) IN ${this.sql(lowerTickers)}` : this.sql``}
       OFFSET ${args.offset}
       LIMIT ${args.limit}
