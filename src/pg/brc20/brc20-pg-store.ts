@@ -1,28 +1,30 @@
 import { PgSqlClient, logger } from '@hirosystems/api-toolkit';
+import BigNumber from 'bignumber.js';
+import { throwOnFirstRejected } from '../helpers';
 import { PgStore } from '../pg-store';
 import {
   DbInscriptionIndexPaging,
-  DbPaginatedResult,
   DbInscriptionInsert,
   DbLocationInsert,
+  DbPaginatedResult,
 } from '../types';
-import BigNumber from 'bignumber.js';
+import { Brc20Deploy, Brc20Mint, Brc20Transfer, brc20FromInscription } from './helpers';
 import {
-  DbBrc20Token,
-  DbBrc20Balance,
-  BRC20_EVENTS_COLUMNS,
-  DbBrc20Supply,
-  DbBrc20Holder,
-  DbBrc20Transfer,
-  BRC20_TRANSFERS_COLUMNS,
-  DbBrc20DeployInsert,
-  DbBrc20EventInsert,
-  DbBrc20Deploy,
   BRC20_DEPLOYS_COLUMNS,
+  BRC20_EVENTS_COLUMNS,
+  BRC20_TRANSFERS_COLUMNS,
+  DbBrc20Balance,
   DbBrc20BalanceInsert,
   DbBrc20BalanceTypeId,
+  DbBrc20Deploy,
+  DbBrc20DeployInsert,
+  DbBrc20EventInsert,
+  DbBrc20Holder,
+  DbBrc20Supply,
+  DbBrc20Token,
+  DbBrc20Transfer,
 } from './types';
-import { brc20FromInscription, Brc20Deploy, Brc20Mint, Brc20Transfer } from './helpers';
+import postgres = require('postgres');
 
 export class Brc20PgStore {
   // TODO: Move this to the api-toolkit so we can have pg submodules.
@@ -42,11 +44,12 @@ export class Brc20PgStore {
     const results = await this.sql<(DbBrc20Token & { total: number })[]>`
       SELECT
         d.id, i.genesis_id, i.number, d.block_height, d.tx_id, d.address, d.ticker, d.max, d.limit,
-        d.decimals, l.timestamp as deploy_timestamp, COUNT(*) OVER() as total
+        d.decimals, l.timestamp as deploy_timestamp, COALESCE(s.minted_supply, 0) as minted_supply, COUNT(*) OVER() as total
       FROM brc20_deploys AS d
       INNER JOIN inscriptions AS i ON i.id = d.inscription_id
       INNER JOIN genesis_locations AS g ON g.inscription_id = d.inscription_id
       INNER JOIN locations AS l ON l.id = g.location_id
+      LEFT JOIN brc20_supplies AS s ON d.id = s.brc20_deploy_id
       ${lowerTickers ? this.sql`WHERE LOWER(d.ticker) IN ${this.sql(lowerTickers)}` : this.sql``}
       OFFSET ${args.offset}
       LIMIT ${args.limit}
@@ -118,32 +121,28 @@ export class Brc20PgStore {
   async getTokenSupply(args: { ticker: string }): Promise<DbBrc20Supply | undefined> {
     return await this.parent.sqlTransaction(async sql => {
       const deploy = await this.getDeploy(args);
-      if (!deploy) {
-        return;
-      }
-      const minted = await sql<{ total: string }[]>`
-        SELECT SUM(avail_balance + trans_balance) AS total
-        FROM brc20_balances
-        WHERE brc20_deploy_id = ${deploy.id}
-        GROUP BY brc20_deploy_id
-      `;
-      const holders = await sql<{ count: string }[]>`
-        WITH historical_holders AS (
-          SELECT SUM(avail_balance + trans_balance) AS balance
-          FROM brc20_balances
-          WHERE brc20_deploy_id = ${deploy.id}
-          GROUP BY address
-        )
-        SELECT COUNT(*) AS count
-        FROM historical_holders
-        WHERE balance > 0
-      `;
-      const supply = await sql<{ max: string }[]>`
+      if (!deploy) return;
+
+      const supplyPromise = sql<{ max: string }[]>`
         SELECT max FROM brc20_deploys WHERE id = ${deploy.id}
       `;
+      const mintedPromise = sql<{ minted_supply: string }[]>`
+        SELECT minted_supply
+        FROM brc20_supplies
+        WHERE brc20_deploy_id = ${deploy.id}
+      `;
+      const holdersPromise = sql<{ count: string }[]>`
+        SELECT COUNT(*) AS count
+        FROM brc20_balances
+        WHERE brc20_deploy_id = ${deploy.id}
+        GROUP BY address
+        HAVING SUM(avail_balance + trans_balance) > 0
+      `;
+      const settles = await Promise.allSettled([supplyPromise, holdersPromise, mintedPromise]);
+      const [supply, holders, minted] = throwOnFirstRejected(settles);
       return {
         max_supply: supply[0].max,
-        minted_supply: minted[0].total,
+        minted_supply: minted[0].minted_supply ?? '0',
         holders: holders[0].count,
       };
     });

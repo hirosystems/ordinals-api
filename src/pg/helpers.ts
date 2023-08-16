@@ -15,3 +15,25 @@ export function getInscriptionRecursion(content: PgBytea): string[] {
   }
   return result;
 }
+
+/**
+ * Returns the values from settled Promise results.
+ * Throws if any Promise is rejected.
+ * This can be used with Promise.allSettled to get the values from all promises,
+ * instead of Promise.all which will swallow following unhandled rejections.
+ * @param settles - Array of `Promise.allSettled()` results
+ * @returns Array of Promise result values
+ */
+export function throwOnFirstRejected<T extends any[]>(settles: {
+  [K in keyof T]: PromiseSettledResult<T[K]>;
+}): T {
+  const values: T = [] as any;
+  for (const promise of settles) {
+    if (promise.status === 'rejected') throw promise.reason;
+
+    // Note: Pushing to result `values` array is required for type inference
+    // Compared to e.g. `settles.map(s => s.value)`
+    values.push(promise.value);
+  }
+  return values;
+}

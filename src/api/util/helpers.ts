@@ -117,6 +117,7 @@ export function parseBrc20Tokens(items: DbBrc20Token[]): Brc20TokenResponse[] {
     mint_limit: i.limit ?? null,
     decimals: i.decimals,
     deploy_timestamp: i.deploy_timestamp.valueOf(),
+    minted_supply: i.minted_supply,
   }));
 }
 

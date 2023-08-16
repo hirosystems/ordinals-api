@@ -218,6 +218,7 @@ export class PgStore extends BasePgStore {
       // we can respond to the chainhook node with a `200` HTTP code as soon as possible.
       const viewRefresh = Promise.allSettled([
         this.normalizeInscriptionCount({ min_block_height: updatedBlockHeightMin }),
+        this.refreshMaterializedView('brc20_supplies'),
       ]);
       // Only wait for these on tests.
       if (isTestEnv) await viewRefresh;

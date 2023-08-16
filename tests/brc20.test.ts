@@ -442,6 +442,7 @@ describe('BRC-20', () => {
           ticker: 'PEPE',
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           deploy_timestamp: 1677811111000,
+          minted_supply: '0',
         },
       ]);
     });
@@ -516,6 +517,7 @@ describe('BRC-20', () => {
           ticker: 'PEPE',
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           deploy_timestamp: 1677803510000,
+          minted_supply: '0',
         },
       ]);
     });
@@ -590,6 +592,7 @@ describe('BRC-20', () => {
           ticker: 'PEPE',
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           deploy_timestamp: 1677803510000,
+          minted_supply: '0',
         },
       ]);
       const response2 = await fastify.inject({
@@ -611,6 +614,7 @@ describe('BRC-20', () => {
           ticker: 'PEPE',
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           deploy_timestamp: 1677803510000,
+          minted_supply: '0',
         },
       ]);
     });
@@ -728,6 +732,19 @@ describe('BRC-20', () => {
           transferrable_balance: '0',
         },
       ]);
+
+      const response3 = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/tokens?ticker=PEPE`,
+      });
+      expect(response3.statusCode).toBe(200);
+      const responseJson3 = response3.json();
+      expect(responseJson3.total).toBe(1);
+      expect(responseJson3.results).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ ticker: 'PEPE', minted_supply: '350000' }),
+        ])
+      );
     });
 
     test('rollback mints deduct balance correctly', async () => {
