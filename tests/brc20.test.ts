@@ -1218,6 +1218,14 @@ describe('BRC-20', () => {
           transferrable_balance: '2000',
         },
       ]);
+
+      // Balance at previous block
+      const response2 = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/balances/${address}?block_height=775618`,
+      });
+      const json2 = response2.json();
+      expect(json2.results[0].available_balance).toBe('10000');
     });
 
     test('cannot transfer more than available balance', async () => {
@@ -1411,6 +1419,20 @@ describe('BRC-20', () => {
           transferrable_balance: '0',
         },
       ]);
+
+      // Balance at previous block
+      const prevBlock1 = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/balances/${address}?block_height=775618`,
+      });
+      const prevBlockJson1 = prevBlock1.json();
+      expect(prevBlockJson1.results[0].available_balance).toBe('10000');
+      const prevBlock2 = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/balances/${address2}?block_height=775618`,
+      });
+      const prevBlockJson2 = prevBlock2.json();
+      expect(prevBlockJson2.results[0]).toBeUndefined();
     });
 
     test('cannot spend valid transfer twice', async () => {
