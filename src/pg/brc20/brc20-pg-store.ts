@@ -50,7 +50,7 @@ export class Brc20PgStore {
       INNER JOIN genesis_locations AS g ON g.inscription_id = d.inscription_id
       INNER JOIN locations AS l ON l.id = g.location_id
       LEFT JOIN brc20_supplies AS s ON d.id = s.brc20_deploy_id
-      ${lowerTickers ? this.sql`WHERE LOWER(d.ticker) IN ${this.sql(lowerTickers)}` : this.sql``}
+      ${lowerTickers ? this.sql`WHERE d.ticker_lower IN ${this.sql(lowerTickers)}` : this.sql``}
       OFFSET ${args.offset}
       LIMIT ${args.limit}
     `;
@@ -88,8 +88,8 @@ export class Brc20PgStore {
       }
       WHERE
         b.address = ${args.address}
-        ${lowerTickers ? this.sql`AND LOWER(d.ticker) IN ${this.sql(lowerTickers)}` : this.sql``}
         ${args.block_height ? this.sql`AND l.block_height <= ${args.block_height}` : this.sql``}
+        ${lowerTickers ? this.sql`AND d.ticker_lower IN ${this.sql(lowerTickers)}` : this.sql``}
       GROUP BY d.ticker
       LIMIT ${args.limit}
       OFFSET ${args.offset}
@@ -107,7 +107,7 @@ export class Brc20PgStore {
         FROM brc20_events AS e
         INNER JOIN brc20_deploys AS d ON d.id = e.brc20_deploy_id
         INNER JOIN inscriptions AS i ON i.id = e.inscription_id
-        WHERE LOWER(d.ticker) = LOWER(${args.ticker})
+        WHERE d.ticker_lower = LOWER(${args.ticker})
         ORDER BY i.number DESC
         LIMIT ${args.limit}
         OFFSET ${args.offset}
