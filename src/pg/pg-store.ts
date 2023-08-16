@@ -664,8 +664,8 @@ export class PgStore extends BasePgStore {
   private async insertLocation(args: { location: DbLocationInsert }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
       // Does the inscription exist? Warn if it doesn't.
-      const genesis = await sql<{ id: number }[]>`
-        SELECT id FROM inscriptions WHERE genesis_id = ${args.location.genesis_id}
+      const genesis = await sql<{ id: number; number: number }[]>`
+        SELECT id, number FROM inscriptions WHERE genesis_id = ${args.location.genesis_id}
       `;
       if (genesis.count === 0) {
         logger.warn(
@@ -729,6 +729,7 @@ export class PgStore extends BasePgStore {
         });
         await this.brc20.insertOperationTransfer({
           inscription_id,
+          inscription_number: genesis[0].number,
           location_id: locationRes[0].id,
           location: args.location,
         });

@@ -175,6 +175,7 @@ export class Brc20PgStore {
     inscription: DbInscriptionInsert;
     location: DbLocationInsert;
   }): Promise<void> {
+    if (args.inscription.number < 0) return; // No cursed inscriptions apply.
     // Is this a BRC-20 operation? Is it being inscribed to a valid address?
     const brc20 = brc20FromInscription(args.inscription);
     if (brc20) {
@@ -215,9 +216,11 @@ export class Brc20PgStore {
 
   async insertOperationTransfer(args: {
     inscription_id: number;
+    inscription_number: number;
     location_id: number;
     location: DbLocationInsert;
   }): Promise<void> {
+    if (args.inscription_number < 0) return; // No cursed inscriptions apply.
     // Is this a BRC-20 balance transfer? Check if we have a valid transfer inscription emitted by
     // this address that hasn't been sent to another address before. Use `LIMIT 3` as a quick way
     // of checking if we have just inserted the first transfer for this inscription (genesis +
