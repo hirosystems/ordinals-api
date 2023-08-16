@@ -1,5 +1,6 @@
 import { PgSqlClient, logger } from '@hirosystems/api-toolkit';
 import BigNumber from 'bignumber.js';
+import * as postgres from 'postgres';
 import { throwOnFirstRejected } from '../helpers';
 import { PgStore } from '../pg-store';
 import {
@@ -24,7 +25,6 @@ import {
   DbBrc20Token,
   DbBrc20Transfer,
 } from './types';
-import postgres = require('postgres');
 
 export class Brc20PgStore {
   // TODO: Move this to the api-toolkit so we can have pg submodules.
@@ -37,10 +37,17 @@ export class Brc20PgStore {
     this.parent = db;
   }
 
+  sqlOr(partials: postgres.PendingQuery<postgres.Row[]>[] | undefined) {
+    return partials?.reduce((acc, curr) => this.sql`${acc} OR ${curr}`);
+  }
+
   async getTokens(
     args: { ticker?: string[] } & DbInscriptionIndexPaging
   ): Promise<DbPaginatedResult<DbBrc20Token>> {
-    const lowerTickers = args.ticker?.map(t => t.toLowerCase());
+    const tickerPrefixCondition = this.sqlOr(
+      args.ticker?.map(t => this.sql`d.ticker_lower LIKE LOWER(${t}) || '%'`)
+    );
+
     const results = await this.sql<(DbBrc20Token & { total: number })[]>`
       SELECT
         d.id, i.genesis_id, i.number, d.block_height, d.tx_id, d.address, d.ticker, d.max, d.limit,
@@ -50,7 +57,7 @@ export class Brc20PgStore {
       INNER JOIN genesis_locations AS g ON g.inscription_id = d.inscription_id
       INNER JOIN locations AS l ON l.id = g.location_id
       LEFT JOIN brc20_supplies AS s ON d.id = s.brc20_deploy_id
-      ${lowerTickers ? this.sql`WHERE d.ticker_lower IN ${this.sql(lowerTickers)}` : this.sql``}
+      ${tickerPrefixCondition ? this.sql`WHERE ${tickerPrefixCondition}` : this.sql``}
       OFFSET ${args.offset}
       LIMIT ${args.limit}
     `;
@@ -73,7 +80,10 @@ export class Brc20PgStore {
       block_height?: number;
     } & DbInscriptionIndexPaging
   ): Promise<DbPaginatedResult<DbBrc20Balance>> {
-    const lowerTickers = args.ticker?.map(t => t.toLowerCase());
+    const tickerPrefixConditions = this.sqlOr(
+      args.ticker?.map(t => this.sql`d.ticker_lower LIKE LOWER(${t}) || '%'`)
+    );
+
     const results = await this.sql<(DbBrc20Balance & { total: number })[]>`
       SELECT
         d.ticker,
@@ -89,7 +99,7 @@ export class Brc20PgStore {
       WHERE
         b.address = ${args.address}
         ${args.block_height ? this.sql`AND l.block_height <= ${args.block_height}` : this.sql``}
-        ${lowerTickers ? this.sql`AND d.ticker_lower IN ${this.sql(lowerTickers)}` : this.sql``}
+        ${tickerPrefixConditions ? this.sql`AND (${tickerPrefixConditions})` : this.sql``}
       GROUP BY d.ticker
       LIMIT ${args.limit}
       OFFSET ${args.offset}
@@ -116,6 +126,7 @@ export class Brc20PgStore {
       FROM events
       INNER JOIN
     `;
+    // todo: use event history
   }
 
   async getTokenSupply(args: { ticker: string }): Promise<DbBrc20Supply | undefined> {

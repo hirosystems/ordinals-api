@@ -1,8 +1,20 @@
+import {
+  BasePgStore,
+  PgSqlClient,
+  connectPostgres,
+  logger,
+  runMigrations,
+} from '@hirosystems/api-toolkit';
 import { BitcoinEvent, Payload } from '@hirosystems/chainhook-client';
+import * as path from 'path';
+import * as postgres from 'postgres';
 import { Order, OrderBy } from '../api/schemas';
 import { isProdEnv, isTestEnv, normalizedHexString, parseSatPoint } from '../api/util/helpers';
 import { OrdinalSatoshi } from '../api/util/ordinal-satoshi';
 import { ENV } from '../env';
+import { Brc20PgStore } from './brc20/brc20-pg-store';
+import { CountsPgStore } from './counts/counts-pg-store';
+import { getIndexResultCountType } from './counts/helpers';
 import { getInscriptionRecursion } from './helpers';
 import {
   DbFullyLocatedInscriptionResult,
@@ -23,18 +35,6 @@ import {
   INSCRIPTIONS_COLUMNS,
   LOCATIONS_COLUMNS,
 } from './types';
-import {
-  BasePgStore,
-  PgSqlClient,
-  connectPostgres,
-  logger,
-  runMigrations,
-} from '@hirosystems/api-toolkit';
-import * as path from 'path';
-import { Brc20PgStore } from './brc20/brc20-pg-store';
-import { CountsPgStore } from './counts/counts-pg-store';
-import { getIndexResultCountType } from './counts/helpers';
-import * as postgres from 'postgres';
 
 export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 
