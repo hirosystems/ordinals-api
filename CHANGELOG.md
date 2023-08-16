@@ -1,3 +1,52 @@
+## [1.0.0-beta.15](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.14...v1.0.0-beta.15) (2023-08-04)
+
+
+### Bug Fixes
+
+* consider `tx_index` in transfers by block endpoint ([#178](https://github.com/hirosystems/ordinals-api/issues/178)) ([ed517d6](https://github.com/hirosystems/ordinals-api/commit/ed517d6eb01b2a780ef0fb89fc5a65582d5e575e))
+
+## [1.0.0-beta.14](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.13...v1.0.0-beta.14) (2023-08-02)
+
+
+### Bug Fixes
+
+* add secondary sorting by inscription number ([#177](https://github.com/hirosystems/ordinals-api/issues/177)) ([99959df](https://github.com/hirosystems/ordinals-api/commit/99959dfe6ec3de9288ce47bd8ef4d72535c19468))
+
+## [1.0.0-beta.13](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.12...v1.0.0-beta.13) (2023-08-01)
+
+
+### Bug Fixes
+
+* optimize COUNT calculations via the use of count tables ([#175](https://github.com/hirosystems/ordinals-api/issues/175)) ([31498bd](https://github.com/hirosystems/ordinals-api/commit/31498bdb57203bd6c28eccac4446a9d169a3fe18))
+
+## [1.0.0-beta.12](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.11...v1.0.0-beta.12) (2023-07-31)
+
+
+### Bug Fixes
+
+* rollback location pointers ([#174](https://github.com/hirosystems/ordinals-api/issues/174)) ([3c9d7f0](https://github.com/hirosystems/ordinals-api/commit/3c9d7f07d14aed2bad1c07d69f7170d74a85d575))
+
+## [1.0.0-beta.11](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.10...v1.0.0-beta.11) (2023-07-25)
+
+
+### Bug Fixes
+
+* warn correctly on missing prev locations ([879bf55](https://github.com/hirosystems/ordinals-api/commit/879bf55b0fc7efd830c5cc0e1d742818177e8344))
+
+## [1.0.0-beta.10](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.9...v1.0.0-beta.10) (2023-07-25)
+
+
+### Features
+
+* detect and tag recursive inscriptions ([#167](https://github.com/hirosystems/ordinals-api/issues/167)) ([fb36285](https://github.com/hirosystems/ordinals-api/commit/fb362857c2c3cf4c098f6604b49d77efa6f95d8b))
+
+## [1.0.0-beta.9](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.8...v1.0.0-beta.9) (2023-07-25)
+
+
+### Features
+
+* add inscription number sort option ([#168](https://github.com/hirosystems/ordinals-api/issues/168)) ([9f4cdbc](https://github.com/hirosystems/ordinals-api/commit/9f4cdbc96f2efa4610e771df74b11951803cb8a6))
+
 ## [1.0.0-beta.8](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.7...v1.0.0-beta.8) (2023-07-21)
 
 
