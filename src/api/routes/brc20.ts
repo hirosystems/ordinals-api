@@ -4,6 +4,7 @@ import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import {
   AddressParam,
+  BlockHeightParam,
   Brc20BalanceResponseSchema,
   Brc20HolderResponseSchema,
   Brc20TickerParam,
@@ -165,6 +166,7 @@ export const Brc20Routes: FastifyPluginCallback<
         }),
         querystring: Type.Object({
           ticker: Type.Optional(Brc20TickersParam),
+          block_height: Type.Optional(BlockHeightParam),
           // Pagination
           offset: Type.Optional(OffsetParam),
           limit: Type.Optional(LimitParam),
@@ -182,6 +184,7 @@ export const Brc20Routes: FastifyPluginCallback<
         offset,
         address: request.params.address,
         ticker: request.query.ticker,
+        block_height: request.query.block_height ? parseInt(request.query.block_height) : undefined,
       });
       await reply.send({
         limit,

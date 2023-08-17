@@ -65,6 +65,7 @@ export class Brc20PgStore {
     args: {
       address: string;
       ticker?: string[];
+      block_height?: number;
     } & DbInscriptionIndexPaging
   ): Promise<DbPaginatedResult<DbBrc20Balance>> {
     const lowerTickers = args.ticker ? args.ticker.map(t => t.toLowerCase()) : undefined;
@@ -77,9 +78,13 @@ export class Brc20PgStore {
         COUNT(*) OVER() as total
       FROM brc20_balances AS b
       INNER JOIN brc20_deploys AS d ON d.id = b.brc20_deploy_id
+      ${
+        args.block_height ? this.sql`INNER JOIN locations AS l ON l.id = b.location_id` : this.sql``
+      }
       WHERE
         b.address = ${args.address}
         ${lowerTickers ? this.sql`AND LOWER(d.ticker) IN ${this.sql(lowerTickers)}` : this.sql``}
+        ${args.block_height ? this.sql`AND l.block_height <= ${args.block_height}` : this.sql``}
       GROUP BY d.ticker
       LIMIT ${args.limit}
       OFFSET ${args.offset}
