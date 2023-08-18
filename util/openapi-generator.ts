@@ -20,6 +20,7 @@ export const ApiGenerator: FastifyPluginAsync<
     mkdirSync('./tmp');
   }
   writeFileSync('./tmp/openapi.yaml', fastify.swagger({ yaml: true }));
+  writeFileSync('./tmp/openapi.json', JSON.stringify(fastify.swagger(), null, 2));
 };
 
 const fastify = Fastify({
