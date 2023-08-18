@@ -1717,6 +1717,34 @@ describe('BRC-20', () => {
   });
 
   describe('routes', () => {
+    test('token endpoint', async () => {
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({ height: 775617 })
+          .transaction({ hash: randomHash() })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'deploy',
+                tick: 'PEPE',
+                max: '21000000',
+              },
+              number: 5,
+              tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+              address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+            })
+          )
+          .build()
+      );
+      const response = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/tokens/PEPE`,
+      });
+      expect(response.statusCode).toBe(200);
+    });
+
     test('filter tickers by ticker prefix', async () => {
       await db.updateInscriptions(
         new TestChainhookPayloadBuilder()

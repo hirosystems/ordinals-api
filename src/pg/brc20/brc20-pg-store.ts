@@ -153,8 +153,8 @@ export class Brc20PgStore {
       const [supply, holders, minted] = throwOnFirstRejected(settles);
       return {
         max_supply: supply[0].max,
-        minted_supply: minted[0].minted_supply ?? '0',
-        holders: holders[0].count,
+        minted_supply: minted[0]?.minted_supply ?? '0',
+        holders: holders[0]?.count ?? '0',
       };
     });
   }
