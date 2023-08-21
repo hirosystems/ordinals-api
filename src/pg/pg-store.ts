@@ -598,8 +598,9 @@ export class PgStore extends BasePgStore {
 
   private async insertInscriptions(reveals: DbRevealInsert[]): Promise<void> {
     if (reveals.length === 0) return;
+    // TODO: Locations in same updates?
     await this.sqlWriteTransaction(async sql => {
-      const inscriptions = await sql<{ id: number }[]>`
+      await sql`
         INSERT INTO inscriptions ${sql(reveals.map(i => i.inscription))}
         ON CONFLICT ON CONSTRAINT inscriptions_number_unique DO UPDATE SET
           genesis_id = EXCLUDED.genesis_id,
@@ -614,12 +615,12 @@ export class PgStore extends BasePgStore {
           updated_at = NOW()
         RETURNING id
       `;
-      const locationData = reveals.map((item, i) => ({
-        inscription_id: inscriptions[i].id,
-        ...item.location,
-        timestamp: sql`to_timestamp(${item.location.timestamp})`,
+      const locationData = reveals.map(i => ({
+        ...i.location,
+        inscription_id: sql`(SELECT id FROM inscriptions WHERE genesis_id = ${i.location.genesis_id})`,
+        timestamp: sql`TO_TIMESTAMP(${i.location.timestamp})`,
       }));
-      const locations = await sql<(DbLocationPointerInsert & { genesis_id: string })[]>`
+      const locations = await sql<DbLocationPointerInsert[]>`
         INSERT INTO locations ${sql(locationData)}
         ON CONFLICT ON CONSTRAINT locations_output_offset_unique DO UPDATE SET
           inscription_id = EXCLUDED.inscription_id,
@@ -640,36 +641,26 @@ export class PgStore extends BasePgStore {
       //   location: args.location,
       // });
       await this.updateInscriptionLocationPointers(locations);
-      // await this.updateInscriptionRecursion({ inscription_id, ref_genesis_ids: recursion });
+      await this.updateInscriptionRecursions(reveals);
       // await this.counts.applyInscription({ inscription: args.inscription });
-      // logger.info(
-      //   `PgStore${upsert.count > 0 ? ' upsert ' : ' '}reveal #${args.inscription.number} (${
-      //     args.location.genesis_id
-      //   }) at block ${args.location.block_height}`
-      // );
+      for (const reveal of reveals) {
+        logger.info(
+          `PgStore reveal #${reveal.inscription.number} (${reveal.location.genesis_id}) at block ${reveal.location.block_height}`
+        );
+      }
     });
   }
 
   private async insertLocations(transfers: DbLocationInsert[]): Promise<void> {
     if (transfers.length === 0) return;
     await this.sqlWriteTransaction(async sql => {
-      const locations = transfers.map(t => ({
-        inscription_id: sql`(SELECT id FROM inscriptions WHERE genesis_id = ${t.genesis_id})`,
-        genesis_id: t.genesis_id,
-        block_height: t.block_height,
-        block_hash: t.block_hash,
-        tx_id: t.tx_id,
-        tx_index: t.tx_index,
-        address: t.address,
-        output: t.output,
-        offset: t.offset,
-        prev_output: t.prev_output,
-        prev_offset: t.prev_offset,
-        value: t.value,
-        timestamp: sql`to_timestamp(${t.timestamp})`,
+      const locationData = transfers.map(t => ({
+        ...t,
+        inscription_id: sql`(UPDATE inscriptions SET updated_at = NOW() WHERE genesis_id = ${t.genesis_id} RETURNING id)`,
+        timestamp: sql`TO_TIMESTAMP(${t.timestamp})`,
       }));
-      const locationRes = await sql<{ id: number }[]>`
-        INSERT INTO locations ${sql(locations)}
+      const locations = await sql<DbLocationPointerInsert[]>`
+        INSERT INTO locations ${sql(locationData)}
         ON CONFLICT ON CONSTRAINT locations_output_offset_unique DO UPDATE SET
           inscription_id = EXCLUDED.inscription_id,
           genesis_id = EXCLUDED.genesis_id,
@@ -680,17 +671,10 @@ export class PgStore extends BasePgStore {
           address = EXCLUDED.address,
           value = EXCLUDED.value,
           timestamp = EXCLUDED.timestamp
-        RETURNING id
+        RETURNING inscription_id, id AS location_id, block_height, tx_index, address
       `;
+      await this.updateInscriptionLocationPointers(locations);
       // if (inscription_id) {
-      //   await this.updateInscriptionLocationPointers({
-      //     inscription_id,
-      //     genesis_id: args.location.genesis_id,
-      //     location_id: locationRes[0].id,
-      //     block_height: args.location.block_height,
-      //     tx_index: args.location.tx_index,
-      //     address: args.location.address,
-      //   });
       // await this.brc20.insertOperationTransfer({
       //   inscription_id,
       //   inscription_number: genesis[0].number,
@@ -778,9 +762,25 @@ export class PgStore extends BasePgStore {
     });
   }
 
-  private async updateInscriptionLocationPointers(args: DbLocationPointerInsert[]): Promise<void> {
+  private async updateInscriptionLocationPointers(
+    pointers: DbLocationPointerInsert[]
+  ): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
-      const ids = args.map(i => i.inscription_id);
+      const ids = new Set<number>(pointers.map(i => i.inscription_id));
+      // Avoid duplicate row manipulation. Pick the most recent pointers for insertion.
+      const genPointers = new Map<number, DbLocationPointerInsert>();
+      for (const p of pointers) {
+        const i = genPointers.get(p.inscription_id);
+        genPointers.set(
+          p.inscription_id,
+          i
+            ? i.block_height < p.block_height ||
+              (i.block_height === p.block_height && i.tx_index < p.tx_index)
+              ? i
+              : p
+            : p
+        );
+      }
       const genesis = await sql<(DbLocationPointer & { old_address: string | null })[]>`
         WITH old_pointers AS (
           SELECT inscription_id, address
@@ -788,7 +788,7 @@ export class PgStore extends BasePgStore {
           WHERE inscription_id IN ${sql(ids)}
         ),
         new_pointers AS (
-          INSERT INTO genesis_locations ${sql(args)}
+          INSERT INTO genesis_locations ${sql(Array.from(genPointers.values()))}
           ON CONFLICT (inscription_id) DO UPDATE SET
             location_id = EXCLUDED.location_id,
             block_height = EXCLUDED.block_height,
@@ -799,9 +799,6 @@ export class PgStore extends BasePgStore {
             (EXCLUDED.block_height = genesis_locations.block_height AND
               EXCLUDED.tx_index < genesis_locations.tx_index)
           RETURNING *
-        ),
-        updated_dates AS (
-          UPDATE inscriptions SET updated_at = NOW() WHERE id IN ${sql(ids)}
         )
         SELECT n.*, o.address AS old_address
         FROM new_pointers AS n
@@ -811,6 +808,20 @@ export class PgStore extends BasePgStore {
       if (genesis.count > 0) {
         // await this.counts.applyGenesisLocation({ old: genesis[0], new: pointer });
       }
+      // Avoid duplicate row manipulation. Pick the most recent pointers for insertion.
+      const currPointers = new Map<number, DbLocationPointerInsert>();
+      for (const p of pointers) {
+        const i = currPointers.get(p.inscription_id);
+        currPointers.set(
+          p.inscription_id,
+          i
+            ? i.block_height > p.block_height ||
+              (i.block_height === p.block_height && i.tx_index > p.tx_index)
+              ? i
+              : p
+            : p
+        );
+      }
       const currentRes = await sql`
         WITH old_pointers AS (
           SELECT inscription_id, address
@@ -818,7 +829,7 @@ export class PgStore extends BasePgStore {
           WHERE inscription_id IN ${sql(ids)}
         ),
         new_pointers AS (
-          INSERT INTO current_locations ${sql(args)}
+          INSERT INTO current_locations ${sql(Array.from(currPointers.values()))}
           ON CONFLICT (inscription_id) DO UPDATE SET
             location_id = EXCLUDED.location_id,
             block_height = EXCLUDED.block_height,
@@ -829,9 +840,6 @@ export class PgStore extends BasePgStore {
             (EXCLUDED.block_height = current_locations.block_height AND
               EXCLUDED.tx_index > current_locations.tx_index)
           RETURNING *
-        ),
-        updated_dates AS (
-          UPDATE inscriptions SET updated_at = NOW() WHERE id IN ${sql(ids)}
         )
         SELECT n.*, o.address AS old_address
         FROM new_pointers AS n
@@ -886,24 +894,37 @@ export class PgStore extends BasePgStore {
     });
   }
 
-  private async updateInscriptionRecursion(args: {
-    inscription_id: number;
-    ref_genesis_ids: string[];
-  }): Promise<void> {
-    await this.sqlWriteTransaction(async sql => {
-      const validated = await sql<{ id: string }[]>`
-        SELECT id FROM inscriptions WHERE genesis_id IN ${this.sql(args.ref_genesis_ids)}
-      `;
-      if (validated.count > 0) {
-        const values = validated.map(i => ({
-          inscription_id: args.inscription_id,
-          ref_inscription_id: i.id,
-        }));
-        await this.sql`
-          INSERT INTO inscription_recursions ${sql(values)}
-          ON CONFLICT ON CONSTRAINT inscriptions_inscription_id_ref_inscription_id_unique DO NOTHING
-        `;
-      }
+  private async updateInscriptionRecursions(reveals: DbRevealInsert[]): Promise<void> {
+    if (reveals.length === 0) return;
+    // TODO: Gap fills may make us miss some recursion refs because they will not appear in this
+    // query.
+    const inserts: {
+      inscription_id: postgres.PendingQuery<postgres.Row[]>;
+      ref_inscription_id: postgres.PendingQuery<postgres.Row[]>;
+    }[] = [];
+    reveals.forEach(i => {
+      if (i.recursive_refs.length)
+        i.recursive_refs.forEach(r =>
+          inserts.push({
+            inscription_id: this
+              .sql`(SELECT id FROM inscriptions WHERE genesis_id = ${i.inscription.genesis_id})`,
+            ref_inscription_id: this.sql`(SELECT id FROM inscriptions WHERE genesis_id = ${r})`,
+          })
+        );
     });
+    // const inserts = reveals.map(
+    //   i => this.sql`(
+    //     SELECT i1.id AS inscription_id
+    //     FROM inscriptions AS i1 WHERE i1.genesis_id = ${i.inscription.genesis_id}
+    //     CROSS JOIN
+    //     SELECT i2.id AS ref_inscription_id
+    //     FROM inscriptions AS i2 WHERE i2.genesis_id IN ${this.sql(i.recursive_refs)})
+    //   )`
+    // );
+    if (inserts.length === 0) return;
+    await this.sql`
+      INSERT INTO inscription_recursions ${this.sql(inserts)}
+      ON CONFLICT ON CONSTRAINT inscriptions_inscription_id_ref_inscription_id_unique DO NOTHING
+    `;
   }
 }
