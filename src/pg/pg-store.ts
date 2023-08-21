@@ -650,7 +650,7 @@ export class PgStore extends BasePgStore {
       // });
       await this.updateInscriptionLocationPointers(locations);
       await this.updateInscriptionRecursions(writes);
-      // await this.counts.applyInscription({ inscription: args.inscription });
+      await this.counts.applyInscriptions(inscriptions);
       for (const reveal of writes) {
         const action = reveal.inscription ? `reveal #${reveal.inscription.number}` : `transfer`;
         logger.info(
@@ -739,26 +739,26 @@ export class PgStore extends BasePgStore {
       const ids = new Set<number>(pointers.map(i => i.inscription_id));
       // Avoid duplicate row manipulation. Pick the most recent pointers for insertion.
       const genPointers = new Map<number, DbLocationPointerInsert>();
-      for (const p of pointers) {
-        const i = genPointers.get(p.inscription_id);
+      for (const ptr of pointers) {
+        const current = genPointers.get(ptr.inscription_id);
         genPointers.set(
-          p.inscription_id,
-          i
-            ? i.block_height < p.block_height ||
-              (i.block_height === p.block_height && i.tx_index < p.tx_index)
-              ? i
-              : p
-            : p
+          ptr.inscription_id,
+          current
+            ? current.block_height < ptr.block_height ||
+              (current.block_height === ptr.block_height && current.tx_index < ptr.tx_index)
+              ? current
+              : ptr
+            : ptr
         );
       }
-      const genesis = await sql<(DbLocationPointer & { old_address: string | null })[]>`
+      const genesis = await sql<{ old_address: string | null; new_address: string | null }[]>`
         WITH old_pointers AS (
           SELECT inscription_id, address
           FROM genesis_locations
-          WHERE inscription_id IN ${sql(ids)}
+          WHERE inscription_id IN ${sql([...ids])}
         ),
         new_pointers AS (
-          INSERT INTO genesis_locations ${sql(Array.from(genPointers.values()))}
+          INSERT INTO genesis_locations ${sql([...genPointers.values()])}
           ON CONFLICT (inscription_id) DO UPDATE SET
             location_id = EXCLUDED.location_id,
             block_height = EXCLUDED.block_height,
@@ -770,36 +770,33 @@ export class PgStore extends BasePgStore {
               EXCLUDED.tx_index < genesis_locations.tx_index)
           RETURNING *
         )
-        SELECT n.*, o.address AS old_address
+        SELECT n.address AS new_address, o.address AS old_address
         FROM new_pointers AS n
         LEFT JOIN old_pointers AS o USING (inscription_id)
       `;
-      // Affect genesis counts only if we have an update.
-      if (genesis.count > 0) {
-        // await this.counts.applyGenesisLocation({ old: genesis[0], new: pointer });
-      }
+      await this.counts.applyLocations(genesis, true);
       // Avoid duplicate row manipulation. Pick the most recent pointers for insertion.
       const currPointers = new Map<number, DbLocationPointerInsert>();
-      for (const p of pointers) {
-        const i = currPointers.get(p.inscription_id);
+      for (const ptr of pointers) {
+        const current = currPointers.get(ptr.inscription_id);
         currPointers.set(
-          p.inscription_id,
-          i
-            ? i.block_height > p.block_height ||
-              (i.block_height === p.block_height && i.tx_index > p.tx_index)
-              ? i
-              : p
-            : p
+          ptr.inscription_id,
+          current
+            ? current.block_height > ptr.block_height ||
+              (current.block_height === ptr.block_height && current.tx_index > ptr.tx_index)
+              ? current
+              : ptr
+            : ptr
         );
       }
-      const currentRes = await sql`
+      const current = await sql<{ old_address: string | null; new_address: string | null }[]>`
         WITH old_pointers AS (
           SELECT inscription_id, address
           FROM current_locations
-          WHERE inscription_id IN ${sql(ids)}
+          WHERE inscription_id IN ${sql([...ids])}
         ),
         new_pointers AS (
-          INSERT INTO current_locations ${sql(Array.from(currPointers.values()))}
+          INSERT INTO current_locations ${sql([...currPointers.values()])}
           ON CONFLICT (inscription_id) DO UPDATE SET
             location_id = EXCLUDED.location_id,
             block_height = EXCLUDED.block_height,
@@ -811,25 +808,17 @@ export class PgStore extends BasePgStore {
               EXCLUDED.tx_index > current_locations.tx_index)
           RETURNING *
         )
-        SELECT n.*, o.address AS old_address
+        SELECT n.address AS new_address, o.address AS old_address
         FROM new_pointers AS n
         LEFT JOIN old_pointers AS o USING (inscription_id)
       `;
-      // Affect current location counts only if we have an update.
-      if (currentRes.count > 0) {
-        // await this.counts.applyCurrentLocation({ old: current[0], new: pointer });
-      }
-      // Backfill orphan locations for this inscription, if any.
+      await this.counts.applyLocations(current, false);
+      // Backfill orphan locations, if any.
       await sql`
         UPDATE locations AS l
         SET inscription_id = (SELECT id FROM inscriptions WHERE genesis_id = l.genesis_id)
         WHERE l.inscription_id IS NULL
       `;
-      // await sql`
-      //   UPDATE locations
-      //   SET inscription_id = ${args.inscription_id}
-      //   WHERE genesis_id = ${args.genesis_id} AND inscription_id IS NULL
-      // `;
     });
   }
 
