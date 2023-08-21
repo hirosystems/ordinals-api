@@ -35,6 +35,7 @@ describe('BRC-20', () => {
         sat_ordinal: '2000000',
         sat_rarity: 'common',
         sat_coinbase_height: 110,
+        recursive: false,
       };
       return insert;
     };
@@ -61,6 +62,7 @@ describe('BRC-20', () => {
         sat_ordinal: '2000000',
         sat_rarity: 'common',
         sat_coinbase_height: 110,
+        recursive: false,
       };
       expect(brc20FromInscription(insert)).toBeUndefined();
       insert.content_type = 'application/json';
@@ -88,6 +90,7 @@ describe('BRC-20', () => {
         sat_ordinal: '2000000',
         sat_rarity: 'common',
         sat_coinbase_height: 110,
+        recursive: false,
       };
       expect(brc20FromInscription(insert)).toBeUndefined();
     });
