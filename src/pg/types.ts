@@ -142,9 +142,9 @@ export type DbInscriptionInsert = {
 };
 
 export type DbRevealInsert = {
-  inscription: DbInscriptionInsert;
+  inscription?: DbInscriptionInsert;
+  recursive_refs?: string[];
   location: DbLocationInsert;
-  recursive_refs: string[];
 };
 
 export type DbInscription = {

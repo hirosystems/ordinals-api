@@ -113,8 +113,7 @@ export class PgStore extends BasePgStore {
         const event = applyEvent as BitcoinEvent;
         const block_height = event.block_identifier.index;
         const block_hash = normalizedHexString(event.block_identifier.hash);
-        const reveals: DbRevealInsert[] = [];
-        const transfers: DbLocationInsert[] = [];
+        const writes: DbRevealInsert[] = [];
         for (const tx of event.transactions) {
           const tx_id = normalizedHexString(tx.transaction_identifier.hash);
           for (const operation of tx.metadata.ordinal_operations) {
@@ -123,7 +122,7 @@ export class PgStore extends BasePgStore {
               const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
               const satpoint = parseSatPoint(reveal.satpoint_post_inscription);
               const recursive_refs = getInscriptionRecursion(reveal.content_bytes);
-              reveals.push({
+              writes.push({
                 inscription: {
                   genesis_id: reveal.inscription_id,
                   mime_type: reveal.content_type.split(';')[0],
@@ -160,7 +159,7 @@ export class PgStore extends BasePgStore {
               const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
               const satpoint = parseSatPoint(reveal.satpoint_post_inscription);
               const recursive_refs = getInscriptionRecursion(reveal.content_bytes);
-              reveals.push({
+              writes.push({
                 inscription: {
                   genesis_id: reveal.inscription_id,
                   mime_type: reveal.content_type.split(';')[0],
@@ -196,27 +195,28 @@ export class PgStore extends BasePgStore {
               const transfer = operation.inscription_transferred;
               const satpoint = parseSatPoint(transfer.satpoint_post_transfer);
               const prevSatpoint = parseSatPoint(transfer.satpoint_pre_transfer);
-              transfers.push({
-                block_hash,
-                block_height,
-                tx_id,
-                tx_index: transfer.tx_index,
-                genesis_id: transfer.inscription_id,
-                address: transfer.updated_address,
-                output: `${satpoint.tx_id}:${satpoint.vout}`,
-                offset: satpoint.offset ?? null,
-                prev_output: `${prevSatpoint.tx_id}:${prevSatpoint.vout}`,
-                prev_offset: prevSatpoint.offset ?? null,
-                value: transfer.post_transfer_output_value
-                  ? transfer.post_transfer_output_value.toString()
-                  : null,
-                timestamp: event.timestamp,
+              writes.push({
+                location: {
+                  block_hash,
+                  block_height,
+                  tx_id,
+                  tx_index: transfer.tx_index,
+                  genesis_id: transfer.inscription_id,
+                  address: transfer.updated_address,
+                  output: `${satpoint.tx_id}:${satpoint.vout}`,
+                  offset: satpoint.offset ?? null,
+                  prev_output: `${prevSatpoint.tx_id}:${prevSatpoint.vout}`,
+                  prev_offset: prevSatpoint.offset ?? null,
+                  value: transfer.post_transfer_output_value
+                    ? transfer.post_transfer_output_value.toString()
+                    : null,
+                  timestamp: event.timestamp,
+                },
               });
             }
           }
         }
-        await this.insertInscriptions(reveals);
-        await this.insertLocations(transfers);
+        await this.insertInscriptions(writes);
         updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
       }
     });
@@ -596,26 +596,30 @@ export class PgStore extends BasePgStore {
     return query[0];
   }
 
-  private async insertInscriptions(reveals: DbRevealInsert[]): Promise<void> {
-    if (reveals.length === 0) return;
-    // TODO: Locations in same updates?
+  private async insertInscriptions(writes: DbRevealInsert[]): Promise<void> {
+    if (writes.length === 0) return;
     await this.sqlWriteTransaction(async sql => {
-      await sql`
-        INSERT INTO inscriptions ${sql(reveals.map(i => i.inscription))}
-        ON CONFLICT ON CONSTRAINT inscriptions_number_unique DO UPDATE SET
-          genesis_id = EXCLUDED.genesis_id,
-          mime_type = EXCLUDED.mime_type,
-          content_type = EXCLUDED.content_type,
-          content_length = EXCLUDED.content_length,
-          content = EXCLUDED.content,
-          fee = EXCLUDED.fee,
-          sat_ordinal = EXCLUDED.sat_ordinal,
-          sat_rarity = EXCLUDED.sat_rarity,
-          sat_coinbase_height = EXCLUDED.sat_coinbase_height,
-          updated_at = NOW()
-        RETURNING id
-      `;
-      const locationData = reveals.map(i => ({
+      const inscriptions: DbInscriptionInsert[] = [];
+      const transferGenesisIds = new Set<string>();
+      for (const r of writes)
+        if (r.inscription) inscriptions.push(r.inscription);
+        else transferGenesisIds.add(r.location.genesis_id);
+      if (inscriptions.length)
+        await sql`
+          INSERT INTO inscriptions ${sql(inscriptions)}
+          ON CONFLICT ON CONSTRAINT inscriptions_number_unique DO UPDATE SET
+            genesis_id = EXCLUDED.genesis_id,
+            mime_type = EXCLUDED.mime_type,
+            content_type = EXCLUDED.content_type,
+            content_length = EXCLUDED.content_length,
+            content = EXCLUDED.content,
+            fee = EXCLUDED.fee,
+            sat_ordinal = EXCLUDED.sat_ordinal,
+            sat_rarity = EXCLUDED.sat_rarity,
+            sat_coinbase_height = EXCLUDED.sat_coinbase_height,
+            updated_at = NOW()
+        `;
+      const locationData = writes.map(i => ({
         ...i.location,
         inscription_id: sql`(SELECT id FROM inscriptions WHERE genesis_id = ${i.location.genesis_id})`,
         timestamp: sql`TO_TIMESTAMP(${i.location.timestamp})`,
@@ -634,6 +638,10 @@ export class PgStore extends BasePgStore {
           timestamp = EXCLUDED.timestamp
         RETURNING inscription_id, id AS location_id, block_height, tx_index, address
       `;
+      if (transferGenesisIds.size)
+        await sql`
+          UPDATE inscriptions SET updated_at = NOW() WHERE genesis_id IN ${sql(transferGenesisIds)}
+        `;
       // await this.brc20.insertOperation({
       //   inscription_id,
       //   location_id: locationRes[0].id,
@@ -641,52 +649,14 @@ export class PgStore extends BasePgStore {
       //   location: args.location,
       // });
       await this.updateInscriptionLocationPointers(locations);
-      await this.updateInscriptionRecursions(reveals);
+      await this.updateInscriptionRecursions(writes);
       // await this.counts.applyInscription({ inscription: args.inscription });
-      for (const reveal of reveals) {
+      for (const reveal of writes) {
+        const action = reveal.inscription ? `reveal #${reveal.inscription.number}` : `transfer`;
         logger.info(
-          `PgStore reveal #${reveal.inscription.number} (${reveal.location.genesis_id}) at block ${reveal.location.block_height}`
+          `PgStore ${action} (${reveal.location.genesis_id}) at block ${reveal.location.block_height}`
         );
       }
-    });
-  }
-
-  private async insertLocations(transfers: DbLocationInsert[]): Promise<void> {
-    if (transfers.length === 0) return;
-    await this.sqlWriteTransaction(async sql => {
-      const locationData = transfers.map(t => ({
-        ...t,
-        inscription_id: sql`(UPDATE inscriptions SET updated_at = NOW() WHERE genesis_id = ${t.genesis_id} RETURNING id)`,
-        timestamp: sql`TO_TIMESTAMP(${t.timestamp})`,
-      }));
-      const locations = await sql<DbLocationPointerInsert[]>`
-        INSERT INTO locations ${sql(locationData)}
-        ON CONFLICT ON CONSTRAINT locations_output_offset_unique DO UPDATE SET
-          inscription_id = EXCLUDED.inscription_id,
-          genesis_id = EXCLUDED.genesis_id,
-          block_height = EXCLUDED.block_height,
-          block_hash = EXCLUDED.block_hash,
-          tx_id = EXCLUDED.tx_id,
-          tx_index = EXCLUDED.tx_index,
-          address = EXCLUDED.address,
-          value = EXCLUDED.value,
-          timestamp = EXCLUDED.timestamp
-        RETURNING inscription_id, id AS location_id, block_height, tx_index, address
-      `;
-      await this.updateInscriptionLocationPointers(locations);
-      // if (inscription_id) {
-      // await this.brc20.insertOperationTransfer({
-      //   inscription_id,
-      //   inscription_number: genesis[0].number,
-      //   location_id: locationRes[0].id,
-      //   location: args.location,
-      // });
-      // }
-      // logger.info(
-      //   `PgStore${upsert.count > 0 ? ' upsert ' : ' '}transfer (${
-      //     args.location.genesis_id
-      //   }) at block ${args.location.block_height}`
-      // );
     });
   }
 
@@ -902,25 +872,14 @@ export class PgStore extends BasePgStore {
       inscription_id: postgres.PendingQuery<postgres.Row[]>;
       ref_inscription_id: postgres.PendingQuery<postgres.Row[]>;
     }[] = [];
-    reveals.forEach(i => {
-      if (i.recursive_refs.length)
-        i.recursive_refs.forEach(r =>
+    for (const i of reveals)
+      if (i.inscription && i.recursive_refs?.length)
+        for (const r of i.recursive_refs)
           inserts.push({
             inscription_id: this
-              .sql`(SELECT id FROM inscriptions WHERE genesis_id = ${i.inscription.genesis_id})`,
+              .sql`(SELECT id FROM inscriptions WHERE genesis_id = ${i.inscription?.genesis_id})`,
             ref_inscription_id: this.sql`(SELECT id FROM inscriptions WHERE genesis_id = ${r})`,
-          })
-        );
-    });
-    // const inserts = reveals.map(
-    //   i => this.sql`(
-    //     SELECT i1.id AS inscription_id
-    //     FROM inscriptions AS i1 WHERE i1.genesis_id = ${i.inscription.genesis_id}
-    //     CROSS JOIN
-    //     SELECT i2.id AS ref_inscription_id
-    //     FROM inscriptions AS i2 WHERE i2.genesis_id IN ${this.sql(i.recursive_refs)})
-    //   )`
-    // );
+          });
     if (inserts.length === 0) return;
     await this.sql`
       INSERT INTO inscription_recursions ${this.sql(inserts)}
