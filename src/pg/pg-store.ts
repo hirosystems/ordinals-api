@@ -640,7 +640,9 @@ export class PgStore extends BasePgStore {
       `;
       if (transferGenesisIds.size)
         await sql`
-          UPDATE inscriptions SET updated_at = NOW() WHERE genesis_id IN ${sql(transferGenesisIds)}
+          UPDATE inscriptions
+          SET updated_at = NOW()
+          WHERE genesis_id IN ${sql([...transferGenesisIds])}
         `;
       // await this.brc20.insertOperation({
       //   inscription_id,
