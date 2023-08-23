@@ -42,6 +42,12 @@ export class Brc20PgStore {
     return partials?.reduce((acc, curr) => this.sql`${acc} OR ${curr}`);
   }
 
+  /**
+   * Perform a scan of all inscriptions stored in the DB divided by block in order to look for
+   * BRC-20 operations.
+   * @param startBlock - Start at block height
+   * @param endBlock - End at block height
+   */
   async scanBlocks(startBlock?: number, endBlock?: number): Promise<void> {
     const range = await this.parent.sql<{ min: number; max: number }[]>`
       SELECT
