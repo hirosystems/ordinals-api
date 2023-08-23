@@ -1,14 +1,29 @@
 import { PgNumeric } from '@hirosystems/api-toolkit';
+import { DbLocation } from '../types';
+
+export type DbBrc20ScannedInscription = DbLocation & {
+  genesis: boolean;
+  content: string;
+};
 
 export type DbBrc20DeployInsert = {
-  inscription_id: number;
-  block_height: number;
+  inscription_id: string;
+  block_height: string;
   tx_id: string;
   address: string;
   ticker: string;
   max: string;
   decimals: string;
   limit: string | null;
+};
+
+export type DbBrc20MintInsert = {
+  inscription_id: string;
+  brc20_deploy_id: string;
+  block_height: string;
+  tx_id: string;
+  address: string;
+  amount: string;
 };
 
 export type DbBrc20Deploy = {
@@ -25,9 +40,9 @@ export type DbBrc20Deploy = {
 
 export type DbBrc20Transfer = {
   id: string;
-  inscription_id: number;
-  brc20_deploy_id: number;
-  block_height: number;
+  inscription_id: string;
+  brc20_deploy_id: string;
+  block_height: string;
   tx_id: string;
   from_address: string;
   to_address?: string;
@@ -75,21 +90,13 @@ export enum DbBrc20BalanceTypeId {
 }
 
 export type DbBrc20BalanceInsert = {
-  inscription_id: number;
-  location_id: number;
-  brc20_deploy_id: number;
+  inscription_id: PgNumeric;
+  location_id: PgNumeric;
+  brc20_deploy_id: PgNumeric;
   address: string | null;
   avail_balance: PgNumeric;
   trans_balance: PgNumeric;
   type: DbBrc20BalanceTypeId;
-};
-
-export type DbBrc20EventInsert = {
-  inscription_id: number;
-  brc20_deploy_id: string;
-  deploy_id: string | null;
-  mint_id: string | null;
-  transfer_id: string | null;
 };
 
 export const BRC20_DEPLOYS_COLUMNS = [
@@ -113,13 +120,4 @@ export const BRC20_TRANSFERS_COLUMNS = [
   'from_address',
   'to_address',
   'amount',
-];
-
-export const BRC20_EVENTS_COLUMNS = [
-  'id',
-  'inscription_id',
-  'brc20_deploy_id',
-  'deploy_id',
-  'mint_id',
-  'transfer_id',
 ];

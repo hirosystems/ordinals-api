@@ -35,6 +35,7 @@ describe('BRC-20', () => {
         sat_ordinal: '2000000',
         sat_rarity: 'common',
         sat_coinbase_height: 110,
+        recursive: false,
       };
       return insert;
     };
@@ -61,6 +62,7 @@ describe('BRC-20', () => {
         sat_ordinal: '2000000',
         sat_rarity: 'common',
         sat_coinbase_height: 110,
+        recursive: false,
       };
       expect(brc20FromInscription(insert)).toBeUndefined();
       insert.content_type = 'application/json';
@@ -88,6 +90,7 @@ describe('BRC-20', () => {
         sat_ordinal: '2000000',
         sat_rarity: 'common',
         sat_coinbase_height: 110,
+        recursive: false,
       };
       expect(brc20FromInscription(insert)).toBeUndefined();
     });
@@ -1250,6 +1253,52 @@ describe('BRC-20', () => {
       expect(json2.results[0].available_balance).toBe('10000');
     });
 
+    test('transfer ignored if token not found', async () => {
+      const address = 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td';
+      await deployAndMintPEPE(address);
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 775619,
+            hash: '00000000000000000002b14f0c5dde0b2fc74d022e860696bd64f1f652756674',
+          })
+          .transaction({
+            hash: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'transfer',
+                tick: 'TEST', // Not found
+                amt: '2000',
+              },
+              number: 7,
+              tx_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
+              address: address,
+            })
+          )
+          .build()
+      );
+
+      const response = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/balances/${address}`,
+      });
+      expect(response.statusCode).toBe(200);
+      const json = response.json();
+      expect(json.total).toBe(1);
+      expect(json.results).toStrictEqual([
+        {
+          available_balance: '10000',
+          overall_balance: '10000',
+          ticker: 'PEPE',
+          transferrable_balance: '0',
+        },
+      ]);
+    });
+
     test('cannot transfer more than available balance', async () => {
       const address = 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td';
       await deployAndMintPEPE(address);
@@ -1558,154 +1607,6 @@ describe('BRC-20', () => {
       const json2 = response2.json();
       expect(json2.total).toBe(1);
       expect(json2.results).toStrictEqual([
-        {
-          available_balance: '9000',
-          overall_balance: '9000',
-          ticker: 'PEPE',
-          transferrable_balance: '0',
-        },
-      ]);
-    });
-
-    test('balance transfer gap fill applied correctly', async () => {
-      const address = 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td';
-      const address2 = '3QNjwPDRafjBm9XxJpshgk3ksMJh3TFxTU';
-      await deployAndMintPEPE(address);
-      await db.updateInscriptions(
-        new TestChainhookPayloadBuilder()
-          .apply()
-          .block({
-            height: 775640,
-            hash: '00000000000000000002b14f0c5dde0b2fc74d022e860696bd64f1f652756674',
-          })
-          .transaction({
-            hash: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
-          })
-          .inscriptionRevealed(
-            brc20Reveal({
-              json: {
-                p: 'brc-20',
-                op: 'transfer',
-                tick: 'PEPE',
-                amt: '9000',
-              },
-              number: 7,
-              tx_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
-              address: address,
-            })
-          )
-          .build()
-      );
-
-      // Make the first seen transfer
-      await db.updateInscriptions(
-        new TestChainhookPayloadBuilder()
-          .apply()
-          .block({
-            height: 775651,
-            hash: '00000000000000000003feae13d107f0f2c4fb4dd08fb2a8b1ab553512e77f03',
-          })
-          .transaction({
-            hash: 'ce32d47452a4dfae6510fd283e1cec587c5cac217dec09ac4b01541adc86cd34',
-          })
-          .inscriptionTransferred({
-            inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
-            updated_address: address2,
-            satpoint_pre_transfer:
-              '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac:0:0',
-            satpoint_post_transfer:
-              'ce32d47452a4dfae6510fd283e1cec587c5cac217dec09ac4b01541adc86cd34:0:0',
-            post_transfer_output_value: null,
-            tx_index: 0,
-          })
-          .build()
-      );
-      const response1 = await fastify.inject({
-        method: 'GET',
-        url: `/ordinals/brc-20/balances/${address}`,
-      });
-      expect(response1.statusCode).toBe(200);
-      const json1 = response1.json();
-      expect(json1.total).toBe(1);
-      expect(json1.results).toStrictEqual([
-        {
-          available_balance: '1000',
-          overall_balance: '1000',
-          ticker: 'PEPE',
-          transferrable_balance: '0',
-        },
-      ]);
-      const response2 = await fastify.inject({
-        method: 'GET',
-        url: `/ordinals/brc-20/balances/${address2}`,
-      });
-      expect(response2.statusCode).toBe(200);
-      const json2 = response2.json();
-      expect(json2.total).toBe(1);
-      expect(json2.results).toStrictEqual([
-        {
-          available_balance: '9000',
-          overall_balance: '9000',
-          ticker: 'PEPE',
-          transferrable_balance: '0',
-        },
-      ]);
-
-      // Oops, turns out there was a gap fill with another transfer first
-      await db.updateInscriptions(
-        new TestChainhookPayloadBuilder()
-          .apply()
-          .block({
-            height: 775645,
-            hash: '00000000000000000003feae13d107f0f2c4fb4dd08fb2a8b1ab553512e77f03',
-          })
-          .transaction({
-            hash: '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac',
-          })
-          .inscriptionTransferred({
-            inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
-            updated_address: 'bc1q6uwuet65rm6xvlz7ztw2gvdmmay5uaycu03mqz',
-            satpoint_pre_transfer:
-              'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a:0:0',
-            satpoint_post_transfer:
-              '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac:0:0',
-            post_transfer_output_value: null,
-            tx_index: 0,
-          })
-          .build()
-      );
-      const response1b = await fastify.inject({
-        method: 'GET',
-        url: `/ordinals/brc-20/balances/${address}`,
-      });
-      expect(response1b.statusCode).toBe(200);
-      const json1b = response1b.json();
-      expect(json1b.total).toBe(1);
-      expect(json1b.results).toStrictEqual([
-        {
-          available_balance: '1000',
-          overall_balance: '1000',
-          ticker: 'PEPE',
-          transferrable_balance: '0',
-        },
-      ]);
-      // No movements at all for this address.
-      const response2b = await fastify.inject({
-        method: 'GET',
-        url: `/ordinals/brc-20/balances/${address2}`,
-      });
-      expect(response2b.statusCode).toBe(200);
-      const json2b = response2b.json();
-      expect(json2b.total).toBe(0);
-      // This address is the one that should have the balance.
-      const response3 = await fastify.inject({
-        method: 'GET',
-        url: `/ordinals/brc-20/balances/bc1q6uwuet65rm6xvlz7ztw2gvdmmay5uaycu03mqz`,
-      });
-      expect(response3.statusCode).toBe(200);
-      const json3 = response3.json();
-      expect(json3.total).toBe(1);
-      expect(json3.results).toStrictEqual([
         {
           available_balance: '9000',
           overall_balance: '9000',

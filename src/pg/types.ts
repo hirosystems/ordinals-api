@@ -138,6 +138,13 @@ export type DbInscriptionInsert = {
   sat_ordinal: PgNumeric;
   sat_rarity: string;
   sat_coinbase_height: number;
+  recursive: boolean;
+};
+
+export type DbRevealInsert = {
+  inscription?: DbInscriptionInsert;
+  recursive_refs?: string[];
+  location: DbLocationInsert;
 };
 
 export type DbInscription = {
