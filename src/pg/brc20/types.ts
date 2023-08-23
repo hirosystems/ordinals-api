@@ -40,9 +40,9 @@ export type DbBrc20Deploy = {
 
 export type DbBrc20Transfer = {
   id: string;
-  inscription_id: number;
-  brc20_deploy_id: number;
-  block_height: number;
+  inscription_id: string;
+  brc20_deploy_id: string;
+  block_height: string;
   tx_id: string;
   from_address: string;
   to_address?: string;
