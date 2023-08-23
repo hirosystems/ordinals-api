@@ -425,6 +425,7 @@ describe('BRC-20', () => {
           )
           .build()
       );
+      await db.brc20.scanBlocks();
       const response1 = await fastify.inject({
         method: 'GET',
         url: `/ordinals/brc-20/tokens?ticker=PEPE`,
@@ -498,6 +499,7 @@ describe('BRC-20', () => {
           )
           .build()
       );
+      await db.brc20.scanBlocks();
       const response1 = await fastify.inject({
         method: 'GET',
         url: `/ordinals/brc-20/tokens?ticker=PEPE`,
@@ -571,6 +573,7 @@ describe('BRC-20', () => {
           )
           .build()
       );
+      await db.brc20.scanBlocks();
       const response1 = await fastify.inject({
         method: 'GET',
         url: `/ordinals/brc-20/tokens?ticker=PEPE`,
@@ -667,6 +670,7 @@ describe('BRC-20', () => {
           )
           .build()
       );
+      await db.brc20.scanBlocks();
 
       const response1 = await fastify.inject({
         method: 'GET',
@@ -710,6 +714,7 @@ describe('BRC-20', () => {
           )
           .build()
       );
+      await db.brc20.scanBlocks(775619);
 
       const response2 = await fastify.inject({
         method: 'GET',
@@ -780,6 +785,7 @@ describe('BRC-20', () => {
           )
           .build()
       );
+      await db.brc20.scanBlocks();
       // Rollback
       await db.updateInscriptions(
         new TestChainhookPayloadBuilder()
@@ -870,6 +876,7 @@ describe('BRC-20', () => {
           )
           .build()
       );
+      await db.brc20.scanBlocks();
 
       const response2 = await fastify.inject({
         method: 'GET',
@@ -966,6 +973,7 @@ describe('BRC-20', () => {
           )
           .build()
       );
+      await db.brc20.scanBlocks();
 
       const response2 = await fastify.inject({
         method: 'GET',
@@ -1009,6 +1017,7 @@ describe('BRC-20', () => {
           )
           .build()
       );
+      await db.brc20.scanBlocks(775619);
 
       const response3 = await fastify.inject({
         method: 'GET',
@@ -1046,6 +1055,7 @@ describe('BRC-20', () => {
           )
           .build()
       );
+      await db.brc20.scanBlocks();
 
       const response2 = await fastify.inject({
         method: 'GET',
@@ -1111,6 +1121,7 @@ describe('BRC-20', () => {
           )
           .build()
       );
+      await db.brc20.scanBlocks();
 
       const response2 = await fastify.inject({
         method: 'GET',

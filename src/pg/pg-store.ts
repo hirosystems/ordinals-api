@@ -83,6 +83,7 @@ export class PgStore extends BasePgStore {
     let updatedBlockHeightMin = Infinity;
     await this.sqlWriteTransaction(async sql => {
       for (const rollbackEvent of payload.rollback) {
+        // TODO: Optimize rollbacks just as we optimized applys.
         const event = rollbackEvent as BitcoinEvent;
         const block_height = event.block_identifier.index;
         for (const tx of event.transactions) {
@@ -644,14 +645,9 @@ export class PgStore extends BasePgStore {
           SET updated_at = NOW()
           WHERE genesis_id IN ${sql([...transferGenesisIds])}
         `;
-      // await this.brc20.insertOperation({
-      //   inscription_id,
-      //   location_id: locationRes[0].id,
-      //   inscription: args.inscription,
-      //   location: args.location,
-      // });
       await this.updateInscriptionLocationPointers(locations);
       await this.updateInscriptionRecursions(writes);
+      await this.backfillOrphanLocations();
       await this.counts.applyInscriptions(inscriptions);
       for (const reveal of writes) {
         const action = reveal.inscription ? `reveal #${reveal.inscription.number}` : `transfer`;
@@ -745,6 +741,7 @@ export class PgStore extends BasePgStore {
     ): DbLocationPointerInsert[] => {
       const out = new Map<number, DbLocationPointerInsert>();
       for (const ptr of pointers) {
+        if (ptr.inscription_id === null) continue;
         const current = out.get(ptr.inscription_id);
         out.set(ptr.inscription_id, current ? (cond(current, ptr) ? current : ptr) : ptr);
       }
@@ -752,75 +749,81 @@ export class PgStore extends BasePgStore {
     };
 
     await this.sqlWriteTransaction(async sql => {
-      const distinctIds = [...new Set<number>(pointers.map(i => i.inscription_id))];
-
+      const distinctIds = [
+        ...new Set<number>(pointers.map(i => i.inscription_id).filter(v => v !== null)),
+      ];
       const genesisPtrs = distinctPointers(
         (a, b) =>
           a.block_height < b.block_height ||
           (a.block_height === b.block_height && a.tx_index < b.tx_index)
       );
-      const genesis = await sql<{ old_address: string | null; new_address: string | null }[]>`
-        WITH old_pointers AS (
-          SELECT inscription_id, address
-          FROM genesis_locations
-          WHERE inscription_id IN ${sql(distinctIds)}
-        ),
-        new_pointers AS (
-          INSERT INTO genesis_locations ${sql(genesisPtrs)}
-          ON CONFLICT (inscription_id) DO UPDATE SET
-            location_id = EXCLUDED.location_id,
-            block_height = EXCLUDED.block_height,
-            tx_index = EXCLUDED.tx_index,
-            address = EXCLUDED.address
-          WHERE
-            EXCLUDED.block_height < genesis_locations.block_height OR
-            (EXCLUDED.block_height = genesis_locations.block_height AND
-              EXCLUDED.tx_index < genesis_locations.tx_index)
-          RETURNING inscription_id, address
-        )
-        SELECT n.address AS new_address, o.address AS old_address
-        FROM new_pointers AS n
-        LEFT JOIN old_pointers AS o USING (inscription_id)
-      `;
-      await this.counts.applyLocations(genesis, true);
+      if (genesisPtrs.length) {
+        const genesis = await sql<{ old_address: string | null; new_address: string | null }[]>`
+          WITH old_pointers AS (
+            SELECT inscription_id, address
+            FROM genesis_locations
+            WHERE inscription_id IN ${sql(distinctIds)}
+          ),
+          new_pointers AS (
+            INSERT INTO genesis_locations ${sql(genesisPtrs)}
+            ON CONFLICT (inscription_id) DO UPDATE SET
+              location_id = EXCLUDED.location_id,
+              block_height = EXCLUDED.block_height,
+              tx_index = EXCLUDED.tx_index,
+              address = EXCLUDED.address
+            WHERE
+              EXCLUDED.block_height < genesis_locations.block_height OR
+              (EXCLUDED.block_height = genesis_locations.block_height AND
+                EXCLUDED.tx_index < genesis_locations.tx_index)
+            RETURNING inscription_id, address
+          )
+          SELECT n.address AS new_address, o.address AS old_address
+          FROM new_pointers AS n
+          LEFT JOIN old_pointers AS o USING (inscription_id)
+        `;
+        await this.counts.applyLocations(genesis, true);
+      }
 
       const currentPtrs = distinctPointers(
         (a, b) =>
           a.block_height > b.block_height ||
           (a.block_height === b.block_height && a.tx_index > b.tx_index)
       );
-      const current = await sql<{ old_address: string | null; new_address: string | null }[]>`
-        WITH old_pointers AS (
-          SELECT inscription_id, address
-          FROM current_locations
-          WHERE inscription_id IN ${sql(distinctIds)}
-        ),
-        new_pointers AS (
-          INSERT INTO current_locations ${sql(currentPtrs)}
-          ON CONFLICT (inscription_id) DO UPDATE SET
-            location_id = EXCLUDED.location_id,
-            block_height = EXCLUDED.block_height,
-            tx_index = EXCLUDED.tx_index,
-            address = EXCLUDED.address
-          WHERE
-            EXCLUDED.block_height > current_locations.block_height OR
-            (EXCLUDED.block_height = current_locations.block_height AND
-              EXCLUDED.tx_index > current_locations.tx_index)
-          RETURNING inscription_id, address
-        )
-        SELECT n.address AS new_address, o.address AS old_address
-        FROM new_pointers AS n
-        LEFT JOIN old_pointers AS o USING (inscription_id)
-      `;
-      await this.counts.applyLocations(current, false);
-
-      // Backfill orphan locations.
-      await sql`
-        UPDATE locations AS l
-        SET inscription_id = (SELECT id FROM inscriptions WHERE genesis_id = l.genesis_id)
-        WHERE l.inscription_id IS NULL
-      `;
+      if (currentPtrs.length) {
+        const current = await sql<{ old_address: string | null; new_address: string | null }[]>`
+          WITH old_pointers AS (
+            SELECT inscription_id, address
+            FROM current_locations
+            WHERE inscription_id IN ${sql(distinctIds)}
+          ),
+          new_pointers AS (
+            INSERT INTO current_locations ${sql(currentPtrs)}
+            ON CONFLICT (inscription_id) DO UPDATE SET
+              location_id = EXCLUDED.location_id,
+              block_height = EXCLUDED.block_height,
+              tx_index = EXCLUDED.tx_index,
+              address = EXCLUDED.address
+            WHERE
+              EXCLUDED.block_height > current_locations.block_height OR
+              (EXCLUDED.block_height = current_locations.block_height AND
+                EXCLUDED.tx_index > current_locations.tx_index)
+            RETURNING inscription_id, address
+          )
+          SELECT n.address AS new_address, o.address AS old_address
+          FROM new_pointers AS n
+          LEFT JOIN old_pointers AS o USING (inscription_id)
+        `;
+        await this.counts.applyLocations(current, false);
+      }
     });
+  }
+
+  private async backfillOrphanLocations(): Promise<void> {
+    await this.sql`
+      UPDATE locations AS l
+      SET inscription_id = (SELECT id FROM inscriptions WHERE genesis_id = l.genesis_id)
+      WHERE l.inscription_id IS NULL
+    `;
   }
 
   private async recalculateCurrentLocationPointerFromLocationRollBack(args: {
