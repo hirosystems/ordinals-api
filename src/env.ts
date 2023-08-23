@@ -18,6 +18,8 @@ const schema = Type.Object({
   API_HOST: Type.String({ default: '0.0.0.0' }),
   /** Port in which to serve the API */
   API_PORT: Type.Number({ default: 3000, minimum: 0, maximum: 65535 }),
+  /** Port in which to serve the Admin RPC interface */
+  ADMIN_RPC_PORT: Type.Number({ default: 3001, minimum: 0, maximum: 65535 }),
   /** Port in which to receive chainhook events */
   EVENT_PORT: Type.Number({ default: 3099, minimum: 0, maximum: 65535 }),
   /** Event server body limit (bytes) */
