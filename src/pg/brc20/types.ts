@@ -7,8 +7,8 @@ export type DbBrc20ScannedInscription = DbLocation & {
 };
 
 export type DbBrc20DeployInsert = {
-  inscription_id: number;
-  block_height: number;
+  inscription_id: string;
+  block_height: string;
   tx_id: string;
   address: string;
   ticker: string;
