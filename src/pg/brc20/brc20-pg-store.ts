@@ -1,13 +1,14 @@
 import { PgSqlClient, logger } from '@hirosystems/api-toolkit';
+import BigNumber from 'bignumber.js';
+import * as postgres from 'postgres';
+import { throwOnFirstRejected } from '../helpers';
 import { PgStore } from '../pg-store';
 import {
   DbInscriptionIndexPaging,
   DbPaginatedResult,
-  DbLocationInsert,
   LOCATIONS_COLUMNS,
   DbLocation,
 } from '../types';
-import BigNumber from 'bignumber.js';
 import {
   DbBrc20Token,
   DbBrc20Balance,
@@ -35,6 +36,10 @@ export class Brc20PgStore {
 
   constructor(db: PgStore) {
     this.parent = db;
+  }
+
+  sqlOr(partials: postgres.PendingQuery<postgres.Row[]>[] | undefined) {
+    return partials?.reduce((acc, curr) => this.sql`${acc} OR ${curr}`);
   }
 
   async scanBlocks(startBlock?: number, endBlock?: number): Promise<void> {
@@ -97,14 +102,20 @@ export class Brc20PgStore {
   async getTokens(
     args: { ticker?: string[] } & DbInscriptionIndexPaging
   ): Promise<DbPaginatedResult<DbBrc20Token>> {
-    const lowerTickers = args.ticker ? args.ticker.map(t => t.toLowerCase()) : undefined;
+    const tickerPrefixCondition = this.sqlOr(
+      args.ticker?.map(t => this.sql`d.ticker_lower LIKE LOWER(${t}) || '%'`)
+    );
+
     const results = await this.sql<(DbBrc20Token & { total: number })[]>`
       SELECT
         d.id, i.genesis_id, i.number, d.block_height, d.tx_id, d.address, d.ticker, d.max, d.limit,
-        d.decimals, COUNT(*) OVER() as total
+        d.decimals, l.timestamp as deploy_timestamp, COALESCE(s.minted_supply, 0) as minted_supply, COUNT(*) OVER() as total
       FROM brc20_deploys AS d
       INNER JOIN inscriptions AS i ON i.id = d.inscription_id
-      ${lowerTickers ? this.sql`WHERE LOWER(d.ticker) IN ${this.sql(lowerTickers)}` : this.sql``}
+      INNER JOIN genesis_locations AS g ON g.inscription_id = d.inscription_id
+      INNER JOIN locations AS l ON l.id = g.location_id
+      LEFT JOIN brc20_supplies AS s ON d.id = s.brc20_deploy_id
+      ${tickerPrefixCondition ? this.sql`WHERE ${tickerPrefixCondition}` : this.sql``}
       OFFSET ${args.offset}
       LIMIT ${args.limit}
     `;
@@ -121,7 +132,10 @@ export class Brc20PgStore {
       block_height?: number;
     } & DbInscriptionIndexPaging
   ): Promise<DbPaginatedResult<DbBrc20Balance>> {
-    const lowerTickers = args.ticker ? args.ticker.map(t => t.toLowerCase()) : undefined;
+    const tickerPrefixConditions = this.sqlOr(
+      args.ticker?.map(t => this.sql`d.ticker_lower LIKE LOWER(${t}) || '%'`)
+    );
+
     const results = await this.sql<(DbBrc20Balance & { total: number })[]>`
       SELECT
         d.ticker,
@@ -136,8 +150,8 @@ export class Brc20PgStore {
       }
       WHERE
         b.address = ${args.address}
-        ${lowerTickers ? this.sql`AND LOWER(d.ticker) IN ${this.sql(lowerTickers)}` : this.sql``}
         ${args.block_height ? this.sql`AND l.block_height <= ${args.block_height}` : this.sql``}
+        ${tickerPrefixConditions ? this.sql`AND (${tickerPrefixConditions})` : this.sql``}
       GROUP BY d.ticker
       LIMIT ${args.limit}
       OFFSET ${args.offset}
@@ -151,33 +165,29 @@ export class Brc20PgStore {
   async getTokenSupply(args: { ticker: string }): Promise<DbBrc20Supply | undefined> {
     return await this.parent.sqlTransaction(async sql => {
       const deploy = await this.getDeploy(args);
-      if (!deploy) {
-        return;
-      }
-      const minted = await sql<{ total: string }[]>`
-        SELECT SUM(avail_balance + trans_balance) AS total
-        FROM brc20_balances
-        WHERE brc20_deploy_id = ${deploy.id}
-        GROUP BY brc20_deploy_id
-      `;
-      const holders = await sql<{ count: string }[]>`
-        WITH historical_holders AS (
-          SELECT SUM(avail_balance + trans_balance) AS balance
-          FROM brc20_balances
-          WHERE brc20_deploy_id = ${deploy.id}
-          GROUP BY address
-        )
-        SELECT COUNT(*) AS count
-        FROM historical_holders
-        WHERE balance > 0
-      `;
-      const supply = await sql<{ max: string }[]>`
+      if (!deploy) return;
+
+      const supplyPromise = sql<{ max: string }[]>`
         SELECT max FROM brc20_deploys WHERE id = ${deploy.id}
       `;
+      const mintedPromise = sql<{ minted_supply: string }[]>`
+        SELECT minted_supply
+        FROM brc20_supplies
+        WHERE brc20_deploy_id = ${deploy.id}
+      `;
+      const holdersPromise = sql<{ count: string }[]>`
+        SELECT COUNT(*) AS count
+        FROM brc20_balances
+        WHERE brc20_deploy_id = ${deploy.id}
+        GROUP BY address
+        HAVING SUM(avail_balance + trans_balance) > 0
+      `;
+      const settles = await Promise.allSettled([supplyPromise, holdersPromise, mintedPromise]);
+      const [supply, holders, minted] = throwOnFirstRejected(settles);
       return {
         max_supply: supply[0].max,
-        minted_supply: minted[0].total,
-        holders: holders[0].count,
+        minted_supply: minted[0]?.minted_supply ?? '0',
+        holders: holders[0]?.count ?? '0',
       };
     });
   }
@@ -285,7 +295,7 @@ export class Brc20PgStore {
     const deploy = await this.sql<DbBrc20Deploy[]>`
       SELECT ${this.sql(BRC20_DEPLOYS_COLUMNS)}
       FROM brc20_deploys
-      WHERE LOWER(ticker) = LOWER(${args.ticker})
+      WHERE ticker_lower = LOWER(${args.ticker})
     `;
     if (deploy.count) return deploy[0];
   }
@@ -301,7 +311,7 @@ export class Brc20PgStore {
           COALESCE(SUM(amount), 0) AS minted_supply
         FROM brc20_deploys AS d
         LEFT JOIN brc20_mints AS m ON m.brc20_deploy_id = d.id
-        WHERE LOWER(d.ticker) = LOWER(${mint.op.tick})
+        WHERE d.ticker_lower = LOWER(${mint.op.tick})
         GROUP BY d.id
       `;
       if (tokenRes.count === 0) return;
@@ -359,7 +369,7 @@ export class Brc20PgStore {
         SELECT b.brc20_deploy_id, COALESCE(SUM(b.avail_balance), 0) AS avail_balance
         FROM brc20_balances AS b
         INNER JOIN brc20_deploys AS d ON b.brc20_deploy_id = d.id
-        WHERE LOWER(d.ticker) = LOWER(${transfer.op.tick})
+        WHERE d.ticker_lower = LOWER(${transfer.op.tick})
           AND b.address = ${transfer.location.address}
         GROUP BY b.brc20_deploy_id
       `;
