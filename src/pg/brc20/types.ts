@@ -45,6 +45,8 @@ export type DbBrc20Token = {
   max: string;
   limit?: string;
   decimals: number;
+  deploy_timestamp: number;
+  minted_supply: string;
 };
 
 export type DbBrc20Supply = {
