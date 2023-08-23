@@ -16,7 +16,6 @@ import {
   DbInscriptionInsert,
   DbInscriptionLocationChange,
   DbLocation,
-  DbLocationInsert,
   DbLocationPointer,
   DbLocationPointerInsert,
   DbPaginatedResult,
@@ -219,6 +218,8 @@ export class PgStore extends BasePgStore {
         }
         await this.insertInscriptions(writes);
         updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
+        if (ENV.BRC20_BLOCK_SCAN_ENABLED)
+          await this.brc20.scanBlocks(event.block_identifier.index, event.block_identifier.index);
       }
     });
     await this.refreshMaterializedView('chain_tip');
