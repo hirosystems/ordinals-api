@@ -1,7 +1,9 @@
 import {
   BasePgStore,
+  PgConnectionVars,
   PgSqlClient,
   connectPostgres,
+  isTestEnv,
   logger,
   runMigrations,
 } from '@hirosystems/api-toolkit';
@@ -9,7 +11,7 @@ import { BitcoinEvent, Payload } from '@hirosystems/chainhook-client';
 import * as path from 'path';
 import * as postgres from 'postgres';
 import { Order, OrderBy } from '../api/schemas';
-import { isProdEnv, isTestEnv, normalizedHexString, parseSatPoint } from '../api/util/helpers';
+import { normalizedHexString, parseSatPoint } from '../api/util/helpers';
 import { OrdinalSatoshi } from '../api/util/ordinal-satoshi';
 import { ENV } from '../env';
 import { Brc20PgStore } from './brc20/brc20-pg-store';
@@ -45,7 +47,7 @@ export class PgStore extends BasePgStore {
   readonly counts: CountsPgStore;
 
   static async connect(opts?: { skipMigrations: boolean }): Promise<PgStore> {
-    const pgConfig = {
+    const pgConfig: PgConnectionVars = {
       host: ENV.PGHOST,
       port: ENV.PGPORT,
       user: ENV.PGUSER,
@@ -59,6 +61,7 @@ export class PgStore extends BasePgStore {
         poolMax: ENV.PG_CONNECTION_POOL_MAX,
         idleTimeout: ENV.PG_IDLE_TIMEOUT,
         maxLifetime: ENV.PG_MAX_LIFETIME,
+        statementTimeout: ENV.PG_STATEMENT_TIMEOUT,
       },
     });
     if (opts?.skipMigrations !== true) {
@@ -568,12 +571,6 @@ export class PgStore extends BasePgStore {
       ORDER BY block_height DESC
       LIMIT 5000
     `; // roughly 35 days of blocks, assuming 10 minute block times on a full database
-  }
-
-  async refreshMaterializedView(viewName: string) {
-    await this.sql`REFRESH MATERIALIZED VIEW ${
-      isProdEnv ? this.sql`CONCURRENTLY` : this.sql``
-    } ${this.sql(viewName)}`;
   }
 
   private async getInscription(args: { genesis_id: string }): Promise<DbInscription | undefined> {

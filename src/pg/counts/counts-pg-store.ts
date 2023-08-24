@@ -1,5 +1,4 @@
-import { PgSqlClient } from '@hirosystems/api-toolkit';
-import { PgStore } from '../pg-store';
+import { BasePgStoreModule } from '@hirosystems/api-toolkit';
 import { SatoshiRarity } from '../../api/util/ordinal-satoshi';
 import {
   DbInscription,
@@ -14,17 +13,7 @@ import { DbInscriptionIndexResultCountType } from './types';
  * This class affects all the different tables that track inscription counts according to different
  * parameters (sat rarity, mime type, cursed, blessed, current owner, etc.)
  */
-export class CountsPgStore {
-  // TODO: Move this to the api-toolkit so we can have pg submodules.
-  private readonly parent: PgStore;
-  private get sql(): PgSqlClient {
-    return this.parent.sql;
-  }
-
-  constructor(db: PgStore) {
-    this.parent = db;
-  }
-
+export class CountsPgStore extends BasePgStoreModule {
   async fromResults(
     countType: DbInscriptionIndexResultCountType,
     filters?: DbInscriptionIndexFilters
@@ -65,7 +54,7 @@ export class CountsPgStore {
 
   async applyInscriptions(writes: DbInscriptionInsert[]): Promise<void> {
     if (writes.length === 0) return;
-    await this.parent.sqlWriteTransaction(async sql => {
+    await this.sqlWriteTransaction(async sql => {
       const mimeType = new Map<string, any>();
       const rarity = new Map<string, any>();
       const type = new Map<string, any>();
@@ -97,7 +86,7 @@ export class CountsPgStore {
   }
 
   async rollBackInscription(args: { inscription: DbInscription }): Promise<void> {
-    await this.parent.sqlWriteTransaction(async sql => {
+    await this.sqlWriteTransaction(async sql => {
       await sql`
         UPDATE counts_by_mime_type SET count = count - 1 WHERE mime_type = ${args.inscription.mime_type}
       `;
@@ -124,7 +113,7 @@ export class CountsPgStore {
     genesis: boolean = true
   ): Promise<void> {
     if (writes.length === 0) return;
-    await this.parent.sqlWriteTransaction(async sql => {
+    await this.sqlWriteTransaction(async sql => {
       const table = genesis ? sql`counts_by_genesis_address` : sql`counts_by_address`;
       const oldAddr = new Map<string, any>();
       const newAddr = new Map<string, any>();
@@ -157,7 +146,7 @@ export class CountsPgStore {
     curr: DbLocationPointer;
     prev: DbLocationPointer;
   }): Promise<void> {
-    await this.parent.sqlWriteTransaction(async sql => {
+    await this.sqlWriteTransaction(async sql => {
       if (args.curr.address) {
         await sql`
           UPDATE counts_by_address SET count = count - 1 WHERE address = ${args.curr.address}
