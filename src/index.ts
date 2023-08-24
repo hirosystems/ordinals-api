@@ -1,6 +1,5 @@
-import { logger, registerShutdownConfig } from '@hirosystems/api-toolkit';
+import { isProdEnv, logger, registerShutdownConfig } from '@hirosystems/api-toolkit';
 import { buildApiServer, buildPromServer } from './api/init';
-import { isProdEnv } from './api/util/helpers';
 import { startChainhookServer } from './chainhook/server';
 import { ENV } from './env';
 import { ApiMetrics } from './metrics/metrics';
