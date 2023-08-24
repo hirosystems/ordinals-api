@@ -8,8 +8,7 @@ import { InscriptionsRoutes } from './routes/inscriptions';
 import { SatRoutes } from './routes/sats';
 import { StatsRoutes } from './routes/stats';
 import { StatusRoutes } from './routes/status';
-import { isProdEnv } from './util/helpers';
-import { PINO_LOGGER_CONFIG } from '@hirosystems/api-toolkit';
+import { PINO_LOGGER_CONFIG, isProdEnv } from '@hirosystems/api-toolkit';
 
 export const Api: FastifyPluginAsync<
   Record<never, never>,
