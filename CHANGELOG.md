@@ -1,3 +1,10 @@
+## [1.0.0-beta.16](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.15...v1.0.0-beta.16) (2023-08-24)
+
+
+### Bug Fixes
+
+* upgrade api-toolkit ([#190](https://github.com/hirosystems/ordinals-api/issues/190)) ([a691b67](https://github.com/hirosystems/ordinals-api/commit/a691b6707eb2b6e2cedfc8a13fe249157660457f))
+
 ## [1.0.0-beta.15](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.14...v1.0.0-beta.15) (2023-08-04)
 
 
