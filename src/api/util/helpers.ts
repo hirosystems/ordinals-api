@@ -1,4 +1,10 @@
-import { DbBrc20Token, DbBrc20Supply, DbBrc20Balance, DbBrc20Holder } from '../../pg/brc20/types';
+import {
+  DbBrc20Activity,
+  DbBrc20Balance,
+  DbBrc20Holder,
+  DbBrc20Supply,
+  DbBrc20Token,
+} from '../../pg/brc20/types';
 import {
   DbFullyLocatedInscriptionResult,
   DbInscriptionLocationChange,
@@ -8,6 +14,7 @@ import {
   BlockHashParamCType,
   BlockHeightParamCType,
   BlockInscriptionTransfer,
+  Brc20ActivityResponse,
   Brc20BalanceResponse,
   Brc20HolderResponse,
   Brc20Supply,
@@ -128,6 +135,47 @@ export function parseBrc20Balances(items: DbBrc20Balance[]): Brc20BalanceRespons
     transferrable_balance: i.trans_balance,
     overall_balance: i.total_balance,
   }));
+}
+
+export function parseBrc20Activities(items: DbBrc20Activity[]): Brc20ActivityResponse[] {
+  return items.map(i => {
+    const a: Partial<Brc20ActivityResponse> = {
+      operation: i.operation,
+      address: i.address,
+      tx_id: i.tx_id,
+      timestamp: i.timestamp,
+      block_height: parseInt(i.block_height),
+      block_hash: i.block_hash,
+      ticker: i.ticker,
+      inscription_id: i.inscription_id,
+    };
+
+    // Typescript needs checking both `i` and `a` (even though they're the same)
+    if (i.operation === 'deploy' && a.operation === 'deploy') {
+      a.deploy = {
+        max_supply: i.deploy_max,
+        mint_limit: i.deploy_limit,
+        decimals: i.deploy_decimals,
+      };
+    } else if (i.operation === 'mint' && a.operation === 'mint') {
+      a.mint = {
+        amount: i.mint_amount,
+      };
+    } else if (i.operation === 'transfer' && a.operation === 'transfer') {
+      a.transfer = {
+        amount: i.transfer_amount,
+        from_address: i.transfer_from,
+        to_address: i.transfer_to,
+      };
+    } else if (i.operation === 'prepare_transfer' && a.operation === 'prepare_transfer') {
+      a.transfer = {
+        amount: i.transfer_amount,
+        from_address: i.transfer_from,
+      };
+    }
+
+    return a as Brc20ActivityResponse;
+  });
 }
 
 export function parseBrc20Holders(items: DbBrc20Holder[]): Brc20HolderResponse[] {

@@ -26,7 +26,7 @@ export const Api: FastifyPluginAsync<
 export async function buildApiServer(args: { db: PgStore }) {
   const fastify = Fastify({
     trustProxy: true,
-    logger: PINO_LOGGER_CONFIG,
+    logger: { level: 'debug' },
   }).withTypeProvider<TypeBoxTypeProvider>();
 
   fastify.decorate('db', args.db);

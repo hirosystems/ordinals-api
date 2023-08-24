@@ -27,7 +27,7 @@ export type DbBrc20MintInsert = {
 };
 
 export type DbBrc20Deploy = {
-  id: string;
+  id: number;
   inscription_id: number;
   block_height: number;
   tx_id: string;
@@ -108,6 +108,60 @@ export type DbBrc20BalanceInsert = {
   trans_balance: PgNumeric;
   type: DbBrc20BalanceTypeId;
 };
+
+export type DbBrc20EventOperation = 'deploy' | 'mint' | 'prepare_transfer' | 'transfer';
+
+export type DbBrc20EventInsert = {
+  operation: DbBrc20EventOperation;
+  inscription_id: string;
+  genesis_location_id: string;
+  brc20_deploy_id: string;
+  deploy_id: string | null;
+  mint_id: string | null;
+  transfer_id: string | null;
+};
+
+type BaseActivity = {
+  ticker: string;
+  operation: DbBrc20EventOperation;
+  inscription_id: string;
+  block_height: string;
+  block_hash: string;
+  tx_id: string;
+  address: string;
+  timestamp: number;
+};
+
+type DeployActivity = BaseActivity & {
+  operation: 'deploy';
+  deploy_max: string;
+  deploy_limit: string | null;
+  deploy_decimals: number;
+};
+
+type MintActivity = BaseActivity & {
+  operation: 'mint';
+  mint_amount: string;
+};
+
+type PrepareTransferActivity = BaseActivity & {
+  operation: 'prepare_transfer';
+  transfer_amount: string;
+  transfer_from: string;
+};
+
+type TransferActivity = BaseActivity & {
+  operation: 'transfer';
+  transfer_amount: string;
+  transfer_from: string;
+  transfer_to: string;
+};
+
+export type DbBrc20Activity =
+  | DeployActivity
+  | MintActivity
+  | PrepareTransferActivity
+  | TransferActivity;
 
 export const BRC20_DEPLOYS_COLUMNS = [
   'id',

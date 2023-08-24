@@ -1,9 +1,18 @@
 import { cycleMigrations } from '@hirosystems/api-toolkit';
 import { buildApiServer } from '../src/api/init';
+import { Brc20ActivityResponse } from '../src/api/schemas';
 import { brc20FromInscription } from '../src/pg/brc20/helpers';
 import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
 import { DbInscriptionInsert } from '../src/pg/types';
-import { TestChainhookPayloadBuilder, TestFastifyServer, brc20Reveal, randomHash } from './helpers';
+import {
+  TestChainhookPayloadBuilder,
+  TestFastifyServer,
+  brc20Reveal,
+  incrementing,
+  randomHash,
+} from './helpers';
+
+jest.setTimeout(240_000);
 
 describe('BRC-20', () => {
   let db: PgStore;
@@ -1686,129 +1695,360 @@ describe('BRC-20', () => {
   });
 
   describe('routes', () => {
-    test('token endpoint', async () => {
-      await db.updateInscriptions(
-        new TestChainhookPayloadBuilder()
-          .apply()
-          .block({ height: 775617 })
-          .transaction({ hash: randomHash() })
-          .inscriptionRevealed(
-            brc20Reveal({
-              json: {
-                p: 'brc-20',
-                op: 'deploy',
-                tick: 'PEPE',
-                max: '21000000',
-              },
-              number: 5,
-              tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
-              address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-            })
-          )
-          .build()
-      );
-      const response = await fastify.inject({
-        method: 'GET',
-        url: `/ordinals/brc-20/tokens/PEPE`,
+    describe('/brc-20/tokens', () => {
+      test('token endpoint', async () => {
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: 775617 })
+            .transaction({ hash: randomHash() })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'deploy',
+                  tick: 'PEPE',
+                  max: '21000000',
+                },
+                number: 5,
+                tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+                address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+              })
+            )
+            .build()
+        );
+        const response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/tokens/PEPE`,
+        });
+        expect(response.statusCode).toBe(200);
       });
-      expect(response.statusCode).toBe(200);
+
+      test('filter tickers by ticker prefix', async () => {
+        const blockHeights = incrementing(775600);
+
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: randomHash() })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'deploy',
+                  tick: 'PEPE',
+                  max: '21000000',
+                },
+                number: 5,
+                tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+                address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+              })
+            )
+            .build()
+        );
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: randomHash() })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'deploy',
+                  tick: 'PEER',
+                  max: '21000000',
+                },
+                number: 5,
+                tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+                address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+              })
+            )
+            .build()
+        );
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: randomHash() })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'deploy',
+                  tick: 'ABCD',
+                  max: '21000000',
+                },
+                number: 5,
+                tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+                address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+              })
+            )
+            .build()
+        );
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: randomHash() })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'deploy',
+                  tick: 'DCBA',
+                  max: '21000000',
+                },
+                number: 5,
+                tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+                address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+              })
+            )
+            .build()
+        );
+        const response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/tokens?ticker=PE&ticker=AB`,
+        });
+        expect(response.statusCode).toBe(200);
+        const responseJson = response.json();
+        expect(responseJson.total).toBe(3);
+        expect(responseJson.results).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ ticker: 'PEPE' }),
+            expect.objectContaining({ ticker: 'PEER' }),
+            expect.objectContaining({ ticker: 'ABCD' }),
+          ])
+        );
+      });
     });
 
-    test('filter tickers by ticker prefix', async () => {
-      await db.updateInscriptions(
-        new TestChainhookPayloadBuilder()
-          .apply()
-          .block({ height: 775617 })
-          .transaction({ hash: randomHash() })
-          .inscriptionRevealed(
-            brc20Reveal({
-              json: {
-                p: 'brc-20',
-                op: 'deploy',
-                tick: 'PEPE',
-                max: '21000000',
+    describe('/brc-20/activity', () => {
+      test('activity for token transfers', async () => {
+        // Setup
+        const inscriptionNumbers = incrementing(1);
+        const blockHeights = incrementing(775600);
+        const addressA = 'bc1q6uwuet65rm6xvlz7ztw2gvdmmay5uaycu03mqz';
+        const addressB = 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4';
+
+        // A deploys PEPE
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: randomHash() })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'deploy',
+                  tick: 'PEPE',
+                  max: '21000000',
+                },
+                number: inscriptionNumbers.next().value,
+                tx_id: randomHash(),
+                address: addressA,
+              })
+            )
+            .build()
+        );
+
+        // Verify that the PEPE deploy is in the activity feed
+        let response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/activity?ticker=PEPE`,
+        });
+        expect(response.statusCode).toBe(200);
+        let json = response.json();
+        expect(json.total).toBe(1);
+        expect(json.results).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              operation: 'deploy',
+              ticker: 'PEPE',
+              address: addressA,
+              deploy: expect.objectContaining({
+                max_supply: '21000000',
+              }),
+            } as Brc20ActivityResponse),
+          ])
+        );
+
+        // A mints 10000 PEPE
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: randomHash() })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'mint',
+                  tick: 'PEPE',
+                  amt: '10000',
+                },
+                number: inscriptionNumbers.next().value,
+                tx_id: randomHash(),
+                address: addressA,
+              })
+            )
+            .build()
+        );
+
+        response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/activity?ticker=PEPE`,
+        });
+        expect(response.statusCode).toBe(200);
+        json = response.json();
+        expect(json.total).toBe(2);
+        expect(json.results).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              operation: 'deploy',
+              ticker: 'PEPE',
+            } as Brc20ActivityResponse),
+            expect.objectContaining({
+              operation: 'mint',
+              ticker: 'PEPE',
+              address: addressA,
+              mint: {
+                amount: '10000',
               },
-              number: 5,
-              tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
-              address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-            })
-          )
-          .build()
-      );
-      await db.updateInscriptions(
-        new TestChainhookPayloadBuilder()
-          .apply()
-          .block({ height: 775618 })
-          .transaction({ hash: randomHash() })
-          .inscriptionRevealed(
-            brc20Reveal({
-              json: {
-                p: 'brc-20',
-                op: 'deploy',
-                tick: 'PEER',
-                max: '21000000',
+            } as Brc20ActivityResponse),
+          ])
+        );
+
+        // B mints 10000 PEPE
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: randomHash() })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'mint',
+                  tick: 'PEPE',
+                  amt: '10000',
+                },
+                number: inscriptionNumbers.next().value,
+                tx_id: randomHash(),
+                address: addressB,
+              })
+            )
+            .build()
+        );
+
+        response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/activity?ticker=PEPE`,
+        });
+        expect(response.statusCode).toBe(200);
+        json = response.json();
+        expect(json.total).toBe(3);
+        expect(json.results).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              operation: 'mint',
+              ticker: 'PEPE',
+              address: addressB,
+              mint: {
+                amount: '10000',
               },
-              number: 6,
-              tx_id: 'ff2aaeff6889211369305e6367180fc58a12c57fc784b68fa6a6741943db3863',
-              address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-            })
-          )
-          .build()
-      );
-      await db.updateInscriptions(
-        new TestChainhookPayloadBuilder()
-          .apply()
-          .block({ height: 775619 })
-          .transaction({ hash: randomHash() })
-          .inscriptionRevealed(
-            brc20Reveal({
-              json: {
-                p: 'brc-20',
-                op: 'deploy',
-                tick: 'ABCD',
-                max: '21000000',
+            } as Brc20ActivityResponse),
+          ])
+        );
+
+        // A creates transfer of 9000 PEPE
+        const transferHash = randomHash();
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: transferHash })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'transfer',
+                  tick: 'PEPE',
+                  amt: '9000',
+                },
+                number: inscriptionNumbers.next().value,
+                tx_id: transferHash,
+                address: addressA,
+              })
+            )
+            .build()
+        );
+
+        response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/activity?ticker=PEPE`,
+        });
+        expect(response.statusCode).toBe(200);
+        json = response.json();
+        expect(json.total).toBe(4);
+        expect(json.results).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              operation: 'prepare_transfer',
+              ticker: 'PEPE',
+              address: addressA,
+              tx_id: transferHash,
+              transfer: {
+                amount: '9000',
+                from_address: addressA,
               },
-              number: 7,
-              tx_id: '7ab47806eb20100417a0450244a034bd49062e1809713a0b1d31a61b07b9e434',
-              address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+            } as Brc20ActivityResponse),
+          ])
+        );
+
+        // A sends transfer inscription to B (aka transfer/sale)
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: randomHash() })
+            .inscriptionTransferred({
+              updated_address: addressB,
+              tx_index: 0,
+              inscription_id: `${transferHash}i0`,
+              post_transfer_output_value: null,
+              satpoint_pre_transfer: `${transferHash}:0:0`,
+              satpoint_post_transfer:
+                '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac:0:0',
             })
-          )
-          .build()
-      );
-      await db.updateInscriptions(
-        new TestChainhookPayloadBuilder()
-          .apply()
-          .block({ height: 775620 })
-          .transaction({ hash: randomHash() })
-          .inscriptionRevealed(
-            brc20Reveal({
-              json: {
-                p: 'brc-20',
-                op: 'deploy',
-                tick: 'DCBA',
-                max: '21000000',
+            .build()
+        );
+
+        response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/activity?ticker=PEPE`,
+        });
+        expect(response.statusCode).toBe(200);
+        json = response.json();
+        expect(json.total).toBe(5);
+        expect(json.results).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              operation: 'transfer',
+              ticker: 'PEPE',
+              tx_id: expect.not.stringMatching(transferHash),
+              address: addressB,
+              transfer: {
+                amount: '9000',
+                from_address: addressA,
+                to_address: addressB,
               },
-              number: 8,
-              tx_id: '0b3b160765698aa809bcb948d1fd2d939dc372340439e4bf840d42a07bf41975',
-              address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-            })
-          )
-          .build()
-      );
-      const response = await fastify.inject({
-        method: 'GET',
-        url: `/ordinals/brc-20/tokens?ticker=PE&ticker=AB`,
+            } as Brc20ActivityResponse),
+          ])
+        );
       });
-      expect(response.statusCode).toBe(200);
-      const responseJson = response.json();
-      expect(responseJson.total).toBe(3);
-      expect(responseJson.results).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ ticker: 'PEPE' }),
-          expect.objectContaining({ ticker: 'PEER' }),
-          expect.objectContaining({ ticker: 'ABCD' }),
-        ])
-      );
     });
   });
 });
