@@ -1,3 +1,15 @@
+## [1.0.0-brc-20.2](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.1...v1.0.0-brc-20.2) (2023-08-24)
+
+
+### Features
+
+* add more brc20 features ([#183](https://github.com/hirosystems/ordinals-api/issues/183)) ([c1939ce](https://github.com/hirosystems/ordinals-api/commit/c1939cee3a40df5f285d3bb749c8b29cea4bb271))
+
+
+### Bug Fixes
+
+* optimize inscription and brc-20 inserts ([#189](https://github.com/hirosystems/ordinals-api/issues/189)) ([3807334](https://github.com/hirosystems/ordinals-api/commit/38073341163bc1c5cea44b66ad3da505f2ce4273))
+
 ## [1.0.0-brc-20.1](https://github.com/hirosystems/ordinals-api/compare/v0.4.15...v1.0.0-brc-20.1) (2023-08-17)
 
 
