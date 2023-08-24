@@ -1,3 +1,11 @@
+## [1.0.0-brc-20.3](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.2...v1.0.0-brc-20.3) (2023-08-24)
+
+
+### Bug Fixes
+
+* add unique indexes for mints and transfers ([b428bb4](https://github.com/hirosystems/ordinals-api/commit/b428bb48ef2b2a3eda6f3366fbd7fd488d090d4d))
+* sending transfer as fee returns amt to sender ([e23012a](https://github.com/hirosystems/ordinals-api/commit/e23012a926eef80e1d467ef28f618fae989426fd))
+
 ## [1.0.0-brc-20.2](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.1...v1.0.0-brc-20.2) (2023-08-24)
 
 
