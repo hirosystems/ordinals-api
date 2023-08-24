@@ -351,6 +351,7 @@ export class Brc20PgStore {
       await sql`
         WITH mint_insert AS (
           INSERT INTO brc20_mints ${sql(mintInsert)}
+          ON CONFLICT (inscription_id) DO NOTHING
         )
         INSERT INTO brc20_balances ${sql(balanceInsert)}
         ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
@@ -403,6 +404,7 @@ export class Brc20PgStore {
       await sql`
         WITH transfer_insert AS (
           INSERT INTO brc20_transfers ${sql(transferInsert)}
+          ON CONFLICT (inscription_id) DO NOTHING
         )
         INSERT INTO brc20_balances ${sql(balanceInsert)}
         ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
