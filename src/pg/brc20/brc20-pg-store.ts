@@ -23,6 +23,7 @@ import {
   DbBrc20ScannedInscription,
   DbBrc20MintInsert,
   DbBrc20DeployInsert,
+  DbBrc20TransferInsert,
 } from './types';
 import { Brc20Deploy, Brc20Mint, Brc20Transfer, brc20FromInscriptionContent } from './helpers';
 import { hexToBuffer } from '../../api/util/helpers';
@@ -60,12 +61,7 @@ export class Brc20PgStore {
         const block = await sql<DbBrc20ScannedInscription[]>`
           SELECT
             i.content,
-            (
-              CASE EXISTS(SELECT location_id FROM genesis_locations WHERE location_id = l.id)
-                WHEN TRUE THEN TRUE
-                ELSE FALSE
-              END
-            ) AS genesis,
+            EXISTS(SELECT location_id FROM genesis_locations WHERE location_id = l.id) AS genesis,
             ${sql(LOCATIONS_COLUMNS.map(c => `l.${c}`))}
           FROM locations AS l
           INNER JOIN inscriptions AS i ON l.inscription_id = i.id
@@ -98,8 +94,7 @@ export class Brc20PgStore {
               break;
           }
         }
-      }
-      if (!write.genesis) {
+      } else {
         await this.applyTransfer(write);
       }
     }
@@ -257,7 +252,8 @@ export class Brc20PgStore {
           inscription_id: transfer.inscription_id,
           location_id: args.id,
           brc20_deploy_id: transfer.brc20_deploy_id,
-          address: args.address,
+          // If a transfer is sent as fee, its amount must be returned to sender.
+          address: args.address ?? transfer.from_address,
           avail_balance: amount.toString(),
           trans_balance: '0',
           type: DbBrc20BalanceTypeId.transferTo,
@@ -386,7 +382,7 @@ export class Brc20PgStore {
       const available = new BigNumber(balanceRes[0].avail_balance);
       if (transAmt.gt(available)) return;
 
-      const transferInsert = {
+      const transferInsert: DbBrc20TransferInsert = {
         inscription_id: transfer.location.inscription_id,
         brc20_deploy_id: balanceRes[0].brc20_deploy_id,
         block_height: transfer.location.block_height,

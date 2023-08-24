@@ -16,6 +16,8 @@ export const AdminApi: FastifyPluginCallback<Record<never, never>, Server, TypeB
       schema: {
         description: 'Scan for BRC-20 operations within a block range',
         querystring: Type.Object({
+          // TIP: The first BRC-20 token was deployed at height `779832`. This should be a good
+          // place to start.
           start_block: Type.Integer(),
           end_block: Type.Integer(),
         }),

@@ -38,6 +38,16 @@ export type DbBrc20Deploy = {
   limit?: string;
 };
 
+export type DbBrc20TransferInsert = {
+  inscription_id: string;
+  brc20_deploy_id: string;
+  block_height: string;
+  tx_id: string;
+  from_address: string;
+  to_address: string | null;
+  amount: string;
+};
+
 export type DbBrc20Transfer = {
   id: string;
   inscription_id: string;
@@ -93,7 +103,7 @@ export type DbBrc20BalanceInsert = {
   inscription_id: PgNumeric;
   location_id: PgNumeric;
   brc20_deploy_id: PgNumeric;
-  address: string | null;
+  address: string;
   avail_balance: PgNumeric;
   trans_balance: PgNumeric;
   type: DbBrc20BalanceTypeId;

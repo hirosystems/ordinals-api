@@ -1506,6 +1506,74 @@ describe('BRC-20', () => {
       expect(prevBlockJson2.results[0]).toBeUndefined();
     });
 
+    test('sending transfer as fee returns amount to sender', async () => {
+      const address = 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td';
+      await deployAndMintPEPE(address);
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 775619,
+            hash: '00000000000000000002b14f0c5dde0b2fc74d022e860696bd64f1f652756674',
+          })
+          .transaction({
+            hash: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'transfer',
+                tick: 'PEPE',
+                amt: '9000',
+              },
+              number: 7,
+              tx_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
+              address: address,
+            })
+          )
+          .build()
+      );
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 775620,
+            hash: '00000000000000000003feae13d107f0f2c4fb4dd08fb2a8b1ab553512e77f03',
+          })
+          .transaction({
+            hash: '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac',
+          })
+          .inscriptionTransferred({
+            inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
+            updated_address: null, // Sent as fee
+            satpoint_pre_transfer:
+              'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a:0:0',
+            satpoint_post_transfer:
+              '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac:0:0',
+            post_transfer_output_value: null,
+            tx_index: 0,
+          })
+          .build()
+      );
+
+      const response1 = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/balances/${address}`,
+      });
+      expect(response1.statusCode).toBe(200);
+      const json1 = response1.json();
+      expect(json1.total).toBe(1);
+      expect(json1.results).toStrictEqual([
+        {
+          available_balance: '10000',
+          overall_balance: '10000',
+          ticker: 'PEPE',
+          transferrable_balance: '0',
+        },
+      ]);
+    });
+
     test('cannot spend valid transfer twice', async () => {
       const address = 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td';
       const address2 = '3QNjwPDRafjBm9XxJpshgk3ksMJh3TFxTU';
