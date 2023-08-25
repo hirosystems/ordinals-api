@@ -1,3 +1,11 @@
+## [1.0.0-brc-20.4](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.3...v1.0.0-brc-20.4) (2023-08-25)
+
+
+### Bug Fixes
+
+* refresh supplies view only if BRC-20 is enabled ([7d6705a](https://github.com/hirosystems/ordinals-api/commit/7d6705a82f2acec5531b53d2d352f7fa04bf1c51))
+* upgrade api-toolkit ([#190](https://github.com/hirosystems/ordinals-api/issues/190)) ([0e673a7](https://github.com/hirosystems/ordinals-api/commit/0e673a7ab327e98b85b3f6289fc7addadee6b1d2))
+
 ## [1.0.0-brc-20.3](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.2...v1.0.0-brc-20.3) (2023-08-24)
 
 
