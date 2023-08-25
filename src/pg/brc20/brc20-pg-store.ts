@@ -235,30 +235,27 @@ export class Brc20PgStore {
 
     const results = await this.sql<(DbBrc20Activity & { total: number })[]>`
       SELECT
-        ticker,
-        operation,
-        genesis_id AS inscription_id,
+        e.operation,
+        d.ticker,
+        l.genesis_id AS inscription_id,
         l.block_height,
-        block_hash,
+        l.block_hash,
         l.tx_id,
         l.address,
-        timestamp,
-        max AS deploy_max,
+        l.timestamp,
+        d.max AS deploy_max,
         d.limit AS deploy_limit,
-        decimals AS deploy_decimals,
+        d.decimals AS deploy_decimals,
         (SELECT amount FROM brc20_mints WHERE id = e.mint_id) AS mint_amount,
-        t.from_address AS transfer_from,
-        t.to_address AS transfer_to,
-        t.amount AS transfer_amount,
+        (SELECT amount || ';' || from_address || ';' || COALESCE(to_address, '') FROM brc20_transfers WHERE id = e.transfer_id) AS transfer_data,
         COUNT(*) OVER() as total
       FROM brc20_events AS e
       INNER JOIN brc20_deploys AS d ON e.brc20_deploy_id = d.id
       INNER JOIN locations AS l ON e.genesis_location_id = l.id
-      LEFT JOIN brc20_transfers AS t ON e.transfer_id = t.id
       WHERE TRUE
-        ${args.block_height ? this.sql`AND l.block_height <= ${args.block_height}` : this.sql``}
-        ${tickerConditions ? this.sql`AND (${tickerConditions})` : this.sql``}
         ${args.operation ? this.sql`AND operation IN ${this.sql(args.operation)}` : this.sql``}
+        ${tickerConditions ? this.sql`AND (${tickerConditions})` : this.sql``}
+        ${args.block_height ? this.sql`AND l.block_height <= ${args.block_height}` : this.sql``}
       ORDER BY timestamp DESC
       LIMIT ${args.limit}
       OFFSET ${args.offset}

@@ -144,24 +144,12 @@ type MintActivity = BaseActivity & {
   mint_amount: string;
 };
 
-type PrepareTransferActivity = BaseActivity & {
-  operation: 'prepare_transfer';
-  transfer_amount: string;
-  transfer_from: string;
-};
-
 type TransferActivity = BaseActivity & {
-  operation: 'transfer';
-  transfer_amount: string;
-  transfer_from: string;
-  transfer_to: string;
+  operation: 'prepare_transfer' | 'transfer';
+  transfer_data: string;
 };
 
-export type DbBrc20Activity =
-  | DeployActivity
-  | MintActivity
-  | PrepareTransferActivity
-  | TransferActivity;
+export type DbBrc20Activity = DeployActivity | MintActivity | TransferActivity;
 
 export const BRC20_DEPLOYS_COLUMNS = [
   'id',

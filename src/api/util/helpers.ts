@@ -161,17 +161,12 @@ export function parseBrc20Activities(items: DbBrc20Activity[]): Brc20ActivityRes
       a.mint = {
         amount: i.mint_amount,
       };
-    } else if (i.operation === 'transfer' && a.operation === 'transfer') {
-      a.transfer = {
-        amount: i.transfer_amount,
-        from_address: i.transfer_from,
-        to_address: i.transfer_to,
-      };
-    } else if (i.operation === 'prepare_transfer' && a.operation === 'prepare_transfer') {
-      a.transfer = {
-        amount: i.transfer_amount,
-        from_address: i.transfer_from,
-      };
+    } else if (
+      (i.operation === 'transfer' && a.operation === 'transfer') ||
+      (i.operation === 'prepare_transfer' && a.operation === 'prepare_transfer')
+    ) {
+      const [amount, from_address, to_address] = i.transfer_data.split(';');
+      a.transfer = { amount, from_address, to_address: to_address || undefined };
     }
 
     return a as Brc20ActivityResponse;
