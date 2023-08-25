@@ -1,3 +1,10 @@
+## [1.0.0-brc-20.5](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.4...v1.0.0-brc-20.5) (2023-08-25)
+
+
+### Bug Fixes
+
+* change uniqueness constraint in locations table ([9a9c5de](https://github.com/hirosystems/ordinals-api/commit/9a9c5de7ff76557e2728b726363d68833d05a689))
+
 ## [1.0.0-brc-20.4](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.3...v1.0.0-brc-20.4) (2023-08-25)
 
 
