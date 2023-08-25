@@ -109,7 +109,7 @@ export type DbBrc20BalanceInsert = {
   type: DbBrc20BalanceTypeId;
 };
 
-export type DbBrc20EventOperation = 'deploy' | 'mint' | 'prepare_transfer' | 'transfer';
+export type DbBrc20EventOperation = 'deploy' | 'mint' | 'transfer' | 'transfer_send';
 
 export type DbBrc20EventInsert = {
   operation: DbBrc20EventOperation;
@@ -145,7 +145,7 @@ type MintActivity = BaseActivity & {
 };
 
 type TransferActivity = BaseActivity & {
-  operation: 'prepare_transfer' | 'transfer';
+  operation: 'transfer' | 'transfer_send';
   transfer_data: string;
 };
 

@@ -1996,7 +1996,7 @@ describe('BRC-20', () => {
         expect(json.results).toEqual(
           expect.arrayContaining([
             expect.objectContaining({
-              operation: 'prepare_transfer',
+              operation: 'transfer',
               ticker: 'PEPE',
               address: addressA,
               tx_id: transferHash,
@@ -2036,7 +2036,7 @@ describe('BRC-20', () => {
         expect(json.results).toEqual(
           expect.arrayContaining([
             expect.objectContaining({
-              operation: 'transfer',
+              operation: 'transfer_send',
               ticker: 'PEPE',
               tx_id: expect.not.stringMatching(transferHash),
               address: addressB,

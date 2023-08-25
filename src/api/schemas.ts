@@ -202,13 +202,14 @@ export const Brc20OperationParam = Type.Union(
   [
     Type.Literal('deploy'),
     Type.Literal('mint'),
-    Type.Literal('prepare_transfer'),
     Type.Literal('transfer'),
+    Type.Literal('transfer_send'),
   ],
   {
     title: 'Operation',
-    description: 'BRC-20 token operation',
-    examples: ['deploy', 'mint', 'prepare_transfer', 'transfer'],
+    description:
+      'BRC-20 token operation. Note that a BRC-20 transfer is a two step process `transfer` (creating the inscription, which makes funds transferrable) and `transfer_send` (sending the inscription to a recipient, which moves the funds)',
+    examples: ['deploy', 'mint', 'transfer', 'transfer_send'],
   }
 );
 
@@ -391,8 +392,8 @@ export const Brc20ActivityResponseSchema = Type.Object({
   operation: Type.Union([
     Type.Literal('deploy'),
     Type.Literal('mint'),
-    Type.Literal('prepare_transfer'),
     Type.Literal('transfer'),
+    Type.Literal('transfer_send'),
   ]),
   ticker: Type.String({ examples: ['PEPE'] }),
   inscription_id: Type.String({

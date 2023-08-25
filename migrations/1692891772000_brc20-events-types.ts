@@ -15,7 +15,7 @@ export function up(pgm: MigrationBuilder): void {
       unique: true, // only one event exists per location
     },
     operation: {
-      type: 'text', // enum-style: ['deploy', 'mint', 'prepare_transfer', 'transfer']
+      type: 'text', // enum-style: ['deploy', 'mint', 'transfer', 'transfer_send']
       notNull: true,
     },
   });

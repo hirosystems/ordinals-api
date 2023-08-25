@@ -317,7 +317,7 @@ export class Brc20PgStore {
 
       // Add to event history
       const event: DbBrc20EventInsert = {
-        operation: 'transfer',
+        operation: 'transfer_send',
         inscription_id: transfer.inscription_id,
         genesis_location_id: args.id,
         brc20_deploy_id: transfer.brc20_deploy_id,
@@ -502,7 +502,7 @@ export class Brc20PgStore {
       if (insertions.count) {
         // Add to event history
         const event: DbBrc20EventInsert = {
-          operation: 'prepare_transfer',
+          operation: 'transfer',
           inscription_id: transfer.location.inscription_id,
           genesis_location_id: transfer.location.id,
           brc20_deploy_id: balanceRes[0].brc20_deploy_id,
