@@ -625,15 +625,14 @@ export class PgStore extends BasePgStore {
       }));
       const locations = await sql<DbLocationPointerInsert[]>`
         INSERT INTO locations ${sql(locationData)}
-        ON CONFLICT ON CONSTRAINT locations_output_offset_unique DO UPDATE SET
-          inscription_id = EXCLUDED.inscription_id,
+        ON CONFLICT ON CONSTRAINT locations_inscription_id_block_height_tx_index_unique DO UPDATE SET
           genesis_id = EXCLUDED.genesis_id,
-          block_height = EXCLUDED.block_height,
           block_hash = EXCLUDED.block_hash,
           tx_id = EXCLUDED.tx_id,
-          tx_index = EXCLUDED.tx_index,
           address = EXCLUDED.address,
           value = EXCLUDED.value,
+          output = EXCLUDED.output,
+          "offset" = EXCLUDED.offset,
           timestamp = EXCLUDED.timestamp
         RETURNING inscription_id, id AS location_id, block_height, tx_index, address
       `;

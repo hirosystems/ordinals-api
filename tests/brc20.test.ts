@@ -1748,8 +1748,8 @@ describe('BRC-20', () => {
                 tick: 'PEER',
                 max: '21000000',
               },
-              number: 5,
-              tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+              number: 6,
+              tx_id: 'ff2aaeff6889211369305e6367180fc58a12c57fc784b68fa6a6741943db3863',
               address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
             })
           )
@@ -1768,8 +1768,8 @@ describe('BRC-20', () => {
                 tick: 'ABCD',
                 max: '21000000',
               },
-              number: 5,
-              tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+              number: 7,
+              tx_id: '7ab47806eb20100417a0450244a034bd49062e1809713a0b1d31a61b07b9e434',
               address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
             })
           )
@@ -1778,7 +1778,7 @@ describe('BRC-20', () => {
       await db.updateInscriptions(
         new TestChainhookPayloadBuilder()
           .apply()
-          .block({ height: 775619 })
+          .block({ height: 775620 })
           .transaction({ hash: randomHash() })
           .inscriptionRevealed(
             brc20Reveal({
@@ -1788,8 +1788,8 @@ describe('BRC-20', () => {
                 tick: 'DCBA',
                 max: '21000000',
               },
-              number: 5,
-              tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+              number: 8,
+              tx_id: '0b3b160765698aa809bcb948d1fd2d939dc372340439e4bf840d42a07bf41975',
               address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
             })
           )
