@@ -1725,13 +1725,15 @@ describe('BRC-20', () => {
       });
 
       test('filter tickers by ticker prefix', async () => {
+        const inscriptionNumbers = incrementing(1);
         const blockHeights = incrementing(775600);
 
+        let transferHash = randomHash();
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
             .block({ height: blockHeights.next().value })
-            .transaction({ hash: randomHash() })
+            .transaction({ hash: transferHash })
             .inscriptionRevealed(
               brc20Reveal({
                 json: {
@@ -1740,18 +1742,20 @@ describe('BRC-20', () => {
                   tick: 'PEPE',
                   max: '21000000',
                 },
-                number: 5,
-                tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+                number: inscriptionNumbers.next().value,
+                tx_id: transferHash,
                 address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
               })
             )
             .build()
         );
+
+        transferHash = randomHash();
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
             .block({ height: blockHeights.next().value })
-            .transaction({ hash: randomHash() })
+            .transaction({ hash: transferHash })
             .inscriptionRevealed(
               brc20Reveal({
                 json: {
@@ -1760,18 +1764,20 @@ describe('BRC-20', () => {
                   tick: 'PEER',
                   max: '21000000',
                 },
-                number: 5,
-                tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+                number: inscriptionNumbers.next().value,
+                tx_id: transferHash,
                 address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
               })
             )
             .build()
         );
+
+        transferHash = randomHash();
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
             .block({ height: blockHeights.next().value })
-            .transaction({ hash: randomHash() })
+            .transaction({ hash: transferHash })
             .inscriptionRevealed(
               brc20Reveal({
                 json: {
@@ -1780,18 +1786,20 @@ describe('BRC-20', () => {
                   tick: 'ABCD',
                   max: '21000000',
                 },
-                number: 5,
-                tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+                number: inscriptionNumbers.next().value,
+                tx_id: transferHash,
                 address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
               })
             )
             .build()
         );
+
+        transferHash = randomHash();
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
             .block({ height: blockHeights.next().value })
-            .transaction({ hash: randomHash() })
+            .transaction({ hash: transferHash })
             .inscriptionRevealed(
               brc20Reveal({
                 json: {
@@ -1800,8 +1808,8 @@ describe('BRC-20', () => {
                   tick: 'DCBA',
                   max: '21000000',
                 },
-                number: 5,
-                tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+                number: inscriptionNumbers.next().value,
+                tx_id: transferHash,
                 address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
               })
             )
