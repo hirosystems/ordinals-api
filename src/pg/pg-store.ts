@@ -17,7 +17,7 @@ import { ENV } from '../env';
 import { Brc20PgStore } from './brc20/brc20-pg-store';
 import { CountsPgStore } from './counts/counts-pg-store';
 import { getIndexResultCountType } from './counts/helpers';
-import { getInscriptionRecursion } from './helpers';
+import { chunkArray, getInscriptionRecursion } from './helpers';
 import {
   DbFullyLocatedInscriptionResult,
   DbInscription,
@@ -219,7 +219,8 @@ export class PgStore extends BasePgStore {
             }
           }
         }
-        await this.insertInscriptions(writes);
+        for (const writeChunk of chunkArray(writes, 5000))
+          await this.insertInscriptions(writeChunk);
         updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
         if (ENV.BRC20_BLOCK_SCAN_ENABLED)
           await this.brc20.scanBlocks(event.block_identifier.index, event.block_identifier.index);
