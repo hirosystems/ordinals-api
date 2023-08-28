@@ -871,19 +871,20 @@ export class PgStore extends BasePgStore {
     if (reveals.length === 0) return;
     const inserts = [];
     for (const i of reveals)
-      if (i.inscription && i.recursive_refs?.length)
-        for (const ref of i.recursive_refs)
+      if (i.inscription && i.recursive_refs?.length) {
+        const refSet = new Set(i.recursive_refs);
+        for (const ref of refSet)
           inserts.push({
             inscription_id: this
               .sql`(SELECT id FROM inscriptions WHERE genesis_id = ${i.inscription.genesis_id})`,
             ref_inscription_id: this.sql`(SELECT id FROM inscriptions WHERE genesis_id = ${ref})`,
             ref_inscription_genesis_id: ref,
           });
+      }
     if (inserts.length === 0) return;
     await this.sql`
       INSERT INTO inscription_recursions ${this.sql(inserts)}
-      ON CONFLICT ON CONSTRAINT inscription_recursions_unique DO UPDATE SET
-        ref_inscription_id = EXCLUDED.ref_inscription_id
+      ON CONFLICT ON CONSTRAINT inscription_recursions_unique DO NOTHING
     `;
   }
 }
