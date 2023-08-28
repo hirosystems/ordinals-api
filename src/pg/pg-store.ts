@@ -639,15 +639,15 @@ export class PgStore extends BasePgStore {
           timestamp = EXCLUDED.timestamp
         RETURNING inscription_id, id AS location_id, block_height, tx_index, address
       `;
-      if (transferGenesisIds.size)
-        await sql`
-          UPDATE inscriptions
-          SET updated_at = NOW()
-          WHERE genesis_id IN ${sql([...transferGenesisIds])}
-        `;
       await this.updateInscriptionRecursions(writes);
       if (ENV.BRC20_BLOCK_SCAN_ENABLED) {
         // TODO: Temporary
+        if (transferGenesisIds.size)
+          await sql`
+            UPDATE inscriptions
+            SET updated_at = NOW()
+            WHERE genesis_id IN ${sql([...transferGenesisIds])}
+          `;
         await this.backfillOrphanLocations();
         await this.updateInscriptionLocationPointers(locations);
         await this.counts.applyInscriptions(inscriptions);
