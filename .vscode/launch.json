@@ -69,8 +69,6 @@
         "--testTimeout=3600000",
         "--runInBand",
         "--no-cache",
-        "-t",
-        "shows recursive inscription"
       ],
       "outputCapture": "std",
       "console": "integratedTerminal",
