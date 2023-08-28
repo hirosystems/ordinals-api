@@ -1,7 +1,7 @@
 {
     "plugins": [
         [
-            "@semantic-release/commit-analyzer@9.0.2",
+            "@semantic-release/commit-analyzer@v9.0.2",
             {
                 "preset": "conventionalcommits"
             }
