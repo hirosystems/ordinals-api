@@ -284,7 +284,7 @@ export class Brc20PgStore {
       if (brc20Transfer.count > 2) return;
       const transfer = brc20Transfer[0];
       const amount = new BigNumber(transfer.amount);
-      const changes: DbBrc20BalanceInsert[] = [
+      const balanceChanges: DbBrc20BalanceInsert[] = [
         {
           inscription_id: transfer.inscription_id,
           location_id: args.id,
@@ -305,18 +305,8 @@ export class Brc20PgStore {
           type: DbBrc20BalanceTypeId.transferTo,
         },
       ];
-      await sql`
-        WITH updated_transfer AS (
-          UPDATE brc20_transfers
-          SET to_address = ${args.address}
-          WHERE id = ${transfer.id}
-        )
-        INSERT INTO brc20_balances ${sql(changes)}
-        ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
-      `;
-
       // Add to event history
-      const event: DbBrc20EventInsert = {
+      const eventInsert: DbBrc20EventInsert = {
         operation: 'transfer_send',
         inscription_id: transfer.inscription_id,
         genesis_location_id: args.id,
@@ -325,7 +315,17 @@ export class Brc20PgStore {
         mint_id: null,
         transfer_id: transfer.id,
       };
-      await this.parent.sql`INSERT INTO brc20_events ${this.parent.sql(event)}`;
+      await sql`
+        WITH updated_transfer AS (
+          UPDATE brc20_transfers
+          SET to_address = ${args.address}
+          WHERE id = ${transfer.id}
+        ), inserted_balance AS (
+          INSERT INTO brc20_balances ${sql(balanceChanges)}
+          ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
+        )
+        INSERT INTO brc20_events ${sql(eventInsert)}
+      `;
     });
   }
 
