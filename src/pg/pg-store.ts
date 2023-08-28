@@ -219,6 +219,8 @@ export class PgStore extends BasePgStore {
             }
           }
         }
+        // Divide insertion array into chunks of 5000 in order to avoid the postgres limit of 65534
+        // query params.
         for (const writeChunk of chunkArray(writes, 5000))
           await this.insertInscriptions(writeChunk);
         updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
@@ -857,24 +859,22 @@ export class PgStore extends BasePgStore {
 
   private async updateInscriptionRecursions(reveals: DbRevealInsert[]): Promise<void> {
     if (reveals.length === 0) return;
-    // TODO: Gap fills may make us miss some recursion refs because they will not appear in this
-    // query.
-    const inserts: {
-      inscription_id: postgres.PendingQuery<postgres.Row[]>;
-      ref_inscription_id: postgres.PendingQuery<postgres.Row[]>;
-    }[] = [];
-    for (const i of reveals)
-      if (i.inscription && i.recursive_refs?.length)
-        for (const r of i.recursive_refs)
-          inserts.push({
-            inscription_id: this
-              .sql`(SELECT id FROM inscriptions WHERE genesis_id = ${i.inscription?.genesis_id})`,
-            ref_inscription_id: this.sql`(SELECT id FROM inscriptions WHERE genesis_id = ${r})`,
-          });
-    if (inserts.length === 0) return;
-    await this.sql`
-      INSERT INTO inscription_recursions ${this.sql(inserts)}
-      ON CONFLICT ON CONSTRAINT inscriptions_inscription_id_ref_inscription_id_unique DO NOTHING
-    `;
+    await this.sqlWriteTransaction(async sql => {
+      // TODO: Gap fills may make us miss some recursion refs because they will not appear in this
+      // query.
+      for (const i of reveals)
+        if (i.inscription && i.recursive_refs?.length)
+          await sql`
+            WITH from_i AS (
+              SELECT id FROM inscriptions WHERE genesis_id = ${i.inscription.genesis_id}
+            ),
+            to_i AS (
+              SELECT id FROM inscriptions WHERE genesis_id IN ${sql(i.recursive_refs)}
+            )
+            INSERT INTO inscription_recursions (inscription_id, ref_inscription_id)
+            (SELECT from_i.id, to_i.id FROM from_i, to_i WHERE to_i IS NOT NULL)
+            ON CONFLICT ON CONSTRAINT inscriptions_inscription_id_ref_inscription_id_unique DO NOTHING
+          `;
+    });
   }
 }
