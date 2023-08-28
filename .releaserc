@@ -3,8 +3,8 @@
         [
             "@semantic-release/commit-analyzer",
             {
-                "preset": "conventionalcommits"
-                releaseRules: [
+                "preset": "conventionalcommits",
+                "releaseRules": [
                     { breaking: true, release: 'major' }
                   ]
             }
