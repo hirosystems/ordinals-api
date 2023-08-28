@@ -6,6 +6,7 @@ export const shorthands: ColumnDefinitions | undefined = undefined;
 export function up(pgm: MigrationBuilder): void {
   // Attention: This migration assumes that the `brc20_events` table is empty, otherwise events will be lost!
 
+  pgm.createType('brc20_operation', ['deploy', 'mint', 'transfer', 'transfer_send']);
   pgm.addColumns('brc20_events', {
     genesis_location_id: {
       type: 'bigint',
@@ -15,7 +16,7 @@ export function up(pgm: MigrationBuilder): void {
       unique: true, // only one event exists per location
     },
     operation: {
-      type: 'text', // enum-style: ['deploy', 'mint', 'transfer', 'transfer_send']
+      type: 'brc20_operation',
       notNull: true,
     },
   });

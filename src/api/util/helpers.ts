@@ -141,13 +141,13 @@ export function parseBrc20Activities(items: DbBrc20Activity[]): Brc20ActivityRes
   return items.map(i => {
     const a: Partial<Brc20ActivityResponse> = {
       operation: i.operation,
+      ticker: i.ticker,
       address: i.address,
       tx_id: i.tx_id,
-      timestamp: i.timestamp,
-      block_height: parseInt(i.block_height),
-      block_hash: i.block_hash,
-      ticker: i.ticker,
       inscription_id: i.inscription_id,
+      block_hash: i.block_hash,
+      block_height: parseInt(i.block_height),
+      timestamp: i.timestamp.valueOf(),
     };
 
     // Typescript needs checking both `i` and `a` (even though they're the same)
@@ -161,12 +161,12 @@ export function parseBrc20Activities(items: DbBrc20Activity[]): Brc20ActivityRes
       a.mint = {
         amount: i.mint_amount,
       };
-    } else if (
-      (i.operation === 'transfer' && a.operation === 'transfer') ||
-      (i.operation === 'transfer_send' && a.operation === 'transfer_send')
-    ) {
+    } else if (i.operation === 'transfer' && a.operation === 'transfer') {
+      const [amount, from_address] = i.transfer_data.split(';');
+      a.transfer = { amount, from_address };
+    } else if (i.operation === 'transfer_send' && a.operation === 'transfer_send') {
       const [amount, from_address, to_address] = i.transfer_data.split(';');
-      a.transfer = { amount, from_address, to_address: to_address || undefined };
+      a.transfer_send = { amount, from_address, to_address };
     }
 
     return a as Brc20ActivityResponse;

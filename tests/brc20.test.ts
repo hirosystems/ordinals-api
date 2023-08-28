@@ -2048,7 +2048,30 @@ describe('BRC-20', () => {
               ticker: 'PEPE',
               tx_id: expect.not.stringMatching(transferHash),
               address: addressB,
-              transfer: {
+              transfer_send: {
+                amount: '9000',
+                from_address: addressA,
+                to_address: addressB,
+              },
+            } as Brc20ActivityResponse),
+          ])
+        );
+
+        response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/activity?ticker=PEPE&operation=transfer_send`,
+        });
+        expect(response.statusCode).toBe(200);
+        json = response.json();
+        expect(json.total).toBe(1);
+        expect(json.results).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              operation: 'transfer_send',
+              ticker: 'PEPE',
+              tx_id: expect.not.stringMatching(transferHash),
+              address: addressB,
+              transfer_send: {
                 amount: '9000',
                 from_address: addressA,
                 to_address: addressB,

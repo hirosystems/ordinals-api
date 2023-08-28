@@ -428,11 +428,17 @@ export const Brc20ActivityResponseSchema = Type.Object({
       from_address: Type.String({
         examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
       }),
-      to_address: Type.Optional(
-        Type.String({
-          examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
-        })
-      ),
+    })
+  ),
+  transfer_send: Type.Optional(
+    Type.Object({
+      amount: Type.String({ examples: ['1000000'] }),
+      from_address: Type.String({
+        examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
+      }),
+      to_address: Type.String({
+        examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
+      }),
     })
   ),
 });
