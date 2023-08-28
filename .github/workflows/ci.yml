@@ -127,7 +127,6 @@ jobs:
           SEMANTIC_RELEASE_PACKAGE: ${{ github.event.repository.name }}
         with:
           semantic_version: 19
-          debug: true
           extra_plugins: |
             @semantic-release/changelog
             @semantic-release/git
