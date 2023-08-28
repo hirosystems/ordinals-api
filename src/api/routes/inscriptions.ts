@@ -4,52 +4,43 @@ import { Value } from '@sinclair/typebox/value';
 import { FastifyPluginAsync, FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import {
+  AddressesParam,
+  BlockHeightParam,
+  BlockInscriptionTransferSchema,
+  BlockParam,
+  CursedParam,
+  InscriptionIdParamCType,
+  InscriptionIdentifierParam,
+  InscriptionIdsParam,
+  InscriptionLocationResponseSchema,
+  InscriptionNumberParam,
+  InscriptionNumbersParam,
   InscriptionResponse,
   LimitParam,
+  MimeTypesParam,
   NotFoundResponse,
   OffsetParam,
-  PaginatedResponse,
-  MimeTypesParam,
-  SatoshiRaritiesParam,
-  OutputParam,
+  Order,
+  OrderBy,
   OrderByParam,
   OrderParam,
-  OrderBy,
-  Order,
-  InscriptionIdentifierParam,
-  BlockHashParamCType,
-  BlockHeightParamCType,
-  InscriptionIdParamCType,
-  BlockHeightParam,
-  BlockParam,
   OrdinalParam,
-  InscriptionNumberParam,
+  OutputParam,
+  PaginatedResponse,
+  RecursiveParam,
+  SatoshiRaritiesParam,
   TimestampParam,
-  AddressesParam,
-  InscriptionIdsParam,
-  InscriptionNumbersParam,
-  InscriptionLocationResponseSchema,
-  BlockInscriptionTransferSchema,
 } from '../schemas';
 import { handleInscriptionCache, handleInscriptionTransfersCache } from '../util/cache';
 import {
   DEFAULT_API_LIMIT,
+  blockParam,
   hexToBuffer,
   parseBlockTransfers,
   parseDbInscription,
   parseDbInscriptions,
   parseInscriptionLocations,
 } from '../util/helpers';
-
-function blockParam(param: string | undefined, name: string) {
-  const out: Record<string, string> = {};
-  if (BlockHashParamCType.Check(param)) {
-    out[`${name}_hash`] = param;
-  } else if (BlockHeightParamCType.Check(param)) {
-    out[`${name}_height`] = param;
-  }
-  return out;
-}
 
 function inscriptionIdArrayParam(param: string | number) {
   return InscriptionIdParamCType.Check(param) ? { genesis_id: [param] } : { number: [param] };
@@ -93,8 +84,11 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
           number: Type.Optional(InscriptionNumbersParam),
           output: Type.Optional(OutputParam),
           address: Type.Optional(AddressesParam),
+          genesis_address: Type.Optional(AddressesParam),
           mime_type: Type.Optional(MimeTypesParam),
           rarity: Type.Optional(SatoshiRaritiesParam),
+          recursive: Type.Optional(RecursiveParam),
+          cursed: Type.Optional(CursedParam),
           // Pagination
           offset: Type.Optional(OffsetParam),
           limit: Type.Optional(LimitParam),
@@ -129,8 +123,11 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
           number: request.query.number,
           output: request.query.output,
           address: request.query.address,
+          genesis_address: request.query.genesis_address,
           mime_type: request.query.mime_type,
           sat_rarity: request.query.rarity,
+          recursive: request.query.recursive,
+          cursed: request.query.cursed,
         },
         {
           order_by: request.query.order_by ?? OrderBy.genesis_block_height,

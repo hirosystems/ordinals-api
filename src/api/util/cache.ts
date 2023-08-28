@@ -1,10 +1,11 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { logger } from '../../logger';
 import { InscriptionIdParamCType, InscriptionNumberParamCType } from '../schemas';
+import { logger } from '@hirosystems/api-toolkit';
 
 export enum ETagType {
-  inscriptionTransfers,
+  inscriptionsIndex,
   inscription,
+  inscriptionsPerBlock,
 }
 
 /**
@@ -23,7 +24,14 @@ export async function handleInscriptionTransfersCache(
   request: FastifyRequest,
   reply: FastifyReply
 ) {
-  return handleCache(ETagType.inscriptionTransfers, request, reply);
+  return handleCache(ETagType.inscriptionsIndex, request, reply);
+}
+
+export async function handleInscriptionsPerBlockCache(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  return handleCache(ETagType.inscriptionsPerBlock, request, reply);
 }
 
 async function handleCache(type: ETagType, request: FastifyRequest, reply: FastifyReply) {
@@ -33,8 +41,11 @@ async function handleCache(type: ETagType, request: FastifyRequest, reply: Fasti
     case ETagType.inscription:
       etag = await getInscriptionLocationEtag(request);
       break;
-    case ETagType.inscriptionTransfers:
-      etag = await getInscriptionTransfersEtag(request);
+    case ETagType.inscriptionsIndex:
+      etag = await getInscriptionsIndexEtag(request);
+      break;
+    case ETagType.inscriptionsPerBlock:
+      etag = await request.server.db.getInscriptionsPerBlockETag();
       break;
   }
   if (etag) {
@@ -76,13 +87,13 @@ async function getInscriptionLocationEtag(request: FastifyRequest): Promise<stri
 }
 
 /**
- * Get an ETag based on the last state of inscription transfers.
+ * Get an ETag based on the last state of all inscriptions.
  * @param request - Fastify request
  * @returns ETag string
  */
-async function getInscriptionTransfersEtag(request: FastifyRequest): Promise<string | undefined> {
+async function getInscriptionsIndexEtag(request: FastifyRequest): Promise<string | undefined> {
   try {
-    return await request.server.db.getInscriptionTransfersETag();
+    return await request.server.db.getInscriptionsIndexETag();
   } catch (error) {
     return;
   }

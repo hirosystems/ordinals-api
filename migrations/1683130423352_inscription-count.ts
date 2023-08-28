@@ -9,4 +9,5 @@ export function up(pgm: MigrationBuilder): void {
     { data: true },
     `SELECT COUNT(*) AS count FROM inscriptions`
   );
+  pgm.createIndex('inscription_count', ['count'], { unique: true });
 }

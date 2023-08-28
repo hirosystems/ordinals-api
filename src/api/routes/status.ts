@@ -1,8 +1,8 @@
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
-import { SERVER_VERSION } from '../../server-version';
 import { ApiStatusResponse } from '../schemas';
+import { SERVER_VERSION } from '@hirosystems/api-toolkit';
 
 export const StatusRoutes: FastifyPluginCallback<
   Record<never, never>,

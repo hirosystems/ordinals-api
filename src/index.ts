@@ -1,15 +1,13 @@
+import { isProdEnv, logger, registerShutdownConfig } from '@hirosystems/api-toolkit';
 import { buildApiServer, buildPromServer } from './api/init';
-import { isProdEnv } from './api/util/helpers';
-import { buildChainhookServer } from './chainhook/server';
+import { startChainhookServer } from './chainhook/server';
 import { ENV } from './env';
-import { logger } from './logger';
 import { ApiMetrics } from './metrics/metrics';
 import { PgStore } from './pg/pg-store';
-import { registerShutdownConfig } from './shutdown-handler';
 
 async function initBackgroundServices(db: PgStore) {
   logger.info('Initializing background services...');
-  const server = await buildChainhookServer({ db });
+  const server = await startChainhookServer({ db });
   registerShutdownConfig({
     name: 'Chainhook Server',
     forceKillable: false,
@@ -17,8 +15,6 @@ async function initBackgroundServices(db: PgStore) {
       await server.close();
     },
   });
-
-  await server.listen({ host: ENV.API_HOST, port: ENV.EVENT_PORT });
 }
 
 async function initApiService(db: PgStore) {
@@ -51,7 +47,7 @@ async function initApiService(db: PgStore) {
 
 async function initApp() {
   logger.info(`Initializing in ${ENV.RUN_MODE} run mode...`);
-  const db = await PgStore.connect({ skipMigrations: false });
+  const db = await PgStore.connect({ skipMigrations: ENV.RUN_MODE === 'readonly' });
 
   if (['default', 'writeonly'].includes(ENV.RUN_MODE)) {
     await initBackgroundServices(db);

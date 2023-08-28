@@ -1,6 +1,6 @@
+import { cycleMigrations } from '@hirosystems/api-toolkit';
 import { buildApiServer } from '../src/api/init';
-import { cycleMigrations } from '../src/pg/migrations';
-import { PgStore } from '../src/pg/pg-store';
+import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
 import { TestChainhookPayloadBuilder, TestFastifyServer } from './helpers';
 
 describe('/sats', () => {
@@ -10,7 +10,7 @@ describe('/sats', () => {
   beforeEach(async () => {
     db = await PgStore.connect({ skipMigrations: true });
     fastify = await buildApiServer({ db });
-    await cycleMigrations();
+    await cycleMigrations(MIGRATIONS_DIR);
   });
 
   afterEach(async () => {
@@ -58,6 +58,9 @@ describe('/sats', () => {
           ordinal_offset: 0,
           satpoint_post_inscription:
             '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+          inscription_input_index: 0,
+          transfers_pre_inscription: 0,
+          tx_index: 0,
         })
         .build()
     );
@@ -92,6 +95,9 @@ describe('/sats', () => {
           satpoint_post_inscription:
             '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
           curse_type: 'p2wsh',
+          inscription_input_index: 0,
+          transfers_pre_inscription: 0,
+          tx_index: 0,
         })
         .build()
     );
@@ -121,6 +127,9 @@ describe('/sats', () => {
           satpoint_post_inscription:
             'b9cd9489fe30b81d007f753663d12766f1368721a87f4c69056c8215caa57993:0:0',
           curse_type: 'p2wsh',
+          inscription_input_index: 0,
+          transfers_pre_inscription: 0,
+          tx_index: 0,
         })
         .build()
     );
@@ -132,30 +141,6 @@ describe('/sats', () => {
     const json = response.json();
     expect(json.total).toBe(2);
     expect(json.results).toStrictEqual([
-      {
-        address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-        content_length: 5,
-        content_type: 'image/png',
-        genesis_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-        genesis_block_hash: '163de66dc9c0949905bfe8e148bde04600223cf88d19f26fdbeba1d6e6fa0f88',
-        genesis_block_height: 775617,
-        genesis_fee: '2805',
-        genesis_timestamp: 1677803510000,
-        genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
-        id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-        location: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
-        mime_type: 'image/png',
-        number: -7,
-        offset: '0',
-        output: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0',
-        sat_coinbase_height: 51483,
-        sat_ordinal: '257418248345364',
-        sat_rarity: 'common',
-        timestamp: 1677803510000,
-        tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
-        value: '10000',
-        curse_type: '"p2wsh"',
-      },
       {
         address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
         content_length: 5,
@@ -179,6 +164,34 @@ describe('/sats', () => {
         tx_id: 'b9cd9489fe30b81d007f753663d12766f1368721a87f4c69056c8215caa57993',
         value: '10000',
         curse_type: '"p2wsh"',
+        recursive: false,
+        recursion_refs: null,
+      },
+      {
+        address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+        content_length: 5,
+        content_type: 'image/png',
+        genesis_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+        genesis_block_hash: '163de66dc9c0949905bfe8e148bde04600223cf88d19f26fdbeba1d6e6fa0f88',
+        genesis_block_height: 775617,
+        genesis_fee: '2805',
+        genesis_timestamp: 1677803510000,
+        genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+        id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+        location: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+        mime_type: 'image/png',
+        number: -7,
+        offset: '0',
+        output: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0',
+        sat_coinbase_height: 51483,
+        sat_ordinal: '257418248345364',
+        sat_rarity: 'common',
+        timestamp: 1677803510000,
+        tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+        value: '10000',
+        curse_type: '"p2wsh"',
+        recursive: false,
+        recursion_refs: null,
       },
     ]);
   });

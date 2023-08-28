@@ -2,7 +2,7 @@ import { SwaggerOptions } from '@fastify/swagger';
 import { Static, TSchema, Type } from '@sinclair/typebox';
 import { TypeCompiler } from '@sinclair/typebox/compiler';
 import { SatoshiRarity, SAT_SUPPLY } from './util/ordinal-satoshi';
-import { SERVER_VERSION } from '../server-version';
+import { SERVER_VERSION } from '@hirosystems/api-toolkit';
 
 export const OpenApiSchemaOptions: SwaggerOptions = {
   openapi: {
@@ -30,6 +30,10 @@ export const OpenApiSchemaOptions: SwaggerOptions = {
       {
         name: 'Satoshis',
         description: 'Endpoints to query Satoshi ordinal and rarity information',
+      },
+      {
+        name: 'Statistics',
+        description: 'Endpoints to query statistics on ordinal inscription data',
       },
     ],
   },
@@ -161,6 +165,18 @@ export const OutputParam = Type.RegEx(/^[a-fA-F0-9]{64}:[0-9]+$/, {
   examples: ['8f46f0d4ef685e650727e6faf7e30f23b851a7709714ec774f7909b3fb5e604c:0'],
 });
 
+export const RecursiveParam = Type.Boolean({
+  title: 'Recursive',
+  description: 'Whether or not the inscription is recursive',
+  examples: [false],
+});
+
+export const CursedParam = Type.Boolean({
+  title: 'Cursed',
+  description: 'Whether or not the inscription is cursed',
+  examples: [false],
+});
+
 export const OffsetParam = Type.Integer({
   minimum: 0,
   title: 'Offset',
@@ -175,6 +191,7 @@ export const LimitParam = Type.Integer({
 });
 
 export enum OrderBy {
+  number = 'number',
   genesis_block_height = 'genesis_block_height',
   ordinal = 'ordinal',
   rarity = 'rarity',
@@ -252,6 +269,17 @@ export const InscriptionResponse = Type.Object(
     content_length: Type.Integer({ examples: [59] }),
     timestamp: Type.Integer({ examples: [1677733170000] }),
     curse_type: Nullable(Type.String({ examples: ['p2wsh'] })),
+    recursive: Type.Boolean({ examples: [true] }),
+    recursion_refs: Nullable(
+      Type.Array(
+        Type.String({
+          examples: [
+            '1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218i0',
+            '541076e29e1b63460412d3087b37130c9a14abd0beeb4e9b2b805d2072c84dedi0',
+          ],
+        })
+      )
+    ),
   },
   { title: 'Inscription Response' }
 );
@@ -333,3 +361,17 @@ export const NotFoundResponse = Type.Object(
   },
   { title: 'Not Found Response' }
 );
+
+export const InscriptionsPerBlock = Type.Object({
+  block_height: Type.String({ examples: ['778921'] }),
+  block_hash: Type.String({
+    examples: ['0000000000000000000452773967cdd62297137cdaf79950c5e8bb0c62075133'],
+  }),
+  inscription_count: Type.String({ examples: ['100'] }),
+  inscription_count_accum: Type.String({ examples: ['3100'] }),
+  timestamp: Type.Integer({ examples: [1677733170000] }),
+});
+export const InscriptionsPerBlockResponse = Type.Object({
+  results: Type.Array(InscriptionsPerBlock),
+});
+export type InscriptionsPerBlockResponse = Static<typeof InscriptionsPerBlockResponse>;

@@ -4,18 +4,12 @@ import {
   DbLocation,
 } from '../../pg/types';
 import {
+  BlockHashParamCType,
+  BlockHeightParamCType,
   BlockInscriptionTransfer,
   InscriptionLocationResponse,
   InscriptionResponseType,
 } from '../schemas';
-
-export const isDevEnv = process.env.NODE_ENV === 'development';
-export const isTestEnv = process.env.NODE_ENV === 'test';
-export const isProdEnv =
-  process.env.NODE_ENV === 'production' ||
-  process.env.NODE_ENV === 'prod' ||
-  !process.env.NODE_ENV ||
-  (!isTestEnv && !isDevEnv);
 
 export const DEFAULT_API_LIMIT = 20;
 
@@ -45,6 +39,8 @@ export function parseDbInscriptions(
     content_length: parseInt(i.content_length),
     timestamp: i.timestamp.valueOf(),
     curse_type: i.curse_type,
+    recursive: i.recursive,
+    recursion_refs: i.recursion_refs?.split(',') ?? null,
   }));
 }
 export function parseDbInscription(item: DbFullyLocatedInscriptionResult): InscriptionResponseType {
@@ -126,4 +122,14 @@ export const has0xPrefix = (id: string) => id.substr(0, 2).toLowerCase() === '0x
 
 export function normalizedHexString(hex: string): string {
   return has0xPrefix(hex) ? hex.substring(2) : hex;
+}
+
+export function blockParam(param: string | undefined, name: string) {
+  const out: Record<string, string> = {};
+  if (BlockHashParamCType.Check(param)) {
+    out[`${name}_hash`] = param;
+  } else if (BlockHeightParamCType.Check(param)) {
+    out[`${name}_height`] = param;
+  }
+  return out;
 }
