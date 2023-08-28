@@ -19,7 +19,19 @@
   ],
   "plugins": [
     [
-      "@semantic-release/release-notes-generator"
-    ]
+      "@semantic-release/commit-analyzer",
+      {
+        "preset": "conventionalcommits"
+      }
+    ],
+    [
+      "@semantic-release/release-notes-generator",
+      {
+        "preset": "conventionalcommits"
+      }
+    ],
+    "@semantic-release/github",
+    "@semantic-release/changelog",
+    "@semantic-release/git"
   ]
 }
