@@ -1,3 +1,10 @@
+## [1.0.0-brc-20.6](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.5...v1.0.0-brc-20.6) (2023-08-26)
+
+
+### Bug Fixes
+
+* place a cap on max insertion size ([bef5f23](https://github.com/hirosystems/ordinals-api/commit/bef5f23891b0a041bc27f54e507fead928306c95))
+
 ## [1.0.0-brc-20.5](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.4...v1.0.0-brc-20.5) (2023-08-25)
 
 
