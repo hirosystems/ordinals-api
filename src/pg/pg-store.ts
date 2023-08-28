@@ -645,10 +645,13 @@ export class PgStore extends BasePgStore {
           SET updated_at = NOW()
           WHERE genesis_id IN ${sql([...transferGenesisIds])}
         `;
-      await this.updateInscriptionLocationPointers(locations);
       await this.updateInscriptionRecursions(writes);
-      await this.backfillOrphanLocations();
-      await this.counts.applyInscriptions(inscriptions);
+      if (ENV.BRC20_BLOCK_SCAN_ENABLED) {
+        // TODO: Temporary
+        await this.backfillOrphanLocations();
+        await this.updateInscriptionLocationPointers(locations);
+        await this.counts.applyInscriptions(inscriptions);
+      }
       for (const reveal of writes) {
         const action = reveal.inscription ? `reveal #${reveal.inscription.number}` : `transfer`;
         logger.info(
@@ -819,11 +822,18 @@ export class PgStore extends BasePgStore {
   }
 
   private async backfillOrphanLocations(): Promise<void> {
-    await this.sql`
-      UPDATE locations AS l
-      SET inscription_id = (SELECT id FROM inscriptions WHERE genesis_id = l.genesis_id)
-      WHERE l.inscription_id IS NULL
-    `;
+    await this.sqlWriteTransaction(async sql => {
+      await sql`
+        UPDATE locations AS l
+        SET inscription_id = (SELECT id FROM inscriptions WHERE genesis_id = l.genesis_id)
+        WHERE l.inscription_id IS NULL
+      `;
+      await sql`
+        UPDATE inscription_recursions AS l
+        SET ref_inscription_id = (SELECT id FROM inscriptions WHERE genesis_id = l.ref_inscription_genesis_id)
+        WHERE l.ref_inscription_id IS NULL
+      `;
+    });
   }
 
   private async recalculateCurrentLocationPointerFromLocationRollBack(args: {
@@ -859,22 +869,21 @@ export class PgStore extends BasePgStore {
 
   private async updateInscriptionRecursions(reveals: DbRevealInsert[]): Promise<void> {
     if (reveals.length === 0) return;
-    await this.sqlWriteTransaction(async sql => {
-      // TODO: Gap fills may make us miss some recursion refs because they will not appear in this
-      // query.
-      for (const i of reveals)
-        if (i.inscription && i.recursive_refs?.length)
-          await sql`
-            WITH from_i AS (
-              SELECT id FROM inscriptions WHERE genesis_id = ${i.inscription.genesis_id}
-            ),
-            to_i AS (
-              SELECT id FROM inscriptions WHERE genesis_id IN ${sql(i.recursive_refs)}
-            )
-            INSERT INTO inscription_recursions (inscription_id, ref_inscription_id)
-            (SELECT from_i.id, to_i.id FROM from_i, to_i WHERE to_i IS NOT NULL)
-            ON CONFLICT ON CONSTRAINT inscriptions_inscription_id_ref_inscription_id_unique DO NOTHING
-          `;
-    });
+    const inserts = [];
+    for (const i of reveals)
+      if (i.inscription && i.recursive_refs?.length)
+        for (const ref of i.recursive_refs)
+          inserts.push({
+            inscription_id: this
+              .sql`(SELECT id FROM inscriptions WHERE genesis_id = ${i.inscription.genesis_id})`,
+            ref_inscription_id: this.sql`(SELECT id FROM inscriptions WHERE genesis_id = ${ref})`,
+            ref_inscription_genesis_id: ref,
+          });
+    if (inserts.length === 0) return;
+    await this.sql`
+      INSERT INTO inscription_recursions ${this.sql(inserts)}
+      ON CONFLICT ON CONSTRAINT inscription_recursions_unique DO UPDATE SET
+        ref_inscription_id = EXCLUDED.ref_inscription_id
+    `;
   }
 }
