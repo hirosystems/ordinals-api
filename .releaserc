@@ -1,19 +1,19 @@
 {
     "plugins": [
         [
-            "@semantic-release/commit-analyzer": "v9.0.2",
+            "@semantic-release/commit-analyzer",
             {
                 "preset": "conventionalcommits"
             }
         ],
         [
-            "@semantic-release/release-notes-generator": "v11.0.5",
+            "@semantic-release/release-notes-generator",
             {
                 "preset": "conventionalcommits"
             }
         ],
         "@semantic-release/github",
-        "@semantic-release/changelog": "v6.0.3",
+        "@semantic-release/changelog",
         "@semantic-release/git"
     ]
 }
