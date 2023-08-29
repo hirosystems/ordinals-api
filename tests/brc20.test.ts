@@ -2080,6 +2080,328 @@ describe('BRC-20', () => {
           ])
         );
       });
+
+      test('activity for multiple token transfers among three participants', async () => {
+        // Step 1: A deploys a token
+        // Step 2: A mints 1000 of the token
+        // Step 3: B mints 2000 of the token
+        // Step 4: A creates a transfer to B
+        // Step 5: B creates a transfer to C
+        // Step 6: A transfer_send the transfer to B
+        // Step 7: B transfer_send the transfer to C
+
+        // Setup
+        const inscriptionNumbers = incrementing(1);
+        const blockHeights = incrementing(775600);
+        const addressA = 'bc1q6uwuet65rm6xvlz7ztw2gvdmmay5uaycu03mqz';
+        const addressB = 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4';
+        const addressC = 'bc1q9d80h0q5d3f54w7w8c3l2sguf9uset4ydw9xj2';
+
+        // Step 1: A deploys a token
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: randomHash() })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'deploy',
+                  tick: 'PEPE',
+                  max: '21000000',
+                },
+                number: inscriptionNumbers.next().value,
+                tx_id: randomHash(),
+                address: addressA,
+              })
+            )
+            .build()
+        );
+
+        // Verify that the PEPE deploy is in the activity feed
+        let response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/activity?ticker=PEPE`,
+        });
+        expect(response.statusCode).toBe(200);
+        let json = response.json();
+        expect(json.total).toBe(1);
+        expect(json.results).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              operation: 'deploy',
+              ticker: 'PEPE',
+              address: addressA,
+              deploy: expect.objectContaining({
+                max_supply: '21000000',
+              }),
+            } as Brc20ActivityResponse),
+          ])
+        );
+
+        // Step 2: A mints 1000 of the token
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: randomHash() })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'mint',
+                  tick: 'PEPE',
+                  amt: '1000',
+                },
+                number: inscriptionNumbers.next().value,
+                tx_id: randomHash(),
+                address: addressA,
+              })
+            )
+            .build()
+        );
+
+        // Verify that the PEPE mint is in the activity feed
+        response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/activity?ticker=PEPE`,
+        });
+        expect(response.statusCode).toBe(200);
+        json = response.json();
+        expect(json.total).toBe(2);
+        expect(json.results).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              operation: 'mint',
+              ticker: 'PEPE',
+              address: addressA,
+              mint: {
+                amount: '1000',
+              },
+            } as Brc20ActivityResponse),
+          ])
+        );
+
+        // Step 3: B mints 2000 of the token
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: randomHash() })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'mint',
+                  tick: 'PEPE',
+                  amt: '2000',
+                },
+                number: inscriptionNumbers.next().value,
+                tx_id: randomHash(),
+                address: addressB,
+              })
+            )
+            .build()
+        );
+
+        // Verify that the PEPE mint is in the activity feed
+        response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/activity?ticker=PEPE`,
+        });
+        expect(response.statusCode).toBe(200);
+        json = response.json();
+        expect(json.total).toBe(3);
+        expect(json.results).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              operation: 'mint',
+              ticker: 'PEPE',
+              address: addressB,
+              mint: {
+                amount: '2000',
+              },
+            } as Brc20ActivityResponse),
+          ])
+        );
+
+        // Step 4: A creates a transfer to B
+        const transferHashAB = randomHash();
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: transferHashAB })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'transfer',
+                  tick: 'PEPE',
+                  amt: '1000',
+                },
+                number: inscriptionNumbers.next().value,
+                tx_id: transferHashAB,
+                address: addressA,
+              })
+            )
+            .build()
+        );
+
+        // Verify that the PEPE transfer is in the activity feed
+        response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/activity?ticker=PEPE`,
+        });
+        expect(response.statusCode).toBe(200);
+        json = response.json();
+        expect(json.total).toBe(4);
+        expect(json.results).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              operation: 'transfer',
+              ticker: 'PEPE',
+              address: addressA,
+              tx_id: transferHashAB,
+              transfer: {
+                amount: '1000',
+                from_address: addressA,
+              },
+            } as Brc20ActivityResponse),
+          ])
+        );
+
+        // Step 5: B creates a transfer to C
+        const transferHashBC = randomHash();
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: transferHashBC })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'transfer',
+                  tick: 'PEPE',
+                  amt: '2000',
+                },
+                number: inscriptionNumbers.next().value,
+                tx_id: transferHashBC,
+                address: addressB,
+              })
+            )
+            .build()
+        );
+
+        // Verify that the PEPE transfer is in the activity feed
+        response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/activity?ticker=PEPE`,
+        });
+        expect(response.statusCode).toBe(200);
+        json = response.json();
+        expect(json.total).toBe(5);
+        expect(json.results).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              operation: 'transfer',
+              ticker: 'PEPE',
+              address: addressB,
+              tx_id: transferHashBC,
+              transfer: {
+                amount: '2000',
+                from_address: addressB,
+              },
+            } as Brc20ActivityResponse),
+          ])
+        );
+
+        // Step 6: A transfer_send the transfer to B
+        const transferHashABSend = randomHash();
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: transferHashABSend })
+            .inscriptionTransferred({
+              updated_address: addressB,
+              tx_index: 0,
+              inscription_id: `${transferHashAB}i0`,
+              post_transfer_output_value: null,
+              satpoint_pre_transfer: `${transferHashAB}:0:0`,
+              satpoint_post_transfer: `${transferHashABSend}:0:0`,
+            })
+            .build()
+        );
+
+        // Verify that the PEPE transfer_send is in the activity feed
+        response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/activity?ticker=PEPE`,
+        });
+        expect(response.statusCode).toBe(200);
+        json = response.json();
+        expect(json.total).toBe(6);
+        expect(json.results).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              operation: 'transfer_send',
+              ticker: 'PEPE',
+              tx_id: expect.not.stringMatching(transferHashAB),
+              address: addressB,
+              transfer_send: {
+                amount: '1000',
+                from_address: addressA,
+                to_address: addressB,
+              },
+            } as Brc20ActivityResponse),
+          ])
+        );
+
+        // Step 7: B transfer_send the transfer to C
+        const transferHashBCSend = randomHash();
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: transferHashBCSend })
+            .inscriptionTransferred({
+              updated_address: addressC,
+              tx_index: 0,
+              inscription_id: `${transferHashBC}i0`,
+              post_transfer_output_value: null,
+              satpoint_pre_transfer: `${transferHashBC}:0:0`,
+              satpoint_post_transfer: `${transferHashBCSend}:0:0`,
+            })
+            .build()
+        );
+
+        // Verify that the PEPE transfer_send is in the activity feed
+        response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/activity?ticker=PEPE`,
+        });
+        expect(response.statusCode).toBe(200);
+        json = response.json();
+        expect(json.total).toBe(7);
+        expect(json.results).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              operation: 'transfer_send',
+              ticker: 'PEPE',
+              tx_id: expect.not.stringMatching(transferHashBC),
+              address: addressC,
+              transfer_send: {
+                amount: '2000',
+                from_address: addressB,
+                to_address: addressC,
+              },
+            } as Brc20ActivityResponse),
+          ])
+        );
+      });
     });
   });
 });
