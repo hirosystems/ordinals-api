@@ -1,3 +1,11 @@
+## [1.0.0-beta.18](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.17...v1.0.0-beta.18) (2023-08-29)
+
+
+### Bug Fixes
+
+* syntax ([79ff84c](https://github.com/hirosystems/ordinals-api/commit/79ff84c92c14b446a440610810a950144b066c97))
+* test locking versions in GH action only ([275bbcc](https://github.com/hirosystems/ordinals-api/commit/275bbcc819fd6025ee8e3889dcdaabe0fb44fc49))
+
 ## [1.0.0-beta.16](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.15...v1.0.0-beta.16) (2023-08-24)
 
 
