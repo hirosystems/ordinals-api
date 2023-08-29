@@ -27,9 +27,9 @@ export type DbBrc20MintInsert = {
 };
 
 export type DbBrc20Deploy = {
-  id: number;
-  inscription_id: number;
-  block_height: number;
+  id: string;
+  inscription_id: string;
+  block_height: string;
   tx_id: string;
   address: string;
   ticker: string;

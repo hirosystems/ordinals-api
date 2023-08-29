@@ -139,7 +139,7 @@ export function parseBrc20Balances(items: DbBrc20Balance[]): Brc20BalanceRespons
 
 export function parseBrc20Activities(items: DbBrc20Activity[]): Brc20ActivityResponse[] {
   return items.map(i => {
-    const a: Partial<Brc20ActivityResponse> = {
+    const activity = {
       operation: i.operation,
       ticker: i.ticker,
       address: i.address,
@@ -150,26 +150,34 @@ export function parseBrc20Activities(items: DbBrc20Activity[]): Brc20ActivityRes
       timestamp: i.timestamp.valueOf(),
     };
 
-    // Typescript needs checking both `i` and `a` (even though they're the same)
-    if (i.operation === 'deploy' && a.operation === 'deploy') {
-      a.deploy = {
-        max_supply: i.deploy_max,
-        mint_limit: i.deploy_limit,
-        decimals: i.deploy_decimals,
-      };
-    } else if (i.operation === 'mint' && a.operation === 'mint') {
-      a.mint = {
-        amount: i.mint_amount,
-      };
-    } else if (i.operation === 'transfer' && a.operation === 'transfer') {
-      const [amount, from_address] = i.transfer_data.split(';');
-      a.transfer = { amount, from_address };
-    } else if (i.operation === 'transfer_send' && a.operation === 'transfer_send') {
-      const [amount, from_address, to_address] = i.transfer_data.split(';');
-      a.transfer_send = { amount, from_address, to_address };
+    switch (i.operation) {
+      case 'deploy': {
+        return {
+          ...activity,
+          deploy: {
+            max_supply: i.deploy_max,
+            mint_limit: i.deploy_limit,
+            decimals: i.deploy_decimals,
+          },
+        };
+      }
+      case 'mint': {
+        return {
+          ...activity,
+          mint: {
+            amount: i.mint_amount,
+          },
+        };
+      }
+      case 'transfer': {
+        const [amount, from_address] = i.transfer_data.split(';');
+        return { ...activity, transfer: { amount, from_address } };
+      }
+      case 'transfer_send': {
+        const [amount, from_address, to_address] = i.transfer_data.split(';');
+        return { ...activity, transfer_send: { amount, from_address, to_address } };
+      }
     }
-
-    return a as Brc20ActivityResponse;
   });
 }
 
