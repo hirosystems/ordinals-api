@@ -41,6 +41,7 @@ import {
 export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 
 type InscriptionIdentifier = { genesis_id: string } | { number: number };
+type PgQueryFragment = postgres.PendingQuery<postgres.Row[]>; // TODO: Move to api-toolkit
 
 export class PgStore extends BasePgStore {
   readonly brc20: Brc20PgStore;
@@ -869,7 +870,11 @@ export class PgStore extends BasePgStore {
 
   private async updateInscriptionRecursions(reveals: DbRevealInsert[]): Promise<void> {
     if (reveals.length === 0) return;
-    const inserts = [];
+    const inserts: {
+      inscription_id: PgQueryFragment;
+      ref_inscription_id: PgQueryFragment;
+      ref_inscription_genesis_id: string;
+    }[] = [];
     for (const i of reveals)
       if (i.inscription && i.recursive_refs?.length) {
         const refSet = new Set(i.recursive_refs);
@@ -882,9 +887,12 @@ export class PgStore extends BasePgStore {
           });
       }
     if (inserts.length === 0) return;
-    await this.sql`
-      INSERT INTO inscription_recursions ${this.sql(inserts)}
-      ON CONFLICT ON CONSTRAINT inscription_recursions_unique DO NOTHING
-    `;
+    await this.sqlWriteTransaction(async sql => {
+      for (const chunk of chunkArray(inserts, 500))
+        await sql`
+          INSERT INTO inscription_recursions ${sql(chunk)}
+          ON CONFLICT ON CONSTRAINT inscription_recursions_unique DO NOTHING
+        `;
+    });
   }
 }
