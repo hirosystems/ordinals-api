@@ -1,34 +1,34 @@
 import { PgSqlClient, logger } from '@hirosystems/api-toolkit';
 import BigNumber from 'bignumber.js';
 import * as postgres from 'postgres';
+import { hexToBuffer } from '../../api/util/helpers';
 import { throwOnFirstRejected } from '../helpers';
 import { PgStore } from '../pg-store';
 import {
   DbInscriptionIndexPaging,
+  DbLocation,
   DbPaginatedResult,
   LOCATIONS_COLUMNS,
-  DbLocation,
 } from '../types';
+import { Brc20Deploy, Brc20Mint, Brc20Transfer, brc20FromInscriptionContent } from './helpers';
 import {
-  DbBrc20Token,
-  DbBrc20Balance,
-  DbBrc20Supply,
-  DbBrc20Holder,
-  DbBrc20Transfer,
-  BRC20_TRANSFERS_COLUMNS,
-  DbBrc20Deploy,
   BRC20_DEPLOYS_COLUMNS,
+  BRC20_TRANSFERS_COLUMNS,
+  DbBrc20Activity,
+  DbBrc20Balance,
   DbBrc20BalanceInsert,
   DbBrc20BalanceTypeId,
-  DbBrc20ScannedInscription,
-  DbBrc20MintInsert,
+  DbBrc20Deploy,
   DbBrc20DeployInsert,
-  DbBrc20TransferInsert,
   DbBrc20EventInsert,
-  DbBrc20Activity,
+  DbBrc20Holder,
+  DbBrc20MintInsert,
+  DbBrc20ScannedInscription,
+  DbBrc20Supply,
+  DbBrc20Token,
+  DbBrc20Transfer,
+  DbBrc20TransferInsert,
 } from './types';
-import { Brc20Deploy, Brc20Mint, Brc20Transfer, brc20FromInscriptionContent } from './helpers';
-import { hexToBuffer } from '../../api/util/helpers';
 
 export class Brc20PgStore {
   // TODO: Move this to the api-toolkit so we can have pg submodules.
@@ -341,28 +341,26 @@ export class Brc20PgStore {
       limit: deploy.op.lim ?? null,
       decimals: deploy.op.dec ?? '18',
     };
-    const insertions = await this.parent.sql<{ id: string; ticker: string; address: string }[]>`
-      INSERT INTO brc20_deploys ${this.parent.sql(insert)}
-      ON CONFLICT (LOWER(ticker)) DO NOTHING
-      RETURNING id, ticker, address
+    await this.parent.sql`
+      WITH deploy_insert AS (
+        INSERT INTO brc20_deploys ${this.parent.sql(insert)}
+        ON CONFLICT (LOWER(ticker)) DO NOTHING
+        RETURNING id
+      )
+      INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, deploy_id) (
+        SELECT
+          'deploy' AS operation,
+          ${deploy.location.inscription_id} AS inscription_id,
+          ${deploy.location.id} AS genesis_location_id,
+          id AS brc20_deploy_id,
+          id AS deploy_id
+        FROM deploy_insert
+      )
     `;
-    if (insertions.count) {
-      // Add to event history
-      const event: DbBrc20EventInsert = {
-        operation: 'deploy',
-        inscription_id: deploy.location.inscription_id,
-        genesis_location_id: deploy.location.id,
-        brc20_deploy_id: insertions[0].id,
-        deploy_id: insertions[0].id,
-        mint_id: null,
-        transfer_id: null,
-      };
-      await this.parent.sql`INSERT INTO brc20_events ${this.parent.sql(event)}`;
 
-      logger.info(
-        `Brc20PgStore deploy ${deploy.op.tick} by ${deploy.location.address} at block ${deploy.location.block_height}`
-      );
-    }
+    logger.info(
+      `Brc20PgStore deploy ${deploy.op.tick} by ${deploy.location.address} at block ${deploy.location.block_height}`
+    );
   }
 
   private async getDeploy(args: { ticker: string }): Promise<DbBrc20Deploy | undefined> {
@@ -420,32 +418,30 @@ export class Brc20PgStore {
         type: DbBrc20BalanceTypeId.mint,
       };
 
-      const insertions = await sql<{ id: string }[]>`
+      await sql`
         WITH mint_insert AS (
           INSERT INTO brc20_mints ${sql(mintInsert)}
           ON CONFLICT (inscription_id) DO NOTHING
+          RETURNING id
+        ), balance_insert AS (
+          INSERT INTO brc20_balances ${sql(balanceInsert)}
+          ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
+          RETURNING id
         )
-        INSERT INTO brc20_balances ${sql(balanceInsert)}
-        ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
-        RETURNING id
+        INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, mint_id) (
+          SELECT
+            'mint' AS operation,
+            ${mint.location.inscription_id} AS inscription_id,
+            ${mint.location.id} AS genesis_location_id,
+            ${token.id} AS brc20_deploy_id,
+            id AS mint_id
+          FROM mint_insert
+        )
       `;
-      if (insertions.count) {
-        // Add to event history
-        const event: DbBrc20EventInsert = {
-          operation: 'mint',
-          inscription_id: mint.location.inscription_id,
-          genesis_location_id: mint.location.id,
-          brc20_deploy_id: token.id,
-          deploy_id: null,
-          mint_id: insertions[0].id,
-          transfer_id: null,
-        };
-        await this.parent.sql`INSERT INTO brc20_events ${this.parent.sql(event)}`;
 
-        logger.info(
-          `Brc20PgStore mint ${mint.op.tick} (${mint.op.amt}) by ${mint.location.address} at block ${mint.location.block_height}`
-        );
-      }
+      logger.info(
+        `Brc20PgStore mint ${mint.op.tick} (${mint.op.amt}) by ${mint.location.address} at block ${mint.location.block_height}`
+      );
     });
   }
 
@@ -488,7 +484,7 @@ export class Brc20PgStore {
         trans_balance: transAmt.toString(),
         type: DbBrc20BalanceTypeId.transferIntent,
       };
-      const insertions = await sql<{ id: string }[]>`
+      await sql`
         WITH transfer_insert AS (
           INSERT INTO brc20_transfers ${sql(transferInsert)}
           ON CONFLICT (inscription_id) DO NOTHING
@@ -497,25 +493,20 @@ export class Brc20PgStore {
           INSERT INTO brc20_balances ${sql(balanceInsert)}
           ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
         )
-        SELECT id FROM transfer_insert
+        INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id) (
+          SELECT
+            'transfer' AS operation,
+            ${transfer.location.inscription_id} AS inscription_id,
+            ${transfer.location.id} AS genesis_location_id,
+            ${balanceRes[0].brc20_deploy_id} AS brc20_deploy_id,
+            id AS transfer_id
+          FROM transfer_insert
+        )
       `;
-      if (insertions.count) {
-        // Add to event history
-        const event: DbBrc20EventInsert = {
-          operation: 'transfer',
-          inscription_id: transfer.location.inscription_id,
-          genesis_location_id: transfer.location.id,
-          brc20_deploy_id: balanceRes[0].brc20_deploy_id,
-          deploy_id: null,
-          mint_id: null,
-          transfer_id: insertions[0].id,
-        };
-        await this.parent.sql`INSERT INTO brc20_events ${this.parent.sql(event)}`;
 
-        logger.info(
-          `Brc20PgStore transfer ${transfer.op.tick} (${transfer.op.amt}) by ${transfer.location.address} at block ${transfer.location.block_height}`
-        );
-      }
+      logger.info(
+        `Brc20PgStore transfer ${transfer.op.tick} (${transfer.op.amt}) by ${transfer.location.address} at block ${transfer.location.block_height}`
+      );
     });
   }
 }
