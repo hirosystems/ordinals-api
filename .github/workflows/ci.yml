@@ -131,7 +131,7 @@ jobs:
           extra_plugins: |
             @semantic-release/changelog
             @semantic-release/git
-            conventional-changelog-conventionalcommits@6
+            conventional-changelog-conventionalcommits
             @semantic-release/commit-analyzer
 
       - name: Set up Docker Buildx
