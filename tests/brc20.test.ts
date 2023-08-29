@@ -2402,6 +2402,137 @@ describe('BRC-20', () => {
           ])
         );
       });
+
+      test('activity for multiple token creation', async () => {
+        const inscriptionNumbers = incrementing(1);
+        const blockHeights = incrementing(775600);
+        const addressA = 'bc1q6uwuet65rm6xvlz7ztw2gvdmmay5uaycu03mqz';
+
+        // Step 1: Create a token PEPE
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: randomHash() })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'deploy',
+                  tick: 'PEPE',
+                  max: '21000000',
+                },
+                number: inscriptionNumbers.next().value,
+                tx_id: randomHash(),
+                address: addressA,
+              })
+            )
+            .build()
+        );
+
+        // Verify that the PEPE deploy is in the activity feed
+        let response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/activity`,
+        });
+        expect(response.statusCode).toBe(200);
+        let json = response.json();
+        expect(json.total).toBe(1);
+        expect(json.results).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              operation: 'deploy',
+              ticker: 'PEPE',
+              address: addressA,
+              deploy: expect.objectContaining({
+                max_supply: '21000000',
+              }),
+            } as Brc20ActivityResponse),
+          ])
+        );
+
+        // Step 2: Create a token PEER
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: randomHash() })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'deploy',
+                  tick: 'PEER',
+                  max: '21000000',
+                },
+                number: inscriptionNumbers.next().value,
+                tx_id: randomHash(),
+                address: addressA,
+              })
+            )
+            .build()
+        );
+
+        // Verify that the PEER deploy is in the activity feed
+        response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/activity`,
+        });
+        expect(response.statusCode).toBe(200);
+        json = response.json();
+        expect(json.total).toBe(2);
+        expect(json.results).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              operation: 'deploy',
+              ticker: 'PEER',
+              address: addressA,
+              deploy: expect.objectContaining({
+                max_supply: '21000000',
+              }),
+            } as Brc20ActivityResponse),
+          ])
+        );
+
+        // Verify that no events are available before the first block height
+        response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/activity?ticker=PEER&block_height=${775600}`,
+        });
+        expect(response.statusCode).toBe(200);
+        json = response.json();
+        expect(json.total).toBe(0);
+        expect(json.results).toEqual([]);
+
+        // Verify that the PEER deploy is not in the activity feed when using block_height parameter
+        response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/activity?block_height=${775600}`,
+        });
+        expect(response.statusCode).toBe(200);
+        json = response.json();
+        expect(json.total).toBe(1);
+        expect(json.results).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              operation: 'deploy',
+              ticker: 'PEPE',
+              address: addressA,
+              deploy: expect.objectContaining({
+                max_supply: '21000000',
+              }),
+            } as Brc20ActivityResponse),
+          ])
+        );
+        // Should NOT include PEER at this block height
+        expect(json.results).not.toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              ticker: 'PEER',
+            } as Brc20ActivityResponse),
+          ])
+        );
+      });
     });
   });
 });
