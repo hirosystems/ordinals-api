@@ -52,9 +52,8 @@ export class Brc20PgStore {
   async scanBlocks(startBlock: number, endBlock: number): Promise<void> {
     for (let blockHeight = startBlock; blockHeight <= endBlock; blockHeight++) {
       await this.parent.sqlWriteTransaction(async sql => {
-        const cursor = sql<DbBrc20ScannedInscription[]>`
+        const block = await sql<DbBrc20ScannedInscription[]>`
           SELECT
-            i.content,
             EXISTS(SELECT location_id FROM genesis_locations WHERE location_id = l.id) AS genesis,
             ${sql(LOCATIONS_COLUMNS.map(c => `l.${c}`))}
           FROM locations AS l
@@ -63,10 +62,8 @@ export class Brc20PgStore {
             AND i.number >= 0
             AND i.mime_type IN ('application/json', 'text/plain')
           ORDER BY tx_index ASC
-        `.cursor();
-        for await (const chunk of cursor) {
-          await this.insertOperations(chunk);
-        }
+        `;
+        await this.insertOperations(block);
       });
     }
   }
@@ -76,7 +73,10 @@ export class Brc20PgStore {
     for (const write of writes) {
       if (write.genesis) {
         if (write.address === null) continue;
-        const brc20 = brc20FromInscriptionContent(hexToBuffer(write.content));
+        const content = await this.parent.sql<{ content: string }[]>`
+          SELECT content FROM inscriptions WHERE id = ${write.inscription_id}
+        `;
+        const brc20 = brc20FromInscriptionContent(hexToBuffer(content[0].content));
         if (brc20) {
           switch (brc20.op) {
             case 'deploy':
