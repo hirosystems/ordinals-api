@@ -1,5 +1,4 @@
 import { BasePgStoreModule, logger } from '@hirosystems/api-toolkit';
-import BigNumber from 'bignumber.js';
 import * as postgres from 'postgres';
 import { throwOnFirstRejected } from '../helpers';
 import { DbInscriptionIndexPaging, DbPaginatedResult } from '../types';
@@ -10,12 +9,9 @@ import {
   DbBrc20Holder,
   DbBrc20Deploy,
   BRC20_DEPLOYS_COLUMNS,
-  DbBrc20BalanceInsert,
   DbBrc20BalanceTypeId,
   DbBrc20ScannedInscription,
-  DbBrc20MintInsert,
   DbBrc20DeployInsert,
-  DbBrc20TransferInsert,
   DbBrc20Location,
 } from './types';
 import { Brc20Deploy, Brc20Mint, Brc20Transfer, brc20FromInscriptionContent } from './helpers';

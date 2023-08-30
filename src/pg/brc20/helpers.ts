@@ -46,7 +46,9 @@ const Brc20Schema = Type.Union([Brc20DeploySchema, Brc20MintSchema, Brc20Transfe
 const Brc20C = TypeCompiler.Compile(Brc20Schema);
 export type Brc20 = Static<typeof Brc20Schema>;
 
-const UINT64_MAX = BigNumber('18446744073709551615');
+const UINT64_MAX = BigNumber('18446744073709551615'); // 20 digits
+// Only compare against `UINT64_MAX` if the number is at least the same number of digits.
+const numExceedsMax = (num: string) => num.length >= 20 && UINT64_MAX.isLessThan(num);
 
 // For testing only
 export function brc20FromInscription(inscription: DbInscriptionInsert): Brc20 | undefined {
@@ -65,20 +67,11 @@ export function brc20FromInscriptionContent(content: string): Brc20 | undefined 
       if (Buffer.from(json.tick).length > 4) return;
       // Check numeric values.
       if (json.op === 'deploy') {
-        const max = BigNumber(json.max);
-        if (max.isNaN() || max.isZero() || max.isGreaterThan(UINT64_MAX)) return;
-        if (json.lim) {
-          const lim = BigNumber(json.lim);
-          if (lim.isNaN() || lim.isZero() || lim.isGreaterThan(UINT64_MAX)) return;
-        }
-        if (json.dec) {
-          // `dec` can have a value of 0 but must be no more than 18.
-          const dec = BigNumber(json.dec);
-          if (dec.isNaN() || dec.isGreaterThan(18)) return;
-        }
+        if (parseFloat(json.max) == 0 || numExceedsMax(json.max)) return;
+        if (json.lim && (parseFloat(json.lim) == 0 || numExceedsMax(json.lim))) return;
+        if (json.dec && parseFloat(json.dec) > 18) return;
       } else {
-        const amt = BigNumber(json.amt);
-        if (amt.isNaN() || amt.isZero() || amt.isGreaterThan(UINT64_MAX)) return;
+        if (parseFloat(json.amt) == 0 || numExceedsMax(json.amt)) return;
       }
       return json;
     }
