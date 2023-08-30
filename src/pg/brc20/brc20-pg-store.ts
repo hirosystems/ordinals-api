@@ -107,12 +107,15 @@ export class Brc20PgStore {
     const results = await this.sql<(DbBrc20Token & { total: number })[]>`
       SELECT
         d.id, i.genesis_id, i.number, d.block_height, d.tx_id, d.address, d.ticker, d.max, d.limit,
-        d.decimals, l.timestamp as deploy_timestamp, COALESCE(s.minted_supply, 0) as minted_supply, COUNT(*) OVER() as total
+        d.decimals, l.timestamp as deploy_timestamp, COALESCE(st.tx_count, 0) AS tx_count,
+        COALESCE(st.holder_count, 0) AS holder_count, COALESCE(s.minted_supply, 0) AS minted_supply,
+        COUNT(*) OVER() as total
       FROM brc20_deploys AS d
       INNER JOIN inscriptions AS i ON i.id = d.inscription_id
       INNER JOIN genesis_locations AS g ON g.inscription_id = d.inscription_id
       INNER JOIN locations AS l ON l.id = g.location_id
-      LEFT JOIN brc20_supplies AS s ON d.id = s.brc20_deploy_id
+      LEFT JOIN brc20_stats AS st ON st.brc20_deploy_id = d.id
+      LEFT JOIN brc20_supplies AS s ON s.brc20_deploy_id = d.id
       ${tickerPrefixCondition ? this.sql`WHERE ${tickerPrefixCondition}` : this.sql``}
       OFFSET ${args.offset}
       LIMIT ${args.limit}
