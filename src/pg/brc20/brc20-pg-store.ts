@@ -294,19 +294,19 @@ export class Brc20PgStore extends BasePgStoreModule {
       validated_mint AS (
         SELECT
           m.id AS brc20_deploy_id,
-          LEAST(${mint.op.amt}, m.max - m.minted_supply) AS real_mint_amount
+          LEAST(${mint.op.amt}::numeric, m.max - m.minted_supply) AS real_mint_amount
         FROM mint_data AS m
         WHERE
           (m.minted_supply < m.max)
-          AND (m.limit IS NULL OR ${mint.op.amt} <= m.limit)
-          AND (SCALE(${mint.op.amt}) <= m.decimals)
+          AND (m.limit IS NULL OR ${mint.op.amt}::numeric <= m.limit)
+          AND (SCALE(${mint.op.amt}::numeric) <= m.decimals)
       ),
       mint_insert AS (
         INSERT INTO brc20_mints
           (inscription_id, brc20_deploy_id, block_height, tx_id, address, amount)
           (
             SELECT ${mint.location.inscription_id}, brc20_deploy_id, ${mint.location.block_height},
-              ${mint.location.tx_id}, ${mint.location.address}, ${mint.op.amt}
+              ${mint.location.tx_id}, ${mint.location.address}, ${mint.op.amt}::numeric
             FROM validated_mint
           )
         ON CONFLICT (inscription_id) DO NOTHING
@@ -344,7 +344,7 @@ export class Brc20PgStore extends BasePgStoreModule {
       ),
       validated_transfer AS (
         SELECT * FROM balance_data
-        WHERE avail_balance >= ${transfer.op.amt}
+        WHERE avail_balance >= ${transfer.op.amt}::numeric
       ),
       transfer_insert AS (
         INSERT INTO brc20_transfers
@@ -352,7 +352,7 @@ export class Brc20PgStore extends BasePgStoreModule {
           (
             SELECT ${transfer.location.inscription_id}, brc20_deploy_id,
               ${transfer.location.block_height}, ${transfer.location.tx_id},
-              ${transfer.location.address}, NULL, ${transfer.op.amt}
+              ${transfer.location.address}, NULL, ${transfer.op.amt}::numeric
             FROM validated_transfer
           )
         ON CONFLICT (inscription_id) DO NOTHING
@@ -361,8 +361,8 @@ export class Brc20PgStore extends BasePgStoreModule {
         (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type)
         (
           SELECT ${transfer.location.inscription_id}, ${transfer.location.id}, brc20_deploy_id,
-            ${transfer.location.address}, -1 * ${transfer.op.amt}, ${transfer.op.amt},
-            ${DbBrc20BalanceTypeId.transferIntent}
+            ${transfer.location.address}, -1 * ${transfer.op.amt}::numeric,
+            ${transfer.op.amt}::numeric, ${DbBrc20BalanceTypeId.transferIntent}
           FROM validated_transfer
         )
       ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
