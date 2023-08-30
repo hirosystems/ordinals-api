@@ -1,3 +1,10 @@
+## [1.0.0-brc-20.9](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.8...v1.0.0-brc-20.9) (2023-08-30)
+
+
+### Bug Fixes
+
+* insert ops in single queries, reduce BigNumber usage ([#207](https://github.com/hirosystems/ordinals-api/issues/207)) ([ef11e34](https://github.com/hirosystems/ordinals-api/commit/ef11e34a2090a7f1b7630600cbee7e1ebb632680))
+
 ## [1.0.0-brc-20.8](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.7...v1.0.0-brc-20.8) (2023-08-30)
 
 
