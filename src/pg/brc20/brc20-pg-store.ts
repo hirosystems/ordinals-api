@@ -49,18 +49,11 @@ export class Brc20PgStore {
    * @param startBlock - Start at block height
    * @param endBlock - End at block height
    */
-  async scanBlocks(startBlock?: number, endBlock?: number): Promise<void> {
-    const range = await this.parent.sql<{ min: number; max: number }[]>`
-      SELECT
-        ${startBlock ? this.parent.sql`${startBlock}` : this.parent.sql`MIN(block_height)`} AS min,
-        ${endBlock ? this.parent.sql`${endBlock}` : this.parent.sql`MAX(block_height)`} AS max
-      FROM locations
-    `;
-    for (let blockHeight = range[0].min; blockHeight <= range[0].max; blockHeight++) {
+  async scanBlocks(startBlock: number, endBlock: number): Promise<void> {
+    for (let blockHeight = startBlock; blockHeight <= endBlock; blockHeight++) {
       await this.parent.sqlWriteTransaction(async sql => {
         const block = await sql<DbBrc20ScannedInscription[]>`
           SELECT
-            i.content,
             EXISTS(SELECT location_id FROM genesis_locations WHERE location_id = l.id) AS genesis,
             ${sql(LOCATIONS_COLUMNS.map(c => `l.${c}`))}
           FROM locations AS l
@@ -80,7 +73,11 @@ export class Brc20PgStore {
     for (const write of writes) {
       if (write.genesis) {
         if (write.address === null) continue;
-        const brc20 = brc20FromInscriptionContent(hexToBuffer(write.content));
+        // Read contents here to avoid OOM errors when bulk-requesting content from postgres.
+        const content = await this.parent.sql<{ content: string }[]>`
+          SELECT content FROM inscriptions WHERE id = ${write.inscription_id}
+        `;
+        const brc20 = brc20FromInscriptionContent(hexToBuffer(content[0].content));
         if (brc20) {
           switch (brc20.op) {
             case 'deploy':
@@ -235,7 +232,7 @@ export class Brc20PgStore {
             OR (l.block_height = ${args.block_height} AND l.tx_index < ${args.tx_index}))
         LIMIT 3
       `;
-      if (brc20Transfer.count > 2) return;
+      if (brc20Transfer.count === 0 || brc20Transfer.count > 2) return;
       const transfer = brc20Transfer[0];
       const amount = new BigNumber(transfer.amount);
       const changes: DbBrc20BalanceInsert[] = [

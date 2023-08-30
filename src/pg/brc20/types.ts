@@ -3,7 +3,6 @@ import { DbLocation } from '../types';
 
 export type DbBrc20ScannedInscription = DbLocation & {
   genesis: boolean;
-  content: string;
 };
 
 export type DbBrc20DeployInsert = {
