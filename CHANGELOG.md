@@ -1,3 +1,10 @@
+## [1.0.0-brc-20.8](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.7...v1.0.0-brc-20.8) (2023-08-30)
+
+
+### Bug Fixes
+
+* optimize brc-20 scan by minimizing string conversions ([#206](https://github.com/hirosystems/ordinals-api/issues/206)) ([98c12c8](https://github.com/hirosystems/ordinals-api/commit/98c12c8457006fd0a03dfcd4aeb43046b8d6189a))
+
 ## [1.0.0-brc-20.7](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.6...v1.0.0-brc-20.7) (2023-08-30)
 
 
