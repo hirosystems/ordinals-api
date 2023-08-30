@@ -3,12 +3,7 @@ import BigNumber from 'bignumber.js';
 import * as postgres from 'postgres';
 import { throwOnFirstRejected } from '../helpers';
 import { PgStore } from '../pg-store';
-import {
-  DbInscriptionIndexPaging,
-  DbPaginatedResult,
-  LOCATIONS_COLUMNS,
-  DbLocation,
-} from '../types';
+import { DbInscriptionIndexPaging, DbPaginatedResult } from '../types';
 import {
   DbBrc20Token,
   DbBrc20Balance,
@@ -24,9 +19,9 @@ import {
   DbBrc20MintInsert,
   DbBrc20DeployInsert,
   DbBrc20TransferInsert,
+  DbBrc20Location,
 } from './types';
 import { Brc20Deploy, Brc20Mint, Brc20Transfer, brc20FromInscriptionContent } from './helpers';
-import { hexToBuffer } from '../../api/util/helpers';
 
 export class Brc20PgStore {
   // TODO: Move this to the api-toolkit so we can have pg submodules.
@@ -53,15 +48,20 @@ export class Brc20PgStore {
     for (let blockHeight = startBlock; blockHeight <= endBlock; blockHeight++) {
       await this.parent.sqlWriteTransaction(async sql => {
         const block = await sql<DbBrc20ScannedInscription[]>`
-          SELECT
-            EXISTS(SELECT location_id FROM genesis_locations WHERE location_id = l.id) AS genesis,
-            ${sql(LOCATIONS_COLUMNS.map(c => `l.${c}`))}
-          FROM locations AS l
-          INNER JOIN inscriptions AS i ON l.inscription_id = i.id
-          WHERE l.block_height = ${blockHeight}
-            AND i.number >= 0
-            AND i.mime_type IN ('application/json', 'text/plain')
-          ORDER BY tx_index ASC
+          WITH candidates AS (
+            SELECT
+              convert_from(i.content, 'utf-8') as content,
+              EXISTS(SELECT location_id FROM genesis_locations WHERE location_id = l.id) AS genesis,
+              l.id, l.inscription_id, l.block_height, l.tx_id, l.tx_index, l.address
+            FROM locations AS l
+            INNER JOIN inscriptions AS i ON l.inscription_id = i.id
+            WHERE l.block_height = ${blockHeight}
+              AND i.number >= 0
+              AND i.mime_type IN ('application/json', 'text/plain')
+            ORDER BY tx_index ASC
+          )
+          SELECT * FROM candidates
+          WHERE content SIMILAR TO '%"p":[ \\t\\n\\r\\f\\v]*"brc-20"%'
         `;
         await this.insertOperations(block);
       });
@@ -73,11 +73,7 @@ export class Brc20PgStore {
     for (const write of writes) {
       if (write.genesis) {
         if (write.address === null) continue;
-        // Read contents here to avoid OOM errors when bulk-requesting content from postgres.
-        const content = await this.parent.sql<{ content: string }[]>`
-          SELECT content FROM inscriptions WHERE id = ${write.inscription_id}
-        `;
-        const brc20 = brc20FromInscriptionContent(hexToBuffer(content[0].content));
+        const brc20 = brc20FromInscriptionContent(write.content);
         if (brc20) {
           switch (brc20.op) {
             case 'deploy':
@@ -268,7 +264,10 @@ export class Brc20PgStore {
     });
   }
 
-  private async insertDeploy(deploy: { op: Brc20Deploy; location: DbLocation }): Promise<void> {
+  private async insertDeploy(deploy: {
+    op: Brc20Deploy;
+    location: DbBrc20Location;
+  }): Promise<void> {
     if (!deploy.location.inscription_id || !deploy.location.address) return;
     const insert: DbBrc20DeployInsert = {
       inscription_id: deploy.location.inscription_id,
@@ -299,7 +298,7 @@ export class Brc20PgStore {
     if (deploy.count) return deploy[0];
   }
 
-  private async insertMint(mint: { op: Brc20Mint; location: DbLocation }): Promise<void> {
+  private async insertMint(mint: { op: Brc20Mint; location: DbBrc20Location }): Promise<void> {
     await this.parent.sqlWriteTransaction(async sql => {
       if (!mint.location.inscription_id || !mint.location.address) return;
       const tokenRes = await sql<
@@ -361,7 +360,7 @@ export class Brc20PgStore {
 
   private async insertTransfer(transfer: {
     op: Brc20Transfer;
-    location: DbLocation;
+    location: DbBrc20Location;
   }): Promise<void> {
     await this.parent.sqlWriteTransaction(async sql => {
       if (!transfer.location.inscription_id || !transfer.location.address) return;
