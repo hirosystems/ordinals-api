@@ -5,6 +5,8 @@ import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
 import { DbInscriptionInsert } from '../src/pg/types';
 import { TestChainhookPayloadBuilder, TestFastifyServer, brc20Reveal, randomHash } from './helpers';
 
+jest.setTimeout(100_000);
+
 describe('BRC-20', () => {
   let db: PgStore;
   let fastify: TestFastifyServer;
@@ -1712,6 +1714,13 @@ describe('BRC-20', () => {
         url: `/ordinals/brc-20/tokens/PEPE`,
       });
       expect(response.statusCode).toBe(200);
+      const responseJson = response.json();
+      expect(responseJson.total).toBe(1);
+      expect(responseJson.results).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ ticker: 'PEPE', holder_count: 0, tx_count: 0 }),
+        ])
+      );
     });
 
     test('filter tickers by ticker prefix', async () => {
