@@ -49,16 +49,10 @@ export class Brc20PgStore {
    * @param startBlock - Start at block height
    * @param endBlock - End at block height
    */
-  async scanBlocks(startBlock?: number, endBlock?: number): Promise<void> {
-    const range = await this.parent.sql<{ min: number; max: number }[]>`
-      SELECT
-        ${startBlock ? this.parent.sql`${startBlock}` : this.parent.sql`MIN(block_height)`} AS min,
-        ${endBlock ? this.parent.sql`${endBlock}` : this.parent.sql`MAX(block_height)`} AS max
-      FROM locations
-    `;
-    for (let blockHeight = range[0].min; blockHeight <= range[0].max; blockHeight++) {
+  async scanBlocks(startBlock: number, endBlock: number): Promise<void> {
+    for (let blockHeight = startBlock; blockHeight <= endBlock; blockHeight++) {
       await this.parent.sqlWriteTransaction(async sql => {
-        const block = await sql<DbBrc20ScannedInscription[]>`
+        const cursor = sql<DbBrc20ScannedInscription[]>`
           SELECT
             i.content,
             EXISTS(SELECT location_id FROM genesis_locations WHERE location_id = l.id) AS genesis,
@@ -69,8 +63,10 @@ export class Brc20PgStore {
             AND i.number >= 0
             AND i.mime_type IN ('application/json', 'text/plain')
           ORDER BY tx_index ASC
-        `;
-        await this.insertOperations(block);
+        `.cursor();
+        for await (const chunk of cursor) {
+          await this.insertOperations(chunk);
+        }
       });
     }
   }
