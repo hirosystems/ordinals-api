@@ -73,6 +73,7 @@ export class Brc20PgStore {
     for (const write of writes) {
       if (write.genesis) {
         if (write.address === null) continue;
+        // Read contents here to avoid OOM errors when bulk-requesting content from postgres.
         const content = await this.parent.sql<{ content: string }[]>`
           SELECT content FROM inscriptions WHERE id = ${write.inscription_id}
         `;
@@ -231,7 +232,7 @@ export class Brc20PgStore {
             OR (l.block_height = ${args.block_height} AND l.tx_index < ${args.tx_index}))
         LIMIT 3
       `;
-      if (brc20Transfer.count > 2) return;
+      if (brc20Transfer.count === 0 || brc20Transfer.count > 2) return;
       const transfer = brc20Transfer[0];
       const amount = new BigNumber(transfer.amount);
       const changes: DbBrc20BalanceInsert[] = [
