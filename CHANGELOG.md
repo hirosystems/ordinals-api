@@ -1,3 +1,17 @@
+## [1.0.0-brc-20.7](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.6...v1.0.0-brc-20.7) (2023-08-30)
+
+
+### Bug Fixes
+
+* add recursion backfill and temporary skip ([#198](https://github.com/hirosystems/ordinals-api/issues/198)) ([63571ee](https://github.com/hirosystems/ordinals-api/commit/63571eeb5459165a90cc6b45d35f5f50adb7df79))
+* attempt to optimize brc-20 scan ([#204](https://github.com/hirosystems/ordinals-api/issues/204)) ([f6545cd](https://github.com/hirosystems/ordinals-api/commit/f6545cdef64fbf8dce6c522e11eb86d4ee4f69d5))
+* do not insert repeated recursions ([#199](https://github.com/hirosystems/ordinals-api/issues/199)) ([9c8508b](https://github.com/hirosystems/ordinals-api/commit/9c8508b1e5ef7b21e99c4174b72c4b98b7990d23))
+* dont update cache timestamp during ingestion ([#200](https://github.com/hirosystems/ordinals-api/issues/200)) ([8f973a3](https://github.com/hirosystems/ordinals-api/commit/8f973a30862f5aa869709dcaeec434cbe43903c4))
+* guard against empty recursion refs ([71ce1a5](https://github.com/hirosystems/ordinals-api/commit/71ce1a52760c2e101c255e7d691653c180cc73c8))
+* optimize inscription backfill indexes ([#197](https://github.com/hirosystems/ordinals-api/issues/197)) ([ab2f7bf](https://github.com/hirosystems/ordinals-api/commit/ab2f7bfc475f2399f72647aeac23b4b9a62d0905))
+* semantic release ([26cd2c6](https://github.com/hirosystems/ordinals-api/commit/26cd2c6e8fb1948698052bbf3620fbefbd269bc9))
+* split recursion insertion into chunks ([#201](https://github.com/hirosystems/ordinals-api/issues/201)) ([4ebc106](https://github.com/hirosystems/ordinals-api/commit/4ebc10652a345353ec58afc8a09893564e28d94e))
+
 ## [1.0.0](https://github.com/hirosystems/ordinals-api/compare/v0.4.15...v1.0.0) (2023-08-29)
 
 
