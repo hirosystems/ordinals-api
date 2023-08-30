@@ -1,3 +1,10 @@
+## [1.0.0-brc-20.10](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.9...v1.0.0-brc-20.10) (2023-08-30)
+
+
+### Bug Fixes
+
+* cast numbers to postgres numeric ([f8ae276](https://github.com/hirosystems/ordinals-api/commit/f8ae2767d6276178488e55ca98c884fc3db17860))
+
 ## [1.0.0-brc-20.9](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.8...v1.0.0-brc-20.9) (2023-08-30)
 
 
