@@ -201,16 +201,14 @@ export class Brc20PgStore extends BasePgStoreModule {
   }
 
   async applyTransfer(location: DbBrc20ScannedInscription): Promise<void> {
-    await this.sqlWriteTransaction(async sql => {
-      if (!location.inscription_id) return;
-      // Is this a BRC-20 balance transfer? Check if we have a valid transfer inscription emitted by
-      // this address that hasn't been sent to another address before. Use `LIMIT 3` as a quick way
-      // of checking if we have just inserted the first transfer for this inscription (genesis +
-      // transfer).
-      const brc20Transfer = await sql<
-        { id: string; amount: string; brc20_deploy_id: string; from_address: string }[]
-      >`
-        SELECT t.id, t.amount, t.brc20_deploy_id, t.from_address
+    if (!location.inscription_id) return;
+    // Is this a BRC-20 balance transfer? Check if we have a valid transfer inscription emitted by
+    // this address that hasn't been sent to another address before. Use `LIMIT 3` as a quick way
+    // of checking if we have just inserted the first transfer for this inscription (genesis +
+    // transfer).
+    const sendRes = await this.sql`
+      WITH transfer_data AS (
+        SELECT t.id, t.amount, t.brc20_deploy_id, t.from_address, ROW_NUMBER() OVER()
         FROM locations AS l
         INNER JOIN brc20_transfers AS t ON t.inscription_id = l.inscription_id
         WHERE l.inscription_id = ${location.inscription_id}
@@ -219,46 +217,41 @@ export class Brc20PgStore extends BasePgStoreModule {
             OR (l.block_height = ${location.block_height} AND l.tx_index < ${location.tx_index})
           )
         LIMIT 3
-      `;
-      if (brc20Transfer.count === 0 || brc20Transfer.count > 2) return;
-      const transferData = brc20Transfer[0];
-      const amount = new BigNumber(transferData.amount);
-      const fromAddress = transferData.from_address;
-      // If a transfer is sent as fee, its amount must be returned to sender.
-      const toAddress = location.address ?? transferData.from_address;
-      const changes: DbBrc20BalanceInsert[] = [
-        {
-          inscription_id: location.inscription_id,
-          location_id: location.id,
-          brc20_deploy_id: transferData.brc20_deploy_id,
-          address: fromAddress,
-          avail_balance: '0',
-          trans_balance: amount.negated().toString(),
-          type: DbBrc20BalanceTypeId.transferFrom,
-        },
-        {
-          inscription_id: location.inscription_id,
-          location_id: location.id,
-          brc20_deploy_id: transferData.brc20_deploy_id,
-          address: toAddress,
-          avail_balance: amount.toString(),
-          trans_balance: '0',
-          type: DbBrc20BalanceTypeId.transferTo,
-        },
-      ];
-      await sql`
-        WITH updated_transfer AS (
-          UPDATE brc20_transfers
-          SET to_address = ${toAddress}
-          WHERE id = ${transferData.id}
-        )
-        INSERT INTO brc20_balances ${sql(changes)}
+      ),
+      validated_transfer AS (
+        SELECT * FROM transfer_data
+        WHERE NOT EXISTS(SELECT id FROM transfer_data WHERE row_number = 3)
+        LIMIT 1
+      ),
+      updated_transfer AS (
+        UPDATE brc20_transfers
+        SET to_address = COALESCE(${location.address}, (SELECT from_address FROM validated_transfer))
+        WHERE id = (SELECT id FROM validated_transfer)
+      ),
+      balance_insert_from AS (
+        INSERT INTO brc20_balances
+          (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type)
+          (
+            SELECT ${location.inscription_id}, ${location.id}, brc20_deploy_id, from_address, 0,
+              -1 * amount, ${DbBrc20BalanceTypeId.transferFrom}
+            FROM validated_transfer
+          )
         ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
-      `;
+      )
+      INSERT INTO brc20_balances
+        (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type)
+        (
+          SELECT ${location.inscription_id}, ${location.id}, brc20_deploy_id,
+            COALESCE(${location.address}, from_address), amount, 0,
+            ${DbBrc20BalanceTypeId.transferTo}
+          FROM validated_transfer
+        )
+      ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
+    `;
+    if (sendRes.count)
       logger.info(
-        `Brc20PgStore send transfer id=${transferData.id} (${transferData.amount}) from ${fromAddress} to ${toAddress} at block ${location.block_height}`
+        `Brc20PgStore send transfer to ${location.address} at block ${location.block_height}`
       );
-    });
   }
 
   private async insertDeploy(deploy: {
@@ -276,11 +269,11 @@ export class Brc20PgStore extends BasePgStoreModule {
       limit: deploy.op.lim ?? null,
       decimals: deploy.op.dec ?? '18',
     };
-    const tickers = await this.sql<{ ticker: string; address: string }[]>`
+    const deployRes = await this.sql`
       INSERT INTO brc20_deploys ${this.sql(insert)}
       ON CONFLICT (LOWER(ticker)) DO NOTHING
     `;
-    if (tickers.count)
+    if (deployRes.count)
       logger.info(
         `Brc20PgStore deploy ${deploy.op.tick} by ${deploy.location.address} at block ${deploy.location.block_height}`
       );
@@ -288,6 +281,10 @@ export class Brc20PgStore extends BasePgStoreModule {
 
   private async insertMint(mint: { op: Brc20Mint; location: DbBrc20Location }): Promise<void> {
     if (!mint.location.inscription_id || !mint.location.address) return;
+    // Check the following conditions:
+    // * Is the mint amount within the allowed token limits?
+    // * Is the number of decimals correct?
+    // * Does the mint amount exceed remaining supply?
     const mintRes = await this.sql`
       WITH mint_data AS (
         SELECT
@@ -338,6 +335,8 @@ export class Brc20PgStore extends BasePgStoreModule {
     location: DbBrc20Location;
   }): Promise<void> {
     if (!transfer.location.inscription_id || !transfer.location.address) return;
+    // Check the following conditions:
+    // * Do we have enough available balance to do this transfer?
     const transferRes = await this.sql`
       WITH balance_data AS (
         SELECT b.brc20_deploy_id, COALESCE(SUM(b.avail_balance), 0) AS avail_balance
