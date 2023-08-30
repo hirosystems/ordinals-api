@@ -1,3 +1,10 @@
+## [1.0.0-brc-20.11](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.10...v1.0.0-brc-20.11) (2023-08-30)
+
+
+### Bug Fixes
+
+* remove supply view, calculate supply as we mint ([36addce](https://github.com/hirosystems/ordinals-api/commit/36addce6add55ffd4e5180c3c396c964672182e9))
+
 ## [1.0.0-brc-20.10](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.9...v1.0.0-brc-20.10) (2023-08-30)
 
 
