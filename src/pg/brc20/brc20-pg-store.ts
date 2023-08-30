@@ -86,12 +86,11 @@ export class Brc20PgStore extends BasePgStoreModule {
     const results = await this.sql<(DbBrc20Token & { total: number })[]>`
       SELECT
         d.id, i.genesis_id, i.number, d.block_height, d.tx_id, d.address, d.ticker, d.max, d.limit,
-        d.decimals, l.timestamp as deploy_timestamp, COALESCE(s.minted_supply, 0) as minted_supply, COUNT(*) OVER() as total
+        d.decimals, l.timestamp as deploy_timestamp, d.minted_supply, COUNT(*) OVER() as total
       FROM brc20_deploys AS d
       INNER JOIN inscriptions AS i ON i.id = d.inscription_id
       INNER JOIN genesis_locations AS g ON g.inscription_id = d.inscription_id
       INNER JOIN locations AS l ON l.id = g.location_id
-      LEFT JOIN brc20_supplies AS s ON d.id = s.brc20_deploy_id
       ${tickerPrefixCondition ? this.sql`WHERE ${tickerPrefixCondition}` : this.sql``}
       OFFSET ${args.offset}
       LIMIT ${args.limit}
@@ -144,13 +143,8 @@ export class Brc20PgStore extends BasePgStoreModule {
       const deploy = await this.getDeploy(args);
       if (!deploy) return;
 
-      const supplyPromise = sql<{ max: string }[]>`
-        SELECT max FROM brc20_deploys WHERE id = ${deploy.id}
-      `;
-      const mintedPromise = sql<{ minted_supply: string }[]>`
-        SELECT minted_supply
-        FROM brc20_supplies
-        WHERE brc20_deploy_id = ${deploy.id}
+      const supplyPromise = sql<{ max: string; minted_supply: string }[]>`
+        SELECT max, minted_supply FROM brc20_deploys WHERE id = ${deploy.id}
       `;
       const holdersPromise = sql<{ count: string }[]>`
         SELECT COUNT(*) AS count
@@ -159,11 +153,11 @@ export class Brc20PgStore extends BasePgStoreModule {
         GROUP BY address
         HAVING SUM(avail_balance + trans_balance) > 0
       `;
-      const settles = await Promise.allSettled([supplyPromise, holdersPromise, mintedPromise]);
-      const [supply, holders, minted] = throwOnFirstRejected(settles);
+      const settles = await Promise.allSettled([supplyPromise, holdersPromise]);
+      const [supply, holders] = throwOnFirstRejected(settles);
       return {
         max_supply: supply[0].max,
-        minted_supply: minted[0]?.minted_supply ?? '0',
+        minted_supply: supply[0]?.minted_supply ?? '0',
         holders: holders[0]?.count ?? '0',
       };
     });
@@ -283,23 +277,17 @@ export class Brc20PgStore extends BasePgStoreModule {
     // * Does the mint amount exceed remaining supply?
     const mintRes = await this.sql`
       WITH mint_data AS (
-        SELECT
-          d.id, d.decimals, d.limit, d.max,
-          COALESCE(SUM(amount), 0) AS minted_supply
-        FROM brc20_deploys AS d
-        LEFT JOIN brc20_mints AS m ON m.brc20_deploy_id = d.id
-        WHERE d.ticker_lower = LOWER(${mint.op.tick})
-        GROUP BY d.id
+        SELECT id, decimals, "limit", max, minted_supply
+        FROM brc20_deploys
+        WHERE ticker_lower = LOWER(${mint.op.tick}) AND minted_supply < max
       ),
       validated_mint AS (
         SELECT
-          m.id AS brc20_deploy_id,
-          LEAST(${mint.op.amt}::numeric, m.max - m.minted_supply) AS real_mint_amount
-        FROM mint_data AS m
-        WHERE
-          (m.minted_supply < m.max)
-          AND (m.limit IS NULL OR ${mint.op.amt}::numeric <= m.limit)
-          AND (SCALE(${mint.op.amt}::numeric) <= m.decimals)
+          id AS brc20_deploy_id,
+          LEAST(${mint.op.amt}::numeric, max - minted_supply) AS real_mint_amount
+        FROM mint_data
+        WHERE ("limit" IS NULL OR ${mint.op.amt}::numeric <= "limit")
+          AND (SCALE(${mint.op.amt}::numeric) <= decimals)
       ),
       mint_insert AS (
         INSERT INTO brc20_mints
@@ -310,6 +298,11 @@ export class Brc20PgStore extends BasePgStoreModule {
             FROM validated_mint
           )
         ON CONFLICT (inscription_id) DO NOTHING
+      ),
+      supply_update AS (
+        UPDATE brc20_deploys
+        SET minted_supply = minted_supply + (SELECT real_mint_amount FROM validated_mint)
+        WHERE id = (SELECT brc20_deploy_id FROM validated_mint)
       )
       INSERT INTO brc20_balances
         (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type)

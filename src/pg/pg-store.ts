@@ -235,7 +235,6 @@ export class PgStore extends BasePgStore {
       // We'll issue materialized view refreshes in parallel. We will not wait for them to finish so
       // we can respond to the chainhook node with a `200` HTTP code as soon as possible.
       const views = [this.normalizeInscriptionCount({ min_block_height: updatedBlockHeightMin })];
-      if (ENV.BRC20_BLOCK_SCAN_ENABLED) views.push(this.refreshMaterializedView('brc20_supplies'));
       const viewRefresh = Promise.allSettled(views);
       // Only wait for these on tests.
       if (isTestEnv) await viewRefresh;
