@@ -1,21 +1,13 @@
-import { PgSqlClient, logger } from '@hirosystems/api-toolkit';
+import { BasePgStoreModule, logger } from '@hirosystems/api-toolkit';
 import BigNumber from 'bignumber.js';
 import * as postgres from 'postgres';
 import { throwOnFirstRejected } from '../helpers';
-import { PgStore } from '../pg-store';
-import {
-  DbInscriptionIndexPaging,
-  DbPaginatedResult,
-  LOCATIONS_COLUMNS,
-  DbLocation,
-} from '../types';
+import { DbInscriptionIndexPaging, DbPaginatedResult } from '../types';
 import {
   DbBrc20Token,
   DbBrc20Balance,
   DbBrc20Supply,
   DbBrc20Holder,
-  DbBrc20Transfer,
-  BRC20_TRANSFERS_COLUMNS,
   DbBrc20Deploy,
   BRC20_DEPLOYS_COLUMNS,
   DbBrc20BalanceInsert,
@@ -24,21 +16,11 @@ import {
   DbBrc20MintInsert,
   DbBrc20DeployInsert,
   DbBrc20TransferInsert,
+  DbBrc20Location,
 } from './types';
 import { Brc20Deploy, Brc20Mint, Brc20Transfer, brc20FromInscriptionContent } from './helpers';
-import { hexToBuffer } from '../../api/util/helpers';
 
-export class Brc20PgStore {
-  // TODO: Move this to the api-toolkit so we can have pg submodules.
-  private readonly parent: PgStore;
-  private get sql(): PgSqlClient {
-    return this.parent.sql;
-  }
-
-  constructor(db: PgStore) {
-    this.parent = db;
-  }
-
+export class Brc20PgStore extends BasePgStoreModule {
   sqlOr(partials: postgres.PendingQuery<postgres.Row[]>[] | undefined) {
     return partials?.reduce((acc, curr) => this.sql`${acc} OR ${curr}`);
   }
@@ -51,17 +33,22 @@ export class Brc20PgStore {
    */
   async scanBlocks(startBlock: number, endBlock: number): Promise<void> {
     for (let blockHeight = startBlock; blockHeight <= endBlock; blockHeight++) {
-      await this.parent.sqlWriteTransaction(async sql => {
+      await this.sqlWriteTransaction(async sql => {
         const block = await sql<DbBrc20ScannedInscription[]>`
-          SELECT
-            EXISTS(SELECT location_id FROM genesis_locations WHERE location_id = l.id) AS genesis,
-            ${sql(LOCATIONS_COLUMNS.map(c => `l.${c}`))}
-          FROM locations AS l
-          INNER JOIN inscriptions AS i ON l.inscription_id = i.id
-          WHERE l.block_height = ${blockHeight}
-            AND i.number >= 0
-            AND i.mime_type IN ('application/json', 'text/plain')
-          ORDER BY tx_index ASC
+          WITH candidates AS (
+            SELECT
+              convert_from(i.content, 'utf-8') as content,
+              EXISTS(SELECT location_id FROM genesis_locations WHERE location_id = l.id) AS genesis,
+              l.id, l.inscription_id, l.block_height, l.tx_id, l.tx_index, l.address
+            FROM locations AS l
+            INNER JOIN inscriptions AS i ON l.inscription_id = i.id
+            WHERE l.block_height = ${blockHeight}
+              AND i.number >= 0
+              AND i.mime_type IN ('application/json', 'text/plain')
+            ORDER BY tx_index ASC
+          )
+          SELECT * FROM candidates
+          WHERE content SIMILAR TO '%"p":[ \\t\\n\\r\\f\\v]*"brc-20"%'
         `;
         await this.insertOperations(block);
       });
@@ -73,11 +60,7 @@ export class Brc20PgStore {
     for (const write of writes) {
       if (write.genesis) {
         if (write.address === null) continue;
-        // Read contents here to avoid OOM errors when bulk-requesting content from postgres.
-        const content = await this.parent.sql<{ content: string }[]>`
-          SELECT content FROM inscriptions WHERE id = ${write.inscription_id}
-        `;
-        const brc20 = brc20FromInscriptionContent(hexToBuffer(content[0].content));
+        const brc20 = brc20FromInscriptionContent(write.content);
         if (brc20) {
           switch (brc20.op) {
             case 'deploy':
@@ -161,7 +144,7 @@ export class Brc20PgStore {
   }
 
   async getTokenSupply(args: { ticker: string }): Promise<DbBrc20Supply | undefined> {
-    return await this.parent.sqlTransaction(async sql => {
+    return await this.sqlTransaction(async sql => {
       const deploy = await this.getDeploy(args);
       if (!deploy) return;
 
@@ -195,7 +178,7 @@ export class Brc20PgStore {
       ticker: string;
     } & DbInscriptionIndexPaging
   ): Promise<DbPaginatedResult<DbBrc20Holder> | undefined> {
-    return await this.parent.sqlTransaction(async sql => {
+    return await this.sqlTransaction(async sql => {
       const deploy = await this.getDeploy(args);
       if (!deploy) {
         return;
@@ -217,40 +200,47 @@ export class Brc20PgStore {
     });
   }
 
-  async applyTransfer(args: DbBrc20ScannedInscription): Promise<void> {
-    await this.parent.sqlWriteTransaction(async sql => {
+  async applyTransfer(location: DbBrc20ScannedInscription): Promise<void> {
+    await this.sqlWriteTransaction(async sql => {
+      if (!location.inscription_id) return;
       // Is this a BRC-20 balance transfer? Check if we have a valid transfer inscription emitted by
       // this address that hasn't been sent to another address before. Use `LIMIT 3` as a quick way
       // of checking if we have just inserted the first transfer for this inscription (genesis +
       // transfer).
-      const brc20Transfer = await sql<DbBrc20Transfer[]>`
-        SELECT ${sql(BRC20_TRANSFERS_COLUMNS.map(c => `t.${c}`))}
+      const brc20Transfer = await sql<
+        { id: string; amount: string; brc20_deploy_id: string; from_address: string }[]
+      >`
+        SELECT t.id, t.amount, t.brc20_deploy_id, t.from_address
         FROM locations AS l
         INNER JOIN brc20_transfers AS t ON t.inscription_id = l.inscription_id
-        WHERE l.inscription_id = ${args.inscription_id}
-          AND (l.block_height < ${args.block_height}
-            OR (l.block_height = ${args.block_height} AND l.tx_index < ${args.tx_index}))
+        WHERE l.inscription_id = ${location.inscription_id}
+          AND (
+            l.block_height < ${location.block_height}
+            OR (l.block_height = ${location.block_height} AND l.tx_index < ${location.tx_index})
+          )
         LIMIT 3
       `;
       if (brc20Transfer.count === 0 || brc20Transfer.count > 2) return;
-      const transfer = brc20Transfer[0];
-      const amount = new BigNumber(transfer.amount);
+      const transferData = brc20Transfer[0];
+      const amount = new BigNumber(transferData.amount);
+      const fromAddress = transferData.from_address;
+      // If a transfer is sent as fee, its amount must be returned to sender.
+      const toAddress = location.address ?? transferData.from_address;
       const changes: DbBrc20BalanceInsert[] = [
         {
-          inscription_id: transfer.inscription_id,
-          location_id: args.id,
-          brc20_deploy_id: transfer.brc20_deploy_id,
-          address: transfer.from_address,
+          inscription_id: location.inscription_id,
+          location_id: location.id,
+          brc20_deploy_id: transferData.brc20_deploy_id,
+          address: fromAddress,
           avail_balance: '0',
           trans_balance: amount.negated().toString(),
           type: DbBrc20BalanceTypeId.transferFrom,
         },
         {
-          inscription_id: transfer.inscription_id,
-          location_id: args.id,
-          brc20_deploy_id: transfer.brc20_deploy_id,
-          // If a transfer is sent as fee, its amount must be returned to sender.
-          address: args.address ?? transfer.from_address,
+          inscription_id: location.inscription_id,
+          location_id: location.id,
+          brc20_deploy_id: transferData.brc20_deploy_id,
+          address: toAddress,
           avail_balance: amount.toString(),
           trans_balance: '0',
           type: DbBrc20BalanceTypeId.transferTo,
@@ -259,16 +249,22 @@ export class Brc20PgStore {
       await sql`
         WITH updated_transfer AS (
           UPDATE brc20_transfers
-          SET to_address = ${args.address}
-          WHERE id = ${transfer.id}
+          SET to_address = ${toAddress}
+          WHERE id = ${transferData.id}
         )
         INSERT INTO brc20_balances ${sql(changes)}
         ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
       `;
+      logger.info(
+        `Brc20PgStore send transfer id=${transferData.id} (${transferData.amount}) from ${fromAddress} to ${toAddress} at block ${location.block_height}`
+      );
     });
   }
 
-  private async insertDeploy(deploy: { op: Brc20Deploy; location: DbLocation }): Promise<void> {
+  private async insertDeploy(deploy: {
+    op: Brc20Deploy;
+    location: DbBrc20Location;
+  }): Promise<void> {
     if (!deploy.location.inscription_id || !deploy.location.address) return;
     const insert: DbBrc20DeployInsert = {
       inscription_id: deploy.location.inscription_id,
@@ -280,8 +276,8 @@ export class Brc20PgStore {
       limit: deploy.op.lim ?? null,
       decimals: deploy.op.dec ?? '18',
     };
-    const tickers = await this.parent.sql<{ ticker: string; address: string }[]>`
-      INSERT INTO brc20_deploys ${this.parent.sql(insert)}
+    const tickers = await this.sql<{ ticker: string; address: string }[]>`
+      INSERT INTO brc20_deploys ${this.sql(insert)}
       ON CONFLICT (LOWER(ticker)) DO NOTHING
     `;
     if (tickers.count)
@@ -299,8 +295,8 @@ export class Brc20PgStore {
     if (deploy.count) return deploy[0];
   }
 
-  private async insertMint(mint: { op: Brc20Mint; location: DbLocation }): Promise<void> {
-    await this.parent.sqlWriteTransaction(async sql => {
+  private async insertMint(mint: { op: Brc20Mint; location: DbBrc20Location }): Promise<void> {
+    await this.sqlWriteTransaction(async sql => {
       if (!mint.location.inscription_id || !mint.location.address) return;
       const tokenRes = await sql<
         { id: string; decimals: string; limit: string; max: string; minted_supply: string }[]
@@ -361,9 +357,9 @@ export class Brc20PgStore {
 
   private async insertTransfer(transfer: {
     op: Brc20Transfer;
-    location: DbLocation;
+    location: DbBrc20Location;
   }): Promise<void> {
-    await this.parent.sqlWriteTransaction(async sql => {
+    await this.sqlWriteTransaction(async sql => {
       if (!transfer.location.inscription_id || !transfer.location.address) return;
       const balanceRes = await sql<{ brc20_deploy_id: string; avail_balance: string }[]>`
         SELECT b.brc20_deploy_id, COALESCE(SUM(b.avail_balance), 0) AS avail_balance

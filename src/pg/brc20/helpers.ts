@@ -46,50 +46,39 @@ const Brc20Schema = Type.Union([Brc20DeploySchema, Brc20MintSchema, Brc20Transfe
 const Brc20C = TypeCompiler.Compile(Brc20Schema);
 export type Brc20 = Static<typeof Brc20Schema>;
 
+const UINT64_MAX = BigNumber('18446744073709551615');
+
+// For testing only
 export function brc20FromInscription(inscription: DbInscriptionInsert): Brc20 | undefined {
   if (inscription.number < 0) return;
   if (inscription.mime_type !== 'text/plain' && inscription.mime_type !== 'application/json')
     return;
-  const buf =
-    typeof inscription.content === 'string'
-      ? hexToBuffer(inscription.content)
-      : inscription.content;
+  const buf = hexToBuffer(inscription.content as string).toString('utf-8');
   return brc20FromInscriptionContent(buf);
 }
 
-export function brc20FromInscriptionContent(content: Buffer): Brc20 | undefined {
+export function brc20FromInscriptionContent(content: string): Brc20 | undefined {
   try {
-    const json = JSON.parse(content.toString('utf-8'));
+    const json = JSON.parse(content);
     if (Brc20C.Check(json)) {
       // Check ticker byte length
-      if (Buffer.from(json.tick).length > 4) {
-        return;
-      }
+      if (Buffer.from(json.tick).length > 4) return;
       // Check numeric values.
-      const uint64_max = BigNumber('18446744073709551615');
       if (json.op === 'deploy') {
         const max = BigNumber(json.max);
-        if (max.isNaN() || max.isZero() || max.isGreaterThan(uint64_max)) {
-          return;
-        }
+        if (max.isNaN() || max.isZero() || max.isGreaterThan(UINT64_MAX)) return;
         if (json.lim) {
           const lim = BigNumber(json.lim);
-          if (lim.isNaN() || lim.isZero() || lim.isGreaterThan(uint64_max)) {
-            return;
-          }
+          if (lim.isNaN() || lim.isZero() || lim.isGreaterThan(UINT64_MAX)) return;
         }
         if (json.dec) {
           // `dec` can have a value of 0 but must be no more than 18.
           const dec = BigNumber(json.dec);
-          if (dec.isNaN() || dec.isGreaterThan(18)) {
-            return;
-          }
+          if (dec.isNaN() || dec.isGreaterThan(18)) return;
         }
       } else {
         const amt = BigNumber(json.amt);
-        if (amt.isNaN() || amt.isZero() || amt.isGreaterThan(uint64_max)) {
-          return;
-        }
+        if (amt.isNaN() || amt.isZero() || amt.isGreaterThan(UINT64_MAX)) return;
       }
       return json;
     }
