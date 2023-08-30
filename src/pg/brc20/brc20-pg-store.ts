@@ -298,7 +298,7 @@ export class Brc20PgStore extends BasePgStoreModule {
   private async insertMint(mint: { op: Brc20Mint; location: DbBrc20Location }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
       if (!mint.location.inscription_id || !mint.location.address) return;
-      const tokenRes = await sql<{ brc20_deploy_id: string; real_mint_amount: string }[]>`
+      const mintRes = await sql<{ brc20_deploy_id: string; real_mint_amount: string }[]>`
         WITH mint_data AS (
           SELECT
             d.id, d.decimals, d.limit, d.max,
@@ -307,59 +307,40 @@ export class Brc20PgStore extends BasePgStoreModule {
           LEFT JOIN brc20_mints AS m ON m.brc20_deploy_id = d.id
           WHERE d.ticker_lower = LOWER(${mint.op.tick})
           GROUP BY d.id
-        )
-        SELECT
-          m.id AS brc20_deploy_id,
-          LEAST(${mint.op.amt}, m.max - m.minted_supply) AS real_mint_amount
-        FROM mint_data AS m
-        WHERE
-          (m.minted_supply < m.max)
-          AND (m.limit IS NULL OR ${mint.op.amt} <= m.limit)
-          AND (SCALE(${mint.op.amt}) <= m.decimals)
-      `;
-      if (tokenRes.count === 0) return;
-      const token = tokenRes[0];
-
-      // Is the mint amount within the allowed token limits?
-      // if (token.limit && BigNumber(mint.op.amt).isGreaterThan(token.limit)) return;
-      // Is the number of decimals correct?
-      // if (mint.op.amt.includes('.') && mint.op.amt.split('.')[1].length > parseInt(token.decimals))
-      //   return;
-      // Does the mint amount exceed remaining supply?
-      // const minted = new BigNumber(token.minted_supply);
-      // const availSupply = new BigNumber(token.max).minus(minted);
-      // if (availSupply.isLessThanOrEqualTo(0)) return;
-      // const mintAmt = BigNumber.min(availSupply, mint.op.amt);
-
-      const mintInsert: DbBrc20MintInsert = {
-        inscription_id: mint.location.inscription_id,
-        brc20_deploy_id: token.brc20_deploy_id,
-        block_height: mint.location.block_height,
-        tx_id: mint.location.tx_id,
-        address: mint.location.address,
-        amount: mint.op.amt, // Original requested amount
-      };
-      const balanceInsert: DbBrc20BalanceInsert = {
-        inscription_id: mint.location.inscription_id,
-        location_id: mint.location.id,
-        brc20_deploy_id: token.brc20_deploy_id,
-        address: mint.location.address,
-        avail_balance: token.real_mint_amount,
-        trans_balance: '0',
-        type: DbBrc20BalanceTypeId.mint,
-      };
-
-      await sql`
-        WITH mint_insert AS (
-          INSERT INTO brc20_mints ${sql(mintInsert)}
+        ),
+        validated_mint AS (
+          SELECT
+            m.id AS brc20_deploy_id,
+            LEAST(${mint.op.amt}, m.max - m.minted_supply) AS real_mint_amount
+          FROM mint_data AS m
+          WHERE
+            (m.minted_supply < m.max)
+            AND (m.limit IS NULL OR ${mint.op.amt} <= m.limit)
+            AND (SCALE(${mint.op.amt}) <= m.decimals)
+        ),
+        mint_insert AS (
+          INSERT INTO brc20_mints
+            (inscription_id, brc20_deploy_id, block_height, tx_id, address, amount)
+            (
+              SELECT ${mint.location.inscription_id}, brc20_deploy_id, ${mint.location.block_height},
+                ${mint.location.tx_id}, ${mint.location.address}, ${mint.op.amt}
+              FROM validated_mint
+            )
           ON CONFLICT (inscription_id) DO NOTHING
         )
-        INSERT INTO brc20_balances ${sql(balanceInsert)}
+        INSERT INTO brc20_balances
+          (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type)
+          (
+            SELECT ${mint.location.inscription_id}, ${mint.location.id}, brc20_deploy_id,
+              ${mint.location.address}, real_mint_amount, 0, ${DbBrc20BalanceTypeId.mint}
+            FROM validated_mint
+          )
         ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
       `;
-      logger.info(
-        `Brc20PgStore mint ${mint.op.tick} (${mint.op.amt}) by ${mint.location.address} at block ${mint.location.block_height}`
-      );
+      if (mintRes.count)
+        logger.info(
+          `Brc20PgStore mint ${mint.op.tick} (${mint.op.amt}) by ${mint.location.address} at block ${mint.location.block_height}`
+        );
     });
   }
 
