@@ -29,6 +29,7 @@ export class Brc20PgStore extends BasePgStoreModule {
    */
   async scanBlocks(startBlock: number, endBlock: number): Promise<void> {
     for (let blockHeight = startBlock; blockHeight <= endBlock; blockHeight++) {
+      logger.info(`Brc20PgStore scanning block ${blockHeight}`);
       await this.sqlWriteTransaction(async sql => {
         const block = await sql<DbBrc20ScannedInscription[]>`
           WITH candidates AS (
@@ -39,6 +40,7 @@ export class Brc20PgStore extends BasePgStoreModule {
             FROM locations AS l
             INNER JOIN inscriptions AS i ON l.inscription_id = i.id
             WHERE l.block_height = ${blockHeight}
+              AND encode(i.content, 'escape') NOT LIKE '%\\000%'
               AND i.number >= 0
               AND i.mime_type IN ('application/json', 'text/plain')
             ORDER BY tx_index ASC
