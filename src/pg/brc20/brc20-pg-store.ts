@@ -1,8 +1,7 @@
-import { PgSqlClient, logger } from '@hirosystems/api-toolkit';
+import { BasePgStoreModule, logger } from '@hirosystems/api-toolkit';
 import BigNumber from 'bignumber.js';
 import * as postgres from 'postgres';
 import { throwOnFirstRejected } from '../helpers';
-import { PgStore } from '../pg-store';
 import { DbInscriptionIndexPaging, DbPaginatedResult } from '../types';
 import {
   DbBrc20Token,
@@ -21,17 +20,7 @@ import {
 } from './types';
 import { Brc20Deploy, Brc20Mint, Brc20Transfer, brc20FromInscriptionContent } from './helpers';
 
-export class Brc20PgStore {
-  // TODO: Move this to the api-toolkit so we can have pg submodules.
-  private readonly parent: PgStore;
-  private get sql(): PgSqlClient {
-    return this.parent.sql;
-  }
-
-  constructor(db: PgStore) {
-    this.parent = db;
-  }
-
+export class Brc20PgStore extends BasePgStoreModule {
   sqlOr(partials: postgres.PendingQuery<postgres.Row[]>[] | undefined) {
     return partials?.reduce((acc, curr) => this.sql`${acc} OR ${curr}`);
   }
@@ -44,7 +33,7 @@ export class Brc20PgStore {
    */
   async scanBlocks(startBlock: number, endBlock: number): Promise<void> {
     for (let blockHeight = startBlock; blockHeight <= endBlock; blockHeight++) {
-      await this.parent.sqlWriteTransaction(async sql => {
+      await this.sqlWriteTransaction(async sql => {
         const block = await sql<DbBrc20ScannedInscription[]>`
           WITH candidates AS (
             SELECT
@@ -155,7 +144,7 @@ export class Brc20PgStore {
   }
 
   async getTokenSupply(args: { ticker: string }): Promise<DbBrc20Supply | undefined> {
-    return await this.parent.sqlTransaction(async sql => {
+    return await this.sqlTransaction(async sql => {
       const deploy = await this.getDeploy(args);
       if (!deploy) return;
 
@@ -189,7 +178,7 @@ export class Brc20PgStore {
       ticker: string;
     } & DbInscriptionIndexPaging
   ): Promise<DbPaginatedResult<DbBrc20Holder> | undefined> {
-    return await this.parent.sqlTransaction(async sql => {
+    return await this.sqlTransaction(async sql => {
       const deploy = await this.getDeploy(args);
       if (!deploy) {
         return;
@@ -212,7 +201,7 @@ export class Brc20PgStore {
   }
 
   async applyTransfer(location: DbBrc20ScannedInscription): Promise<void> {
-    await this.parent.sqlWriteTransaction(async sql => {
+    await this.sqlWriteTransaction(async sql => {
       if (!location.inscription_id) return;
       // Is this a BRC-20 balance transfer? Check if we have a valid transfer inscription emitted by
       // this address that hasn't been sent to another address before. Use `LIMIT 3` as a quick way
@@ -287,8 +276,8 @@ export class Brc20PgStore {
       limit: deploy.op.lim ?? null,
       decimals: deploy.op.dec ?? '18',
     };
-    const tickers = await this.parent.sql<{ ticker: string; address: string }[]>`
-      INSERT INTO brc20_deploys ${this.parent.sql(insert)}
+    const tickers = await this.sql<{ ticker: string; address: string }[]>`
+      INSERT INTO brc20_deploys ${this.sql(insert)}
       ON CONFLICT (LOWER(ticker)) DO NOTHING
     `;
     if (tickers.count)
@@ -307,7 +296,7 @@ export class Brc20PgStore {
   }
 
   private async insertMint(mint: { op: Brc20Mint; location: DbBrc20Location }): Promise<void> {
-    await this.parent.sqlWriteTransaction(async sql => {
+    await this.sqlWriteTransaction(async sql => {
       if (!mint.location.inscription_id || !mint.location.address) return;
       const tokenRes = await sql<
         { id: string; decimals: string; limit: string; max: string; minted_supply: string }[]
@@ -370,7 +359,7 @@ export class Brc20PgStore {
     op: Brc20Transfer;
     location: DbBrc20Location;
   }): Promise<void> {
-    await this.parent.sqlWriteTransaction(async sql => {
+    await this.sqlWriteTransaction(async sql => {
       if (!transfer.location.inscription_id || !transfer.location.address) return;
       const balanceRes = await sql<{ brc20_deploy_id: string; avail_balance: string }[]>`
         SELECT b.brc20_deploy_id, COALESCE(SUM(b.avail_balance), 0) AS avail_balance
