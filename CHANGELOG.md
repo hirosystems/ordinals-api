@@ -1,3 +1,11 @@
+## [1.0.0-brc-20.12](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.11...v1.0.0-brc-20.12) (2023-08-30)
+
+
+### Bug Fixes
+
+* guard against null bytes ([9eddbfc](https://github.com/hirosystems/ordinals-api/commit/9eddbfccfcfd74890f595f47a8ba32f57bf314e2))
+* null char escaping ([8bb4954](https://github.com/hirosystems/ordinals-api/commit/8bb495403328ebe4a9e06a9dd6a61c794bdca0e7))
+
 ## [1.0.0-brc-20.11](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.10...v1.0.0-brc-20.11) (2023-08-30)
 
 
