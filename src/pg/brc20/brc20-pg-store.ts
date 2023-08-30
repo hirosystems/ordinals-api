@@ -9,8 +9,6 @@ import {
   DbBrc20Balance,
   DbBrc20Supply,
   DbBrc20Holder,
-  DbBrc20Transfer,
-  BRC20_TRANSFERS_COLUMNS,
   DbBrc20Deploy,
   BRC20_DEPLOYS_COLUMNS,
   DbBrc20BalanceInsert,
@@ -213,40 +211,47 @@ export class Brc20PgStore {
     });
   }
 
-  async applyTransfer(args: DbBrc20ScannedInscription): Promise<void> {
+  async applyTransfer(location: DbBrc20ScannedInscription): Promise<void> {
     await this.parent.sqlWriteTransaction(async sql => {
+      if (!location.inscription_id) return;
       // Is this a BRC-20 balance transfer? Check if we have a valid transfer inscription emitted by
       // this address that hasn't been sent to another address before. Use `LIMIT 3` as a quick way
       // of checking if we have just inserted the first transfer for this inscription (genesis +
       // transfer).
-      const brc20Transfer = await sql<DbBrc20Transfer[]>`
-        SELECT ${sql(BRC20_TRANSFERS_COLUMNS.map(c => `t.${c}`))}
+      const brc20Transfer = await sql<
+        { id: string; amount: string; brc20_deploy_id: string; from_address: string }[]
+      >`
+        SELECT t.id, t.amount, t.brc20_deploy_id, t.from_address
         FROM locations AS l
         INNER JOIN brc20_transfers AS t ON t.inscription_id = l.inscription_id
-        WHERE l.inscription_id = ${args.inscription_id}
-          AND (l.block_height < ${args.block_height}
-            OR (l.block_height = ${args.block_height} AND l.tx_index < ${args.tx_index}))
+        WHERE l.inscription_id = ${location.inscription_id}
+          AND (
+            l.block_height < ${location.block_height}
+            OR (l.block_height = ${location.block_height} AND l.tx_index < ${location.tx_index})
+          )
         LIMIT 3
       `;
       if (brc20Transfer.count === 0 || brc20Transfer.count > 2) return;
-      const transfer = brc20Transfer[0];
-      const amount = new BigNumber(transfer.amount);
+      const transferData = brc20Transfer[0];
+      const amount = new BigNumber(transferData.amount);
+      const fromAddress = transferData.from_address;
+      // If a transfer is sent as fee, its amount must be returned to sender.
+      const toAddress = location.address ?? transferData.from_address;
       const changes: DbBrc20BalanceInsert[] = [
         {
-          inscription_id: transfer.inscription_id,
-          location_id: args.id,
-          brc20_deploy_id: transfer.brc20_deploy_id,
-          address: transfer.from_address,
+          inscription_id: location.inscription_id,
+          location_id: location.id,
+          brc20_deploy_id: transferData.brc20_deploy_id,
+          address: fromAddress,
           avail_balance: '0',
           trans_balance: amount.negated().toString(),
           type: DbBrc20BalanceTypeId.transferFrom,
         },
         {
-          inscription_id: transfer.inscription_id,
-          location_id: args.id,
-          brc20_deploy_id: transfer.brc20_deploy_id,
-          // If a transfer is sent as fee, its amount must be returned to sender.
-          address: args.address ?? transfer.from_address,
+          inscription_id: location.inscription_id,
+          location_id: location.id,
+          brc20_deploy_id: transferData.brc20_deploy_id,
+          address: toAddress,
           avail_balance: amount.toString(),
           trans_balance: '0',
           type: DbBrc20BalanceTypeId.transferTo,
@@ -255,12 +260,15 @@ export class Brc20PgStore {
       await sql`
         WITH updated_transfer AS (
           UPDATE brc20_transfers
-          SET to_address = ${args.address}
-          WHERE id = ${transfer.id}
+          SET to_address = ${toAddress}
+          WHERE id = ${transferData.id}
         )
         INSERT INTO brc20_balances ${sql(changes)}
         ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
       `;
+      logger.info(
+        `Brc20PgStore send transfer id=${transferData.id} (${transferData.amount}) from ${fromAddress} to ${toAddress} at block ${location.block_height}`
+      );
     });
   }
 
