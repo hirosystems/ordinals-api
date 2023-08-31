@@ -1,12 +1,15 @@
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { Type } from '@sinclair/typebox';
+import { Value } from '@sinclair/typebox/value';
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import {
   AddressParam,
   BlockHeightParam,
+  Brc20ActivityResponseSchema,
   Brc20BalanceResponseSchema,
   Brc20HolderResponseSchema,
+  Brc20OperationsParam,
   Brc20TickerParam,
   Brc20TickersParam,
   Brc20TokenDetailsSchema,
@@ -16,15 +19,15 @@ import {
   OffsetParam,
   PaginatedResponse,
 } from '../schemas';
+import { handleInscriptionTransfersCache } from '../util/cache';
 import {
   DEFAULT_API_LIMIT,
+  parseBrc20Activities,
   parseBrc20Balances,
   parseBrc20Holders,
   parseBrc20Supply,
   parseBrc20Tokens,
 } from '../util/helpers';
-import { Value } from '@sinclair/typebox/value';
-import { handleInscriptionTransfersCache } from '../util/cache';
 
 export const Brc20Routes: FastifyPluginCallback<
   Record<never, never>,
@@ -191,6 +194,46 @@ export const Brc20Routes: FastifyPluginCallback<
         offset,
         total: balances.total,
         results: parseBrc20Balances(balances.results),
+      });
+    }
+  );
+
+  fastify.get(
+    '/brc-20/activity',
+    {
+      schema: {
+        operationId: 'getBrc20Activity',
+        summary: 'BRC-20 Activity',
+        description: 'Retrieves BRC-20 activity',
+        tags: ['BRC-20'],
+        querystring: Type.Object({
+          ticker: Type.Optional(Brc20TickersParam),
+          block_height: Type.Optional(BlockHeightParam),
+          operation: Type.Optional(Brc20OperationsParam),
+          // Pagination
+          offset: Type.Optional(OffsetParam),
+          limit: Type.Optional(LimitParam),
+        }),
+        response: {
+          200: PaginatedResponse(Brc20ActivityResponseSchema, 'Paginated BRC-20 Activity Response'),
+        },
+      },
+    },
+    async (request, reply) => {
+      const limit = request.query.limit ?? DEFAULT_API_LIMIT;
+      const offset = request.query.offset ?? 0;
+      const balances = await fastify.db.brc20.getActivity({
+        limit,
+        offset,
+        ticker: request.query.ticker,
+        block_height: request.query.block_height ? parseInt(request.query.block_height) : undefined,
+        operation: request.query.operation,
+      });
+      await reply.send({
+        limit,
+        offset,
+        total: balances.total,
+        results: parseBrc20Activities(balances.results),
       });
     }
   );

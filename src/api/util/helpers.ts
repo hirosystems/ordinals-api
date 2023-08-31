@@ -1,4 +1,10 @@
-import { DbBrc20Token, DbBrc20Supply, DbBrc20Balance, DbBrc20Holder } from '../../pg/brc20/types';
+import {
+  DbBrc20Activity,
+  DbBrc20Balance,
+  DbBrc20Holder,
+  DbBrc20Supply,
+  DbBrc20Token,
+} from '../../pg/brc20/types';
 import {
   DbFullyLocatedInscriptionResult,
   DbInscriptionLocationChange,
@@ -8,6 +14,7 @@ import {
   BlockHashParamCType,
   BlockHeightParamCType,
   BlockInscriptionTransfer,
+  Brc20ActivityResponse,
   Brc20BalanceResponse,
   Brc20HolderResponse,
   Brc20Supply,
@@ -128,6 +135,50 @@ export function parseBrc20Balances(items: DbBrc20Balance[]): Brc20BalanceRespons
     transferrable_balance: i.trans_balance,
     overall_balance: i.total_balance,
   }));
+}
+
+export function parseBrc20Activities(items: DbBrc20Activity[]): Brc20ActivityResponse[] {
+  return items.map(i => {
+    const activity = {
+      operation: i.operation,
+      ticker: i.ticker,
+      address: i.address,
+      tx_id: i.tx_id,
+      inscription_id: i.inscription_id,
+      block_hash: i.block_hash,
+      block_height: parseInt(i.block_height),
+      timestamp: i.timestamp.valueOf(),
+    };
+
+    switch (i.operation) {
+      case 'deploy': {
+        return {
+          ...activity,
+          deploy: {
+            max_supply: i.deploy_max,
+            mint_limit: i.deploy_limit,
+            decimals: i.deploy_decimals,
+          },
+        };
+      }
+      case 'mint': {
+        return {
+          ...activity,
+          mint: {
+            amount: i.mint_amount,
+          },
+        };
+      }
+      case 'transfer': {
+        const [amount, from_address] = i.transfer_data.split(';');
+        return { ...activity, transfer: { amount, from_address } };
+      }
+      case 'transfer_send': {
+        const [amount, from_address, to_address] = i.transfer_data.split(';');
+        return { ...activity, transfer_send: { amount, from_address, to_address } };
+      }
+    }
+  });
 }
 
 export function parseBrc20Holders(items: DbBrc20Holder[]): Brc20HolderResponse[] {

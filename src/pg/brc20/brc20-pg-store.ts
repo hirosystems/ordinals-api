@@ -1,5 +1,6 @@
 import { BasePgStoreModule, logger } from '@hirosystems/api-toolkit';
 import * as postgres from 'postgres';
+import { hexToBuffer } from '../../api/util/helpers';
 import { throwOnFirstRejected } from '../helpers';
 import { DbInscriptionIndexPaging, DbPaginatedResult } from '../types';
 import {
@@ -13,9 +14,9 @@ import {
   DbBrc20ScannedInscription,
   DbBrc20DeployInsert,
   DbBrc20Location,
+  DbBrc20Activity,
 } from './types';
 import { Brc20Deploy, Brc20Mint, Brc20Transfer, brc20FromInscriptionContent } from './helpers';
-import { hexToBuffer } from '../../api/util/helpers';
 
 export class Brc20PgStore extends BasePgStoreModule {
   sqlOr(partials: postgres.PendingQuery<postgres.Row[]>[] | undefined) {
@@ -192,6 +193,49 @@ export class Brc20PgStore extends BasePgStoreModule {
     });
   }
 
+  async getActivity(
+    args: {
+      ticker?: string[];
+      block_height?: number;
+      operation?: string[];
+    } & DbInscriptionIndexPaging
+  ): Promise<DbPaginatedResult<DbBrc20Activity>> {
+    const tickerConditions = this.sqlOr(
+      args.ticker?.map(t => this.sql`d.ticker_lower = LOWER(${t})`)
+    );
+    const results = await this.sql<(DbBrc20Activity & { total: number })[]>`
+      SELECT
+        e.operation,
+        d.ticker,
+        l.genesis_id AS inscription_id,
+        l.block_height,
+        l.block_hash,
+        l.tx_id,
+        l.address,
+        l.timestamp,
+        d.max AS deploy_max,
+        d.limit AS deploy_limit,
+        d.decimals AS deploy_decimals,
+        (SELECT amount FROM brc20_mints WHERE id = e.mint_id) AS mint_amount,
+        (SELECT amount || ';' || from_address || ';' || COALESCE(to_address, '') FROM brc20_transfers WHERE id = e.transfer_id) AS transfer_data,
+        COUNT(*) OVER() as total
+      FROM brc20_events AS e
+      INNER JOIN brc20_deploys AS d ON e.brc20_deploy_id = d.id
+      INNER JOIN locations AS l ON e.genesis_location_id = l.id
+      WHERE TRUE
+        ${args.operation ? this.sql`AND operation IN ${this.sql(args.operation)}` : this.sql``}
+        ${tickerConditions ? this.sql`AND (${tickerConditions})` : this.sql``}
+        ${args.block_height ? this.sql`AND l.block_height <= ${args.block_height}` : this.sql``}
+      ORDER BY timestamp DESC
+      LIMIT ${args.limit}
+      OFFSET ${args.offset}
+    `;
+    return {
+      total: results[0]?.total ?? 0,
+      results: results ?? [],
+    };
+  }
+
   async applyTransfer(location: DbBrc20ScannedInscription): Promise<void> {
     if (!location.inscription_id) return;
     // Is this a BRC-20 balance transfer? Check if we have a valid transfer inscription emitted by
@@ -221,24 +265,26 @@ export class Brc20PgStore extends BasePgStoreModule {
         WHERE id = (SELECT id FROM validated_transfer)
       ),
       balance_insert_from AS (
-        INSERT INTO brc20_balances
-          (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type)
-          (
-            SELECT ${location.inscription_id}, ${location.id}, brc20_deploy_id, from_address, 0,
-              -1 * amount, ${DbBrc20BalanceTypeId.transferFrom}
-            FROM validated_transfer
-          )
+        INSERT INTO brc20_balances (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type) (
+          SELECT ${location.inscription_id}, ${location.id}, brc20_deploy_id, from_address, 0,
+            -1 * amount, ${DbBrc20BalanceTypeId.transferFrom}
+          FROM validated_transfer
+        )
         ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
-      )
-      INSERT INTO brc20_balances
-        (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type)
-        (
+      ),
+      balance_insert_to AS (
+        INSERT INTO brc20_balances (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type) (
           SELECT ${location.inscription_id}, ${location.id}, brc20_deploy_id,
             COALESCE(${location.address}, from_address), amount, 0,
             ${DbBrc20BalanceTypeId.transferTo}
           FROM validated_transfer
         )
-      ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
+        ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
+      )
+      INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id) (
+        SELECT 'transfer_send', id, ${location.id}, brc20_deploy_id, id
+        FROM validated_transfer
+      )
     `;
     if (sendRes.count)
       logger.info(
@@ -262,8 +308,15 @@ export class Brc20PgStore extends BasePgStoreModule {
       decimals: deploy.op.dec ?? '18',
     };
     const deployRes = await this.sql`
-      INSERT INTO brc20_deploys ${this.sql(insert)}
-      ON CONFLICT (LOWER(ticker)) DO NOTHING
+      WITH deploy_insert AS (
+        INSERT INTO brc20_deploys ${this.sql(insert)}
+        ON CONFLICT (LOWER(ticker)) DO NOTHING
+        RETURNING id
+      )
+      INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, deploy_id) (
+        SELECT 'deploy', ${deploy.location.inscription_id}, ${deploy.location.id}, id, id
+        FROM deploy_insert
+      )
     `;
     if (deployRes.count)
       logger.info(
@@ -292,28 +345,31 @@ export class Brc20PgStore extends BasePgStoreModule {
           AND (SCALE(${mint.op.amt}::numeric) <= decimals)
       ),
       mint_insert AS (
-        INSERT INTO brc20_mints
-          (inscription_id, brc20_deploy_id, block_height, tx_id, address, amount)
-          (
-            SELECT ${mint.location.inscription_id}, brc20_deploy_id, ${mint.location.block_height},
-              ${mint.location.tx_id}, ${mint.location.address}, ${mint.op.amt}::numeric
-            FROM validated_mint
-          )
+        INSERT INTO brc20_mints (inscription_id, brc20_deploy_id, block_height, tx_id, address, amount) (
+          SELECT ${mint.location.inscription_id}, brc20_deploy_id, ${mint.location.block_height},
+            ${mint.location.tx_id}, ${mint.location.address}, ${mint.op.amt}::numeric
+          FROM validated_mint
+        )
         ON CONFLICT (inscription_id) DO NOTHING
+        RETURNING id, brc20_deploy_id
       ),
       supply_update AS (
         UPDATE brc20_deploys
         SET minted_supply = minted_supply + (SELECT real_mint_amount FROM validated_mint)
         WHERE id = (SELECT brc20_deploy_id FROM validated_mint)
-      )
-      INSERT INTO brc20_balances
-        (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type)
-        (
+      ),
+      balance_insert AS (
+        INSERT INTO brc20_balances (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type) (
           SELECT ${mint.location.inscription_id}, ${mint.location.id}, brc20_deploy_id,
             ${mint.location.address}, real_mint_amount, 0, ${DbBrc20BalanceTypeId.mint}
           FROM validated_mint
         )
-      ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
+        ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
+      )
+      INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, mint_id) (
+        SELECT 'mint', ${mint.location.inscription_id}, ${mint.location.id}, brc20_deploy_id, id
+        FROM mint_insert
+      )
     `;
     if (mintRes.count)
       logger.info(
@@ -342,25 +398,28 @@ export class Brc20PgStore extends BasePgStoreModule {
         WHERE avail_balance >= ${transfer.op.amt}::numeric
       ),
       transfer_insert AS (
-        INSERT INTO brc20_transfers
-          (inscription_id, brc20_deploy_id, block_height, tx_id, from_address, to_address, amount)
-          (
-            SELECT ${transfer.location.inscription_id}, brc20_deploy_id,
-              ${transfer.location.block_height}, ${transfer.location.tx_id},
-              ${transfer.location.address}, NULL, ${transfer.op.amt}::numeric
-            FROM validated_transfer
-          )
+        INSERT INTO brc20_transfers (inscription_id, brc20_deploy_id, block_height, tx_id, from_address, to_address, amount) (
+          SELECT ${transfer.location.inscription_id}, brc20_deploy_id,
+            ${transfer.location.block_height}, ${transfer.location.tx_id},
+            ${transfer.location.address}, NULL, ${transfer.op.amt}::numeric
+          FROM validated_transfer
+        )
         ON CONFLICT (inscription_id) DO NOTHING
-      )
-      INSERT INTO brc20_balances
-        (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type)
-        (
+        RETURNING id, brc20_deploy_id
+      ),
+      balance_insert AS (
+        INSERT INTO brc20_balances (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type) (
           SELECT ${transfer.location.inscription_id}, ${transfer.location.id}, brc20_deploy_id,
             ${transfer.location.address}, -1 * ${transfer.op.amt}::numeric,
             ${transfer.op.amt}::numeric, ${DbBrc20BalanceTypeId.transferIntent}
           FROM validated_transfer
         )
-      ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
+        ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
+      )
+      INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id) (
+        SELECT 'transfer', ${transfer.location.inscription_id}, ${transfer.location.id}, brc20_deploy_id, id
+        FROM transfer_insert
+      )
     `;
     if (transferRes.count)
       logger.info(

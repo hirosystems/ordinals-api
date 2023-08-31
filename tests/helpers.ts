@@ -1,5 +1,3 @@
-import { FastifyBaseLogger, FastifyInstance } from 'fastify';
-import { IncomingMessage, Server, ServerResponse } from 'http';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import {
   BitcoinCursedInscriptionRevealed,
@@ -9,6 +7,8 @@ import {
   BitcoinTransaction,
   Payload,
 } from '@hirosystems/chainhook-client';
+import { FastifyBaseLogger, FastifyInstance } from 'fastify';
+import { IncomingMessage, Server, ServerResponse } from 'http';
 import { Brc20 } from '../src/pg/brc20/helpers';
 
 export type TestFastifyServer = FastifyInstance<
@@ -136,3 +136,16 @@ export function brc20Reveal(args: {
 /** Generate a random hash like string for testing */
 export const randomHash = () =>
   [...Array(64)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+
+/** Generator for incrementing numbers */
+export function* incrementing(
+  start: number = 0,
+  step: number = 1
+): Generator<number, number, 'next'> {
+  let current = start;
+
+  while (true) {
+    yield current;
+    current += step;
+  }
+}

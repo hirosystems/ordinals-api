@@ -1,8 +1,8 @@
 import { SwaggerOptions } from '@fastify/swagger';
+import { SERVER_VERSION } from '@hirosystems/api-toolkit';
 import { Static, TSchema, Type } from '@sinclair/typebox';
 import { TypeCompiler } from '@sinclair/typebox/compiler';
-import { SatoshiRarity, SAT_SUPPLY } from './util/ordinal-satoshi';
-import { SERVER_VERSION } from '@hirosystems/api-toolkit';
+import { SAT_SUPPLY, SatoshiRarity } from './util/ordinal-satoshi';
 
 export const OpenApiSchemaOptions: SwaggerOptions = {
   openapi: {
@@ -198,6 +198,23 @@ export const LimitParam = Type.Integer({
   description: 'Results per page',
 });
 
+export const Brc20OperationParam = Type.Union(
+  [
+    Type.Literal('deploy'),
+    Type.Literal('mint'),
+    Type.Literal('transfer'),
+    Type.Literal('transfer_send'),
+  ],
+  {
+    title: 'Operation',
+    description:
+      'BRC-20 token operation. Note that a BRC-20 transfer is a two step process `transfer` (creating the inscription, which makes funds transferrable) and `transfer_send` (sending the inscription to a recipient, which moves the funds)',
+    examples: ['deploy', 'mint', 'transfer', 'transfer_send'],
+  }
+);
+
+export const Brc20OperationsParam = Type.Array(Brc20OperationParam);
+
 export enum OrderBy {
   number = 'number',
   genesis_block_height = 'genesis_block_height',
@@ -370,6 +387,62 @@ export const Brc20BalanceResponseSchema = Type.Object({
   overall_balance: Type.String({ examples: ['2000.00000'] }),
 });
 export type Brc20BalanceResponse = Static<typeof Brc20BalanceResponseSchema>;
+
+export const Brc20ActivityResponseSchema = Type.Object({
+  operation: Type.Union([
+    Type.Literal('deploy'),
+    Type.Literal('mint'),
+    Type.Literal('transfer'),
+    Type.Literal('transfer_send'),
+  ]),
+  ticker: Type.String({ examples: ['PEPE'] }),
+  inscription_id: Type.String({
+    examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218i0'],
+  }),
+  block_height: Type.Integer({ examples: [778921] }),
+  block_hash: Type.String({
+    examples: ['0000000000000000000452773967cdd62297137cdaf79950c5e8bb0c62075133'],
+  }),
+  tx_id: Type.String({
+    examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218'],
+  }),
+  address: Type.String({
+    examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
+  }),
+  timestamp: Type.Integer({ examples: [1677733170000] }),
+  mint: Type.Optional(
+    Type.Object({
+      amount: Nullable(Type.String({ examples: ['1000000'] })),
+    })
+  ),
+  deploy: Type.Optional(
+    Type.Object({
+      max_supply: Type.String({ examples: ['21000000'] }),
+      mint_limit: Nullable(Type.String({ examples: ['100000'] })),
+      decimals: Type.Integer({ examples: [18] }),
+    })
+  ),
+  transfer: Type.Optional(
+    Type.Object({
+      amount: Type.String({ examples: ['1000000'] }),
+      from_address: Type.String({
+        examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
+      }),
+    })
+  ),
+  transfer_send: Type.Optional(
+    Type.Object({
+      amount: Type.String({ examples: ['1000000'] }),
+      from_address: Type.String({
+        examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
+      }),
+      to_address: Type.String({
+        examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
+      }),
+    })
+  ),
+});
+export type Brc20ActivityResponse = Static<typeof Brc20ActivityResponseSchema>;
 
 export const Brc20TokenResponseSchema = Type.Object(
   {
