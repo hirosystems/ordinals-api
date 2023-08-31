@@ -265,32 +265,26 @@ export class Brc20PgStore extends BasePgStoreModule {
         WHERE id = (SELECT id FROM validated_transfer)
       ),
       balance_insert_from AS (
-        INSERT INTO brc20_balances
-          (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type)
-          (
-            SELECT ${location.inscription_id}, ${location.id}, brc20_deploy_id, from_address, 0,
-              -1 * amount, ${DbBrc20BalanceTypeId.transferFrom}
-            FROM validated_transfer
-          )
+        INSERT INTO brc20_balances (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type) (
+          SELECT ${location.inscription_id}, ${location.id}, brc20_deploy_id, from_address, 0,
+            -1 * amount, ${DbBrc20BalanceTypeId.transferFrom}
+          FROM validated_transfer
+        )
         ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
       ),
       balance_insert_to AS (
-        INSERT INTO brc20_balances
-          (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type)
-          (
-            SELECT ${location.inscription_id}, ${location.id}, brc20_deploy_id,
-              COALESCE(${location.address}, from_address), amount, 0,
-              ${DbBrc20BalanceTypeId.transferTo}
-            FROM validated_transfer
-          )
-        ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
-      )
-      INSERT INTO brc20_events
-        (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id)
-        (
-          SELECT 'transfer_send', ${location.inscription_id}, ${location.id}, brc20_deploy_id, id
+        INSERT INTO brc20_balances (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type) (
+          SELECT ${location.inscription_id}, ${location.id}, brc20_deploy_id,
+            COALESCE(${location.address}, from_address), amount, 0,
+            ${DbBrc20BalanceTypeId.transferTo}
           FROM validated_transfer
         )
+        ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
+      )
+      INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id) (
+        SELECT 'transfer_send', id, ${location.id}, brc20_deploy_id, id
+        FROM validated_transfer
+      )
     `;
     if (sendRes.count)
       logger.info(
