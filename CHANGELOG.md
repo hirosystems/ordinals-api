@@ -1,3 +1,10 @@
+## [1.0.0-brc-20.14](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.13...v1.0.0-brc-20.14) (2023-08-31)
+
+
+### Features
+
+* add BRC-20 event history endpoint ([#191](https://github.com/hirosystems/ordinals-api/issues/191)) ([d9967b1](https://github.com/hirosystems/ordinals-api/commit/d9967b1b2db54b4e8d0e027592a1e2f27e6678cf))
+
 ## [1.0.0-brc-20.13](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.12...v1.0.0-brc-20.13) (2023-08-31)
 
 
