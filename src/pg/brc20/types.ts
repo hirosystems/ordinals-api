@@ -1,9 +1,16 @@
 import { PgNumeric } from '@hirosystems/api-toolkit';
-import { DbLocation } from '../types';
 
-export type DbBrc20ScannedInscription = DbLocation & {
+export type DbBrc20Location = {
+  id: string;
+  inscription_id: string | null;
+  block_height: string;
+  tx_id: string;
+  tx_index: number;
+  address: string | null;
+};
+
+export type DbBrc20ScannedInscription = DbBrc20Location & {
   genesis: boolean;
-  content: string;
 };
 
 export type DbBrc20DeployInsert = {

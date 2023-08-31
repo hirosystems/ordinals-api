@@ -988,7 +988,7 @@ describe('BRC-20', () => {
                 p: 'brc-20',
                 op: 'mint',
                 tick: 'PEPE',
-                amt: '250000', // Exceeds supply
+                amt: '5000000000', // Exceeds supply
               },
               number: 8,
               tx_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
@@ -1327,7 +1327,7 @@ describe('BRC-20', () => {
                 p: 'brc-20',
                 op: 'transfer',
                 tick: 'PEPE',
-                amt: '20000', // More than was minted
+                amt: '5000000000', // More than was minted
               },
               number: 7,
               tx_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
