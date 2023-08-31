@@ -1,3 +1,10 @@
+## [1.0.0-brc-20.15](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.14...v1.0.0-brc-20.15) (2023-08-31)
+
+
+### Bug Fixes
+
+* remove migration queries ([f53f889](https://github.com/hirosystems/ordinals-api/commit/f53f8896b55b2d64d4c7aad28e9828ad21d2bea3))
+
 ## [1.0.0-brc-20.14](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.13...v1.0.0-brc-20.14) (2023-08-31)
 
 
