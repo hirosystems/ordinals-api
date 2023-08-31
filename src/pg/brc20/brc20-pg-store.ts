@@ -357,6 +357,7 @@ export class Brc20PgStore extends BasePgStoreModule {
           FROM validated_mint
         )
         ON CONFLICT (inscription_id) DO NOTHING
+        RETURNING id, brc20_deploy_id
       ),
       supply_update AS (
         UPDATE brc20_deploys
@@ -373,7 +374,7 @@ export class Brc20PgStore extends BasePgStoreModule {
       )
       INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, mint_id) (
         SELECT 'mint', ${mint.location.inscription_id}, ${mint.location.id}, brc20_deploy_id, id
-        FROM validated_mint
+        FROM mint_insert
       )
     `;
     if (mintRes.count)
@@ -410,6 +411,7 @@ export class Brc20PgStore extends BasePgStoreModule {
           FROM validated_transfer
         )
         ON CONFLICT (inscription_id) DO NOTHING
+        RETURNING id, brc20_deploy_id
       ),
       balance_insert AS (
         INSERT INTO brc20_balances (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type) (
@@ -422,7 +424,7 @@ export class Brc20PgStore extends BasePgStoreModule {
       )
       INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id) (
         SELECT 'transfer', ${transfer.location.inscription_id}, ${transfer.location.id}, brc20_deploy_id, id
-        FROM validated_transfer
+        FROM transfer_insert
       )
     `;
     if (transferRes.count)
