@@ -1,3 +1,10 @@
+## [1.0.0-brc-20.13](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.12...v1.0.0-brc-20.13) (2023-08-31)
+
+
+### Bug Fixes
+
+* go back to individual content fetch from utf8 pg errors ([4fd530d](https://github.com/hirosystems/ordinals-api/commit/4fd530d4ae2e3345c2fc056c4f605af01973fbb5))
+
 ## [1.0.0-brc-20.12](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.11...v1.0.0-brc-20.12) (2023-08-30)
 
 
