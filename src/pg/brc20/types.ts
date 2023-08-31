@@ -10,7 +10,6 @@ export type DbBrc20Location = {
 };
 
 export type DbBrc20ScannedInscription = DbBrc20Location & {
-  content: string;
   genesis: boolean;
 };
 

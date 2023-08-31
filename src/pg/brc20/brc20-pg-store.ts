@@ -15,6 +15,7 @@ import {
   DbBrc20Location,
 } from './types';
 import { Brc20Deploy, Brc20Mint, Brc20Transfer, brc20FromInscriptionContent } from './helpers';
+import { hexToBuffer } from '../../api/util/helpers';
 
 export class Brc20PgStore extends BasePgStoreModule {
   sqlOr(partials: postgres.PendingQuery<postgres.Row[]>[] | undefined) {
@@ -32,21 +33,15 @@ export class Brc20PgStore extends BasePgStoreModule {
       logger.info(`Brc20PgStore scanning block ${blockHeight}`);
       await this.sqlWriteTransaction(async sql => {
         const block = await sql<DbBrc20ScannedInscription[]>`
-          WITH candidates AS (
-            SELECT
-              convert_from(i.content, 'utf-8') as content,
-              EXISTS(SELECT location_id FROM genesis_locations WHERE location_id = l.id) AS genesis,
-              l.id, l.inscription_id, l.block_height, l.tx_id, l.tx_index, l.address
-            FROM locations AS l
-            INNER JOIN inscriptions AS i ON l.inscription_id = i.id
-            WHERE l.block_height = ${blockHeight}
-              AND encode(i.content, 'escape') NOT LIKE '%\\\\000%'
-              AND i.number >= 0
-              AND i.mime_type IN ('application/json', 'text/plain')
-            ORDER BY tx_index ASC
-          )
-          SELECT * FROM candidates
-          WHERE content SIMILAR TO '%"p":[ \\t\\n\\r\\f\\v]*"brc-20"%'
+          SELECT
+            EXISTS(SELECT location_id FROM genesis_locations WHERE location_id = l.id) AS genesis,
+            l.id, l.inscription_id, l.block_height, l.tx_id, l.tx_index, l.address
+          FROM locations AS l
+          INNER JOIN inscriptions AS i ON l.inscription_id = i.id
+          WHERE l.block_height = ${blockHeight}
+            AND i.number >= 0
+            AND i.mime_type IN ('application/json', 'text/plain')
+          ORDER BY tx_index ASC
         `;
         await this.insertOperations(block);
       });
@@ -58,7 +53,12 @@ export class Brc20PgStore extends BasePgStoreModule {
     for (const write of writes) {
       if (write.genesis) {
         if (write.address === null) continue;
-        const brc20 = brc20FromInscriptionContent(write.content);
+        const content = await this.sql<{ content: string }[]>`
+          SELECT content FROM inscriptions WHERE id = ${write.inscription_id}
+        `;
+        const brc20 = brc20FromInscriptionContent(
+          hexToBuffer(content[0].content).toString('utf-8')
+        );
         if (brc20) {
           switch (brc20.op) {
             case 'deploy':
