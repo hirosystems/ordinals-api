@@ -1,3 +1,10 @@
+## [1.0.0-brc-20.16](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.15...v1.0.0-brc-20.16) (2023-09-01)
+
+
+### Bug Fixes
+
+* optimize read queries, display amounts with correct decimals ([#208](https://github.com/hirosystems/ordinals-api/issues/208)) ([5d6453e](https://github.com/hirosystems/ordinals-api/commit/5d6453eda7a17add8c1f1ec6458781e3b762621a))
+
 ## [1.0.0-brc-20.15](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.14...v1.0.0-brc-20.15) (2023-08-31)
 
 
