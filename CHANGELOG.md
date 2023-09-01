@@ -1,3 +1,10 @@
+## [1.0.0-brc-20.18](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.17...v1.0.0-brc-20.18) (2023-09-01)
+
+
+### Bug Fixes
+
+* temporarily disable count calculation to speed up requests ([#210](https://github.com/hirosystems/ordinals-api/issues/210)) ([640e406](https://github.com/hirosystems/ordinals-api/commit/640e406ba8befb8c6f9d455869870527a7dae99d))
+
 ## [1.0.0-brc-20.17](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.16...v1.0.0-brc-20.17) (2023-09-01)
 
 
