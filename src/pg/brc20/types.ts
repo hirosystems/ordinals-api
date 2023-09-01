@@ -77,12 +77,11 @@ export type DbBrc20Token = {
   max: string;
   limit?: string;
   decimals: number;
-  deploy_timestamp: number;
+  timestamp: number;
   minted_supply: string;
 };
 
-export type DbBrc20Supply = {
-  max_supply: string;
+export type DbBrc20TokenWithSupply = DbBrc20Token & {
   minted_supply: string;
   holders: string;
 };
@@ -168,6 +167,7 @@ export const BRC20_DEPLOYS_COLUMNS = [
   'max',
   'decimals',
   'limit',
+  'minted_supply',
 ];
 
 export const BRC20_TRANSFERS_COLUMNS = [

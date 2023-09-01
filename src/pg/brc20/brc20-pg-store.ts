@@ -1,12 +1,10 @@
 import { BasePgStoreModule, logger } from '@hirosystems/api-toolkit';
 import * as postgres from 'postgres';
 import { hexToBuffer } from '../../api/util/helpers';
-import { throwOnFirstRejected } from '../helpers';
 import { DbInscriptionIndexPaging, DbPaginatedResult } from '../types';
 import {
   DbBrc20Token,
   DbBrc20Balance,
-  DbBrc20Supply,
   DbBrc20Holder,
   DbBrc20Deploy,
   BRC20_DEPLOYS_COLUMNS,
@@ -15,6 +13,7 @@ import {
   DbBrc20DeployInsert,
   DbBrc20Location,
   DbBrc20Activity,
+  DbBrc20TokenWithSupply,
 } from './types';
 import { Brc20Deploy, Brc20Mint, Brc20Transfer, brc20FromInscriptionContent } from './helpers';
 
@@ -85,7 +84,6 @@ export class Brc20PgStore extends BasePgStoreModule {
     const tickerPrefixCondition = this.sqlOr(
       args.ticker?.map(t => this.sql`d.ticker_lower LIKE LOWER(${t}) || '%'`)
     );
-
     const results = await this.sql<(DbBrc20Token & { total: number })[]>`
       SELECT
         d.id, i.genesis_id, i.number, d.block_height, d.tx_id, d.address, d.ticker, d.max, d.limit,
@@ -141,29 +139,29 @@ export class Brc20PgStore extends BasePgStoreModule {
     };
   }
 
-  async getTokenSupply(args: { ticker: string }): Promise<DbBrc20Supply | undefined> {
-    return await this.sqlTransaction(async sql => {
-      const deploy = await this.getDeploy(args);
-      if (!deploy) return;
-
-      const supplyPromise = sql<{ max: string; minted_supply: string }[]>`
-        SELECT max, minted_supply FROM brc20_deploys WHERE id = ${deploy.id}
-      `;
-      const holdersPromise = sql<{ count: string }[]>`
+  async getToken(args: { ticker: string }): Promise<DbBrc20TokenWithSupply | undefined> {
+    const result = await this.sql<DbBrc20TokenWithSupply[]>`
+      WITH token AS (
+        SELECT
+          ${this.sql(BRC20_DEPLOYS_COLUMNS.map(c => `d.${c}`))},
+          i.number, i.genesis_id, l.timestamp
+        FROM brc20_deploys AS d
+        INNER JOIN inscriptions AS i ON i.id = d.inscription_id
+        INNER JOIN genesis_locations AS g ON g.inscription_id = d.inscription_id
+        INNER JOIN locations AS l ON l.id = g.location_id
+        WHERE ticker_lower = LOWER(${args.ticker})
+      ),
+      holders AS (
         SELECT COUNT(*) AS count
         FROM brc20_balances
-        WHERE brc20_deploy_id = ${deploy.id}
+        WHERE brc20_deploy_id = (SELECT id FROM token)
         GROUP BY address
         HAVING SUM(avail_balance + trans_balance) > 0
-      `;
-      const settles = await Promise.allSettled([supplyPromise, holdersPromise]);
-      const [supply, holders] = throwOnFirstRejected(settles);
-      return {
-        max_supply: supply[0].max,
-        minted_supply: supply[0]?.minted_supply ?? '0',
-        holders: holders[0]?.count ?? '0',
-      };
-    });
+      )
+      SELECT *, COALESCE((SELECT count FROM holders), 0) AS holders
+      FROM token
+    `;
+    if (result.count) return result[0];
   }
 
   async getTokenHolders(

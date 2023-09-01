@@ -1701,7 +1701,9 @@ describe('BRC-20', () => {
           new TestChainhookPayloadBuilder()
             .apply()
             .block({ height: 775617 })
-            .transaction({ hash: randomHash() })
+            .transaction({
+              hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+            })
             .inscriptionRevealed(
               brc20Reveal({
                 json: {
@@ -1722,6 +1724,22 @@ describe('BRC-20', () => {
           url: `/ordinals/brc-20/tokens/PEPE`,
         });
         expect(response.statusCode).toBe(200);
+        expect(response.json()).toStrictEqual({
+          token: {
+            id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+            number: 5,
+            block_height: 775617,
+            tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+            address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+            ticker: 'PEPE',
+            max_supply: '21000000',
+            mint_limit: null,
+            decimals: 18,
+            deploy_timestamp: 1677803510000,
+            minted_supply: '0',
+          },
+          supply: { max_supply: '21000000', minted_supply: '0', holders: 0 },
+        });
       });
 
       test('filter tickers by ticker prefix', async () => {

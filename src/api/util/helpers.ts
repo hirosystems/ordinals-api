@@ -2,8 +2,8 @@ import {
   DbBrc20Activity,
   DbBrc20Balance,
   DbBrc20Holder,
-  DbBrc20Supply,
   DbBrc20Token,
+  DbBrc20TokenWithSupply,
 } from '../../pg/brc20/types';
 import {
   DbFullyLocatedInscriptionResult,
@@ -115,14 +115,14 @@ export function parseBrc20Tokens(items: DbBrc20Token[]): Brc20TokenResponse[] {
     max_supply: i.max,
     mint_limit: i.limit ?? null,
     decimals: i.decimals,
-    deploy_timestamp: i.deploy_timestamp.valueOf(),
+    deploy_timestamp: i.timestamp.valueOf(),
     minted_supply: i.minted_supply,
   }));
 }
 
-export function parseBrc20Supply(item: DbBrc20Supply): Brc20Supply {
+export function parseBrc20Supply(item: DbBrc20TokenWithSupply): Brc20Supply {
   return {
-    max_supply: item.max_supply,
+    max_supply: item.max,
     minted_supply: item.minted_supply,
     holders: parseInt(item.holders),
   };
