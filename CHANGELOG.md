@@ -1,3 +1,10 @@
+## [1.0.0-brc-20.17](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.16...v1.0.0-brc-20.17) (2023-09-01)
+
+
+### Bug Fixes
+
+* holders count query ([#209](https://github.com/hirosystems/ordinals-api/issues/209)) ([254ed75](https://github.com/hirosystems/ordinals-api/commit/254ed759f9be05ba0adbf1156515395d8d24b196))
+
 ## [1.0.0-brc-20.16](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.15...v1.0.0-brc-20.16) (2023-09-01)
 
 
