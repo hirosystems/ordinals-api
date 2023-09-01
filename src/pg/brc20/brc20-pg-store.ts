@@ -303,7 +303,6 @@ export class Brc20PgStore extends BasePgStoreModule {
     const tickerPrefixConditions = this.sqlOr(
       args.ticker?.map(t => this.sql`d.ticker_lower LIKE LOWER(${t}) || '%'`)
     );
-
     const results = await this.sql<(DbBrc20Balance & { total: number })[]>`
       SELECT
         d.ticker,
@@ -415,7 +414,7 @@ export class Brc20PgStore extends BasePgStoreModule {
         ${args.operation ? this.sql`AND operation IN ${this.sql(args.operation)}` : this.sql``}
         ${tickerConditions ? this.sql`AND (${tickerConditions})` : this.sql``}
         ${args.block_height ? this.sql`AND l.block_height <= ${args.block_height}` : this.sql``}
-      ORDER BY timestamp DESC
+      ORDER BY l.block_height DESC, l.tx_index DESC
       LIMIT ${args.limit}
       OFFSET ${args.offset}
     `;
