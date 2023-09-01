@@ -501,11 +501,11 @@ describe('BRC-20', () => {
           id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
           number: 5,
           mint_limit: null,
-          max_supply: '21000000',
+          max_supply: '21000000.000000000000000000',
           ticker: 'PEPE',
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           deploy_timestamp: 1677811111000,
-          minted_supply: '0',
+          minted_supply: '0.000000000000000000',
         },
       ]);
     });
@@ -574,13 +574,13 @@ describe('BRC-20', () => {
           block_height: 775617,
           decimals: 18,
           id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-          max_supply: '21000000',
+          max_supply: '21000000.000000000000000000',
           mint_limit: null,
           number: 5,
           ticker: 'PEPE',
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           deploy_timestamp: 1677803510000,
-          minted_supply: '0',
+          minted_supply: '0.000000000000000000',
         },
       ]);
     });
@@ -649,13 +649,13 @@ describe('BRC-20', () => {
           block_height: 775617,
           decimals: 18,
           id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-          max_supply: '21000000',
+          max_supply: '21000000.000000000000000000',
           mint_limit: null,
           number: 5,
           ticker: 'PEPE',
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           deploy_timestamp: 1677803510000,
-          minted_supply: '0',
+          minted_supply: '0.000000000000000000',
         },
       ]);
       const response2 = await fastify.inject({
@@ -671,13 +671,13 @@ describe('BRC-20', () => {
           block_height: 775617,
           decimals: 18,
           id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-          max_supply: '21000000',
+          max_supply: '21000000.000000000000000000',
           mint_limit: null,
           number: 5,
           ticker: 'PEPE',
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           deploy_timestamp: 1677803510000,
-          minted_supply: '0',
+          minted_supply: '0.000000000000000000',
         },
       ]);
     });
@@ -747,9 +747,9 @@ describe('BRC-20', () => {
       expect(responseJson1.results).toStrictEqual([
         {
           ticker: 'PEPE',
-          available_balance: '250000',
-          overall_balance: '250000',
-          transferrable_balance: '0',
+          available_balance: '250000.000000000000000000',
+          overall_balance: '250000.000000000000000000',
+          transferrable_balance: '0.000000000000000000',
         },
       ]);
 
@@ -790,9 +790,9 @@ describe('BRC-20', () => {
       expect(responseJson2.results).toStrictEqual([
         {
           ticker: 'PEPE',
-          available_balance: '350000',
-          overall_balance: '350000',
-          transferrable_balance: '0',
+          available_balance: '350000.000000000000000000',
+          overall_balance: '350000.000000000000000000',
+          transferrable_balance: '0.000000000000000000',
         },
       ]);
 
@@ -805,7 +805,7 @@ describe('BRC-20', () => {
       expect(responseJson3.total).toBe(1);
       expect(responseJson3.results).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ ticker: 'PEPE', minted_supply: '350000' }),
+          expect.objectContaining({ ticker: 'PEPE', minted_supply: '350000.000000000000000000' }),
         ])
       );
     });
@@ -1058,10 +1058,10 @@ describe('BRC-20', () => {
       expect(responseJson2.total).toBe(1);
       expect(responseJson2.results).toStrictEqual([
         {
-          available_balance: '2500', // Max capacity
-          overall_balance: '2500',
+          available_balance: '2500.0', // Max capacity
+          overall_balance: '2500.0',
           ticker: 'PEPE',
-          transferrable_balance: '0',
+          transferrable_balance: '0.0',
         },
       ]);
 
@@ -1244,10 +1244,10 @@ describe('BRC-20', () => {
       expect(json.total).toBe(1);
       expect(json.results).toStrictEqual([
         {
-          available_balance: '8000',
-          overall_balance: '10000',
+          available_balance: '8000.000000000000000000',
+          overall_balance: '10000.000000000000000000',
           ticker: 'PEPE',
-          transferrable_balance: '2000',
+          transferrable_balance: '2000.000000000000000000',
         },
       ]);
 
@@ -1257,7 +1257,7 @@ describe('BRC-20', () => {
         url: `/ordinals/brc-20/balances/${address}?block_height=775618`,
       });
       const json2 = response2.json();
-      expect(json2.results[0].available_balance).toBe('10000');
+      expect(json2.results[0].available_balance).toBe('10000.000000000000000000');
     });
 
     test('transfer ignored if token not found', async () => {
@@ -1298,10 +1298,10 @@ describe('BRC-20', () => {
       expect(json.total).toBe(1);
       expect(json.results).toStrictEqual([
         {
-          available_balance: '10000',
-          overall_balance: '10000',
+          available_balance: '10000.000000000000000000',
+          overall_balance: '10000.000000000000000000',
           ticker: 'PEPE',
-          transferrable_balance: '0',
+          transferrable_balance: '0.000000000000000000',
         },
       ]);
     });
@@ -1344,10 +1344,10 @@ describe('BRC-20', () => {
       expect(json.total).toBe(1);
       expect(json.results).toStrictEqual([
         {
-          available_balance: '10000',
-          overall_balance: '10000',
+          available_balance: '10000.000000000000000000',
+          overall_balance: '10000.000000000000000000',
           ticker: 'PEPE',
-          transferrable_balance: '0',
+          transferrable_balance: '0.000000000000000000',
         },
       ]);
     });
@@ -1406,10 +1406,10 @@ describe('BRC-20', () => {
       expect(json.total).toBe(1);
       expect(json.results).toStrictEqual([
         {
-          available_balance: '1000',
-          overall_balance: '10000',
+          available_balance: '1000.000000000000000000',
+          overall_balance: '10000.000000000000000000',
           ticker: 'PEPE',
-          transferrable_balance: '9000',
+          transferrable_balance: '9000.000000000000000000',
         },
       ]);
     });
@@ -1475,10 +1475,10 @@ describe('BRC-20', () => {
       expect(json1.total).toBe(1);
       expect(json1.results).toStrictEqual([
         {
-          available_balance: '1000',
-          overall_balance: '1000',
+          available_balance: '1000.000000000000000000',
+          overall_balance: '1000.000000000000000000',
           ticker: 'PEPE',
-          transferrable_balance: '0',
+          transferrable_balance: '0.000000000000000000',
         },
       ]);
 
@@ -1491,10 +1491,10 @@ describe('BRC-20', () => {
       expect(json2.total).toBe(1);
       expect(json2.results).toStrictEqual([
         {
-          available_balance: '9000',
-          overall_balance: '9000',
+          available_balance: '9000.000000000000000000',
+          overall_balance: '9000.000000000000000000',
           ticker: 'PEPE',
-          transferrable_balance: '0',
+          transferrable_balance: '0.000000000000000000',
         },
       ]);
 
@@ -1504,7 +1504,7 @@ describe('BRC-20', () => {
         url: `/ordinals/brc-20/balances/${address}?block_height=775618`,
       });
       const prevBlockJson1 = prevBlock1.json();
-      expect(prevBlockJson1.results[0].available_balance).toBe('10000');
+      expect(prevBlockJson1.results[0].available_balance).toBe('10000.000000000000000000');
       const prevBlock2 = await fastify.inject({
         method: 'GET',
         url: `/ordinals/brc-20/balances/${address2}?block_height=775618`,
@@ -1573,10 +1573,10 @@ describe('BRC-20', () => {
       expect(json1.total).toBe(1);
       expect(json1.results).toStrictEqual([
         {
-          available_balance: '10000',
-          overall_balance: '10000',
+          available_balance: '10000.000000000000000000',
+          overall_balance: '10000.000000000000000000',
           ticker: 'PEPE',
-          transferrable_balance: '0',
+          transferrable_balance: '0.000000000000000000',
         },
       ]);
     });
@@ -1667,10 +1667,10 @@ describe('BRC-20', () => {
       expect(json1.total).toBe(1);
       expect(json1.results).toStrictEqual([
         {
-          available_balance: '1000',
-          overall_balance: '1000',
+          available_balance: '1000.000000000000000000',
+          overall_balance: '1000.000000000000000000',
           ticker: 'PEPE',
-          transferrable_balance: '0',
+          transferrable_balance: '0.000000000000000000',
         },
       ]);
 
@@ -1683,10 +1683,10 @@ describe('BRC-20', () => {
       expect(json2.total).toBe(1);
       expect(json2.results).toStrictEqual([
         {
-          available_balance: '9000',
-          overall_balance: '9000',
+          available_balance: '9000.000000000000000000',
+          overall_balance: '9000.000000000000000000',
           ticker: 'PEPE',
-          transferrable_balance: '0',
+          transferrable_balance: '0.000000000000000000',
         },
       ]);
     });
@@ -1730,13 +1730,17 @@ describe('BRC-20', () => {
             tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
             address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
             ticker: 'PEPE',
-            max_supply: '21000000',
+            max_supply: '21000000.000000000000000000',
             mint_limit: null,
             decimals: 18,
             deploy_timestamp: 1677803510000,
-            minted_supply: '0',
+            minted_supply: '0.000000000000000000',
           },
-          supply: { max_supply: '21000000', minted_supply: '0', holders: 0 },
+          supply: {
+            max_supply: '21000000.000000000000000000',
+            minted_supply: '0.000000000000000000',
+            holders: 0,
+          },
         });
       });
 
@@ -1893,7 +1897,7 @@ describe('BRC-20', () => {
               ticker: 'PEPE',
               address: addressA,
               deploy: expect.objectContaining({
-                max_supply: '21000000',
+                max_supply: '21000000.000000000000000000',
               }),
             } as Brc20ActivityResponse),
           ])
@@ -1939,7 +1943,7 @@ describe('BRC-20', () => {
               ticker: 'PEPE',
               address: addressA,
               mint: {
-                amount: '10000',
+                amount: '10000.000000000000000000',
               },
             } as Brc20ActivityResponse),
           ])
@@ -1981,7 +1985,7 @@ describe('BRC-20', () => {
               ticker: 'PEPE',
               address: addressB,
               mint: {
-                amount: '10000',
+                amount: '10000.000000000000000000',
               },
             } as Brc20ActivityResponse),
           ])
@@ -2025,7 +2029,7 @@ describe('BRC-20', () => {
               address: addressA,
               tx_id: transferHash,
               transfer: {
-                amount: '9000',
+                amount: '9000.000000000000000000',
                 from_address: addressA,
               },
             } as Brc20ActivityResponse),
@@ -2065,7 +2069,7 @@ describe('BRC-20', () => {
               tx_id: expect.not.stringMatching(transferHash),
               address: addressB,
               transfer_send: {
-                amount: '9000',
+                amount: '9000.000000000000000000',
                 from_address: addressA,
                 to_address: addressB,
               },
@@ -2088,7 +2092,7 @@ describe('BRC-20', () => {
               tx_id: expect.not.stringMatching(transferHash),
               address: addressB,
               transfer_send: {
-                amount: '9000',
+                amount: '9000.000000000000000000',
                 from_address: addressA,
                 to_address: addressB,
               },
@@ -2150,7 +2154,7 @@ describe('BRC-20', () => {
               ticker: 'PEPE',
               address: addressA,
               deploy: expect.objectContaining({
-                max_supply: '21000000',
+                max_supply: '21000000.000000000000000000',
               }),
             } as Brc20ActivityResponse),
           ])
@@ -2193,7 +2197,7 @@ describe('BRC-20', () => {
               ticker: 'PEPE',
               address: addressA,
               mint: {
-                amount: '1000',
+                amount: '1000.000000000000000000',
               },
             } as Brc20ActivityResponse),
           ])
@@ -2236,7 +2240,7 @@ describe('BRC-20', () => {
               ticker: 'PEPE',
               address: addressB,
               mint: {
-                amount: '2000',
+                amount: '2000.000000000000000000',
               },
             } as Brc20ActivityResponse),
           ])
@@ -2281,7 +2285,7 @@ describe('BRC-20', () => {
               address: addressA,
               tx_id: transferHashAB,
               transfer: {
-                amount: '1000',
+                amount: '1000.000000000000000000',
                 from_address: addressA,
               },
             } as Brc20ActivityResponse),
@@ -2327,7 +2331,7 @@ describe('BRC-20', () => {
               address: addressB,
               tx_id: transferHashBC,
               transfer: {
-                amount: '2000',
+                amount: '2000.000000000000000000',
                 from_address: addressB,
               },
             } as Brc20ActivityResponse),
@@ -2368,7 +2372,7 @@ describe('BRC-20', () => {
               tx_id: expect.not.stringMatching(transferHashAB),
               address: addressB,
               transfer_send: {
-                amount: '1000',
+                amount: '1000.000000000000000000',
                 from_address: addressA,
                 to_address: addressB,
               },
@@ -2410,7 +2414,7 @@ describe('BRC-20', () => {
               tx_id: expect.not.stringMatching(transferHashBC),
               address: addressC,
               transfer_send: {
-                amount: '2000',
+                amount: '2000.000000000000000000',
                 from_address: addressB,
                 to_address: addressC,
               },
@@ -2461,7 +2465,7 @@ describe('BRC-20', () => {
               ticker: 'PEPE',
               address: addressA,
               deploy: expect.objectContaining({
-                max_supply: '21000000',
+                max_supply: '21000000.000000000000000000',
               }),
             } as Brc20ActivityResponse),
           ])
@@ -2504,7 +2508,7 @@ describe('BRC-20', () => {
               ticker: 'PEER',
               address: addressA,
               deploy: expect.objectContaining({
-                max_supply: '21000000',
+                max_supply: '21000000.000000000000000000',
               }),
             } as Brc20ActivityResponse),
           ])
@@ -2535,7 +2539,7 @@ describe('BRC-20', () => {
               ticker: 'PEPE',
               address: addressA,
               deploy: expect.objectContaining({
-                max_supply: '21000000',
+                max_supply: '21000000.000000000000000000',
               }),
             } as Brc20ActivityResponse),
           ])
@@ -2591,9 +2595,12 @@ describe('BRC-20', () => {
         expect(json.results).toStrictEqual([
           {
             address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-            overall_balance: '10000',
+            overall_balance: '10000.000000000000000000',
           },
-          { address: 'bc1qp9jgp9qtlhgvwjnxclj6kav6nr2fq09c206pyl', overall_balance: '2000' },
+          {
+            address: 'bc1qp9jgp9qtlhgvwjnxclj6kav6nr2fq09c206pyl',
+            overall_balance: '2000.000000000000000000',
+          },
         ]);
       });
 

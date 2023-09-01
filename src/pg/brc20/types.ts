@@ -89,10 +89,12 @@ export type DbBrc20TokenWithSupply = DbBrc20Token & {
 export type DbBrc20Holder = {
   address: string;
   total_balance: string;
+  decimals: number;
 };
 
 export type DbBrc20Balance = {
   ticker: string;
+  decimals: number;
   avail_balance: string;
   trans_balance: string;
   total_balance: string;
@@ -129,6 +131,9 @@ export type DbBrc20EventInsert = {
 
 type BaseActivity = {
   ticker: string;
+  deploy_decimals: number;
+  deploy_max: string;
+  deploy_limit: string | null;
   operation: DbBrc20EventOperation;
   inscription_id: string;
   block_height: string;
@@ -140,9 +145,6 @@ type BaseActivity = {
 
 type DeployActivity = BaseActivity & {
   operation: 'deploy';
-  deploy_max: string;
-  deploy_limit: string | null;
-  deploy_decimals: number;
 };
 
 type MintActivity = BaseActivity & {

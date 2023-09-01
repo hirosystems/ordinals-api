@@ -305,7 +305,7 @@ export class Brc20PgStore extends BasePgStoreModule {
     );
     const results = await this.sql<(DbBrc20Balance & { total: number })[]>`
       SELECT
-        d.ticker,
+        d.ticker, d.decimals,
         SUM(b.avail_balance) AS avail_balance,
         SUM(b.trans_balance) AS trans_balance,
         SUM(b.avail_balance + b.trans_balance) AS total_balance,
@@ -319,7 +319,7 @@ export class Brc20PgStore extends BasePgStoreModule {
         b.address = ${args.address}
         ${args.block_height ? this.sql`AND l.block_height <= ${args.block_height}` : this.sql``}
         ${tickerPrefixConditions ? this.sql`AND (${tickerPrefixConditions})` : this.sql``}
-      GROUP BY d.ticker
+      GROUP BY d.ticker, d.decimals
       LIMIT ${args.limit}
       OFFSET ${args.offset}
     `;
@@ -360,13 +360,14 @@ export class Brc20PgStore extends BasePgStoreModule {
     } & DbInscriptionIndexPaging
   ): Promise<DbPaginatedResult<DbBrc20Holder> | undefined> {
     return await this.sqlTransaction(async sql => {
-      const token = await sql`
-        SELECT id FROM brc20_deploys WHERE ticker_lower = LOWER(${args.ticker})
+      const token = await sql<{ id: string; decimals: number }[]>`
+        SELECT id, decimals FROM brc20_deploys WHERE ticker_lower = LOWER(${args.ticker})
       `;
       if (token.count === 0) return;
       const results = await sql<(DbBrc20Holder & { total: number })[]>`
         SELECT
-          address, SUM(avail_balance + trans_balance) AS total_balance, COUNT(*) OVER() AS total
+          address, ${token[0].decimals}::int AS decimals, SUM(avail_balance + trans_balance) AS total_balance,
+          COUNT(*) OVER() AS total
         FROM brc20_balances
         WHERE brc20_deploy_id = ${token[0].id}
         GROUP BY address
