@@ -12,11 +12,62 @@ import {
   randomHash,
 } from './helpers';
 
-jest.setTimeout(240_000);
-
 describe('BRC-20', () => {
   let db: PgStore;
   let fastify: TestFastifyServer;
+
+  const deployAndMintPEPE = async (address: string) => {
+    await db.updateInscriptions(
+      new TestChainhookPayloadBuilder()
+        .apply()
+        .block({
+          height: 775617,
+          hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+        })
+        .transaction({
+          hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+        })
+        .inscriptionRevealed(
+          brc20Reveal({
+            json: {
+              p: 'brc-20',
+              op: 'deploy',
+              tick: 'PEPE',
+              max: '250000',
+            },
+            number: 5,
+            tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+            address: address,
+          })
+        )
+        .build()
+    );
+    await db.updateInscriptions(
+      new TestChainhookPayloadBuilder()
+        .apply()
+        .block({
+          height: 775618,
+          hash: '0000000000000000000098d8f2663891d439f6bb7de230d4e9f6bcc2e85452bf',
+        })
+        .transaction({
+          hash: '3b55f624eaa4f8de6c42e0c490176b67123a83094384f658611faf7bfb85dd0f',
+        })
+        .inscriptionRevealed(
+          brc20Reveal({
+            json: {
+              p: 'brc-20',
+              op: 'mint',
+              tick: 'PEPE',
+              amt: '10000',
+            },
+            number: 6,
+            tx_id: '3b55f624eaa4f8de6c42e0c490176b67123a83094384f658611faf7bfb85dd0f',
+            address: address,
+          })
+        )
+        .build()
+    );
+  };
 
   beforeEach(async () => {
     db = await PgStore.connect({ skipMigrations: true });
@@ -1155,59 +1206,6 @@ describe('BRC-20', () => {
   });
 
   describe('transfer', () => {
-    const deployAndMintPEPE = async (address: string) => {
-      await db.updateInscriptions(
-        new TestChainhookPayloadBuilder()
-          .apply()
-          .block({
-            height: 775617,
-            hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
-          })
-          .transaction({
-            hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
-          })
-          .inscriptionRevealed(
-            brc20Reveal({
-              json: {
-                p: 'brc-20',
-                op: 'deploy',
-                tick: 'PEPE',
-                max: '250000',
-              },
-              number: 5,
-              tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
-              address: address,
-            })
-          )
-          .build()
-      );
-      await db.updateInscriptions(
-        new TestChainhookPayloadBuilder()
-          .apply()
-          .block({
-            height: 775618,
-            hash: '0000000000000000000098d8f2663891d439f6bb7de230d4e9f6bcc2e85452bf',
-          })
-          .transaction({
-            hash: '3b55f624eaa4f8de6c42e0c490176b67123a83094384f658611faf7bfb85dd0f',
-          })
-          .inscriptionRevealed(
-            brc20Reveal({
-              json: {
-                p: 'brc-20',
-                op: 'mint',
-                tick: 'PEPE',
-                amt: '10000',
-              },
-              number: 6,
-              tx_id: '3b55f624eaa4f8de6c42e0c490176b67123a83094384f658611faf7bfb85dd0f',
-              address: address,
-            })
-          )
-          .build()
-      );
-    };
-
     test('available balance decreases on transfer inscription', async () => {
       const address = 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td';
       await deployAndMintPEPE(address);
@@ -2550,6 +2548,97 @@ describe('BRC-20', () => {
             } as Brc20ActivityResponse),
           ])
         );
+      });
+    });
+
+    describe('/brc-20/token/holders', () => {
+      test('displays holders for token', async () => {
+        const address = 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td';
+        await deployAndMintPEPE(address);
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({
+              height: 775619,
+              hash: '0000000000000000000034dd2daec375371800da441b17651459b2220cbc1a6e',
+            })
+            .transaction({
+              hash: '633648e0e1ddcab8dea0496a561f2b08c486ae619b5634d7bb55d7f0cd32ef16',
+            })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'mint',
+                  tick: 'PEPE',
+                  amt: '2000',
+                },
+                number: 999,
+                tx_id: '633648e0e1ddcab8dea0496a561f2b08c486ae619b5634d7bb55d7f0cd32ef16',
+                address: 'bc1qp9jgp9qtlhgvwjnxclj6kav6nr2fq09c206pyl',
+              })
+            )
+            .build()
+        );
+
+        const response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/tokens/PEPE/holders`,
+        });
+        expect(response.statusCode).toBe(200);
+        const json = response.json();
+        expect(json.total).toBe(2);
+        expect(json.results).toStrictEqual([
+          {
+            address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+            overall_balance: '10000',
+          },
+          { address: 'bc1qp9jgp9qtlhgvwjnxclj6kav6nr2fq09c206pyl', overall_balance: '2000' },
+        ]);
+      });
+
+      test('shows empty list on token with no holders', async () => {
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({
+              height: 775617,
+              hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+            })
+            .transaction({
+              hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+            })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'deploy',
+                  tick: 'PEPE',
+                  max: '250000',
+                },
+                number: 5,
+                tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+                address: 'bc1qp9jgp9qtlhgvwjnxclj6kav6nr2fq09c206pyl',
+              })
+            )
+            .build()
+        );
+        const response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/tokens/PEPE/holders`,
+        });
+        expect(response.statusCode).toBe(200);
+        const json = response.json();
+        expect(json.total).toBe(0);
+        expect(json.results).toStrictEqual([]);
+      });
+
+      test('shows 404 on token not found', async () => {
+        const response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/tokens/PEPE/holders`,
+        });
+        expect(response.statusCode).toBe(404);
       });
     });
   });
