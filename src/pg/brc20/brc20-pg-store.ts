@@ -277,7 +277,7 @@ export class Brc20PgStore extends BasePgStoreModule {
     const results = await this.sql<(DbBrc20Token & { total: number })[]>`
       SELECT
         ${this.sql(BRC20_DEPLOYS_COLUMNS.map(c => `d.${c}`))},
-        i.number, i.genesis_id, l.timestamp, COUNT(*) OVER() as total
+        i.number, i.genesis_id, l.timestamp, 1 as total
       FROM brc20_deploys AS d
       INNER JOIN inscriptions AS i ON i.id = d.inscription_id
       INNER JOIN genesis_locations AS g ON g.inscription_id = d.inscription_id
@@ -309,7 +309,7 @@ export class Brc20PgStore extends BasePgStoreModule {
         SUM(b.avail_balance) AS avail_balance,
         SUM(b.trans_balance) AS trans_balance,
         SUM(b.avail_balance + b.trans_balance) AS total_balance,
-        COUNT(*) OVER() as total
+        1 as total
       FROM brc20_balances AS b
       INNER JOIN brc20_deploys AS d ON d.id = b.brc20_deploy_id
       ${
@@ -367,7 +367,7 @@ export class Brc20PgStore extends BasePgStoreModule {
       const results = await sql<(DbBrc20Holder & { total: number })[]>`
         SELECT
           address, ${token[0].decimals}::int AS decimals, SUM(avail_balance + trans_balance) AS total_balance,
-          COUNT(*) OVER() AS total
+          1 AS total
         FROM brc20_balances
         WHERE brc20_deploy_id = ${token[0].id}
         GROUP BY address
@@ -407,7 +407,7 @@ export class Brc20PgStore extends BasePgStoreModule {
         d.decimals AS deploy_decimals,
         (SELECT amount FROM brc20_mints WHERE id = e.mint_id) AS mint_amount,
         (SELECT amount || ';' || from_address || ';' || COALESCE(to_address, '') FROM brc20_transfers WHERE id = e.transfer_id) AS transfer_data,
-        COUNT(*) OVER() as total
+        1 as total
       FROM brc20_events AS e
       INNER JOIN brc20_deploys AS d ON e.brc20_deploy_id = d.id
       INNER JOIN locations AS l ON e.genesis_location_id = l.id
