@@ -1,9 +1,10 @@
+import BigNumber from 'bignumber.js';
 import {
   DbBrc20Activity,
   DbBrc20Balance,
   DbBrc20Holder,
-  DbBrc20Supply,
   DbBrc20Token,
+  DbBrc20TokenWithSupply,
 } from '../../pg/brc20/types';
 import {
   DbFullyLocatedInscriptionResult,
@@ -112,18 +113,18 @@ export function parseBrc20Tokens(items: DbBrc20Token[]): Brc20TokenResponse[] {
     tx_id: i.tx_id,
     address: i.address,
     ticker: i.ticker,
-    max_supply: i.max,
-    mint_limit: i.limit ?? null,
+    max_supply: decimals(i.max, i.decimals),
+    mint_limit: i.limit ? decimals(i.limit, i.decimals) : null,
     decimals: i.decimals,
-    deploy_timestamp: i.deploy_timestamp.valueOf(),
-    minted_supply: i.minted_supply,
+    deploy_timestamp: i.timestamp.valueOf(),
+    minted_supply: decimals(i.minted_supply, i.decimals),
   }));
 }
 
-export function parseBrc20Supply(item: DbBrc20Supply): Brc20Supply {
+export function parseBrc20Supply(item: DbBrc20TokenWithSupply): Brc20Supply {
   return {
-    max_supply: item.max_supply,
-    minted_supply: item.minted_supply,
+    max_supply: decimals(item.max, item.decimals),
+    minted_supply: decimals(item.minted_supply, item.decimals),
     holders: parseInt(item.holders),
   };
 }
@@ -131,9 +132,9 @@ export function parseBrc20Supply(item: DbBrc20Supply): Brc20Supply {
 export function parseBrc20Balances(items: DbBrc20Balance[]): Brc20BalanceResponse[] {
   return items.map(i => ({
     ticker: i.ticker,
-    available_balance: i.avail_balance,
-    transferrable_balance: i.trans_balance,
-    overall_balance: i.total_balance,
+    available_balance: decimals(i.avail_balance, i.decimals),
+    transferrable_balance: decimals(i.trans_balance, i.decimals),
+    overall_balance: decimals(i.total_balance, i.decimals),
   }));
 }
 
@@ -149,14 +150,13 @@ export function parseBrc20Activities(items: DbBrc20Activity[]): Brc20ActivityRes
       block_height: parseInt(i.block_height),
       timestamp: i.timestamp.valueOf(),
     };
-
     switch (i.operation) {
       case 'deploy': {
         return {
           ...activity,
           deploy: {
-            max_supply: i.deploy_max,
-            mint_limit: i.deploy_limit,
+            max_supply: decimals(i.deploy_max, i.deploy_decimals),
+            mint_limit: i.deploy_limit ? decimals(i.deploy_limit, i.deploy_decimals) : null,
             decimals: i.deploy_decimals,
           },
         };
@@ -165,17 +165,23 @@ export function parseBrc20Activities(items: DbBrc20Activity[]): Brc20ActivityRes
         return {
           ...activity,
           mint: {
-            amount: i.mint_amount,
+            amount: decimals(i.mint_amount, i.deploy_decimals),
           },
         };
       }
       case 'transfer': {
         const [amount, from_address] = i.transfer_data.split(';');
-        return { ...activity, transfer: { amount, from_address } };
+        return {
+          ...activity,
+          transfer: { amount: decimals(amount, i.deploy_decimals), from_address },
+        };
       }
       case 'transfer_send': {
         const [amount, from_address, to_address] = i.transfer_data.split(';');
-        return { ...activity, transfer_send: { amount, from_address, to_address } };
+        return {
+          ...activity,
+          transfer_send: { amount: decimals(amount, i.deploy_decimals), from_address, to_address },
+        };
       }
     }
   });
@@ -184,7 +190,7 @@ export function parseBrc20Activities(items: DbBrc20Activity[]): Brc20ActivityRes
 export function parseBrc20Holders(items: DbBrc20Holder[]): Brc20HolderResponse[] {
   return items.map(i => ({
     address: i.address,
-    overall_balance: i.total_balance,
+    overall_balance: decimals(i.total_balance, i.decimals),
   }));
 }
 
@@ -195,6 +201,10 @@ export function parseSatPoint(satpoint: string): {
 } {
   const [tx_id, vout, offset] = satpoint.split(':');
   return { tx_id: normalizedHexString(tx_id), vout: vout, offset };
+}
+
+function decimals(num: string, decimals: number): string {
+  return new BigNumber(num).toFixed(decimals);
 }
 
 /**

@@ -1,20 +1,18 @@
 import { BasePgStoreModule, logger } from '@hirosystems/api-toolkit';
 import * as postgres from 'postgres';
 import { hexToBuffer } from '../../api/util/helpers';
-import { throwOnFirstRejected } from '../helpers';
 import { DbInscriptionIndexPaging, DbPaginatedResult } from '../types';
 import {
   DbBrc20Token,
   DbBrc20Balance,
-  DbBrc20Supply,
   DbBrc20Holder,
-  DbBrc20Deploy,
   BRC20_DEPLOYS_COLUMNS,
   DbBrc20BalanceTypeId,
   DbBrc20ScannedInscription,
   DbBrc20DeployInsert,
   DbBrc20Location,
   DbBrc20Activity,
+  DbBrc20TokenWithSupply,
 } from './types';
 import { Brc20Deploy, Brc20Mint, Brc20Transfer, brc20FromInscriptionContent } from './helpers';
 
@@ -77,163 +75,6 @@ export class Brc20PgStore extends BasePgStoreModule {
         await this.applyTransfer(write);
       }
     }
-  }
-
-  async getTokens(
-    args: { ticker?: string[] } & DbInscriptionIndexPaging
-  ): Promise<DbPaginatedResult<DbBrc20Token>> {
-    const tickerPrefixCondition = this.sqlOr(
-      args.ticker?.map(t => this.sql`d.ticker_lower LIKE LOWER(${t}) || '%'`)
-    );
-
-    const results = await this.sql<(DbBrc20Token & { total: number })[]>`
-      SELECT
-        d.id, i.genesis_id, i.number, d.block_height, d.tx_id, d.address, d.ticker, d.max, d.limit,
-        d.decimals, l.timestamp as deploy_timestamp, d.minted_supply, COUNT(*) OVER() as total
-      FROM brc20_deploys AS d
-      INNER JOIN inscriptions AS i ON i.id = d.inscription_id
-      INNER JOIN genesis_locations AS g ON g.inscription_id = d.inscription_id
-      INNER JOIN locations AS l ON l.id = g.location_id
-      ${tickerPrefixCondition ? this.sql`WHERE ${tickerPrefixCondition}` : this.sql``}
-      OFFSET ${args.offset}
-      LIMIT ${args.limit}
-    `;
-    return {
-      total: results[0]?.total ?? 0,
-      results: results ?? [],
-    };
-  }
-
-  async getBalances(
-    args: {
-      address: string;
-      ticker?: string[];
-      block_height?: number;
-    } & DbInscriptionIndexPaging
-  ): Promise<DbPaginatedResult<DbBrc20Balance>> {
-    const tickerPrefixConditions = this.sqlOr(
-      args.ticker?.map(t => this.sql`d.ticker_lower LIKE LOWER(${t}) || '%'`)
-    );
-
-    const results = await this.sql<(DbBrc20Balance & { total: number })[]>`
-      SELECT
-        d.ticker,
-        SUM(b.avail_balance) AS avail_balance,
-        SUM(b.trans_balance) AS trans_balance,
-        SUM(b.avail_balance + b.trans_balance) AS total_balance,
-        COUNT(*) OVER() as total
-      FROM brc20_balances AS b
-      INNER JOIN brc20_deploys AS d ON d.id = b.brc20_deploy_id
-      ${
-        args.block_height ? this.sql`INNER JOIN locations AS l ON l.id = b.location_id` : this.sql``
-      }
-      WHERE
-        b.address = ${args.address}
-        ${args.block_height ? this.sql`AND l.block_height <= ${args.block_height}` : this.sql``}
-        ${tickerPrefixConditions ? this.sql`AND (${tickerPrefixConditions})` : this.sql``}
-      GROUP BY d.ticker
-      LIMIT ${args.limit}
-      OFFSET ${args.offset}
-    `;
-    return {
-      total: results[0]?.total ?? 0,
-      results: results ?? [],
-    };
-  }
-
-  async getTokenSupply(args: { ticker: string }): Promise<DbBrc20Supply | undefined> {
-    return await this.sqlTransaction(async sql => {
-      const deploy = await this.getDeploy(args);
-      if (!deploy) return;
-
-      const supplyPromise = sql<{ max: string; minted_supply: string }[]>`
-        SELECT max, minted_supply FROM brc20_deploys WHERE id = ${deploy.id}
-      `;
-      const holdersPromise = sql<{ count: string }[]>`
-        SELECT COUNT(*) AS count
-        FROM brc20_balances
-        WHERE brc20_deploy_id = ${deploy.id}
-        GROUP BY address
-        HAVING SUM(avail_balance + trans_balance) > 0
-      `;
-      const settles = await Promise.allSettled([supplyPromise, holdersPromise]);
-      const [supply, holders] = throwOnFirstRejected(settles);
-      return {
-        max_supply: supply[0].max,
-        minted_supply: supply[0]?.minted_supply ?? '0',
-        holders: holders[0]?.count ?? '0',
-      };
-    });
-  }
-
-  async getTokenHolders(
-    args: {
-      ticker: string;
-    } & DbInscriptionIndexPaging
-  ): Promise<DbPaginatedResult<DbBrc20Holder> | undefined> {
-    return await this.sqlTransaction(async sql => {
-      const deploy = await this.getDeploy(args);
-      if (!deploy) {
-        return;
-      }
-      const results = await this.sql<(DbBrc20Holder & { total: number })[]>`
-        SELECT
-          address, SUM(avail_balance + trans_balance) AS total_balance, COUNT(*) OVER() AS total
-        FROM brc20_balances
-        WHERE brc20_deploy_id = ${deploy.id}
-        GROUP BY address
-        ORDER BY total_balance DESC
-        LIMIT ${args.limit}
-        OFFSET ${args.offset}
-      `;
-      return {
-        total: results[0]?.total ?? 0,
-        results: results ?? [],
-      };
-    });
-  }
-
-  async getActivity(
-    args: {
-      ticker?: string[];
-      block_height?: number;
-      operation?: string[];
-    } & DbInscriptionIndexPaging
-  ): Promise<DbPaginatedResult<DbBrc20Activity>> {
-    const tickerConditions = this.sqlOr(
-      args.ticker?.map(t => this.sql`d.ticker_lower = LOWER(${t})`)
-    );
-    const results = await this.sql<(DbBrc20Activity & { total: number })[]>`
-      SELECT
-        e.operation,
-        d.ticker,
-        l.genesis_id AS inscription_id,
-        l.block_height,
-        l.block_hash,
-        l.tx_id,
-        l.address,
-        l.timestamp,
-        d.max AS deploy_max,
-        d.limit AS deploy_limit,
-        d.decimals AS deploy_decimals,
-        (SELECT amount FROM brc20_mints WHERE id = e.mint_id) AS mint_amount,
-        (SELECT amount || ';' || from_address || ';' || COALESCE(to_address, '') FROM brc20_transfers WHERE id = e.transfer_id) AS transfer_data,
-        COUNT(*) OVER() as total
-      FROM brc20_events AS e
-      INNER JOIN brc20_deploys AS d ON e.brc20_deploy_id = d.id
-      INNER JOIN locations AS l ON e.genesis_location_id = l.id
-      WHERE TRUE
-        ${args.operation ? this.sql`AND operation IN ${this.sql(args.operation)}` : this.sql``}
-        ${tickerConditions ? this.sql`AND (${tickerConditions})` : this.sql``}
-        ${args.block_height ? this.sql`AND l.block_height <= ${args.block_height}` : this.sql``}
-      ORDER BY timestamp DESC
-      LIMIT ${args.limit}
-      OFFSET ${args.offset}
-    `;
-    return {
-      total: results[0]?.total ?? 0,
-      results: results ?? [],
-    };
   }
 
   async applyTransfer(location: DbBrc20ScannedInscription): Promise<void> {
@@ -427,12 +268,160 @@ export class Brc20PgStore extends BasePgStoreModule {
       );
   }
 
-  private async getDeploy(args: { ticker: string }): Promise<DbBrc20Deploy | undefined> {
-    const deploy = await this.sql<DbBrc20Deploy[]>`
-      SELECT ${this.sql(BRC20_DEPLOYS_COLUMNS)}
-      FROM brc20_deploys
-      WHERE ticker_lower = LOWER(${args.ticker})
+  async getTokens(
+    args: { ticker?: string[] } & DbInscriptionIndexPaging
+  ): Promise<DbPaginatedResult<DbBrc20Token>> {
+    const tickerPrefixCondition = this.sqlOr(
+      args.ticker?.map(t => this.sql`d.ticker_lower LIKE LOWER(${t}) || '%'`)
+    );
+    const results = await this.sql<(DbBrc20Token & { total: number })[]>`
+      SELECT
+        ${this.sql(BRC20_DEPLOYS_COLUMNS.map(c => `d.${c}`))},
+        i.number, i.genesis_id, l.timestamp, COUNT(*) OVER() as total
+      FROM brc20_deploys AS d
+      INNER JOIN inscriptions AS i ON i.id = d.inscription_id
+      INNER JOIN genesis_locations AS g ON g.inscription_id = d.inscription_id
+      INNER JOIN locations AS l ON l.id = g.location_id
+      ${tickerPrefixCondition ? this.sql`WHERE ${tickerPrefixCondition}` : this.sql``}
+      ORDER BY l.block_height DESC, l.tx_index DESC
+      OFFSET ${args.offset}
+      LIMIT ${args.limit}
     `;
-    if (deploy.count) return deploy[0];
+    return {
+      total: results[0]?.total ?? 0,
+      results: results ?? [],
+    };
+  }
+
+  async getBalances(
+    args: {
+      address: string;
+      ticker?: string[];
+      block_height?: number;
+    } & DbInscriptionIndexPaging
+  ): Promise<DbPaginatedResult<DbBrc20Balance>> {
+    const tickerPrefixConditions = this.sqlOr(
+      args.ticker?.map(t => this.sql`d.ticker_lower LIKE LOWER(${t}) || '%'`)
+    );
+    const results = await this.sql<(DbBrc20Balance & { total: number })[]>`
+      SELECT
+        d.ticker, d.decimals,
+        SUM(b.avail_balance) AS avail_balance,
+        SUM(b.trans_balance) AS trans_balance,
+        SUM(b.avail_balance + b.trans_balance) AS total_balance,
+        COUNT(*) OVER() as total
+      FROM brc20_balances AS b
+      INNER JOIN brc20_deploys AS d ON d.id = b.brc20_deploy_id
+      ${
+        args.block_height ? this.sql`INNER JOIN locations AS l ON l.id = b.location_id` : this.sql``
+      }
+      WHERE
+        b.address = ${args.address}
+        ${args.block_height ? this.sql`AND l.block_height <= ${args.block_height}` : this.sql``}
+        ${tickerPrefixConditions ? this.sql`AND (${tickerPrefixConditions})` : this.sql``}
+      GROUP BY d.ticker, d.decimals
+      LIMIT ${args.limit}
+      OFFSET ${args.offset}
+    `;
+    return {
+      total: results[0]?.total ?? 0,
+      results: results ?? [],
+    };
+  }
+
+  async getToken(args: { ticker: string }): Promise<DbBrc20TokenWithSupply | undefined> {
+    const result = await this.sql<DbBrc20TokenWithSupply[]>`
+      WITH token AS (
+        SELECT
+          ${this.sql(BRC20_DEPLOYS_COLUMNS.map(c => `d.${c}`))},
+          i.number, i.genesis_id, l.timestamp
+        FROM brc20_deploys AS d
+        INNER JOIN inscriptions AS i ON i.id = d.inscription_id
+        INNER JOIN genesis_locations AS g ON g.inscription_id = d.inscription_id
+        INNER JOIN locations AS l ON l.id = g.location_id
+        WHERE ticker_lower = LOWER(${args.ticker})
+      ),
+      holders AS (
+        SELECT COUNT(*) AS count
+        FROM brc20_balances
+        WHERE brc20_deploy_id = (SELECT id FROM token)
+        GROUP BY address
+        HAVING SUM(avail_balance + trans_balance) > 0
+      )
+      SELECT *, COALESCE((SELECT count FROM holders), 0) AS holders
+      FROM token
+    `;
+    if (result.count) return result[0];
+  }
+
+  async getTokenHolders(
+    args: {
+      ticker: string;
+    } & DbInscriptionIndexPaging
+  ): Promise<DbPaginatedResult<DbBrc20Holder> | undefined> {
+    return await this.sqlTransaction(async sql => {
+      const token = await sql<{ id: string; decimals: number }[]>`
+        SELECT id, decimals FROM brc20_deploys WHERE ticker_lower = LOWER(${args.ticker})
+      `;
+      if (token.count === 0) return;
+      const results = await sql<(DbBrc20Holder & { total: number })[]>`
+        SELECT
+          address, ${token[0].decimals}::int AS decimals, SUM(avail_balance + trans_balance) AS total_balance,
+          COUNT(*) OVER() AS total
+        FROM brc20_balances
+        WHERE brc20_deploy_id = ${token[0].id}
+        GROUP BY address
+        ORDER BY total_balance DESC
+        LIMIT ${args.limit}
+        OFFSET ${args.offset}
+      `;
+      return {
+        total: results[0]?.total ?? 0,
+        results: results ?? [],
+      };
+    });
+  }
+
+  async getActivity(
+    args: {
+      ticker?: string[];
+      block_height?: number;
+      operation?: string[];
+    } & DbInscriptionIndexPaging
+  ): Promise<DbPaginatedResult<DbBrc20Activity>> {
+    const tickerConditions = this.sqlOr(
+      args.ticker?.map(t => this.sql`d.ticker_lower = LOWER(${t})`)
+    );
+    const results = await this.sql<(DbBrc20Activity & { total: number })[]>`
+      SELECT
+        e.operation,
+        d.ticker,
+        l.genesis_id AS inscription_id,
+        l.block_height,
+        l.block_hash,
+        l.tx_id,
+        l.address,
+        l.timestamp,
+        d.max AS deploy_max,
+        d.limit AS deploy_limit,
+        d.decimals AS deploy_decimals,
+        (SELECT amount FROM brc20_mints WHERE id = e.mint_id) AS mint_amount,
+        (SELECT amount || ';' || from_address || ';' || COALESCE(to_address, '') FROM brc20_transfers WHERE id = e.transfer_id) AS transfer_data,
+        COUNT(*) OVER() as total
+      FROM brc20_events AS e
+      INNER JOIN brc20_deploys AS d ON e.brc20_deploy_id = d.id
+      INNER JOIN locations AS l ON e.genesis_location_id = l.id
+      WHERE TRUE
+        ${args.operation ? this.sql`AND operation IN ${this.sql(args.operation)}` : this.sql``}
+        ${tickerConditions ? this.sql`AND (${tickerConditions})` : this.sql``}
+        ${args.block_height ? this.sql`AND l.block_height <= ${args.block_height}` : this.sql``}
+      ORDER BY l.block_height DESC, l.tx_index DESC
+      LIMIT ${args.limit}
+      OFFSET ${args.offset}
+    `;
+    return {
+      total: results[0]?.total ?? 0,
+      results: results ?? [],
+    };
   }
 }

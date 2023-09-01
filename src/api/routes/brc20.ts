@@ -90,26 +90,15 @@ export const Brc20Routes: FastifyPluginCallback<
       },
     },
     async (request, reply) => {
-      await fastify.db.sqlTransaction(async sql => {
-        const token = await fastify.db.brc20.getTokens({
-          limit: 1,
-          offset: 0,
-          ticker: [request.params.ticker],
-        });
-        if (!token) {
-          await reply.code(404).send(Value.Create(NotFoundResponse));
-          return;
-        }
-        const supply = await fastify.db.brc20.getTokenSupply({ ticker: request.params.ticker });
-        if (!supply) {
-          await reply.code(404).send(Value.Create(NotFoundResponse));
-          return;
-        }
+      const token = await fastify.db.brc20.getToken({ ticker: request.params.ticker });
+      if (!token) {
+        await reply.code(404).send(Value.Create(NotFoundResponse));
+      } else {
         await reply.send({
-          token: parseBrc20Tokens(token.results)[0],
-          supply: parseBrc20Supply(supply),
+          token: parseBrc20Tokens([token])[0],
+          supply: parseBrc20Supply(token),
         });
-      });
+      }
     }
   );
 
