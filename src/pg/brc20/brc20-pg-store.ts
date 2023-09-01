@@ -342,13 +342,13 @@ export class Brc20PgStore extends BasePgStoreModule {
         WHERE ticker_lower = LOWER(${args.ticker})
       ),
       holders AS (
-        SELECT COUNT(*) AS count
+        SELECT 1 AS holder
         FROM brc20_balances
         WHERE brc20_deploy_id = (SELECT id FROM token)
         GROUP BY address
         HAVING SUM(avail_balance + trans_balance) > 0
       )
-      SELECT *, COALESCE((SELECT count FROM holders), 0) AS holders
+      SELECT *, COALESCE((SELECT COUNT(*) FROM holders), 0) AS holders
       FROM token
     `;
     if (result.count) return result[0];
