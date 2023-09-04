@@ -640,8 +640,7 @@ export class PgStore extends BasePgStore {
         RETURNING inscription_id, id AS location_id, block_height, tx_index, address
       `;
       await this.updateInscriptionRecursions(writes);
-      if (ENV.BRC20_BLOCK_SCAN_ENABLED) {
-        // TODO: Temporary
+      if (!ENV.FAST_INGESTION_MODE) {
         if (transferGenesisIds.size)
           await sql`
             UPDATE inscriptions
