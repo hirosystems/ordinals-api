@@ -1,3 +1,10 @@
+## [1.0.0-brc-20.19](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.18...v1.0.0-brc-20.19) (2023-09-04)
+
+
+### Features
+
+* add fast ingestion mode for faster replays ([#211](https://github.com/hirosystems/ordinals-api/issues/211)) ([7996587](https://github.com/hirosystems/ordinals-api/commit/799658761250125c736ece824430f803b660bf25))
+
 ## [1.0.0-brc-20.18](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.17...v1.0.0-brc-20.18) (2023-09-01)
 
 
