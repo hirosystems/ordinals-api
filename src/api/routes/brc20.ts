@@ -6,6 +6,7 @@ import { Server } from 'http';
 import {
   AddressParam,
   BlockHeightParam,
+  Brc20TokensOrderByParam,
   Brc20ActivityResponseSchema,
   Brc20BalanceResponseSchema,
   Brc20HolderResponseSchema,
@@ -46,6 +47,8 @@ export const Brc20Routes: FastifyPluginCallback<
         tags: ['BRC-20'],
         querystring: Type.Object({
           ticker: Type.Optional(Brc20TickersParam),
+          // Sorting
+          order_by: Type.Optional(Brc20TokensOrderByParam),
           // Pagination
           offset: Type.Optional(OffsetParam),
           limit: Type.Optional(LimitParam),
@@ -62,6 +65,7 @@ export const Brc20Routes: FastifyPluginCallback<
         limit,
         offset,
         ticker: request.query.ticker,
+        order_by: request.query.order_by,
       });
       await reply.send({
         limit,

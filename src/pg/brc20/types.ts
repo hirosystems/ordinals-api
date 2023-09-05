@@ -22,6 +22,7 @@ export type DbBrc20DeployInsert = {
   max: string;
   decimals: string;
   limit: string | null;
+  tx_count: number;
 };
 
 export type DbBrc20MintInsert = {

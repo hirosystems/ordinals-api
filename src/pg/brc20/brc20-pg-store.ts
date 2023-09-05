@@ -15,6 +15,7 @@ import {
   DbBrc20TokenWithSupply,
 } from './types';
 import { Brc20Deploy, Brc20Mint, Brc20Transfer, brc20FromInscriptionContent } from './helpers';
+import { Brc20TokenOrderBy } from '../../api/schemas';
 
 export class Brc20PgStore extends BasePgStoreModule {
   sqlOr(partials: postgres.PendingQuery<postgres.Row[]>[] | undefined) {
@@ -147,6 +148,7 @@ export class Brc20PgStore extends BasePgStoreModule {
       max: deploy.op.max,
       limit: deploy.op.lim ?? null,
       decimals: deploy.op.dec ?? '18',
+      tx_count: 1,
     };
     const deployRes = await this.sql`
       WITH deploy_insert AS (
@@ -206,6 +208,11 @@ export class Brc20PgStore extends BasePgStoreModule {
           FROM validated_mint
         )
         ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
+      ),
+      tx_count_update AS (
+        UPDATE brc20_deploys
+        SET tx_count = tx_count + 1
+        WHERE id = (SELECT brc20_deploy_id FROM mint_insert)
       )
       INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, mint_id) (
         SELECT 'mint', ${mint.location.inscription_id}, ${mint.location.id}, brc20_deploy_id, id
@@ -256,6 +263,11 @@ export class Brc20PgStore extends BasePgStoreModule {
           FROM validated_transfer
         )
         ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
+      ),
+      tx_count_update AS (
+        UPDATE brc20_deploys
+        SET tx_count = tx_count + 1
+        WHERE id = (SELECT brc20_deploy_id FROM transfer_insert)
       )
       INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id) (
         SELECT 'transfer', ${transfer.location.inscription_id}, ${transfer.location.id}, brc20_deploy_id, id
@@ -269,11 +281,15 @@ export class Brc20PgStore extends BasePgStoreModule {
   }
 
   async getTokens(
-    args: { ticker?: string[] } & DbInscriptionIndexPaging
+    args: { ticker?: string[]; order_by?: Brc20TokenOrderBy } & DbInscriptionIndexPaging
   ): Promise<DbPaginatedResult<DbBrc20Token>> {
     const tickerPrefixCondition = this.sqlOr(
       args.ticker?.map(t => this.sql`d.ticker_lower LIKE LOWER(${t}) || '%'`)
     );
+    const orderBy =
+      args.order_by === Brc20TokenOrderBy.tx_count
+        ? this.sql`tx_count DESC` // tx_count
+        : this.sql`l.block_height DESC, l.tx_index DESC`; // default: `index`
     const results = await this.sql<(DbBrc20Token & { total: number })[]>`
       SELECT
         ${this.sql(BRC20_DEPLOYS_COLUMNS.map(c => `d.${c}`))},
@@ -283,7 +299,7 @@ export class Brc20PgStore extends BasePgStoreModule {
       INNER JOIN genesis_locations AS g ON g.inscription_id = d.inscription_id
       INNER JOIN locations AS l ON l.id = g.location_id
       ${tickerPrefixCondition ? this.sql`WHERE ${tickerPrefixCondition}` : this.sql``}
-      ORDER BY l.block_height DESC, l.tx_index DESC
+      ORDER BY ${orderBy}
       OFFSET ${args.offset}
       LIMIT ${args.limit}
     `;
@@ -423,5 +439,19 @@ export class Brc20PgStore extends BasePgStoreModule {
       total: results[0]?.total ?? 0,
       results: results ?? [],
     };
+  }
+
+  /**
+   * Recounts the number of transactions for each BRC-20 deploy.
+   */
+  async normalizeDeployTxCounts(): Promise<void> {
+    await this.sql`
+      UPDATE brc20_deploys AS d
+      SET tx_count = (
+        SELECT COALESCE(COUNT(*), 0) AS tx_count
+        FROM brc20_events
+        WHERE brc20_deploy_id = d.id
+      )
+    `;
   }
 }

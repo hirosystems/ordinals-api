@@ -1694,7 +1694,7 @@ describe('BRC-20', () => {
 
   describe('routes', () => {
     describe('/brc-20/tokens', () => {
-      test('token endpoint', async () => {
+      test('tokens endpoint', async () => {
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
@@ -1744,7 +1744,7 @@ describe('BRC-20', () => {
         });
       });
 
-      test('filter tickers by ticker prefix', async () => {
+      test('tokens filter by ticker prefix', async () => {
         const inscriptionNumbers = incrementing(1);
         const blockHeights = incrementing(775600);
 
@@ -1848,6 +1848,156 @@ describe('BRC-20', () => {
             expect.objectContaining({ ticker: 'PEER' }),
             expect.objectContaining({ ticker: 'ABCD' }),
           ])
+        );
+      });
+
+      test('tokens using order_by tx_count', async () => {
+        // Setup
+        const inscriptionNumbers = incrementing(1);
+        const blockHeights = incrementing(775600);
+        const addressA = 'bc1q6uwuet65rm6xvlz7ztw2gvdmmay5uaycu03mqz';
+        const addressB = 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4';
+
+        // A deploys PEPE
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: randomHash() })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'deploy',
+                  tick: 'PEPE',
+                  max: '21000000',
+                },
+                number: inscriptionNumbers.next().value,
+                tx_id: randomHash(),
+                address: addressA,
+              })
+            )
+            .build()
+        );
+
+        // A mints 10000 PEPE 10 more times (will later be rolled back)
+        const pepeMints = [];
+        for (let i = 0; i < 10; i++) {
+          const txHash = randomHash();
+          const payload = new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: txHash })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'mint',
+                  tick: 'PEPE',
+                  amt: '10000',
+                },
+                number: inscriptionNumbers.next().value,
+                tx_id: txHash,
+                address: addressA,
+              })
+            )
+            .build();
+          pepeMints.push(payload);
+          await db.updateInscriptions(payload);
+        }
+
+        // B deploys ABCD
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: randomHash() })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'deploy',
+                  tick: 'ABCD',
+                  max: '21000000',
+                },
+                number: inscriptionNumbers.next().value,
+                tx_id: randomHash(),
+                address: addressB,
+              })
+            )
+            .build()
+        );
+
+        // B mints 10000 PEPE
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: randomHash() })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'mint',
+                  tick: 'ABCD',
+                  amt: '10000',
+                },
+                number: inscriptionNumbers.next().value,
+                tx_id: randomHash(),
+                address: addressB,
+              })
+            )
+            .build()
+        );
+
+        let response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/tokens`,
+        });
+        expect(response.statusCode).toBe(200);
+        let json = response.json();
+        expect(json.results).toHaveLength(2);
+
+        // WITHOUT tx_count sort: The first result is the token with the latest activity (ABCD)
+        expect(json.results[0]).toEqual(
+          expect.objectContaining({
+            ticker: 'ABCD',
+          } as Brc20ActivityResponse)
+        );
+
+        response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/tokens?order_by=tx_count`,
+        });
+        expect(response.statusCode).toBe(200);
+        json = response.json();
+        expect(json.results).toHaveLength(2);
+
+        // WITH tx_count sort: The first result is the most active token (PEPE)
+        expect(json.results[0]).toEqual(
+          expect.objectContaining({
+            ticker: 'PEPE',
+          } as Brc20ActivityResponse)
+        );
+
+        // Rollback PEPE mints
+        for (const payload of pepeMints) {
+          const payloadRollback = { ...payload, apply: [], rollback: payload.apply };
+          await db.updateInscriptions(payloadRollback);
+        }
+
+        // WITH tx_count sort: The first result is the most active token (now ABCD)
+        response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/tokens?order_by=tx_count`,
+        });
+        expect(response.statusCode).toBe(200);
+        json = response.json();
+        expect(json.results).toHaveLength(2);
+        expect(json.results[0]).toEqual(
+          expect.objectContaining({
+            ticker: 'ABCD',
+          } as Brc20ActivityResponse)
         );
       });
     });

@@ -229,6 +229,9 @@ export class PgStore extends BasePgStore {
           await this.brc20.scanBlocks(event.block_identifier.index, event.block_identifier.index);
       }
     });
+    if (payload.rollback.length > 0) {
+      await this.brc20.normalizeDeployTxCounts(); // not efficient re-count, but only happens on rollbacks
+    }
     await this.refreshMaterializedView('chain_tip');
     // Skip expensive view refreshes if we're not streaming live blocks.
     if (payload.chainhook.is_streaming_blocks) {
