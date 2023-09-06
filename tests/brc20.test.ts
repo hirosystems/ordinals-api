@@ -1553,7 +1553,7 @@ describe('BRC-20', () => {
           })
           .inscriptionTransferred({
             inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
-            updated_address: null, // Sent as fee
+            updated_address: '', // Sent as fee
             satpoint_pre_transfer:
               'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a:0:0',
             satpoint_post_transfer:

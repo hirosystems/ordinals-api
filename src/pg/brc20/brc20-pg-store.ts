@@ -14,7 +14,13 @@ import {
   DbBrc20Activity,
   DbBrc20TokenWithSupply,
 } from './types';
-import { Brc20Deploy, Brc20Mint, Brc20Transfer, brc20FromInscriptionContent } from './helpers';
+import {
+  Brc20Deploy,
+  Brc20Mint,
+  Brc20Transfer,
+  brc20FromInscriptionContent,
+  isAddressSentAsFee,
+} from './helpers';
 
 export class Brc20PgStore extends BasePgStoreModule {
   sqlOr(partials: postgres.PendingQuery<postgres.Row[]>[] | undefined) {
@@ -51,7 +57,7 @@ export class Brc20PgStore extends BasePgStoreModule {
     if (writes.length === 0) return;
     for (const write of writes) {
       if (write.genesis) {
-        if (write.address === null) continue;
+        if (isAddressSentAsFee(write.address)) continue;
         const content = await this.sql<{ content: string }[]>`
           SELECT content FROM inscriptions WHERE id = ${write.inscription_id}
         `;
@@ -83,6 +89,7 @@ export class Brc20PgStore extends BasePgStoreModule {
     // this address that hasn't been sent to another address before. Use `LIMIT 3` as a quick way
     // of checking if we have just inserted the first transfer for this inscription (genesis +
     // transfer).
+    const toAddress = isAddressSentAsFee(location.address) ? null : location.address;
     const sendRes = await this.sql`
       WITH transfer_data AS (
         SELECT t.id, t.amount, t.brc20_deploy_id, t.from_address, ROW_NUMBER() OVER()
@@ -102,7 +109,7 @@ export class Brc20PgStore extends BasePgStoreModule {
       ),
       updated_transfer AS (
         UPDATE brc20_transfers
-        SET to_address = COALESCE(${location.address}, (SELECT from_address FROM validated_transfer))
+        SET to_address = COALESCE(${toAddress}, (SELECT from_address FROM validated_transfer))
         WHERE id = (SELECT id FROM validated_transfer)
       ),
       balance_insert_from AS (
@@ -116,7 +123,7 @@ export class Brc20PgStore extends BasePgStoreModule {
       balance_insert_to AS (
         INSERT INTO brc20_balances (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type) (
           SELECT ${location.inscription_id}, ${location.id}, brc20_deploy_id,
-            COALESCE(${location.address}, from_address), amount, 0,
+            COALESCE(${toAddress}, from_address), amount, 0,
             ${DbBrc20BalanceTypeId.transferTo}
           FROM validated_transfer
         )
@@ -128,21 +135,19 @@ export class Brc20PgStore extends BasePgStoreModule {
       )
     `;
     if (sendRes.count)
-      logger.info(
-        `Brc20PgStore send transfer to ${location.address} at block ${location.block_height}`
-      );
+      logger.info(`Brc20PgStore send transfer to ${toAddress} at block ${location.block_height}`);
   }
 
   private async insertDeploy(deploy: {
     op: Brc20Deploy;
     location: DbBrc20Location;
   }): Promise<void> {
-    if (!deploy.location.inscription_id || !deploy.location.address) return;
+    if (!deploy.location.inscription_id || isAddressSentAsFee(deploy.location.address)) return;
     const insert: DbBrc20DeployInsert = {
       inscription_id: deploy.location.inscription_id,
       block_height: deploy.location.block_height,
       tx_id: deploy.location.tx_id,
-      address: deploy.location.address,
+      address: deploy.location.address as string,
       ticker: deploy.op.tick,
       max: deploy.op.max,
       limit: deploy.op.lim ?? null,
@@ -166,7 +171,7 @@ export class Brc20PgStore extends BasePgStoreModule {
   }
 
   private async insertMint(mint: { op: Brc20Mint; location: DbBrc20Location }): Promise<void> {
-    if (!mint.location.inscription_id || !mint.location.address) return;
+    if (!mint.location.inscription_id || isAddressSentAsFee(mint.location.address)) return;
     // Check the following conditions:
     // * Is the mint amount within the allowed token limits?
     // * Is the number of decimals correct?
@@ -222,7 +227,7 @@ export class Brc20PgStore extends BasePgStoreModule {
     op: Brc20Transfer;
     location: DbBrc20Location;
   }): Promise<void> {
-    if (!transfer.location.inscription_id || !transfer.location.address) return;
+    if (!transfer.location.inscription_id || isAddressSentAsFee(transfer.location.address)) return;
     // Check the following conditions:
     // * Do we have enough available balance to do this transfer?
     const transferRes = await this.sql`
