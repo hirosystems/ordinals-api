@@ -7,12 +7,12 @@ import {
   DbBrc20Balance,
   DbBrc20Holder,
   BRC20_DEPLOYS_COLUMNS,
-  DbBrc20BalanceTypeId,
   DbBrc20ScannedInscription,
   DbBrc20DeployInsert,
   DbBrc20Location,
   DbBrc20Activity,
   DbBrc20TokenWithSupply,
+  DbBrc20BalanceTypeId,
 } from './types';
 import {
   Brc20Deploy,
@@ -128,6 +128,20 @@ export class Brc20PgStore extends BasePgStoreModule {
           FROM validated_transfer
         )
         ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
+      ),
+      total_balance_update_from AS (
+        UPDATE brc20_total_balances SET
+          trans_balance = trans_balance - (SELECT amount FROM validated_transfer)
+        WHERE brc20_deploy_id = (SELECT brc20_deploy_id FROM validated_transfer)
+          AND address = (SELECT from_address FROM validated_transfer)
+      ),
+      total_balance_insert_to AS (
+        INSERT INTO brc20_total_balances (brc20_deploy_id, address, avail_balance, trans_balance) (
+          SELECT brc20_deploy_id, COALESCE(${toAddress}, from_address), amount, 0
+          FROM validated_transfer
+        )
+        ON CONFLICT ON CONSTRAINT brc20_total_balances_unique DO UPDATE SET
+          avail_balance = brc20_total_balances.avail_balance + EXCLUDED.avail_balance
       )
       INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id) (
         SELECT 'transfer_send', id, ${location.id}, brc20_deploy_id, id
@@ -211,6 +225,14 @@ export class Brc20PgStore extends BasePgStoreModule {
           FROM validated_mint
         )
         ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
+      ),
+      total_balance_insert AS (
+        INSERT INTO brc20_total_balances (brc20_deploy_id, address, avail_balance, trans_balance) (
+          SELECT brc20_deploy_id, ${mint.location.address}, real_mint_amount, 0
+          FROM validated_mint
+        )
+        ON CONFLICT ON CONSTRAINT brc20_total_balances_unique DO UPDATE SET
+          avail_balance = brc20_total_balances.avail_balance + EXCLUDED.avail_balance
       )
       INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, mint_id) (
         SELECT 'mint', ${mint.location.inscription_id}, ${mint.location.id}, brc20_deploy_id, id
@@ -261,6 +283,13 @@ export class Brc20PgStore extends BasePgStoreModule {
           FROM validated_transfer
         )
         ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
+      ),
+      total_balance_update AS (
+        UPDATE brc20_total_balances SET
+          avail_balance = avail_balance - ${transfer.op.amt}::numeric,
+          trans_balance = trans_balance + ${transfer.op.amt}::numeric
+        WHERE brc20_deploy_id = (SELECT brc20_deploy_id FROM validated_transfer)
+          AND address = ${transfer.location.address}
       )
       INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id) (
         SELECT 'transfer', ${transfer.location.inscription_id}, ${transfer.location.id}, brc20_deploy_id, id
@@ -309,12 +338,28 @@ export class Brc20PgStore extends BasePgStoreModule {
       args.ticker?.map(t => this.sql`d.ticker_lower LIKE LOWER(${t}) || '%'`)
     );
     const results = await this.sql<(DbBrc20Balance & { total: number })[]>`
+      WITH token_ids AS (
+        SELECT id FROM brc20_deploys
+        WHERE ${tickerPrefixConditions ? tickerPrefixConditions : this.sql`FALSE`}
+      ),
+      total_balances AS (
+        SELECT COUNT(*) AS count
+        FROM brc20_total_balances
+        WHERE address = ${args.address}
+          ${
+            tickerPrefixConditions
+              ? this.sql`AND brc20_deploy_id IN (SELECT id FROM token_ids)`
+              : this.sql``
+          }
+      )
       SELECT
         d.ticker, d.decimals,
         SUM(b.avail_balance) AS avail_balance,
         SUM(b.trans_balance) AS trans_balance,
         SUM(b.avail_balance + b.trans_balance) AS total_balance,
-        1 as total
+        (${
+          args.block_height ? this.sql`COUNT(*) OVER()` : this.sql`SELECT count FROM total_balances`
+        }) as total
       FROM brc20_balances AS b
       INNER JOIN brc20_deploys AS d ON d.id = b.brc20_deploy_id
       ${
@@ -323,7 +368,11 @@ export class Brc20PgStore extends BasePgStoreModule {
       WHERE
         b.address = ${args.address}
         ${args.block_height ? this.sql`AND l.block_height <= ${args.block_height}` : this.sql``}
-        ${tickerPrefixConditions ? this.sql`AND (${tickerPrefixConditions})` : this.sql``}
+        ${
+          tickerPrefixConditions
+            ? this.sql`AND brc20_deploy_id IN (SELECT id FROM token_ids)`
+            : this.sql``
+        }
       GROUP BY d.ticker, d.decimals
       LIMIT ${args.limit}
       OFFSET ${args.offset}
@@ -371,11 +420,10 @@ export class Brc20PgStore extends BasePgStoreModule {
       if (token.count === 0) return;
       const results = await sql<(DbBrc20Holder & { total: number })[]>`
         SELECT
-          address, ${token[0].decimals}::int AS decimals, SUM(avail_balance + trans_balance) AS total_balance,
-          1 AS total
-        FROM brc20_balances
+          address, ${token[0].decimals}::int AS decimals, (avail_balance + trans_balance) AS total_balance,
+          COUNT(*) OVER() AS total
+        FROM brc20_total_balances
         WHERE brc20_deploy_id = ${token[0].id}
-        GROUP BY address
         ORDER BY total_balance DESC
         LIMIT ${args.limit}
         OFFSET ${args.offset}

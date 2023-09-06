@@ -107,16 +107,6 @@ export enum DbBrc20BalanceTypeId {
   transferTo = 3,
 }
 
-export type DbBrc20BalanceInsert = {
-  inscription_id: PgNumeric;
-  location_id: PgNumeric;
-  brc20_deploy_id: PgNumeric;
-  address: string;
-  avail_balance: PgNumeric;
-  trans_balance: PgNumeric;
-  type: DbBrc20BalanceTypeId;
-};
-
 export type DbBrc20EventOperation = 'deploy' | 'mint' | 'transfer' | 'transfer_send';
 
 export type DbBrc20EventInsert = {

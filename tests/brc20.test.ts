@@ -2591,7 +2591,7 @@ describe('BRC-20', () => {
         });
         expect(response.statusCode).toBe(200);
         const json = response.json();
-        // expect(json.total).toBe(2);
+        expect(json.total).toBe(2);
         expect(json.results).toStrictEqual([
           {
             address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
