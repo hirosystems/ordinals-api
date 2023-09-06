@@ -1,3 +1,10 @@
+## [1.0.0-brc-20.20](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.19...v1.0.0-brc-20.20) (2023-09-06)
+
+
+### Bug Fixes
+
+* optimize sent as fee detection ([1c9b0f4](https://github.com/hirosystems/ordinals-api/commit/1c9b0f4b35aa5576f151c4d58d7f7d8083494813))
+
 ## [1.0.0-brc-20.19](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.18...v1.0.0-brc-20.19) (2023-09-04)
 
 
