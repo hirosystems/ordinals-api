@@ -25,6 +25,10 @@ export function up(pgm: MigrationBuilder): void {
       type: 'numeric',
       notNull: true,
     },
+    total_balance: {
+      type: 'numeric',
+      notNull: true,
+    },
   });
   pgm.createConstraint(
     'brc20_total_balances',
@@ -37,4 +41,8 @@ export function up(pgm: MigrationBuilder): void {
     'UNIQUE(brc20_deploy_id, address)'
   );
   pgm.createIndex('brc20_total_balances', ['address']);
+  pgm.createIndex('brc20_total_balances', [
+    'brc20_deploy_id',
+    { name: 'total_balance', sort: 'DESC' },
+  ]);
 }

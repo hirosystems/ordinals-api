@@ -131,17 +131,19 @@ export class Brc20PgStore extends BasePgStoreModule {
       ),
       total_balance_update_from AS (
         UPDATE brc20_total_balances SET
-          trans_balance = trans_balance - (SELECT amount FROM validated_transfer)
+          trans_balance = trans_balance - (SELECT amount FROM validated_transfer),
+          total_balance = total_balance - (SELECT amount FROM validated_transfer)
         WHERE brc20_deploy_id = (SELECT brc20_deploy_id FROM validated_transfer)
           AND address = (SELECT from_address FROM validated_transfer)
       ),
       total_balance_insert_to AS (
-        INSERT INTO brc20_total_balances (brc20_deploy_id, address, avail_balance, trans_balance) (
-          SELECT brc20_deploy_id, COALESCE(${toAddress}, from_address), amount, 0
+        INSERT INTO brc20_total_balances (brc20_deploy_id, address, avail_balance, trans_balance, total_balance) (
+          SELECT brc20_deploy_id, COALESCE(${toAddress}, from_address), amount, 0, amount
           FROM validated_transfer
         )
         ON CONFLICT ON CONSTRAINT brc20_total_balances_unique DO UPDATE SET
-          avail_balance = brc20_total_balances.avail_balance + EXCLUDED.avail_balance
+          avail_balance = brc20_total_balances.avail_balance + EXCLUDED.avail_balance,
+          total_balance = brc20_total_balances.total_balance + EXCLUDED.total_balance
       )
       INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id) (
         SELECT 'transfer_send', id, ${location.id}, brc20_deploy_id, id
@@ -227,12 +229,13 @@ export class Brc20PgStore extends BasePgStoreModule {
         ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
       ),
       total_balance_insert AS (
-        INSERT INTO brc20_total_balances (brc20_deploy_id, address, avail_balance, trans_balance) (
-          SELECT brc20_deploy_id, ${mint.location.address}, real_mint_amount, 0
+        INSERT INTO brc20_total_balances (brc20_deploy_id, address, avail_balance, trans_balance, total_balance) (
+          SELECT brc20_deploy_id, ${mint.location.address}, real_mint_amount, 0, real_mint_amount
           FROM validated_mint
         )
         ON CONFLICT ON CONSTRAINT brc20_total_balances_unique DO UPDATE SET
-          avail_balance = brc20_total_balances.avail_balance + EXCLUDED.avail_balance
+          avail_balance = brc20_total_balances.avail_balance + EXCLUDED.avail_balance,
+          total_balance = brc20_total_balances.total_balance + EXCLUDED.total_balance
       )
       INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, mint_id) (
         SELECT 'mint', ${mint.location.inscription_id}, ${mint.location.id}, brc20_deploy_id, id
@@ -420,8 +423,7 @@ export class Brc20PgStore extends BasePgStoreModule {
       if (token.count === 0) return;
       const results = await sql<(DbBrc20Holder & { total: number })[]>`
         SELECT
-          address, ${token[0].decimals}::int AS decimals, (avail_balance + trans_balance) AS total_balance,
-          COUNT(*) OVER() AS total
+          address, ${token[0].decimals}::int AS decimals, total_balance, COUNT(*) OVER() AS total
         FROM brc20_total_balances
         WHERE brc20_deploy_id = ${token[0].id}
         ORDER BY total_balance DESC
