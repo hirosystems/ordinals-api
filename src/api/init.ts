@@ -10,7 +10,6 @@ import { InscriptionsRoutes } from './routes/inscriptions';
 import { SatRoutes } from './routes/sats';
 import { StatsRoutes } from './routes/stats';
 import { StatusRoutes } from './routes/status';
-import { ENV } from '../env';
 
 export const Api: FastifyPluginAsync<
   Record<never, never>,
@@ -21,7 +20,7 @@ export const Api: FastifyPluginAsync<
   await fastify.register(InscriptionsRoutes);
   await fastify.register(SatRoutes);
   await fastify.register(StatsRoutes);
-  if (ENV.BRC20_BLOCK_SCAN_ENABLED) await fastify.register(Brc20Routes);
+  await fastify.register(Brc20Routes);
 };
 
 export async function buildApiServer(args: { db: PgStore }) {
