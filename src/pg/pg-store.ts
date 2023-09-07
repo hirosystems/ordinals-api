@@ -709,6 +709,7 @@ export class PgStore extends BasePgStore {
     if (!inscription) return;
     await this.sqlWriteTransaction(async sql => {
       await this.counts.rollBackInscription({ inscription });
+      await this.brc20.rollBackInscription({ inscription });
       await sql`DELETE FROM inscriptions WHERE id = ${inscription.id}`;
       logger.info(
         `PgStore rollback reveal #${args.number} (${args.genesis_id}) at block ${args.block_height}`

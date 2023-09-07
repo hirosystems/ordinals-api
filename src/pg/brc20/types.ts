@@ -1,5 +1,3 @@
-import { PgNumeric } from '@hirosystems/api-toolkit';
-
 export type DbBrc20Location = {
   id: string;
   inscription_id: string | null;
@@ -125,6 +123,7 @@ type BaseActivity = {
   deploy_max: string;
   deploy_limit: string | null;
   operation: DbBrc20EventOperation;
+  brc20_deploy_id: string;
   inscription_id: string;
   block_height: string;
   block_hash: string;
@@ -133,21 +132,21 @@ type BaseActivity = {
   timestamp: number;
 };
 
-type DeployActivity = BaseActivity & {
+export type DbBrc20DeployActivity = BaseActivity & {
   operation: 'deploy';
 };
 
-type MintActivity = BaseActivity & {
+export type DbBrc20MintActivity = BaseActivity & {
   operation: 'mint';
   mint_amount: string;
 };
 
-type TransferActivity = BaseActivity & {
+export type DbBrc20TransferActivity = BaseActivity & {
   operation: 'transfer' | 'transfer_send';
   transfer_data: string;
 };
 
-export type DbBrc20Activity = DeployActivity | MintActivity | TransferActivity;
+export type DbBrc20Activity = DbBrc20DeployActivity | DbBrc20MintActivity | DbBrc20TransferActivity;
 
 export const BRC20_DEPLOYS_COLUMNS = [
   'id',

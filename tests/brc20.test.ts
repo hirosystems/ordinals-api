@@ -897,6 +897,12 @@ describe('BRC-20', () => {
       const responseJson2 = response2.json();
       expect(responseJson2.total).toBe(0);
       expect(responseJson2.results).toStrictEqual([]);
+
+      const response3 = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/tokens/PEPE`,
+      });
+      expect(response3.json().token.minted_supply).toBe('0.000000000000000000');
     });
 
     test('numbers should not have more decimal digits than "dec" of ticker', async () => {
