@@ -3,18 +3,21 @@ import * as postgres from 'postgres';
 import { hexToBuffer } from '../../api/util/helpers';
 import { DbInscription, DbInscriptionIndexPaging, DbPaginatedResult } from '../types';
 import {
-  DbBrc20Token,
-  DbBrc20Balance,
-  DbBrc20Holder,
   BRC20_DEPLOYS_COLUMNS,
-  DbBrc20ScannedInscription,
-  DbBrc20DeployInsert,
-  DbBrc20Location,
   DbBrc20Activity,
-  DbBrc20TokenWithSupply,
+  DbBrc20Balance,
   DbBrc20BalanceTypeId,
-  DbBrc20MintActivity,
+  DbBrc20DeployInsert,
+  DbBrc20Event,
+  DbBrc20Holder,
+  DbBrc20Location,
+  DbBrc20MintEvent,
+  DbBrc20ScannedInscription,
+  DbBrc20Token,
+  DbBrc20TokenWithSupply,
+  DbBrc20TransferEvent,
 } from './types';
+
 import {
   Brc20Deploy,
   Brc20Mint,
@@ -22,6 +25,8 @@ import {
   brc20FromInscriptionContent,
   isAddressSentAsFee,
 } from './helpers';
+
+import { Brc20TokenOrderBy } from '../../api/schemas';
 
 export class Brc20PgStore extends BasePgStoreModule {
   sqlOr(partials: postgres.PendingQuery<postgres.Row[]>[] | undefined) {
@@ -160,7 +165,11 @@ export class Brc20PgStore extends BasePgStoreModule {
                   total_balance = brc20_total_balances.total_balance + EXCLUDED.total_balance
               )
             `
-      }
+      }, deploy_update AS (
+        UPDATE brc20_deploys
+        SET tx_count = tx_count + 1
+        WHERE id = (SELECT brc20_deploy_id FROM validated_transfer)
+      )
       INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id) (
         SELECT 'transfer_send', ${location.inscription_id}, ${location.id}, brc20_deploy_id, id
         FROM validated_transfer
@@ -184,6 +193,7 @@ export class Brc20PgStore extends BasePgStoreModule {
       max: deploy.op.max,
       limit: deploy.op.lim ?? null,
       decimals: deploy.op.dec ?? '18',
+      tx_count: 1,
     };
     const deployRes = await this.sql`
       WITH deploy_insert AS (
@@ -231,9 +241,11 @@ export class Brc20PgStore extends BasePgStoreModule {
         ON CONFLICT (inscription_id) DO NOTHING
         RETURNING id, brc20_deploy_id
       ),
-      supply_update AS (
+      deploy_update AS (
         UPDATE brc20_deploys
-        SET minted_supply = minted_supply + (SELECT real_mint_amount FROM validated_mint)
+        SET
+          minted_supply = minted_supply + (SELECT real_mint_amount FROM validated_mint),
+          tx_count = tx_count + 1
         WHERE id = (SELECT brc20_deploy_id FROM validated_mint)
       ),
       balance_insert AS (
@@ -309,6 +321,11 @@ export class Brc20PgStore extends BasePgStoreModule {
           trans_balance = trans_balance + ${transfer.op.amt}::numeric
         WHERE brc20_deploy_id = (SELECT brc20_deploy_id FROM validated_transfer)
           AND address = ${transfer.location.address}
+      ),
+      deploy_update AS (
+        UPDATE brc20_deploys
+        SET tx_count = tx_count + 1
+        WHERE id = (SELECT brc20_deploy_id FROM validated_transfer)
       )
       INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id) (
         SELECT 'transfer', ${transfer.location.inscription_id}, ${transfer.location.id}, brc20_deploy_id, id
@@ -322,7 +339,7 @@ export class Brc20PgStore extends BasePgStoreModule {
   }
 
   async rollBackInscription(args: { inscription: DbInscription }): Promise<void> {
-    const activities = await this.sql<DbBrc20Activity[]>`
+    const activities = await this.sql<DbBrc20Event[]>`
       SELECT * FROM brc20_events WHERE inscription_id = ${args.inscription.id}
     `;
     if (activities.count === 0) return;
@@ -330,14 +347,22 @@ export class Brc20PgStore extends BasePgStoreModule {
     // otherwise handled by the ON DELETE CASCADE postgres constraint.
     for (const activity of activities) {
       switch (activity.operation) {
+        case 'deploy':
+          // Deploy events are handled by the ON DELETE CASCADE postgres constraint.
+          // - tx_count is lost successfully, since the deploy will be deleted.
+          break;
         case 'mint':
           await this.rollBackMint(activity);
+          break;
+        case 'transfer':
+        case 'transfer_send':
+          await this.rollBackTransfer(activity);
           break;
       }
     }
   }
 
-  private async rollBackMint(activity: DbBrc20MintActivity): Promise<void> {
+  private async rollBackMint(activity: DbBrc20MintEvent): Promise<void> {
     // Get real minted amount and substract from places.
     await this.sql`
       WITH minted_balance AS (
@@ -345,9 +370,11 @@ export class Brc20PgStore extends BasePgStoreModule {
         FROM brc20_balances
         WHERE inscription_id = ${activity.inscription_id} AND type = ${DbBrc20BalanceTypeId.mint}
       ),
-      token_supply_update AS (
+      deploy_update AS (
         UPDATE brc20_deploys
-        SET minted_supply = minted_supply - (SELECT avail_balance FROM minted_balance)
+        SET
+          minted_supply = minted_supply - (SELECT avail_balance FROM minted_balance),
+          tx_count = tx_count - 1
         WHERE id = ${activity.brc20_deploy_id}
       )
       UPDATE brc20_total_balances SET
@@ -357,12 +384,26 @@ export class Brc20PgStore extends BasePgStoreModule {
     `;
   }
 
+  private async rollBackTransfer(activity: DbBrc20TransferEvent): Promise<void> {
+    // Subtract tx_count per transfer event (transfer and transfer_send are
+    // separate events, so they will both be counted).
+    await this.sql`
+      UPDATE brc20_deploys
+      SET tx_count = tx_count - 1
+      WHERE id = ${activity.brc20_deploy_id}
+    `;
+  }
+
   async getTokens(
-    args: { ticker?: string[] } & DbInscriptionIndexPaging
+    args: { ticker?: string[]; order_by?: Brc20TokenOrderBy } & DbInscriptionIndexPaging
   ): Promise<DbPaginatedResult<DbBrc20Token>> {
     const tickerPrefixCondition = this.sqlOr(
       args.ticker?.map(t => this.sql`d.ticker_lower LIKE LOWER(${t}) || '%'`)
     );
+    const orderBy =
+      args.order_by === Brc20TokenOrderBy.tx_count
+        ? this.sql`tx_count DESC` // tx_count
+        : this.sql`l.block_height DESC, l.tx_index DESC`; // default: `index`
     const results = await this.sql<(DbBrc20Token & { total: number })[]>`
       SELECT
         ${this.sql(BRC20_DEPLOYS_COLUMNS.map(c => `d.${c}`))},
@@ -372,7 +413,7 @@ export class Brc20PgStore extends BasePgStoreModule {
       INNER JOIN genesis_locations AS g ON g.inscription_id = d.inscription_id
       INNER JOIN locations AS l ON l.id = g.location_id
       ${tickerPrefixCondition ? this.sql`WHERE ${tickerPrefixCondition}` : this.sql``}
-      ORDER BY l.block_height DESC, l.tx_index DESC
+      ORDER BY ${orderBy}
       OFFSET ${args.offset}
       LIMIT ${args.limit}
     `;
