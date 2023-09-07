@@ -99,7 +99,7 @@ export class Brc20PgStore extends BasePgStoreModule {
         WHERE l.inscription_id = ${location.inscription_id}
           AND (
             l.block_height < ${location.block_height}
-            OR (l.block_height = ${location.block_height} AND l.tx_index < ${location.tx_index})
+            OR (l.block_height = ${location.block_height} AND l.tx_index <= ${location.tx_index})
           )
         LIMIT 3
       ),
@@ -133,32 +133,32 @@ export class Brc20PgStore extends BasePgStoreModule {
       ${
         isCancelledTransfer
           ? this.sql`
-            total_balance_revert AS (
-              UPDATE brc20_total_balances SET
-                avail_balance = avail_balance + (SELECT amount FROM validated_transfer),
-                trans_balance = trans_balance - (SELECT amount FROM validated_transfer)
-              WHERE brc20_deploy_id = (SELECT brc20_deploy_id FROM validated_transfer)
-                AND address = (SELECT from_address FROM validated_transfer)
-            )
+              total_balance_revert AS (
+                UPDATE brc20_total_balances SET
+                  avail_balance = avail_balance + (SELECT amount FROM validated_transfer),
+                  trans_balance = trans_balance - (SELECT amount FROM validated_transfer)
+                WHERE brc20_deploy_id = (SELECT brc20_deploy_id FROM validated_transfer)
+                  AND address = (SELECT from_address FROM validated_transfer)
+              )
             `
           : this.sql`
-            total_balance_update_from AS (
-              UPDATE brc20_total_balances SET
-                trans_balance = trans_balance - (SELECT amount FROM validated_transfer),
-                total_balance = total_balance - (SELECT amount FROM validated_transfer)
-              WHERE brc20_deploy_id = (SELECT brc20_deploy_id FROM validated_transfer)
-                AND address = (SELECT from_address FROM validated_transfer)
-            ),
-            total_balance_insert_to AS (
-              INSERT INTO brc20_total_balances (brc20_deploy_id, address, avail_balance, trans_balance, total_balance) (
-                SELECT brc20_deploy_id, ${toAddress}, amount, 0, amount
-                FROM validated_transfer
+              total_balance_insert_from AS (
+                UPDATE brc20_total_balances SET
+                  trans_balance = trans_balance - (SELECT amount FROM validated_transfer),
+                  total_balance = total_balance - (SELECT amount FROM validated_transfer)
+                WHERE brc20_deploy_id = (SELECT brc20_deploy_id FROM validated_transfer)
+                  AND address = (SELECT from_address FROM validated_transfer)
+              ),
+              total_balance_insert_to AS (
+                INSERT INTO brc20_total_balances (brc20_deploy_id, address, avail_balance, trans_balance, total_balance) (
+                  SELECT brc20_deploy_id, ${toAddress}, amount, 0, amount
+                  FROM validated_transfer
+                )
+                ON CONFLICT ON CONSTRAINT brc20_total_balances_unique DO UPDATE SET
+                  avail_balance = brc20_total_balances.avail_balance + EXCLUDED.avail_balance,
+                  total_balance = brc20_total_balances.total_balance + EXCLUDED.total_balance
               )
-              ON CONFLICT ON CONSTRAINT brc20_total_balances_unique DO UPDATE SET
-                avail_balance = brc20_total_balances.avail_balance + EXCLUDED.avail_balance,
-                total_balance = brc20_total_balances.total_balance + EXCLUDED.total_balance
-            )
-          `
+            `
       }
       INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id) (
         SELECT 'transfer_send', id, ${location.id}, brc20_deploy_id, id
