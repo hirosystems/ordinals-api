@@ -1,3 +1,10 @@
+## [1.0.0-brc-20.21](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.20...v1.0.0-brc-20.21) (2023-09-07)
+
+
+### Bug Fixes
+
+* calculate etag correctly on status endpoint ([#213](https://github.com/hirosystems/ordinals-api/issues/213)) ([f0c42e2](https://github.com/hirosystems/ordinals-api/commit/f0c42e2b8b01d34fe26c48e8b3fea80ae1ca418a))
+
 ## [1.0.0-brc-20.20](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.19...v1.0.0-brc-20.20) (2023-09-06)
 
 
