@@ -1,7 +1,12 @@
 import { cycleMigrations } from '@hirosystems/api-toolkit';
 import { buildApiServer } from '../src/api/init';
 import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
-import { TestChainhookPayloadBuilder, TestFastifyServer, randomHash } from './helpers';
+import {
+  TestChainhookPayloadBuilder,
+  TestFastifyServer,
+  randomHash,
+  testRevealApply,
+} from './helpers';
 
 describe('ETag cache', () => {
   let db: PgStore;
@@ -344,5 +349,217 @@ describe('ETag cache', () => {
       headers: { 'if-none-match': etag },
     });
     expect(cacheBusted.statusCode).toBe(200);
+  });
+
+  test('inscription content cache control', async () => {
+    const block1 = new TestChainhookPayloadBuilder()
+      .apply()
+      .block({ height: 778575, hash: randomHash() })
+      .transaction({ hash: '0x9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201' })
+      .inscriptionRevealed({
+        content_bytes: '0x48656C6C6F',
+        content_type: 'text/plain',
+        content_length: 5,
+        inscription_number: 7,
+        inscription_fee: 705,
+        inscription_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
+        inscription_output_value: 10000,
+        inscriber_address: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+        ordinal_number: 257418248345364,
+        ordinal_block_height: 650000,
+        ordinal_offset: 0,
+        satpoint_post_inscription:
+          '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+        inscription_input_index: 0,
+        transfers_pre_inscription: 0,
+        tx_index: 0,
+      })
+      .build();
+    await db.updateInscriptions(block1);
+
+    // ETag response
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions/9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0/content',
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.headers.etag).not.toBeUndefined();
+    const etag = response.headers.etag;
+
+    // Cached
+    const cached = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions/9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0/content',
+      headers: { 'if-none-match': etag },
+    });
+    expect(cached.statusCode).toBe(304);
+  });
+
+  test('recursion /blockheight cache control', async () => {
+    await db.updateInscriptions(testRevealApply(778_001, { blockHash: randomHash() }));
+
+    let response = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/blockheight',
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.headers.etag).toBeDefined();
+    let etag = response.headers.etag;
+
+    // Cached response
+    response = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/blockheight',
+      headers: { 'if-none-match': etag },
+    });
+    expect(response.statusCode).toBe(304);
+
+    await db.updateInscriptions(testRevealApply(778_002, { blockHash: randomHash() }));
+
+    // Content changed
+    response = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/blockheight',
+      headers: { 'if-none-match': etag },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.headers.etag).toBeDefined();
+    etag = response.headers.etag;
+
+    // Cached again
+    response = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/blockheight',
+      headers: { 'if-none-match': etag },
+    });
+    expect(response.statusCode).toBe(304);
+  });
+
+  test('recursion /blockhash cache control', async () => {
+    await db.updateInscriptions(testRevealApply(778_001, { blockHash: randomHash() }));
+
+    let response = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/blockhash',
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.headers.etag).toBeDefined();
+    let etag = response.headers.etag;
+
+    // Cached response
+    response = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/blockhash',
+      headers: { 'if-none-match': etag },
+    });
+    expect(response.statusCode).toBe(304);
+
+    await db.updateInscriptions(testRevealApply(778_002, { blockHash: randomHash() }));
+
+    // Content changed
+    response = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/blockhash',
+      headers: { 'if-none-match': etag },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.headers.etag).toBeDefined();
+    etag = response.headers.etag;
+
+    // Cached again
+    response = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/blockhash',
+      headers: { 'if-none-match': etag },
+    });
+    expect(response.statusCode).toBe(304);
+  });
+
+  test('recursion /blockhash/:blockheight cache control', async () => {
+    await db.updateInscriptions(testRevealApply(778_001, { blockHash: randomHash() }));
+
+    let response = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/blockhash/778001',
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.headers.etag).toBeDefined();
+    let etag = response.headers.etag;
+
+    // Cached response
+    response = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/blockhash/778001',
+      headers: { 'if-none-match': etag },
+    });
+    expect(response.statusCode).toBe(304);
+
+    await db.updateInscriptions(testRevealApply(778_002, { blockHash: randomHash() }));
+
+    // Content changes, but specific item not modified
+    response = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/blockhash/778001',
+      headers: { 'if-none-match': etag },
+    });
+    expect(response.statusCode).toBe(304);
+
+    // New item
+    response = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/blockhash/778002',
+      headers: { 'if-none-match': etag },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.headers.etag).toBeDefined();
+    etag = response.headers.etag;
+
+    // Cached again
+    response = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/blockhash',
+      headers: { 'if-none-match': etag },
+    });
+    expect(response.statusCode).toBe(304);
+  });
+
+  test('recursion /blocktime cache control', async () => {
+    await db.updateInscriptions(testRevealApply(778_001, { blockHash: randomHash() }));
+
+    let response = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/blocktime',
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.headers.etag).toBeDefined();
+    let etag = response.headers.etag;
+
+    // Cached response
+    response = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/blocktime',
+      headers: { 'if-none-match': etag },
+    });
+    expect(response.statusCode).toBe(304);
+
+    await db.updateInscriptions(testRevealApply(778_002, { blockHash: randomHash() }));
+
+    // Content changed
+    response = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/blocktime',
+      headers: { 'if-none-match': etag },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.headers.etag).toBeDefined();
+    etag = response.headers.etag;
+
+    // Cached again
+    response = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/blocktime',
+      headers: { 'if-none-match': etag },
+    });
+    expect(response.statusCode).toBe(304);
   });
 });

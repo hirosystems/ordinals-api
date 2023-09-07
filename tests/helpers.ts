@@ -108,3 +108,40 @@ export class TestChainhookPayloadBuilder {
 /** Generate a random hash like string for testing */
 export const randomHash = () =>
   [...Array(64)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+
+/** Generate a random-ish reveal apply payload for testing */
+export function testRevealApply(
+  blockHeight: number,
+  args: { blockHash?: string; timestamp?: number } = {}
+) {
+  // todo: more params could be randomized
+  const randomHex = randomHash();
+  return new TestChainhookPayloadBuilder()
+    .apply()
+    .block({
+      height: blockHeight,
+      hash: args.blockHash ?? '0x00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+      timestamp: args.timestamp ?? 1676913207,
+    })
+    .transaction({
+      hash: `0x${randomHex}`,
+    })
+    .inscriptionRevealed({
+      content_bytes: '0x48656C6C6F',
+      content_type: 'image/png',
+      content_length: 5,
+      inscription_number: Math.floor(Math.random() * 100_000),
+      inscription_fee: 2805,
+      inscription_id: `${randomHex}i0`,
+      inscription_output_value: 10000,
+      inscriber_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+      satpoint_post_inscription: `${randomHex}:0:0`,
+      ordinal_number: Math.floor(Math.random() * 1_000_000),
+      ordinal_block_height: Math.floor(Math.random() * 777_000),
+      ordinal_offset: 0,
+      inscription_input_index: 0,
+      transfers_pre_inscription: 0,
+      tx_index: 0,
+    })
+    .build();
+}
