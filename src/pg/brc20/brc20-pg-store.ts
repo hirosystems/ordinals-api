@@ -85,11 +85,12 @@ export class Brc20PgStore extends BasePgStoreModule {
 
   async applyTransfer(location: DbBrc20ScannedInscription): Promise<void> {
     if (!location.inscription_id) return;
-    // Is this a BRC-20 balance transfer? Check if we have a valid transfer inscription emitted by
-    // this address that hasn't been sent to another address before. Use `LIMIT 3` as a quick way
-    // of checking if we have just inserted the first transfer for this inscription (genesis +
-    // transfer).
-    const toAddress = isAddressSentAsFee(location.address) ? null : location.address;
+    // Is this transfer sent as fee? If so, return balance to original sender.
+    const isCancelledTransfer = isAddressSentAsFee(location.address);
+    const toAddress = isCancelledTransfer ? null : location.address;
+    // Check if we have a valid transfer inscription emitted by this address that hasn't been sent
+    // to another address before. Use `LIMIT 3` as a quick way of checking if we have just inserted
+    // the first transfer for this inscription (genesis + transfer).
     const sendRes = await this.sql`
       WITH transfer_data AS (
         SELECT t.id, t.amount, t.brc20_deploy_id, t.from_address, ROW_NUMBER() OVER()
@@ -129,22 +130,36 @@ export class Brc20PgStore extends BasePgStoreModule {
         )
         ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
       ),
-      total_balance_update_from AS (
-        UPDATE brc20_total_balances SET
-          trans_balance = trans_balance - (SELECT amount FROM validated_transfer),
-          total_balance = total_balance - (SELECT amount FROM validated_transfer)
-        WHERE brc20_deploy_id = (SELECT brc20_deploy_id FROM validated_transfer)
-          AND address = (SELECT from_address FROM validated_transfer)
-      ),
-      total_balance_insert_to AS (
-        INSERT INTO brc20_total_balances (brc20_deploy_id, address, avail_balance, trans_balance, total_balance) (
-          SELECT brc20_deploy_id, COALESCE(${toAddress}, from_address), amount, 0, amount
-          FROM validated_transfer
-        )
-        ON CONFLICT ON CONSTRAINT brc20_total_balances_unique DO UPDATE SET
-          avail_balance = brc20_total_balances.avail_balance + EXCLUDED.avail_balance,
-          total_balance = brc20_total_balances.total_balance + EXCLUDED.total_balance
-      )
+      ${
+        isCancelledTransfer
+          ? this.sql`
+            total_balance_revert AS (
+              UPDATE brc20_total_balances SET
+                avail_balance = avail_balance + (SELECT amount FROM validated_transfer),
+                trans_balance = trans_balance - (SELECT amount FROM validated_transfer)
+              WHERE brc20_deploy_id = (SELECT brc20_deploy_id FROM validated_transfer)
+                AND address = (SELECT from_address FROM validated_transfer)
+            )
+            `
+          : this.sql`
+            total_balance_update_from AS (
+              UPDATE brc20_total_balances SET
+                trans_balance = trans_balance - (SELECT amount FROM validated_transfer),
+                total_balance = total_balance - (SELECT amount FROM validated_transfer)
+              WHERE brc20_deploy_id = (SELECT brc20_deploy_id FROM validated_transfer)
+                AND address = (SELECT from_address FROM validated_transfer)
+            ),
+            total_balance_insert_to AS (
+              INSERT INTO brc20_total_balances (brc20_deploy_id, address, avail_balance, trans_balance, total_balance) (
+                SELECT brc20_deploy_id, ${toAddress}, amount, 0, amount
+                FROM validated_transfer
+              )
+              ON CONFLICT ON CONSTRAINT brc20_total_balances_unique DO UPDATE SET
+                avail_balance = brc20_total_balances.avail_balance + EXCLUDED.avail_balance,
+                total_balance = brc20_total_balances.total_balance + EXCLUDED.total_balance
+            )
+          `
+      }
       INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id) (
         SELECT 'transfer_send', id, ${location.id}, brc20_deploy_id, id
         FROM validated_transfer
@@ -337,46 +352,42 @@ export class Brc20PgStore extends BasePgStoreModule {
       block_height?: number;
     } & DbInscriptionIndexPaging
   ): Promise<DbPaginatedResult<DbBrc20Balance>> {
-    const tickerPrefixConditions = this.sqlOr(
+    const ticker = this.sqlOr(
       args.ticker?.map(t => this.sql`d.ticker_lower LIKE LOWER(${t}) || '%'`)
     );
+    // Change selection table depending if we're filtering by block height or not.
     const results = await this.sql<(DbBrc20Balance & { total: number })[]>`
       WITH token_ids AS (
         SELECT id FROM brc20_deploys
-        WHERE ${tickerPrefixConditions ? tickerPrefixConditions : this.sql`FALSE`}
-      ),
-      total_balances AS (
-        SELECT COUNT(*) AS count
-        FROM brc20_total_balances
-        WHERE address = ${args.address}
-          ${
-            tickerPrefixConditions
-              ? this.sql`AND brc20_deploy_id IN (SELECT id FROM token_ids)`
-              : this.sql``
-          }
+        WHERE ${ticker ? ticker : this.sql`FALSE`}
       )
-      SELECT
-        d.ticker, d.decimals,
-        SUM(b.avail_balance) AS avail_balance,
-        SUM(b.trans_balance) AS trans_balance,
-        SUM(b.avail_balance + b.trans_balance) AS total_balance,
-        (${
-          args.block_height ? this.sql`COUNT(*) OVER()` : this.sql`SELECT count FROM total_balances`
-        }) as total
-      FROM brc20_balances AS b
-      INNER JOIN brc20_deploys AS d ON d.id = b.brc20_deploy_id
       ${
-        args.block_height ? this.sql`INNER JOIN locations AS l ON l.id = b.location_id` : this.sql``
+        args.block_height
+          ? this.sql`
+              SELECT
+                d.ticker, d.decimals,
+                SUM(b.avail_balance) AS avail_balance,
+                SUM(b.trans_balance) AS trans_balance,
+                SUM(b.avail_balance + b.trans_balance) AS total_balance,
+                COUNT(*) OVER() as total
+              FROM brc20_balances AS b
+              INNER JOIN brc20_deploys AS d ON d.id = b.brc20_deploy_id
+              INNER JOIN locations AS l ON l.id = b.location_id
+              WHERE
+                b.address = ${args.address}
+                AND l.block_height <= ${args.block_height}
+                ${ticker ? this.sql`AND brc20_deploy_id IN (SELECT id FROM token_ids)` : this.sql``}
+              GROUP BY d.ticker, d.decimals
+            `
+          : this.sql`
+              SELECT d.ticker, d.decimals, b.avail_balance, b.trans_balance, b.total_balance, COUNT(*) OVER() as total
+              FROM brc20_total_balances AS b
+              INNER JOIN brc20_deploys AS d ON d.id = b.brc20_deploy_id
+              WHERE
+                b.address = ${args.address}
+                ${ticker ? this.sql`AND brc20_deploy_id IN (SELECT id FROM token_ids)` : this.sql``}
+            `
       }
-      WHERE
-        b.address = ${args.address}
-        ${args.block_height ? this.sql`AND l.block_height <= ${args.block_height}` : this.sql``}
-        ${
-          tickerPrefixConditions
-            ? this.sql`AND brc20_deploy_id IN (SELECT id FROM token_ids)`
-            : this.sql``
-        }
-      GROUP BY d.ticker, d.decimals
       LIMIT ${args.limit}
       OFFSET ${args.offset}
     `;
