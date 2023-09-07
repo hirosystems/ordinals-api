@@ -345,7 +345,7 @@ export class Brc20PgStore extends BasePgStoreModule {
         FROM brc20_balances
         WHERE inscription_id = ${activity.inscription_id} AND type = ${DbBrc20BalanceTypeId.mint}
       ),
-      token_balance_update AS (
+      token_supply_update AS (
         UPDATE brc20_deploys
         SET minted_supply = minted_supply - (SELECT avail_balance FROM minted_balance)
         WHERE id = ${activity.brc20_deploy_id}
@@ -449,13 +449,11 @@ export class Brc20PgStore extends BasePgStoreModule {
         WHERE ticker_lower = LOWER(${args.ticker})
       ),
       holders AS (
-        SELECT 1 AS holder
-        FROM brc20_balances
-        WHERE brc20_deploy_id = (SELECT id FROM token)
-        GROUP BY address
-        HAVING SUM(avail_balance + trans_balance) > 0
+        SELECT COUNT(*) AS count
+        FROM brc20_total_balances
+        WHERE brc20_deploy_id = (SELECT id FROM token) AND total_balance > 0
       )
-      SELECT *, COALESCE((SELECT COUNT(*) FROM holders), 0) AS holders
+      SELECT *, COALESCE((SELECT count FROM holders), 0) AS holders
       FROM token
     `;
     if (result.count) return result[0];
