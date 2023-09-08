@@ -162,7 +162,7 @@ export class Brc20PgStore extends BasePgStoreModule {
             `
       }
       INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id) (
-        SELECT 'transfer_send', id, ${location.id}, brc20_deploy_id, id
+        SELECT 'transfer_send', ${location.inscription_id}, ${location.id}, brc20_deploy_id, id
         FROM validated_transfer
       )
     `;
