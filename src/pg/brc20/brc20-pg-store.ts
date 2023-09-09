@@ -210,6 +210,10 @@ export class Brc20PgStore extends BasePgStoreModule {
       event_type_count_increase AS (
         INSERT INTO brc20_counts_by_event_type (event_type, count) VALUES ('deploy', 1)
         ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + 1
+      ),
+      token_count_increase AS (
+        INSERT INTO brc20_counts_by_tokens (token_type, count) VALUES ('token', 1)
+        ON CONFLICT (token_type) DO UPDATE SET count = brc20_counts_by_tokens.count + 1
       )
       INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, deploy_id) (
         SELECT 'deploy', ${deploy.location.inscription_id}, ${deploy.location.id}, id, id
@@ -423,9 +427,19 @@ export class Brc20PgStore extends BasePgStoreModule {
         ? this.sql`tx_count DESC` // tx_count
         : this.sql`l.block_height DESC, l.tx_index DESC`; // default: `index`
     const results = await this.sql<(DbBrc20Token & { total: number })[]>`
+      ${
+        args.ticker === undefined
+          ? this.sql`WITH global_count AS (
+              SELECT COALESCE(count, 0) AS count FROM brc20_counts_by_tokens
+            )`
+          : this.sql``
+      }
       SELECT
         ${this.sql(BRC20_DEPLOYS_COLUMNS.map(c => `d.${c}`))},
-        i.number, i.genesis_id, l.timestamp, 1 as total
+        i.number, i.genesis_id, l.timestamp,
+        ${
+          args.ticker ? this.sql`COUNT(*) OVER()` : this.sql`(SELECT count FROM global_count)`
+        } AS total
       FROM brc20_deploys AS d
       INNER JOIN inscriptions AS i ON i.id = d.inscription_id
       INNER JOIN genesis_locations AS g ON g.inscription_id = d.inscription_id

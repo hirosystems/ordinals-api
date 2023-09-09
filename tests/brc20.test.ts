@@ -1852,7 +1852,7 @@ describe('BRC-20', () => {
         });
         expect(response.statusCode).toBe(200);
         const responseJson = response.json();
-        // expect(responseJson.total).toBe(3);
+        expect(responseJson.total).toBe(3);
         expect(responseJson.results).toEqual(
           expect.arrayContaining([
             expect.objectContaining({ ticker: 'PEPE' }),
@@ -2006,6 +2006,7 @@ describe('BRC-20', () => {
         });
         expect(response.statusCode).toBe(200);
         let json = response.json();
+        expect(json.total).toBe(2);
         expect(json.results).toHaveLength(2);
 
         // WITHOUT tx_count sort:
@@ -2027,6 +2028,7 @@ describe('BRC-20', () => {
         });
         expect(response.statusCode).toBe(200);
         json = response.json();
+        expect(json.total).toBe(2);
         expect(json.results).toHaveLength(2);
 
         // WITH tx_count sort: The first result is the most active token (PEPE)
@@ -2054,6 +2056,7 @@ describe('BRC-20', () => {
         });
         expect(response.statusCode).toBe(200);
         json = response.json();
+        expect(json.total).toBe(2);
         expect(json.results).toHaveLength(2);
         expect(json.results).toEqual([
           expect.objectContaining({
@@ -2084,6 +2087,7 @@ describe('BRC-20', () => {
         });
         expect(response.statusCode).toBe(200);
         json = response.json();
+        expect(json.total).toBe(2);
         expect(json.results).toHaveLength(2);
         expect(json.results).toEqual([
           expect.objectContaining({
