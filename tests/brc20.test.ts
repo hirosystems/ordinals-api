@@ -1,6 +1,6 @@
 import { cycleMigrations } from '@hirosystems/api-toolkit';
 import { buildApiServer } from '../src/api/init';
-import { Brc20ActivityResponse } from '../src/api/schemas';
+import { Brc20ActivityResponse, Brc20TokenResponse } from '../src/api/schemas';
 import { brc20FromInscription } from '../src/pg/brc20/helpers';
 import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
 import { DbInscriptionInsert } from '../src/pg/types';
@@ -506,6 +506,7 @@ describe('BRC-20', () => {
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           deploy_timestamp: 1677811111000,
           minted_supply: '0.000000000000000000',
+          tx_count: '1',
         },
       ]);
     });
@@ -581,6 +582,7 @@ describe('BRC-20', () => {
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           deploy_timestamp: 1677803510000,
           minted_supply: '0.000000000000000000',
+          tx_count: '1',
         },
       ]);
     });
@@ -656,6 +658,7 @@ describe('BRC-20', () => {
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           deploy_timestamp: 1677803510000,
           minted_supply: '0.000000000000000000',
+          tx_count: '1',
         },
       ]);
       const response2 = await fastify.inject({
@@ -678,6 +681,7 @@ describe('BRC-20', () => {
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           deploy_timestamp: 1677803510000,
           minted_supply: '0.000000000000000000',
+          tx_count: '1',
         },
       ]);
     });
@@ -1700,7 +1704,7 @@ describe('BRC-20', () => {
 
   describe('routes', () => {
     describe('/brc-20/tokens', () => {
-      test('token endpoint', async () => {
+      test('tokens endpoint', async () => {
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
@@ -1741,6 +1745,7 @@ describe('BRC-20', () => {
             decimals: 18,
             deploy_timestamp: 1677803510000,
             minted_supply: '0.000000000000000000',
+            tx_count: '1',
           },
           supply: {
             max_supply: '21000000.000000000000000000',
@@ -1750,7 +1755,7 @@ describe('BRC-20', () => {
         });
       });
 
-      test('filter tickers by ticker prefix', async () => {
+      test('tokens filter by ticker prefix', async () => {
         const inscriptionNumbers = incrementing(1);
         const blockHeights = incrementing(775600);
 
@@ -1855,6 +1860,241 @@ describe('BRC-20', () => {
             expect.objectContaining({ ticker: 'ABCD' }),
           ])
         );
+      });
+
+      test('tokens using order_by tx_count', async () => {
+        // Setup
+        const inscriptionNumbers = incrementing(1);
+        const blockHeights = incrementing(775600);
+        const addressA = 'bc1q6uwuet65rm6xvlz7ztw2gvdmmay5uaycu03mqz';
+        const addressB = 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4';
+
+        // A deploys PEPE
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: randomHash() })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'deploy',
+                  tick: 'PEPE',
+                  max: '21000000',
+                },
+                number: inscriptionNumbers.next().value,
+                tx_id: randomHash(),
+                address: addressA,
+              })
+            )
+            .build()
+        );
+
+        // A mints 10000 PEPE 10 times (will later be rolled back)
+        const pepeMints = [];
+        for (let i = 0; i < 10; i++) {
+          const txHash = randomHash();
+          const payload = new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: txHash })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'mint',
+                  tick: 'PEPE',
+                  amt: '10000',
+                },
+                number: inscriptionNumbers.next().value,
+                tx_id: txHash,
+                address: addressA,
+              })
+            )
+            .build();
+          pepeMints.push(payload);
+          await db.updateInscriptions(payload);
+        }
+
+        // B deploys ABCD
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: randomHash() })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'deploy',
+                  tick: 'ABCD',
+                  max: '21000000',
+                },
+                number: inscriptionNumbers.next().value,
+                tx_id: randomHash(),
+                address: addressB,
+              })
+            )
+            .build()
+        );
+
+        // B mints 10000 ABCD
+        await db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({ height: blockHeights.next().value })
+            .transaction({ hash: randomHash() })
+            .inscriptionRevealed(
+              brc20Reveal({
+                json: {
+                  p: 'brc-20',
+                  op: 'mint',
+                  tick: 'ABCD',
+                  amt: '10000',
+                },
+                number: inscriptionNumbers.next().value,
+                tx_id: randomHash(),
+                address: addressB,
+              })
+            )
+            .build()
+        );
+
+        // B send 1000 ABCD to A
+        // (create inscription, transfer)
+        const txHashTransfer = randomHash();
+        const payloadTransfer = new TestChainhookPayloadBuilder()
+          .apply()
+          .block({ height: blockHeights.next().value })
+          .transaction({ hash: txHashTransfer })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'transfer',
+                tick: 'ABCD',
+                amt: '1000',
+              },
+              number: inscriptionNumbers.next().value,
+              tx_id: txHashTransfer,
+              address: addressB,
+            })
+          )
+          .build();
+        await db.updateInscriptions(payloadTransfer);
+        // (send inscription, transfer_send)
+        const txHashTransferSend = randomHash();
+        const payloadTransferSend = new TestChainhookPayloadBuilder()
+          .apply()
+          .block({ height: blockHeights.next().value })
+          .transaction({ hash: txHashTransferSend })
+          .inscriptionTransferred({
+            inscription_id: `${txHashTransfer}i0`,
+            updated_address: addressA,
+            satpoint_pre_transfer: `${txHashTransfer}:0:0`,
+            satpoint_post_transfer: `${txHashTransferSend}:0:0`,
+            post_transfer_output_value: null,
+            tx_index: 0,
+          })
+          .build();
+        await db.updateInscriptions(payloadTransferSend);
+
+        let response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/tokens`,
+        });
+        expect(response.statusCode).toBe(200);
+        let json = response.json();
+        expect(json.results).toHaveLength(2);
+
+        // WITHOUT tx_count sort:
+        expect(json.results).toEqual([
+          // The first result is the token with the latest activity (ABCD)
+          expect.objectContaining({
+            ticker: 'ABCD',
+            tx_count: '4',
+          } as Brc20TokenResponse),
+          expect.objectContaining({
+            ticker: 'PEPE',
+            tx_count: '11',
+          } as Brc20TokenResponse),
+        ]);
+
+        response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/tokens?order_by=tx_count`,
+        });
+        expect(response.statusCode).toBe(200);
+        json = response.json();
+        expect(json.results).toHaveLength(2);
+
+        // WITH tx_count sort: The first result is the most active token (PEPE)
+        expect(json.results).toEqual([
+          expect.objectContaining({
+            ticker: 'PEPE',
+            tx_count: '11',
+          } as Brc20TokenResponse),
+          expect.objectContaining({
+            ticker: 'ABCD',
+            tx_count: '4',
+          } as Brc20TokenResponse),
+        ]);
+
+        // Rollback PEPE mints
+        for (const payload of pepeMints) {
+          const payloadRollback = { ...payload, apply: [], rollback: payload.apply };
+          await db.updateInscriptions(payloadRollback);
+        }
+
+        // WITH tx_count sort: The first result is the most active token (now ABCD)
+        response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/tokens?order_by=tx_count`,
+        });
+        expect(response.statusCode).toBe(200);
+        json = response.json();
+        expect(json.results).toHaveLength(2);
+        expect(json.results).toEqual([
+          expect.objectContaining({
+            ticker: 'ABCD',
+            tx_count: '4',
+          } as Brc20TokenResponse),
+          expect.objectContaining({
+            ticker: 'PEPE',
+            tx_count: '1', // only the deploy remains
+          } as Brc20TokenResponse),
+        ]);
+
+        // Rollback ABCD transfer
+        await db.updateInscriptions({
+          ...payloadTransfer,
+          apply: [],
+          rollback: payloadTransfer.apply,
+        });
+        await db.updateInscriptions({
+          ...payloadTransferSend,
+          apply: [],
+          rollback: payloadTransferSend.apply,
+        });
+
+        response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/tokens?order_by=tx_count`,
+        });
+        expect(response.statusCode).toBe(200);
+        json = response.json();
+        expect(json.results).toHaveLength(2);
+        expect(json.results).toEqual([
+          expect.objectContaining({
+            ticker: 'ABCD',
+            tx_count: '2', // only the deploy and mint remain
+          } as Brc20TokenResponse),
+          expect.objectContaining({
+            ticker: 'PEPE',
+            tx_count: '1',
+          } as Brc20TokenResponse),
+        ]);
       });
     });
 
