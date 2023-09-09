@@ -215,13 +215,16 @@ export const Brc20Routes: FastifyPluginCallback<
     async (request, reply) => {
       const limit = request.query.limit ?? DEFAULT_API_LIMIT;
       const offset = request.query.offset ?? 0;
-      const balances = await fastify.db.brc20.getActivity({
-        limit,
-        offset,
-        ticker: request.query.ticker,
-        block_height: request.query.block_height ? parseInt(request.query.block_height) : undefined,
-        operation: request.query.operation,
-      });
+      const balances = await fastify.db.brc20.getActivity(
+        { limit, offset },
+        {
+          ticker: request.query.ticker,
+          block_height: request.query.block_height
+            ? parseInt(request.query.block_height)
+            : undefined,
+          operation: request.query.operation,
+        }
+      );
       await reply.send({
         limit,
         offset,

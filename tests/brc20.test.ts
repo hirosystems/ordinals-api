@@ -2177,7 +2177,7 @@ describe('BRC-20', () => {
         });
         expect(response.statusCode).toBe(200);
         json = response.json();
-        // expect(json.total).toBe(2);
+        expect(json.total).toBe(2);
         expect(json.results).toEqual(
           expect.arrayContaining([
             expect.objectContaining({
@@ -2223,7 +2223,7 @@ describe('BRC-20', () => {
         });
         expect(response.statusCode).toBe(200);
         json = response.json();
-        // expect(json.total).toBe(3);
+        expect(json.total).toBe(3);
         expect(json.results).toEqual(
           expect.arrayContaining([
             expect.objectContaining({
@@ -2266,7 +2266,7 @@ describe('BRC-20', () => {
         });
         expect(response.statusCode).toBe(200);
         json = response.json();
-        // expect(json.total).toBe(4);
+        expect(json.total).toBe(4);
         expect(json.results).toEqual(
           expect.arrayContaining([
             expect.objectContaining({
@@ -2306,7 +2306,7 @@ describe('BRC-20', () => {
         });
         expect(response.statusCode).toBe(200);
         json = response.json();
-        // expect(json.total).toBe(5);
+        expect(json.total).toBe(5);
         expect(json.results).toEqual(
           expect.arrayContaining([
             expect.objectContaining({
@@ -2329,7 +2329,7 @@ describe('BRC-20', () => {
         });
         expect(response.statusCode).toBe(200);
         json = response.json();
-        // expect(json.total).toBe(1);
+        expect(json.total).toBe(1);
         expect(json.results).toEqual(
           expect.arrayContaining([
             expect.objectContaining({
@@ -2435,7 +2435,7 @@ describe('BRC-20', () => {
         });
         expect(response.statusCode).toBe(200);
         json = response.json();
-        // expect(json.total).toBe(2);
+        expect(json.total).toBe(2);
         expect(json.results).toEqual(
           expect.arrayContaining([
             expect.objectContaining({
@@ -2478,7 +2478,7 @@ describe('BRC-20', () => {
         });
         expect(response.statusCode).toBe(200);
         json = response.json();
-        // expect(json.total).toBe(3);
+        expect(json.total).toBe(3);
         expect(json.results).toEqual(
           expect.arrayContaining([
             expect.objectContaining({
@@ -2522,7 +2522,7 @@ describe('BRC-20', () => {
         });
         expect(response.statusCode).toBe(200);
         json = response.json();
-        // expect(json.total).toBe(4);
+        expect(json.total).toBe(4);
         expect(json.results).toEqual(
           expect.arrayContaining([
             expect.objectContaining({
@@ -2568,7 +2568,7 @@ describe('BRC-20', () => {
         });
         expect(response.statusCode).toBe(200);
         json = response.json();
-        // expect(json.total).toBe(5);
+        expect(json.total).toBe(5);
         expect(json.results).toEqual(
           expect.arrayContaining([
             expect.objectContaining({
@@ -2609,7 +2609,7 @@ describe('BRC-20', () => {
         });
         expect(response.statusCode).toBe(200);
         json = response.json();
-        // expect(json.total).toBe(6);
+        expect(json.total).toBe(6);
         expect(json.results).toEqual(
           expect.arrayContaining([
             expect.objectContaining({
@@ -2651,7 +2651,7 @@ describe('BRC-20', () => {
         });
         expect(response.statusCode).toBe(200);
         json = response.json();
-        // expect(json.total).toBe(7);
+        expect(json.total).toBe(7);
         expect(json.results).toEqual(
           expect.arrayContaining([
             expect.objectContaining({
@@ -2746,7 +2746,7 @@ describe('BRC-20', () => {
         });
         expect(response.statusCode).toBe(200);
         json = response.json();
-        // expect(json.total).toBe(2);
+        expect(json.total).toBe(2);
         expect(json.results).toEqual(
           expect.arrayContaining([
             expect.objectContaining({

@@ -49,3 +49,7 @@ export function chunkArray<T>(arr: T[], chunkSize: number): T[][] {
   for (let i = 0; i < arr.length; i += chunkSize) result.push(arr.slice(i, i + chunkSize));
   return result;
 }
+
+export function objRemoveUndefinedValues(obj: object) {
+  Object.keys(obj).forEach(key => (obj as any)[key] === undefined && delete (obj as any)[key]);
+}

@@ -9,6 +9,7 @@ import {
   DbBrc20BalanceTypeId,
   DbBrc20DeployInsert,
   DbBrc20Event,
+  DbBrc20EventOperation,
   DbBrc20Holder,
   DbBrc20Location,
   DbBrc20MintEvent,
@@ -27,6 +28,7 @@ import {
 } from './helpers';
 
 import { Brc20TokenOrderBy } from '../../api/schemas';
+import { objRemoveUndefinedValues } from '../helpers';
 
 export class Brc20PgStore extends BasePgStoreModule {
   sqlOr(partials: postgres.PendingQuery<postgres.Row[]>[] | undefined) {
@@ -169,6 +171,10 @@ export class Brc20PgStore extends BasePgStoreModule {
         UPDATE brc20_deploys
         SET tx_count = tx_count + 1
         WHERE id = (SELECT brc20_deploy_id FROM validated_transfer)
+      ),
+      event_type_count_increase AS (
+        INSERT INTO brc20_counts_by_event_type (event_type, count) VALUES ('transfer_send', 1)
+        ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + 1
       )
       INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id) (
         SELECT 'transfer_send', ${location.inscription_id}, ${location.id}, brc20_deploy_id, id
@@ -200,6 +206,10 @@ export class Brc20PgStore extends BasePgStoreModule {
         INSERT INTO brc20_deploys ${this.sql(insert)}
         ON CONFLICT (LOWER(ticker)) DO NOTHING
         RETURNING id
+      ),
+      event_type_count_increase AS (
+        INSERT INTO brc20_counts_by_event_type (event_type, count) VALUES ('deploy', 1)
+        ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + 1
       )
       INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, deploy_id) (
         SELECT 'deploy', ${deploy.location.inscription_id}, ${deploy.location.id}, id, id
@@ -264,6 +274,10 @@ export class Brc20PgStore extends BasePgStoreModule {
         ON CONFLICT ON CONSTRAINT brc20_total_balances_unique DO UPDATE SET
           avail_balance = brc20_total_balances.avail_balance + EXCLUDED.avail_balance,
           total_balance = brc20_total_balances.total_balance + EXCLUDED.total_balance
+      ),
+      event_type_count_increase AS (
+        INSERT INTO brc20_counts_by_event_type (event_type, count) VALUES ('mint', 1)
+        ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + 1
       )
       INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, mint_id) (
         SELECT 'mint', ${mint.location.inscription_id}, ${mint.location.id}, brc20_deploy_id, id
@@ -326,6 +340,10 @@ export class Brc20PgStore extends BasePgStoreModule {
         UPDATE brc20_deploys
         SET tx_count = tx_count + 1
         WHERE id = (SELECT brc20_deploy_id FROM validated_transfer)
+      ),
+      event_type_count_increase AS (
+        INSERT INTO brc20_counts_by_event_type (event_type, count) VALUES ('transfer', 1)
+        ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + 1
       )
       INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id) (
         SELECT 'transfer', ${transfer.location.inscription_id}, ${transfer.location.id}, brc20_deploy_id, id
@@ -527,16 +545,33 @@ export class Brc20PgStore extends BasePgStoreModule {
   }
 
   async getActivity(
-    args: {
+    page: DbInscriptionIndexPaging,
+    filters: {
       ticker?: string[];
       block_height?: number;
       operation?: string[];
-    } & DbInscriptionIndexPaging
+    }
   ): Promise<DbPaginatedResult<DbBrc20Activity>> {
+    objRemoveUndefinedValues(filters);
     const tickerConditions = this.sqlOr(
-      args.ticker?.map(t => this.sql`d.ticker_lower = LOWER(${t})`)
+      filters.ticker?.map(t => this.sql`d.ticker_lower = LOWER(${t})`)
     );
+    const isGlobalCount =
+      Object.keys(filters).length === 0 || (Object.keys(filters).length === 1 && filters.operation);
     const results = await this.sql<(DbBrc20Activity & { total: number })[]>`
+      ${
+        isGlobalCount
+          ? this.sql`WITH global_count AS (
+              SELECT COALESCE(SUM(count), 0) AS count
+              FROM brc20_counts_by_event_type
+              ${
+                filters.operation
+                  ? this.sql`WHERE event_type IN ${this.sql(filters.operation)}`
+                  : this.sql``
+              }
+            )`
+          : this.sql``
+      }
       SELECT
         e.operation,
         d.ticker,
@@ -551,17 +586,25 @@ export class Brc20PgStore extends BasePgStoreModule {
         d.decimals AS deploy_decimals,
         (SELECT amount FROM brc20_mints WHERE id = e.mint_id) AS mint_amount,
         (SELECT amount || ';' || from_address || ';' || COALESCE(to_address, '') FROM brc20_transfers WHERE id = e.transfer_id) AS transfer_data,
-        1 as total
+        ${
+          isGlobalCount ? this.sql`(SELECT count FROM global_count)` : this.sql`COUNT(*) OVER()`
+        } AS total
       FROM brc20_events AS e
       INNER JOIN brc20_deploys AS d ON e.brc20_deploy_id = d.id
       INNER JOIN locations AS l ON e.genesis_location_id = l.id
       WHERE TRUE
-        ${args.operation ? this.sql`AND operation IN ${this.sql(args.operation)}` : this.sql``}
+        ${
+          filters.operation ? this.sql`AND operation IN ${this.sql(filters.operation)}` : this.sql``
+        }
         ${tickerConditions ? this.sql`AND (${tickerConditions})` : this.sql``}
-        ${args.block_height ? this.sql`AND l.block_height <= ${args.block_height}` : this.sql``}
+        ${
+          filters.block_height
+            ? this.sql`AND l.block_height <= ${filters.block_height}`
+            : this.sql``
+        }
       ORDER BY l.block_height DESC, l.tx_index DESC
-      LIMIT ${args.limit}
-      OFFSET ${args.offset}
+      LIMIT ${page.limit}
+      OFFSET ${page.offset}
     `;
     return {
       total: results[0]?.total ?? 0,

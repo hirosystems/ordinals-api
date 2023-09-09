@@ -4,9 +4,15 @@ import { MigrationBuilder, ColumnDefinitions } from 'node-pg-migrate';
 export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export function up(pgm: MigrationBuilder): void {
-  pgm.addColumn('brc20_deploys', {
-    tx_count: {
+  pgm.createTable('brc20_counts_by_event_type', {
+    event_type: {
+      type: 'brc20_operation',
+      notNull: true,
+      primaryKey: true,
+    },
+    count: {
       type: 'bigint',
+      notNull: true,
       default: 1,
     },
   });
