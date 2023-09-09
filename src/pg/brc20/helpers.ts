@@ -64,7 +64,7 @@ export function brc20FromInscriptionContent(content: string): Brc20 | undefined 
     const json = JSON.parse(content);
     if (Brc20C.Check(json)) {
       // Check ticker byte length
-      if (Buffer.from(json.tick).length > 4) return;
+      if (Buffer.from(json.tick).length !== 4) return;
       // Check numeric values.
       if (json.op === 'deploy') {
         if (parseFloat(json.max) == 0 || numExceedsMax(json.max)) return;
