@@ -197,6 +197,13 @@ describe('BRC-20', () => {
         max: '21000000',
       });
       expect(brc20FromInscription(insert3)).toBeUndefined();
+      const insert4 = testInsert({
+        p: 'brc-20',
+        op: 'deploy',
+        tick: 'X', // less than 4 bytes
+        max: '21000000',
+      });
+      expect(brc20FromInscription(insert4)).toBeUndefined();
     });
 
     test('all fields must be strings', () => {
