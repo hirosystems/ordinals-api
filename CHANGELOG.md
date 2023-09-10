@@ -1,3 +1,10 @@
+## [1.0.0-brc-20.22](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.21...v1.0.0-brc-20.22) (2023-09-10)
+
+
+### Bug Fixes
+
+* optimize read queries by keeping count tables, implement rollbacks ([#214](https://github.com/hirosystems/ordinals-api/issues/214)) ([574d349](https://github.com/hirosystems/ordinals-api/commit/574d349667545a66d826aec90ea77f6c8e4d1745)), closes [#215](https://github.com/hirosystems/ordinals-api/issues/215)
+
 ## [1.0.0-brc-20.21](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.20...v1.0.0-brc-20.21) (2023-09-07)
 
 
