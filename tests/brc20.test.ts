@@ -2071,14 +2071,14 @@ describe('BRC-20', () => {
 
         // Rollback ABCD transfer
         await db.updateInscriptions({
-          ...payloadTransfer,
-          apply: [],
-          rollback: payloadTransfer.apply,
-        });
-        await db.updateInscriptions({
           ...payloadTransferSend,
           apply: [],
           rollback: payloadTransferSend.apply,
+        });
+        await db.updateInscriptions({
+          ...payloadTransfer,
+          apply: [],
+          rollback: payloadTransfer.apply,
         });
 
         response = await fastify.inject({
@@ -2897,6 +2897,402 @@ describe('BRC-20', () => {
         });
         expect(response.statusCode).toBe(404);
       });
+    });
+  });
+
+  describe('rollbacks', () => {
+    test('reflects rollbacks on balances and counts correctly', async () => {
+      const address = 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td';
+      const address2 = '3QNjwPDRafjBm9XxJpshgk3ksMJh3TFxTU';
+      await deployAndMintPEPE(address);
+      // Transfer and send PEPE
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 775619,
+            hash: '00000000000000000002b14f0c5dde0b2fc74d022e860696bd64f1f652756674',
+          })
+          .transaction({
+            hash: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'transfer',
+                tick: 'PEPE',
+                amt: '9000',
+              },
+              number: 7,
+              tx_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
+              address: address,
+            })
+          )
+          .build()
+      );
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 775620,
+            hash: '000000000000000000016ddf56d0fe72476165acee9500d48d3e2aaf8412f489',
+          })
+          .transaction({
+            hash: '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac',
+          })
+          .inscriptionTransferred({
+            inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
+            updated_address: address2,
+            satpoint_pre_transfer:
+              'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a:0:0',
+            satpoint_post_transfer:
+              '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac:0:0',
+            post_transfer_output_value: null,
+            tx_index: 0,
+          })
+          .build()
+      );
+      // Deploy and mint 🔥 token
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 775621,
+            hash: '000000000000000000033b0b78ff68c5767109f45ee42696bd4db9b2845a7ea8',
+          })
+          .transaction({
+            hash: '8354e85e87fa2df8b3a06ec0b9d395559b95174530cb19447fc4df5f6d4ca84d',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'deploy',
+                tick: '🔥',
+                max: '1000',
+              },
+              number: 50,
+              tx_id: '8354e85e87fa2df8b3a06ec0b9d395559b95174530cb19447fc4df5f6d4ca84d',
+              address: address,
+            })
+          )
+          .build()
+      );
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 775622,
+            hash: '00000000000000000001f022fadbd930ccf6acbe00a07626e3a0898fb5799bc9',
+          })
+          .transaction({
+            hash: '81f4ee2c247c5f5c0d3a6753fef706df410ea61c2aa6d370003b98beb041b887',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'mint',
+                tick: '🔥',
+                amt: '500',
+              },
+              number: 60,
+              tx_id: '81f4ee2c247c5f5c0d3a6753fef706df410ea61c2aa6d370003b98beb041b887',
+              address: address,
+            })
+          )
+          .build()
+      );
+
+      // Check counts, total minted, holders, events.
+      let request = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/tokens`,
+      });
+      let json = request.json();
+      expect(json.total).toBe(2);
+      expect(json.results[0].minted_supply).toBe('500.000000000000000000');
+      expect(json.results[1].minted_supply).toBe('10000.000000000000000000');
+      request = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/tokens/PEPE`,
+      });
+      json = request.json();
+      expect(json.supply.holders).toBe(2);
+      request = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/tokens/🔥`,
+      });
+      json = request.json();
+      expect(json.supply.holders).toBe(1);
+      request = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/balances/${address}`,
+      });
+      json = request.json();
+      expect(json.total).toBe(2);
+      expect(json.results).toHaveLength(2);
+      expect(json.results[0]).toStrictEqual({
+        ticker: 'PEPE',
+        available_balance: '1000.000000000000000000',
+        transferrable_balance: '0.000000000000000000',
+        overall_balance: '1000.000000000000000000',
+      });
+      expect(json.results[1]).toStrictEqual({
+        ticker: '🔥',
+        available_balance: '500.000000000000000000',
+        transferrable_balance: '0.000000000000000000',
+        overall_balance: '500.000000000000000000',
+      });
+      request = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/balances/${address2}`,
+      });
+      json = request.json();
+      expect(json.total).toBe(1);
+      expect(json.results).toHaveLength(1);
+      expect(json.results[0]).toStrictEqual({
+        ticker: 'PEPE',
+        available_balance: '9000.000000000000000000',
+        transferrable_balance: '0.000000000000000000',
+        overall_balance: '9000.000000000000000000',
+      });
+      request = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/activity`,
+      });
+      json = request.json();
+      expect(json.total).toBe(6);
+      expect(json.results).toHaveLength(6);
+      expect(json.results[0].operation).toBe('mint');
+
+      // Rollback 1: 🔥 is un-minted
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .rollback()
+          .block({
+            height: 775622,
+            hash: '00000000000000000001f022fadbd930ccf6acbe00a07626e3a0898fb5799bc9',
+          })
+          .transaction({
+            hash: '81f4ee2c247c5f5c0d3a6753fef706df410ea61c2aa6d370003b98beb041b887',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'mint',
+                tick: '🔥',
+                amt: '500',
+              },
+              number: 60,
+              tx_id: '81f4ee2c247c5f5c0d3a6753fef706df410ea61c2aa6d370003b98beb041b887',
+              address: address,
+            })
+          )
+          .build()
+      );
+      request = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/tokens/🔥`,
+      });
+      json = request.json();
+      expect(json.supply.holders).toBe(0);
+      expect(json.supply.minted_supply).toBe('0.000000000000000000');
+      request = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/balances/${address}`,
+      });
+      json = request.json();
+      expect(json.total).toBe(1);
+      expect(json.results).toHaveLength(1);
+      expect(json.results[0]).toStrictEqual({
+        ticker: 'PEPE',
+        available_balance: '1000.000000000000000000',
+        transferrable_balance: '0.000000000000000000',
+        overall_balance: '1000.000000000000000000',
+      });
+      request = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/activity`,
+      });
+      json = request.json();
+      expect(json.total).toBe(5);
+      expect(json.results).toHaveLength(5);
+      expect(json.results[0].operation).toBe('deploy');
+
+      // Rollback 2: 🔥 is un-deployed
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .rollback()
+          .block({
+            height: 775621,
+            hash: '000000000000000000033b0b78ff68c5767109f45ee42696bd4db9b2845a7ea8',
+          })
+          .transaction({
+            hash: '8354e85e87fa2df8b3a06ec0b9d395559b95174530cb19447fc4df5f6d4ca84d',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'deploy',
+                tick: '🔥',
+                max: '1000',
+              },
+              number: 50,
+              tx_id: '8354e85e87fa2df8b3a06ec0b9d395559b95174530cb19447fc4df5f6d4ca84d',
+              address: address,
+            })
+          )
+          .build()
+      );
+      request = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/tokens/🔥`,
+      });
+      expect(request.statusCode).toBe(404);
+      request = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/tokens`,
+      });
+      json = request.json();
+      expect(json.total).toBe(1);
+      expect(json.results).toHaveLength(1);
+      request = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/balances/${address}`,
+      });
+      json = request.json();
+      expect(json.total).toBe(1);
+      expect(json.results).toHaveLength(1);
+      expect(json.results[0]).toStrictEqual({
+        ticker: 'PEPE',
+        available_balance: '1000.000000000000000000',
+        transferrable_balance: '0.000000000000000000',
+        overall_balance: '1000.000000000000000000',
+      });
+      request = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/activity`,
+      });
+      json = request.json();
+      expect(json.total).toBe(4);
+      expect(json.results).toHaveLength(4);
+      expect(json.results[0].operation).toBe('transfer_send');
+
+      // Rollback 3: PEPE is un-sent
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .rollback()
+          .block({
+            height: 775620,
+            hash: '000000000000000000016ddf56d0fe72476165acee9500d48d3e2aaf8412f489',
+          })
+          .transaction({
+            hash: '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac',
+          })
+          .inscriptionTransferred({
+            inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
+            updated_address: address2,
+            satpoint_pre_transfer:
+              'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a:0:0',
+            satpoint_post_transfer:
+              '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac:0:0',
+            post_transfer_output_value: null,
+            tx_index: 0,
+          })
+          .build()
+      );
+      request = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/balances/${address}`,
+      });
+      json = request.json();
+      expect(json.total).toBe(1);
+      expect(json.results).toHaveLength(1);
+      expect(json.results[0]).toStrictEqual({
+        ticker: 'PEPE',
+        available_balance: '1000.000000000000000000',
+        transferrable_balance: '9000.000000000000000000',
+        overall_balance: '10000.000000000000000000',
+      });
+      request = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/tokens/PEPE`,
+      });
+      json = request.json();
+      expect(json.supply.holders).toBe(1);
+      request = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/balances/${address2}`,
+      });
+      json = request.json();
+      expect(json.total).toBe(0);
+      expect(json.results).toHaveLength(0);
+      request = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/activity`,
+      });
+      json = request.json();
+      expect(json.total).toBe(3);
+      expect(json.results).toHaveLength(3);
+      expect(json.results[0].operation).toBe('transfer');
+
+      // Rollback 4: PEPE is un-transferred
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .rollback()
+          .block({
+            height: 775619,
+            hash: '00000000000000000002b14f0c5dde0b2fc74d022e860696bd64f1f652756674',
+          })
+          .transaction({
+            hash: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'transfer',
+                tick: 'PEPE',
+                amt: '9000',
+              },
+              number: 7,
+              tx_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
+              address: address,
+            })
+          )
+          .build()
+      );
+      request = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/balances/${address}`,
+      });
+      json = request.json();
+      expect(json.total).toBe(1);
+      expect(json.results).toHaveLength(1);
+      expect(json.results[0]).toStrictEqual({
+        ticker: 'PEPE',
+        available_balance: '10000.000000000000000000',
+        transferrable_balance: '0.000000000000000000',
+        overall_balance: '10000.000000000000000000',
+      });
+      request = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/tokens/PEPE`,
+      });
+      json = request.json();
+      expect(json.supply.holders).toBe(1);
+      request = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/activity`,
+      });
+      json = request.json();
+      expect(json.total).toBe(2);
+      expect(json.results).toHaveLength(2);
+      expect(json.results[0].operation).toBe('mint');
     });
   });
 });

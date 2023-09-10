@@ -725,6 +725,7 @@ export class PgStore extends BasePgStore {
     const location = await this.getLocation({ genesis_id: args.genesis_id, output: args.output });
     if (!location) return;
     await this.sqlWriteTransaction(async sql => {
+      await this.brc20.rollBackLocation({ location });
       await this.recalculateCurrentLocationPointerFromLocationRollBack({ location });
       await sql`DELETE FROM locations WHERE id = ${location.id}`;
       logger.info(
