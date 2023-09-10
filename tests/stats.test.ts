@@ -3,8 +3,6 @@ import { buildApiServer } from '../src/api/init';
 import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
 import { TestChainhookPayloadBuilder, TestFastifyServer, randomHash } from './helpers';
 
-jest.setTimeout(100_000_000);
-
 describe('/stats', () => {
   let db: PgStore;
   let fastify: TestFastifyServer;

@@ -1,5 +1,3 @@
-import { PgNumeric } from '@hirosystems/api-toolkit';
-
 export type DbBrc20Location = {
   id: string;
   inscription_id: string | null;
@@ -22,6 +20,7 @@ export type DbBrc20DeployInsert = {
   max: string;
   decimals: string;
   limit: string | null;
+  tx_count: number;
 };
 
 export type DbBrc20MintInsert = {
@@ -79,6 +78,7 @@ export type DbBrc20Token = {
   decimals: number;
   timestamp: number;
   minted_supply: string;
+  tx_count: string;
 };
 
 export type DbBrc20TokenWithSupply = DbBrc20Token & {
@@ -107,27 +107,36 @@ export enum DbBrc20BalanceTypeId {
   transferTo = 3,
 }
 
-export type DbBrc20BalanceInsert = {
-  inscription_id: PgNumeric;
-  location_id: PgNumeric;
-  brc20_deploy_id: PgNumeric;
-  address: string;
-  avail_balance: PgNumeric;
-  trans_balance: PgNumeric;
-  type: DbBrc20BalanceTypeId;
-};
-
 export type DbBrc20EventOperation = 'deploy' | 'mint' | 'transfer' | 'transfer_send';
 
-export type DbBrc20EventInsert = {
-  operation: DbBrc20EventOperation;
+type BaseEvent = {
   inscription_id: string;
   genesis_location_id: string;
   brc20_deploy_id: string;
-  deploy_id: string | null;
-  mint_id: string | null;
-  transfer_id: string | null;
 };
+
+export type DbBrc20DeployEvent = BaseEvent & {
+  operation: 'deploy';
+  deploy_id: string;
+  mint_id: null;
+  transfer_id: null;
+};
+
+export type DbBrc20MintEvent = BaseEvent & {
+  operation: 'mint';
+  deploy_id: null;
+  mint_id: string;
+  transfer_id: null;
+};
+
+export type DbBrc20TransferEvent = BaseEvent & {
+  operation: 'transfer' | 'transfer_send';
+  deploy_id: null;
+  mint_id: null;
+  transfer_id: string;
+};
+
+export type DbBrc20Event = DbBrc20DeployEvent | DbBrc20MintEvent | DbBrc20TransferEvent;
 
 type BaseActivity = {
   ticker: string;
@@ -135,6 +144,7 @@ type BaseActivity = {
   deploy_max: string;
   deploy_limit: string | null;
   operation: DbBrc20EventOperation;
+  brc20_deploy_id: string;
   inscription_id: string;
   block_height: string;
   block_hash: string;
@@ -143,21 +153,21 @@ type BaseActivity = {
   timestamp: number;
 };
 
-type DeployActivity = BaseActivity & {
+export type DbBrc20DeployActivity = BaseActivity & {
   operation: 'deploy';
 };
 
-type MintActivity = BaseActivity & {
+export type DbBrc20MintActivity = BaseActivity & {
   operation: 'mint';
   mint_amount: string;
 };
 
-type TransferActivity = BaseActivity & {
+export type DbBrc20TransferActivity = BaseActivity & {
   operation: 'transfer' | 'transfer_send';
   transfer_data: string;
 };
 
-export type DbBrc20Activity = DeployActivity | MintActivity | TransferActivity;
+export type DbBrc20Activity = DbBrc20DeployActivity | DbBrc20MintActivity | DbBrc20TransferActivity;
 
 export const BRC20_DEPLOYS_COLUMNS = [
   'id',
@@ -170,6 +180,7 @@ export const BRC20_DEPLOYS_COLUMNS = [
   'decimals',
   'limit',
   'minted_supply',
+  'tx_count',
 ];
 
 export const BRC20_TRANSFERS_COLUMNS = [

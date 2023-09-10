@@ -6,6 +6,7 @@ import { Server } from 'http';
 import {
   AddressParam,
   BlockHeightParam,
+  Brc20TokensOrderByParam,
   Brc20ActivityResponseSchema,
   Brc20BalanceResponseSchema,
   Brc20HolderResponseSchema,
@@ -46,6 +47,8 @@ export const Brc20Routes: FastifyPluginCallback<
         tags: ['BRC-20'],
         querystring: Type.Object({
           ticker: Type.Optional(Brc20TickersParam),
+          // Sorting
+          order_by: Type.Optional(Brc20TokensOrderByParam),
           // Pagination
           offset: Type.Optional(OffsetParam),
           limit: Type.Optional(LimitParam),
@@ -62,6 +65,7 @@ export const Brc20Routes: FastifyPluginCallback<
         limit,
         offset,
         ticker: request.query.ticker,
+        order_by: request.query.order_by,
       });
       await reply.send({
         limit,
@@ -211,13 +215,16 @@ export const Brc20Routes: FastifyPluginCallback<
     async (request, reply) => {
       const limit = request.query.limit ?? DEFAULT_API_LIMIT;
       const offset = request.query.offset ?? 0;
-      const balances = await fastify.db.brc20.getActivity({
-        limit,
-        offset,
-        ticker: request.query.ticker,
-        block_height: request.query.block_height ? parseInt(request.query.block_height) : undefined,
-        operation: request.query.operation,
-      });
+      const balances = await fastify.db.brc20.getActivity(
+        { limit, offset },
+        {
+          ticker: request.query.ticker,
+          block_height: request.query.block_height
+            ? parseInt(request.query.block_height)
+            : undefined,
+          operation: request.query.operation,
+        }
+      );
       await reply.send({
         limit,
         offset,

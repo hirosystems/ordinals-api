@@ -215,6 +215,15 @@ export const Brc20OperationParam = Type.Union(
 
 export const Brc20OperationsParam = Type.Array(Brc20OperationParam);
 
+export enum Brc20TokenOrderBy {
+  tx_count = 'tx_count',
+  index = 'index',
+}
+export const Brc20TokensOrderByParam = Type.Enum(Brc20TokenOrderBy, {
+  title: 'Order By',
+  description: 'Parameter to order results by',
+});
+
 export enum OrderBy {
   number = 'number',
   genesis_block_height = 'genesis_block_height',
@@ -463,6 +472,7 @@ export const Brc20TokenResponseSchema = Type.Object(
     decimals: Type.Integer({ examples: [18] }),
     deploy_timestamp: Type.Integer({ examples: [1677733170000] }),
     minted_supply: Type.String({ examples: ['1000000'] }),
+    tx_count: Type.String({ examples: ['300000'] }),
   },
   { title: 'BRC-20 Token Response' }
 );
