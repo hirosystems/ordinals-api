@@ -174,8 +174,9 @@ export class Brc20PgStore extends BasePgStoreModule {
         WHERE id = (SELECT brc20_deploy_id FROM validated_transfer)
       ),
       event_type_count_increase AS (
-        INSERT INTO brc20_counts_by_event_type (event_type, count) VALUES ('transfer_send', 1)
-        ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + 1
+        INSERT INTO brc20_counts_by_event_type (event_type, count)
+        (SELECT 'transfer_send', COALESCE(COUNT(*), 0) FROM validated_transfer)
+        ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + EXCLUDED.count
       )
       INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id) (
         SELECT 'transfer_send', ${location.inscription_id}, ${location.id}, brc20_deploy_id, id
@@ -209,12 +210,14 @@ export class Brc20PgStore extends BasePgStoreModule {
         RETURNING id
       ),
       event_type_count_increase AS (
-        INSERT INTO brc20_counts_by_event_type (event_type, count) VALUES ('deploy', 1)
-        ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + 1
+        INSERT INTO brc20_counts_by_event_type (event_type, count)
+        (SELECT 'deploy', COALESCE(COUNT(*), 0) FROM deploy_insert)
+        ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + EXCLUDED.count
       ),
       token_count_increase AS (
-        INSERT INTO brc20_counts_by_tokens (token_type, count) VALUES ('token', 1)
-        ON CONFLICT (token_type) DO UPDATE SET count = brc20_counts_by_tokens.count + 1
+        INSERT INTO brc20_counts_by_tokens (token_type, count)
+        (SELECT 'token', COALESCE(COUNT(*), 0) FROM deploy_insert)
+        ON CONFLICT (token_type) DO UPDATE SET count = brc20_counts_by_tokens.count + EXCLUDED.count
       )
       INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, deploy_id) (
         SELECT 'deploy', ${deploy.location.inscription_id}, ${deploy.location.id}, id, id
@@ -281,8 +284,9 @@ export class Brc20PgStore extends BasePgStoreModule {
           total_balance = brc20_total_balances.total_balance + EXCLUDED.total_balance
       ),
       event_type_count_increase AS (
-        INSERT INTO brc20_counts_by_event_type (event_type, count) VALUES ('mint', 1)
-        ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + 1
+        INSERT INTO brc20_counts_by_event_type (event_type, count)
+        (SELECT 'mint', COALESCE(COUNT(*), 0) FROM validated_mint)
+        ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + EXCLUDED.count
       )
       INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, mint_id) (
         SELECT 'mint', ${mint.location.inscription_id}, ${mint.location.id}, brc20_deploy_id, id
@@ -347,8 +351,9 @@ export class Brc20PgStore extends BasePgStoreModule {
         WHERE id = (SELECT brc20_deploy_id FROM validated_transfer)
       ),
       event_type_count_increase AS (
-        INSERT INTO brc20_counts_by_event_type (event_type, count) VALUES ('transfer', 1)
-        ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + 1
+        INSERT INTO brc20_counts_by_event_type (event_type, count)
+        (SELECT 'transfer', COALESCE(COUNT(*), 0) FROM validated_transfer)
+        ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + EXCLUDED.count
       )
       INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id) (
         SELECT 'transfer', ${transfer.location.inscription_id}, ${transfer.location.id}, brc20_deploy_id, id
