@@ -688,6 +688,8 @@ export class Brc20PgStore extends BasePgStoreModule {
         l.tx_id,
         l.address,
         l.timestamp,
+        l.output,
+        l.offset,
         d.max AS deploy_max,
         d.limit AS deploy_limit,
         d.decimals AS deploy_decimals,

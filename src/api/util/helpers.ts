@@ -147,6 +147,7 @@ export function parseBrc20Activities(items: DbBrc20Activity[]): Brc20ActivityRes
       address: i.address,
       tx_id: i.tx_id,
       inscription_id: i.inscription_id,
+      location: `${i.output}:${i.offset}`,
       block_hash: i.block_hash,
       block_height: parseInt(i.block_height),
       timestamp: i.timestamp.valueOf(),

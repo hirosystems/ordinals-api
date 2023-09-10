@@ -144,6 +144,8 @@ type BaseActivity = {
   deploy_max: string;
   deploy_limit: string | null;
   operation: DbBrc20EventOperation;
+  output: string;
+  offset: string;
   brc20_deploy_id: string;
   inscription_id: string;
   block_height: string;

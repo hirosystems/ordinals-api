@@ -415,6 +415,9 @@ export const Brc20ActivityResponseSchema = Type.Object({
   tx_id: Type.String({
     examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218'],
   }),
+  location: Type.String({
+    examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218:0:0'],
+  }),
   address: Type.String({
     examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
   }),
