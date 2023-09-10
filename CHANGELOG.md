@@ -1,3 +1,10 @@
+## [1.0.0-brc-20.24](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.23...v1.0.0-brc-20.24) (2023-09-10)
+
+
+### Features
+
+* add location to activity response ([580861e](https://github.com/hirosystems/ordinals-api/commit/580861e1a74294f2a3a038d9919a0d13927cd8a6))
+
 ## [1.0.0-brc-20.23](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.22...v1.0.0-brc-20.23) (2023-09-10)
 
 
