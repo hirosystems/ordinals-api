@@ -1,3 +1,10 @@
+## [1.0.0-brc-20.23](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.22...v1.0.0-brc-20.23) (2023-09-10)
+
+
+### Bug Fixes
+
+* only increase counts on valid operations ([01f0865](https://github.com/hirosystems/ordinals-api/commit/01f08656966fa2f9ec00f129d51b700ef87ecec7))
+
 ## [1.0.0-brc-20.22](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.21...v1.0.0-brc-20.22) (2023-09-10)
 
 
