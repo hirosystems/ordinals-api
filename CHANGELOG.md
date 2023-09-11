@@ -1,3 +1,10 @@
+## [1.0.0-brc-20.26](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.25...v1.0.0-brc-20.26) (2023-09-11)
+
+
+### Bug Fixes
+
+* ticker filter for balances ([#217](https://github.com/hirosystems/ordinals-api/issues/217)) ([1ca3bcd](https://github.com/hirosystems/ordinals-api/commit/1ca3bcdf6a1627f8e06d710b78af7dd5f8f5faca))
+
 ## [1.0.0-brc-20.25](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.24...v1.0.0-brc-20.25) (2023-09-11)
 
 
