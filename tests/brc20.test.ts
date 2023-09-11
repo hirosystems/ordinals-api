@@ -513,7 +513,7 @@ describe('BRC-20', () => {
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           deploy_timestamp: 1677811111000,
           minted_supply: '0.000000000000000000',
-          tx_count: '1',
+          tx_count: 1,
         },
       ]);
     });
@@ -589,7 +589,7 @@ describe('BRC-20', () => {
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           deploy_timestamp: 1677803510000,
           minted_supply: '0.000000000000000000',
-          tx_count: '1',
+          tx_count: 1,
         },
       ]);
     });
@@ -665,7 +665,7 @@ describe('BRC-20', () => {
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           deploy_timestamp: 1677803510000,
           minted_supply: '0.000000000000000000',
-          tx_count: '1',
+          tx_count: 1,
         },
       ]);
       const response2 = await fastify.inject({
@@ -688,7 +688,7 @@ describe('BRC-20', () => {
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           deploy_timestamp: 1677803510000,
           minted_supply: '0.000000000000000000',
-          tx_count: '1',
+          tx_count: 1,
         },
       ]);
     });
@@ -1752,7 +1752,7 @@ describe('BRC-20', () => {
             decimals: 18,
             deploy_timestamp: 1677803510000,
             minted_supply: '0.000000000000000000',
-            tx_count: '1',
+            tx_count: 1,
           },
           supply: {
             max_supply: '21000000.000000000000000000',
@@ -2021,11 +2021,11 @@ describe('BRC-20', () => {
           // The first result is the token with the latest activity (ABCD)
           expect.objectContaining({
             ticker: 'ABCD',
-            tx_count: '4',
+            tx_count: 4,
           } as Brc20TokenResponse),
           expect.objectContaining({
             ticker: 'PEPE',
-            tx_count: '11',
+            tx_count: 11,
           } as Brc20TokenResponse),
         ]);
 
@@ -2042,11 +2042,11 @@ describe('BRC-20', () => {
         expect(json.results).toEqual([
           expect.objectContaining({
             ticker: 'PEPE',
-            tx_count: '11',
+            tx_count: 11,
           } as Brc20TokenResponse),
           expect.objectContaining({
             ticker: 'ABCD',
-            tx_count: '4',
+            tx_count: 4,
           } as Brc20TokenResponse),
         ]);
 
@@ -2068,11 +2068,11 @@ describe('BRC-20', () => {
         expect(json.results).toEqual([
           expect.objectContaining({
             ticker: 'ABCD',
-            tx_count: '4',
+            tx_count: 4,
           } as Brc20TokenResponse),
           expect.objectContaining({
             ticker: 'PEPE',
-            tx_count: '1', // only the deploy remains
+            tx_count: 1, // only the deploy remains
           } as Brc20TokenResponse),
         ]);
 
@@ -2099,11 +2099,11 @@ describe('BRC-20', () => {
         expect(json.results).toEqual([
           expect.objectContaining({
             ticker: 'ABCD',
-            tx_count: '2', // only the deploy and mint remain
+            tx_count: 2, // only the deploy and mint remain
           } as Brc20TokenResponse),
           expect.objectContaining({
             ticker: 'PEPE',
-            tx_count: '1',
+            tx_count: 1,
           } as Brc20TokenResponse),
         ]);
       });
