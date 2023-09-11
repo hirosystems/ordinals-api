@@ -1068,7 +1068,7 @@ describe('BRC-20', () => {
 
       const response2 = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/balances/${address}`,
+        url: `/ordinals/brc-20/balances/${address}?ticker=PEPE`,
       });
       expect(response2.statusCode).toBe(200);
       const responseJson2 = response2.json();
