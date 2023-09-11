@@ -1,3 +1,10 @@
+## [1.0.0-brc-20.25](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.24...v1.0.0-brc-20.25) (2023-09-11)
+
+
+### Bug Fixes
+
+* change tx_count to json number ([#216](https://github.com/hirosystems/ordinals-api/issues/216)) ([20f9415](https://github.com/hirosystems/ordinals-api/commit/20f941539fe8faadd00220ca085ff0d32214edd3))
+
 ## [1.0.0-brc-20.24](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.23...v1.0.0-brc-20.24) (2023-09-10)
 
 
