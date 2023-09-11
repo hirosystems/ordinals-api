@@ -561,7 +561,7 @@ export class Brc20PgStore extends BasePgStoreModule {
     // Change selection table depending if we're filtering by block height or not.
     const results = await this.sql<(DbBrc20Balance & { total: number })[]>`
       WITH token_ids AS (
-        SELECT id FROM brc20_deploys
+        SELECT id FROM brc20_deploys AS d
         WHERE ${ticker ? ticker : this.sql`FALSE`}
       )
       ${
