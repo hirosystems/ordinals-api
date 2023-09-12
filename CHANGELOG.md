@@ -193,7 +193,6 @@
 * upgrade chainhook client to 1.3.3 ([ee66f93](https://github.com/hirosystems/ordinals-api/commit/ee66f93a1d06c786c2eb7ce415df28c7fa8d0032))
 * warn correctly on missing prev locations ([879bf55](https://github.com/hirosystems/ordinals-api/commit/879bf55b0fc7efd830c5cc0e1d742818177e8344))
 
-
 ## [1.0.0-beta.18](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-beta.17...v1.0.0-beta.18) (2023-08-29)
 
 
