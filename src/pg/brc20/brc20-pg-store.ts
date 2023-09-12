@@ -93,98 +93,107 @@ export class Brc20PgStore extends BasePgStoreModule {
   }
 
   async applyTransfer(location: DbBrc20ScannedInscription): Promise<void> {
-    if (!location.inscription_id) return;
-    // Is this transfer sent as fee? If so, return balance to original sender.
-    const isCancelledTransfer = isAddressSentAsFee(location.address);
-    const toAddress = isCancelledTransfer ? null : location.address;
-    // Check if we have a valid transfer inscription emitted by this address that hasn't been sent
-    // to another address before. Use `LIMIT 3` as a quick way of checking if we have just inserted
-    // the first transfer for this inscription (genesis + transfer).
-    const sendRes = await this.sql`
-      WITH transfer_data AS (
-        SELECT t.id, t.amount, t.brc20_deploy_id, t.from_address, ROW_NUMBER() OVER()
-        FROM locations AS l
-        INNER JOIN brc20_transfers AS t ON t.inscription_id = l.inscription_id
-        WHERE l.inscription_id = ${location.inscription_id}
-          AND (
-            l.block_height < ${location.block_height}
-            OR (l.block_height = ${location.block_height} AND l.tx_index <= ${location.tx_index})
+    await this.sqlWriteTransaction(async sql => {
+      if (!location.inscription_id) return;
+      // Get the sender address for this transfer. We need to get this in a separate query to know
+      // if we should alter the write query to accomodate a "return to sender" scenario.
+      const fromAddressRes = await sql<{ from_address: string }[]>`
+        SELECT from_address FROM brc20_transfers WHERE inscription_id = ${location.inscription_id}
+      `;
+      if (fromAddressRes.count === 0) return;
+      const fromAddress = fromAddressRes[0].from_address;
+      // Is this transfer sent as fee or from the same sender? If so, we'll return the balance.
+      const returnToSender =
+        isAddressSentAsFee(location.address) || fromAddress == location.address;
+      const toAddress = returnToSender ? fromAddress : location.address;
+      // Check if we have a valid transfer inscription emitted by this address that hasn't been sent
+      // to another address before. Use `LIMIT 3` as a quick way of checking if we have just inserted
+      // the first transfer for this inscription (genesis + transfer).
+      const sendRes = await sql`
+        WITH transfer_data AS (
+          SELECT t.id, t.amount, t.brc20_deploy_id, t.from_address, ROW_NUMBER() OVER()
+          FROM locations AS l
+          INNER JOIN brc20_transfers AS t ON t.inscription_id = l.inscription_id
+          WHERE l.inscription_id = ${location.inscription_id}
+            AND (
+              l.block_height < ${location.block_height}
+              OR (l.block_height = ${location.block_height} AND l.tx_index <= ${location.tx_index})
+            )
+          LIMIT 3
+        ),
+        validated_transfer AS (
+          SELECT * FROM transfer_data
+          WHERE NOT EXISTS(SELECT id FROM transfer_data WHERE row_number = 3)
+          LIMIT 1
+        ),
+        updated_transfer AS (
+          UPDATE brc20_transfers
+          SET to_address = ${toAddress}
+          WHERE id = (SELECT id FROM validated_transfer)
+        ),
+        balance_insert_from AS (
+          INSERT INTO brc20_balances (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type) (
+            SELECT ${location.inscription_id}, ${location.id}, brc20_deploy_id, from_address, 0,
+              -1 * amount, ${DbBrc20BalanceTypeId.transferFrom}
+            FROM validated_transfer
           )
-        LIMIT 3
-      ),
-      validated_transfer AS (
-        SELECT * FROM transfer_data
-        WHERE NOT EXISTS(SELECT id FROM transfer_data WHERE row_number = 3)
-        LIMIT 1
-      ),
-      updated_transfer AS (
-        UPDATE brc20_transfers
-        SET to_address = COALESCE(${toAddress}, (SELECT from_address FROM validated_transfer))
-        WHERE id = (SELECT id FROM validated_transfer)
-      ),
-      balance_insert_from AS (
-        INSERT INTO brc20_balances (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type) (
-          SELECT ${location.inscription_id}, ${location.id}, brc20_deploy_id, from_address, 0,
-            -1 * amount, ${DbBrc20BalanceTypeId.transferFrom}
-          FROM validated_transfer
-        )
-        ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
-      ),
-      balance_insert_to AS (
-        INSERT INTO brc20_balances (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type) (
-          SELECT ${location.inscription_id}, ${location.id}, brc20_deploy_id,
-            COALESCE(${toAddress}, from_address), amount, 0,
-            ${DbBrc20BalanceTypeId.transferTo}
-          FROM validated_transfer
-        )
-        ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
-      ),
-      ${
-        isCancelledTransfer
-          ? this.sql`
-              total_balance_revert AS (
-                UPDATE brc20_total_balances SET
-                  avail_balance = avail_balance + (SELECT amount FROM validated_transfer),
-                  trans_balance = trans_balance - (SELECT amount FROM validated_transfer)
-                WHERE brc20_deploy_id = (SELECT brc20_deploy_id FROM validated_transfer)
-                  AND address = (SELECT from_address FROM validated_transfer)
-              )
-            `
-          : this.sql`
-              total_balance_insert_from AS (
-                UPDATE brc20_total_balances SET
-                  trans_balance = trans_balance - (SELECT amount FROM validated_transfer),
-                  total_balance = total_balance - (SELECT amount FROM validated_transfer)
-                WHERE brc20_deploy_id = (SELECT brc20_deploy_id FROM validated_transfer)
-                  AND address = (SELECT from_address FROM validated_transfer)
-              ),
-              total_balance_insert_to AS (
-                INSERT INTO brc20_total_balances (brc20_deploy_id, address, avail_balance, trans_balance, total_balance) (
-                  SELECT brc20_deploy_id, ${toAddress}, amount, 0, amount
-                  FROM validated_transfer
+          ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
+        ),
+        balance_insert_to AS (
+          INSERT INTO brc20_balances (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type) (
+            SELECT ${location.inscription_id}, ${location.id}, brc20_deploy_id, ${toAddress},
+              amount, 0, ${DbBrc20BalanceTypeId.transferTo}
+            FROM validated_transfer
+          )
+          ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
+        ),
+        ${
+          returnToSender
+            ? sql`
+                total_balance_revert AS (
+                  UPDATE brc20_total_balances SET
+                    avail_balance = avail_balance + (SELECT amount FROM validated_transfer),
+                    trans_balance = trans_balance - (SELECT amount FROM validated_transfer)
+                  WHERE brc20_deploy_id = (SELECT brc20_deploy_id FROM validated_transfer)
+                    AND address = (SELECT from_address FROM validated_transfer)
                 )
-                ON CONFLICT ON CONSTRAINT brc20_total_balances_unique DO UPDATE SET
-                  avail_balance = brc20_total_balances.avail_balance + EXCLUDED.avail_balance,
-                  total_balance = brc20_total_balances.total_balance + EXCLUDED.total_balance
-              )
-            `
-      }, deploy_update AS (
-        UPDATE brc20_deploys
-        SET tx_count = tx_count + 1
-        WHERE id = (SELECT brc20_deploy_id FROM validated_transfer)
-      ),
-      event_type_count_increase AS (
-        INSERT INTO brc20_counts_by_event_type (event_type, count)
-        (SELECT 'transfer_send', COALESCE(COUNT(*), 0) FROM validated_transfer)
-        ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + EXCLUDED.count
-      )
-      INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id) (
-        SELECT 'transfer_send', ${location.inscription_id}, ${location.id}, brc20_deploy_id, id
-        FROM validated_transfer
-      )
-    `;
-    if (sendRes.count)
-      logger.info(`Brc20PgStore send transfer to ${toAddress} at block ${location.block_height}`);
+              `
+            : sql`
+                total_balance_insert_from AS (
+                  UPDATE brc20_total_balances SET
+                    trans_balance = trans_balance - (SELECT amount FROM validated_transfer),
+                    total_balance = total_balance - (SELECT amount FROM validated_transfer)
+                  WHERE brc20_deploy_id = (SELECT brc20_deploy_id FROM validated_transfer)
+                    AND address = (SELECT from_address FROM validated_transfer)
+                ),
+                total_balance_insert_to AS (
+                  INSERT INTO brc20_total_balances (brc20_deploy_id, address, avail_balance, trans_balance, total_balance) (
+                    SELECT brc20_deploy_id, ${toAddress}, amount, 0, amount
+                    FROM validated_transfer
+                  )
+                  ON CONFLICT ON CONSTRAINT brc20_total_balances_unique DO UPDATE SET
+                    avail_balance = brc20_total_balances.avail_balance + EXCLUDED.avail_balance,
+                    total_balance = brc20_total_balances.total_balance + EXCLUDED.total_balance
+                )
+              `
+        }, deploy_update AS (
+          UPDATE brc20_deploys
+          SET tx_count = tx_count + 1
+          WHERE id = (SELECT brc20_deploy_id FROM validated_transfer)
+        ),
+        event_type_count_increase AS (
+          INSERT INTO brc20_counts_by_event_type (event_type, count)
+          (SELECT 'transfer_send', COALESCE(COUNT(*), 0) FROM validated_transfer)
+          ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + EXCLUDED.count
+        )
+        INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id) (
+          SELECT 'transfer_send', ${location.inscription_id}, ${location.id}, brc20_deploy_id, id
+          FROM validated_transfer
+        )
+      `;
+      if (sendRes.count)
+        logger.info(`Brc20PgStore send transfer to ${toAddress} at block ${location.block_height}`);
+    });
   }
 
   private async insertDeploy(deploy: {
