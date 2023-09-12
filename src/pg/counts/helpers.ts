@@ -1,3 +1,4 @@
+import { objRemoveUndefinedValues } from '../helpers';
 import { DbInscriptionIndexFilters } from '../types';
 import { DbInscriptionIndexResultCountType } from './types';
 
@@ -10,13 +11,8 @@ export function getIndexResultCountType(
   filters?: DbInscriptionIndexFilters
 ): DbInscriptionIndexResultCountType {
   if (!filters) return DbInscriptionIndexResultCountType.all;
-  // Remove undefined values.
-  Object.keys(filters).forEach(
-    key =>
-      filters[key as keyof DbInscriptionIndexFilters] === undefined &&
-      delete filters[key as keyof DbInscriptionIndexFilters]
-  );
   // How many filters do we have?
+  objRemoveUndefinedValues(filters);
   switch (Object.keys(filters).length) {
     case 0:
       return DbInscriptionIndexResultCountType.all;

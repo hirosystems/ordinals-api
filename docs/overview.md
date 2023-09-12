@@ -6,7 +6,13 @@ Title: Overview
 
 The Ordinals API is a protocol that allows for Bitcoin inscriptions based on Ordinal theory. It provides a service that indexes Bitcoin Ordinals data and offers a REST API to access and query this data.
 
-Here are the key features of the [Ordinals API](https://github.com/hirosystems/ordinals-api):
+> **_NOTE:_**
+>
+> To explore the detailed documentation for the API endpoints, request and response formats, you can refer to the [OpenAPI specification](https://docs.hiro.so/ordinals).
+>
+> The source code for this project is available in our [GitHub repository](https://github.com/hirosystems/ordinals-api). You can explore the codebase, [contribute](https://docs.hiro.so/contributors-guide), and raise [issues](https://github.com/hirosystems/ordinals-api/issues) or [pull requests](https://github.com/hirosystems/ordinals-api/pulls).
+
+Here are the key features of the Ordinals API:
 
 **Ordinal Inscription Ingestion**: The API helps with the complete ingestion of ordinal inscriptions. This includes information about the Genesis block, transactions, timestamps, and the history of inscriptions associated with each transaction. It also provides location and ownership information.
 
@@ -19,5 +25,3 @@ Here are the key features of the [Ordinals API](https://github.com/hirosystems/o
 - `default`: This mode runs all background jobs and the API server. It is suitable for running the service on a single instance.
 - `readonly`: In this mode, only the API server runs. It is designed for auto-scaled clusters with multiple `readonly` instances and a single `writeonly` instance. The `writeonly` instance is responsible for populating the database.
 - `writeonly`: This mode is used in an auto-scaled environment to consume new inscriptions. It works in conjunction with multiple `readonly` instances, as explained above.
-
-For more detailed information and documentation, you can refer to the [Ordinals API reference](https://docs.hiro.so/ordinals).

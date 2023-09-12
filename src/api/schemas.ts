@@ -1,8 +1,8 @@
 import { SwaggerOptions } from '@fastify/swagger';
+import { SERVER_VERSION } from '@hirosystems/api-toolkit';
 import { Static, TSchema, Type } from '@sinclair/typebox';
 import { TypeCompiler } from '@sinclair/typebox/compiler';
-import { SatoshiRarity, SAT_SUPPLY } from './util/ordinal-satoshi';
-import { SERVER_VERSION } from '@hirosystems/api-toolkit';
+import { SAT_SUPPLY, SatoshiRarity } from './util/ordinal-satoshi';
 
 export const OpenApiSchemaOptions: SwaggerOptions = {
   openapi: {
@@ -30,6 +30,10 @@ export const OpenApiSchemaOptions: SwaggerOptions = {
       {
         name: 'Satoshis',
         description: 'Endpoints to query Satoshi ordinal and rarity information',
+      },
+      {
+        name: 'BRC-20',
+        description: 'Endpoints to query BRC-20 token balances and events',
       },
       {
         name: 'Statistics',
@@ -61,6 +65,10 @@ export const AddressesParam = Type.Array(AddressParam, {
     ],
   ],
 });
+
+export const Brc20TickerParam = Type.String();
+
+export const Brc20TickersParam = Type.Array(Brc20TickerParam);
 
 export const InscriptionIdParam = Type.RegEx(/^[a-fA-F0-9]{64}i[0-9]+$/, {
   title: 'Inscription ID',
@@ -188,6 +196,32 @@ export const LimitParam = Type.Integer({
   maximum: 60,
   title: 'Limit',
   description: 'Results per page',
+});
+
+export const Brc20OperationParam = Type.Union(
+  [
+    Type.Literal('deploy'),
+    Type.Literal('mint'),
+    Type.Literal('transfer'),
+    Type.Literal('transfer_send'),
+  ],
+  {
+    title: 'Operation',
+    description:
+      'BRC-20 token operation. Note that a BRC-20 transfer is a two step process `transfer` (creating the inscription, which makes funds transferrable) and `transfer_send` (sending the inscription to a recipient, which moves the funds)',
+    examples: ['deploy', 'mint', 'transfer', 'transfer_send'],
+  }
+);
+
+export const Brc20OperationsParam = Type.Array(Brc20OperationParam);
+
+export enum Brc20TokenOrderBy {
+  tx_count = 'tx_count',
+  index = 'index',
+}
+export const Brc20TokensOrderByParam = Type.Enum(Brc20TokenOrderBy, {
+  title: 'Order By',
+  description: 'Parameter to order results by',
 });
 
 export enum OrderBy {
@@ -354,6 +388,122 @@ export const BlockInscriptionTransferSchema = Type.Object({
   to: InscriptionLocationResponseSchema,
 });
 export type BlockInscriptionTransfer = Static<typeof BlockInscriptionTransferSchema>;
+
+export const Brc20BalanceResponseSchema = Type.Object({
+  ticker: Type.String({ examples: ['PEPE'] }),
+  available_balance: Type.String({ examples: ['1500.00000'] }),
+  transferrable_balance: Type.String({ examples: ['500.00000'] }),
+  overall_balance: Type.String({ examples: ['2000.00000'] }),
+});
+export type Brc20BalanceResponse = Static<typeof Brc20BalanceResponseSchema>;
+
+export const Brc20ActivityResponseSchema = Type.Object({
+  operation: Type.Union([
+    Type.Literal('deploy'),
+    Type.Literal('mint'),
+    Type.Literal('transfer'),
+    Type.Literal('transfer_send'),
+  ]),
+  ticker: Type.String({ examples: ['PEPE'] }),
+  inscription_id: Type.String({
+    examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218i0'],
+  }),
+  block_height: Type.Integer({ examples: [778921] }),
+  block_hash: Type.String({
+    examples: ['0000000000000000000452773967cdd62297137cdaf79950c5e8bb0c62075133'],
+  }),
+  tx_id: Type.String({
+    examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218'],
+  }),
+  location: Type.String({
+    examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218:0:0'],
+  }),
+  address: Type.String({
+    examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
+  }),
+  timestamp: Type.Integer({ examples: [1677733170000] }),
+  mint: Type.Optional(
+    Type.Object({
+      amount: Nullable(Type.String({ examples: ['1000000'] })),
+    })
+  ),
+  deploy: Type.Optional(
+    Type.Object({
+      max_supply: Type.String({ examples: ['21000000'] }),
+      mint_limit: Nullable(Type.String({ examples: ['100000'] })),
+      decimals: Type.Integer({ examples: [18] }),
+    })
+  ),
+  transfer: Type.Optional(
+    Type.Object({
+      amount: Type.String({ examples: ['1000000'] }),
+      from_address: Type.String({
+        examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
+      }),
+    })
+  ),
+  transfer_send: Type.Optional(
+    Type.Object({
+      amount: Type.String({ examples: ['1000000'] }),
+      from_address: Type.String({
+        examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
+      }),
+      to_address: Type.String({
+        examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
+      }),
+    })
+  ),
+});
+export type Brc20ActivityResponse = Static<typeof Brc20ActivityResponseSchema>;
+
+export const Brc20TokenResponseSchema = Type.Object(
+  {
+    id: Type.String({
+      examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218i0'],
+    }),
+    number: Type.Integer({ examples: [248751] }),
+    block_height: Type.Integer({ examples: [752860] }),
+    tx_id: Type.String({
+      examples: ['1463d48e9248159084929294f64bda04487503d30ce7ab58365df1dc6fd58218'],
+    }),
+    address: Type.String({
+      examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
+    }),
+    ticker: Type.String({ examples: ['PEPE'] }),
+    max_supply: Type.String({ examples: ['21000000'] }),
+    mint_limit: Nullable(Type.String({ examples: ['100000'] })),
+    decimals: Type.Integer({ examples: [18] }),
+    deploy_timestamp: Type.Integer({ examples: [1677733170000] }),
+    minted_supply: Type.String({ examples: ['1000000'] }),
+    tx_count: Type.Integer({ examples: [300000] }),
+  },
+  { title: 'BRC-20 Token Response' }
+);
+export type Brc20TokenResponse = Static<typeof Brc20TokenResponseSchema>;
+
+export const Brc20SupplySchema = Type.Object({
+  max_supply: Type.String({ examples: ['21000000'] }),
+  minted_supply: Type.String({ examples: ['1000000'] }),
+  holders: Type.Integer({ examples: [240] }),
+});
+export type Brc20Supply = Static<typeof Brc20SupplySchema>;
+
+export const Brc20HolderResponseSchema = Type.Object({
+  address: Type.String({
+    examples: ['bc1pvwh2dl6h388x65rqq47qjzdmsqgkatpt4hye6daf7yxvl0z3xjgq247aq8'],
+  }),
+  overall_balance: Type.String({ examples: ['2000.00000'] }),
+});
+export type Brc20HolderResponse = Static<typeof Brc20HolderResponseSchema>;
+
+export const Brc20TokenDetailsSchema = Type.Object(
+  {
+    token: Brc20TokenResponseSchema,
+    supply: Brc20SupplySchema,
+  },
+  { title: 'BRC-20 Token Details Response' }
+);
+export type Brc20TokenDetails = Static<typeof Brc20TokenDetailsSchema>;
 
 export const NotFoundResponse = Type.Object(
   {

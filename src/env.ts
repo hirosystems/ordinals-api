@@ -18,6 +18,8 @@ const schema = Type.Object({
   API_HOST: Type.String({ default: '0.0.0.0' }),
   /** Port in which to serve the API */
   API_PORT: Type.Number({ default: 3000, minimum: 0, maximum: 65535 }),
+  /** Port in which to serve the Admin RPC interface */
+  ADMIN_RPC_PORT: Type.Number({ default: 3001, minimum: 0, maximum: 65535 }),
   /** Port in which to receive chainhook events */
   EVENT_PORT: Type.Number({ default: 3099, minimum: 0, maximum: 65535 }),
   /** Event server body limit (bytes) */
@@ -50,6 +52,14 @@ const schema = Type.Object({
   PG_IDLE_TIMEOUT: Type.Number({ default: 30 }),
   PG_MAX_LIFETIME: Type.Number({ default: 60 }),
   PG_STATEMENT_TIMEOUT: Type.Number({ default: 60_000 }),
+
+  /** Enables BRC-20 processing in write mode APIs */
+  BRC20_BLOCK_SCAN_ENABLED: Type.Boolean({ default: true }),
+  /**
+   * Disables inscription genesis/current location calculation, count aggregation, etc. so blocks
+   * can be ingested faster during a full replay.
+   */
+  FAST_INGESTION_MODE: Type.Boolean({ default: false }),
 });
 type Env = Static<typeof schema>;
 

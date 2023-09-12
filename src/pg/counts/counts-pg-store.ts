@@ -52,21 +52,35 @@ export class CountsPgStore extends BasePgStoreModule {
     }
   }
 
-  async applyInscription(args: { inscription: DbInscriptionInsert }): Promise<void> {
+  async applyInscriptions(writes: DbInscriptionInsert[]): Promise<void> {
+    if (writes.length === 0) return;
     await this.sqlWriteTransaction(async sql => {
+      const mimeType = new Map<string, any>();
+      const rarity = new Map<string, any>();
+      const type = new Map<string, any>();
+      for (const i of writes) {
+        const t = i.number < 0 ? 'cursed' : 'blessed';
+        mimeType.set(i.mime_type, {
+          mime_type: i.mime_type,
+          count: mimeType.get(i.mime_type)?.count ?? 0 + 1,
+        });
+        rarity.set(i.sat_rarity, {
+          sat_rarity: i.sat_rarity,
+          count: rarity.get(i.sat_rarity)?.count ?? 0 + 1,
+        });
+        type.set(t, { type: t, count: type.get(t)?.count ?? 0 + 1 });
+      }
       await sql`
-        INSERT INTO counts_by_mime_type ${sql({ mime_type: args.inscription.mime_type })}
-        ON CONFLICT (mime_type) DO UPDATE SET count = counts_by_mime_type.count + 1
+        INSERT INTO counts_by_mime_type ${sql([...mimeType.values()])}
+        ON CONFLICT (mime_type) DO UPDATE SET count = counts_by_mime_type.count + EXCLUDED.count
       `;
       await sql`
-        INSERT INTO counts_by_sat_rarity ${sql({ sat_rarity: args.inscription.sat_rarity })}
-        ON CONFLICT (sat_rarity) DO UPDATE SET count = counts_by_sat_rarity.count + 1
+        INSERT INTO counts_by_sat_rarity ${sql([...rarity.values()])}
+        ON CONFLICT (sat_rarity) DO UPDATE SET count = counts_by_sat_rarity.count + EXCLUDED.count
       `;
       await sql`
-        INSERT INTO counts_by_type ${sql({
-          type: args.inscription.number < 0 ? DbInscriptionType.cursed : DbInscriptionType.blessed,
-        })}
-        ON CONFLICT (type) DO UPDATE SET count = counts_by_type.count + 1
+        INSERT INTO counts_by_type ${sql([...type.values()])}
+        ON CONFLICT (type) DO UPDATE SET count = counts_by_type.count + EXCLUDED.count
       `;
     });
   }
@@ -94,41 +108,37 @@ export class CountsPgStore extends BasePgStoreModule {
     });
   }
 
-  async applyGenesisLocation(args: {
-    old?: DbLocationPointer;
-    new: DbLocationPointer;
-  }): Promise<void> {
+  async applyLocations(
+    writes: { old_address: string | null; new_address: string | null }[],
+    genesis: boolean = true
+  ): Promise<void> {
+    if (writes.length === 0) return;
     await this.sqlWriteTransaction(async sql => {
-      if (args.old && args.old.address) {
-        await sql`
-          UPDATE counts_by_genesis_address SET count = count - 1 WHERE address = ${args.old.address}
-        `;
+      const table = genesis ? sql`counts_by_genesis_address` : sql`counts_by_address`;
+      const oldAddr = new Map<string, any>();
+      const newAddr = new Map<string, any>();
+      for (const i of writes) {
+        if (i.old_address)
+          oldAddr.set(i.old_address, {
+            address: i.old_address,
+            count: oldAddr.get(i.old_address)?.count ?? 0 + 1,
+          });
+        if (i.new_address)
+          newAddr.set(i.new_address, {
+            address: i.new_address,
+            count: newAddr.get(i.new_address)?.count ?? 0 + 1,
+          });
       }
-      if (args.new.address) {
+      if (oldAddr.size)
         await sql`
-          INSERT INTO counts_by_genesis_address ${sql({ address: args.new.address })}
-          ON CONFLICT (address) DO UPDATE SET count = counts_by_genesis_address.count + 1
+          INSERT INTO ${table} ${sql([...oldAddr.values()])}
+          ON CONFLICT (address) DO UPDATE SET count = ${table}.count - EXCLUDED.count
         `;
-      }
-    });
-  }
-
-  async applyCurrentLocation(args: {
-    old?: DbLocationPointer;
-    new: DbLocationPointer;
-  }): Promise<void> {
-    await this.sqlWriteTransaction(async sql => {
-      if (args.old && args.old.address) {
+      if (newAddr.size)
         await sql`
-          UPDATE counts_by_address SET count = count - 1 WHERE address = ${args.old.address}
+          INSERT INTO ${table} ${sql([...newAddr.values()])}
+          ON CONFLICT (address) DO UPDATE SET count = ${table}.count + EXCLUDED.count
         `;
-      }
-      if (args.new.address) {
-        await sql`
-          INSERT INTO counts_by_address ${sql({ address: args.new.address })}
-          ON CONFLICT (address) DO UPDATE SET count = counts_by_address.count + 1
-        `;
-      }
     });
   }
 

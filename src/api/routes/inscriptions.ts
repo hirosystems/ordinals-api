@@ -65,7 +65,7 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
     {
       schema: {
         operationId: 'getInscriptions',
-        summary: 'Inscriptions',
+        summary: 'List of Inscriptions',
         description: 'Retrieves a list of inscriptions with options to filter and sort results',
         tags: ['Inscriptions'],
         querystring: Type.Object({
@@ -198,7 +198,7 @@ const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTyp
     {
       schema: {
         operationId: 'getInscription',
-        summary: 'Inscription',
+        summary: 'Specific Inscription',
         description: 'Retrieves a single inscription',
         tags: ['Inscriptions'],
         params: Type.Object({

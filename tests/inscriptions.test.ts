@@ -160,6 +160,27 @@ describe('/inscriptions', () => {
             inscription_input_index: 0,
             transfers_pre_inscription: 0,
           })
+          .transaction({
+            hash: '0xf351d86c6e6cae3c64e297e7463095732f216875bcc1f3c03f950a492bb25421',
+          })
+          .inscriptionRevealed({
+            content_bytes: '0x48656C6C6F',
+            content_type: 'image/png',
+            content_length: 5,
+            inscription_number: 189,
+            inscription_fee: 2805,
+            inscription_id: 'f351d86c6e6cae3c64e297e7463095732f216875bcc1f3c03f950a492bb25421i0',
+            inscription_output_value: 10000,
+            inscriber_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+            ordinal_number: 257418248345364,
+            ordinal_block_height: 51483,
+            ordinal_offset: 0,
+            satpoint_post_inscription:
+              'f351d86c6e6cae3c64e297e7463095732f216875bcc1f3c03f950a492bb25421:0:0',
+            inscription_input_index: 0,
+            transfers_pre_inscription: 0,
+            tx_index: 0,
+          })
           .build()
       );
       await db.updateInscriptions(
@@ -174,8 +195,12 @@ describe('/inscriptions', () => {
             hash: '0x38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           })
           .inscriptionRevealed({
+            // Include inscription not in DB
             content_bytes: `0x${Buffer.from(
-              'Hello /content/9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0'
+              `Hello
+              /content/9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0
+              /content/f351d86c6e6cae3c64e297e7463095732f216875bcc1f3c03f950a492bb25421i0
+              /content/b4b27b9a15f928b95a8ce4b418946553b7b313a345254cd9b23d79489175fa5ai0`
             ).toString('hex')}`,
             content_type: 'image/png',
             content_length: 5,
@@ -219,7 +244,10 @@ describe('/inscriptions', () => {
         genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
         curse_type: null,
         recursive: true,
-        recursion_refs: ['9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0'],
+        recursion_refs: [
+          '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
+          'f351d86c6e6cae3c64e297e7463095732f216875bcc1f3c03f950a492bb25421i0',
+        ],
       };
 
       // By inscription id
@@ -237,6 +265,49 @@ describe('/inscriptions', () => {
       });
       expect(response2.statusCode).toBe(200);
       expect(response2.json()).toStrictEqual(expected);
+
+      // Backfill new inscription
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 778600,
+            hash: '000000000000000000043b10697970720b44c79f6ca2dd604cc83cc015e0c459',
+            timestamp: 1676913207,
+          })
+          .transaction({
+            hash: 'b4b27b9a15f928b95a8ce4b418946553b7b313a345254cd9b23d79489175fa5a',
+          })
+          .inscriptionRevealed({
+            content_bytes: `0x${Buffer.from('World').toString('hex')}`,
+            content_type: 'text/plain;charset=utf-8',
+            content_length: 5,
+            inscription_number: 200,
+            inscription_fee: 705,
+            inscription_id: 'b4b27b9a15f928b95a8ce4b418946553b7b313a345254cd9b23d79489175fa5ai0',
+            inscription_output_value: 10000,
+            inscriber_address: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+            ordinal_number: 257418248345364,
+            ordinal_block_height: 650000,
+            ordinal_offset: 0,
+            satpoint_post_inscription:
+              'b4b27b9a15f928b95a8ce4b418946553b7b313a345254cd9b23d79489175fa5a:0:0',
+            tx_index: 0,
+            inscription_input_index: 0,
+            transfers_pre_inscription: 0,
+          })
+          .build()
+      );
+      const response3 = await fastify.inject({
+        method: 'GET',
+        url: '/ordinals/v1/inscriptions/38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+      });
+      expect(response3.statusCode).toBe(200);
+      expect(response3.json().recursion_refs).toStrictEqual([
+        '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
+        'f351d86c6e6cae3c64e297e7463095732f216875bcc1f3c03f950a492bb25421i0',
+        'b4b27b9a15f928b95a8ce4b418946553b7b313a345254cd9b23d79489175fa5ai0',
+      ]);
     });
 
     test('shows inscription with null genesis address', async () => {

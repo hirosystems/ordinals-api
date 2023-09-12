@@ -4,6 +4,7 @@ import { startChainhookServer } from './chainhook/server';
 import { ENV } from './env';
 import { ApiMetrics } from './metrics/metrics';
 import { PgStore } from './pg/pg-store';
+import { buildAdminRpcServer } from './admin-rpc/init';
 
 async function initBackgroundServices(db: PgStore) {
   logger.info('Initializing background services...');
@@ -15,6 +16,16 @@ async function initBackgroundServices(db: PgStore) {
       await server.close();
     },
   });
+
+  const adminRpcServer = await buildAdminRpcServer({ db });
+  registerShutdownConfig({
+    name: 'Admin RPC Server',
+    forceKillable: false,
+    handler: async () => {
+      await adminRpcServer.close();
+    },
+  });
+  await adminRpcServer.listen({ host: ENV.API_HOST, port: ENV.ADMIN_RPC_PORT });
 }
 
 async function initApiService(db: PgStore) {

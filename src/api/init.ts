@@ -1,14 +1,15 @@
 import FastifyCors from '@fastify/cors';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
+import { PINO_LOGGER_CONFIG, isProdEnv } from '@hirosystems/api-toolkit';
 import Fastify, { FastifyPluginAsync } from 'fastify';
 import FastifyMetrics, { IFastifyMetrics } from 'fastify-metrics';
 import { Server } from 'http';
 import { PgStore } from '../pg/pg-store';
+import { Brc20Routes } from './routes/brc20';
 import { InscriptionsRoutes } from './routes/inscriptions';
 import { SatRoutes } from './routes/sats';
 import { StatsRoutes } from './routes/stats';
 import { StatusRoutes } from './routes/status';
-import { PINO_LOGGER_CONFIG, isProdEnv } from '@hirosystems/api-toolkit';
 
 export const Api: FastifyPluginAsync<
   Record<never, never>,
@@ -19,6 +20,7 @@ export const Api: FastifyPluginAsync<
   await fastify.register(InscriptionsRoutes);
   await fastify.register(SatRoutes);
   await fastify.register(StatsRoutes);
+  await fastify.register(Brc20Routes);
 };
 
 export async function buildApiServer(args: { db: PgStore }) {
