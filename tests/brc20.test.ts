@@ -1707,6 +1707,142 @@ describe('BRC-20', () => {
         },
       ]);
     });
+
+    test('explicit transfer to self restores balance correctly', async () => {
+      const address = 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td';
+      await deployAndMintPEPE(address);
+      const address2 = 'bc1ph8dp3lqhzpjphqcc3ucgsm7k3w4d74uwfpv8sv893kn3kpkqrdxqqy3cv6';
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 789340,
+            hash: '000000000000000000024643a7b110145e6f4ce9a5b18ef53d4ffa282fe3d978',
+          })
+          .transaction({
+            hash: '825a25b64b5d99ca30e04e53cc9a3020412e1054eb2a7523eb075ddd6d983205',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'transfer',
+                tick: 'PEPE',
+                amt: '20',
+              },
+              number: 10,
+              tx_id: '825a25b64b5d99ca30e04e53cc9a3020412e1054eb2a7523eb075ddd6d983205',
+              address: address,
+            })
+          )
+          .build()
+      );
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 789344,
+            hash: '000000000000000000028e52aab1a0235f624033283d0a6dd8bbb067057c5c77',
+          })
+          .transaction({
+            hash: '486815e61723d03af344e1256d7e0c028a8e9e71eb38157f4bf069eb94292ee1',
+          })
+          .inscriptionTransferred({
+            inscription_id: '825a25b64b5d99ca30e04e53cc9a3020412e1054eb2a7523eb075ddd6d983205i0',
+            updated_address: address2,
+            satpoint_pre_transfer:
+              '825a25b64b5d99ca30e04e53cc9a3020412e1054eb2a7523eb075ddd6d983205:0:0',
+            satpoint_post_transfer:
+              '486815e61723d03af344e1256d7e0c028a8e9e71eb38157f4bf069eb94292ee1:0:0',
+            post_transfer_output_value: null,
+            tx_index: 0,
+          })
+          .build()
+      );
+      let response = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/balances/${address2}`,
+      });
+      expect(response.json().results).toStrictEqual([
+        {
+          available_balance: '20.000000000000000000',
+          overall_balance: '20.000000000000000000',
+          ticker: 'PEPE',
+          transferrable_balance: '0.000000000000000000',
+        },
+      ]);
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 789479,
+            hash: '00000000000000000003ccc653ffeb39b50e9e04b2f0b3702783c7639d8822ab',
+          })
+          .transaction({
+            hash: '09a812f72275892b4858880cf3821004a6e8885817159b340639afe9952ac053',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'transfer',
+                tick: 'PEPE',
+                amt: '20',
+              },
+              number: 11,
+              tx_id: '09a812f72275892b4858880cf3821004a6e8885817159b340639afe9952ac053',
+              address: address2,
+            })
+          )
+          .build()
+      );
+      response = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/balances/${address2}`,
+      });
+      expect(response.json().results).toStrictEqual([
+        {
+          available_balance: '0.000000000000000000',
+          overall_balance: '20.000000000000000000',
+          ticker: 'PEPE',
+          transferrable_balance: '20.000000000000000000',
+        },
+      ]);
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 791469,
+            hash: '000000000000000000003bb9b40f84c2f1e13219fe6298c288883df17d76f361',
+          })
+          .transaction({
+            hash: '26c0c3acbb1c87e682ade86220ba06e649d7599ecfc49a71495f1bdd04efbbb4',
+          })
+          .inscriptionTransferred({
+            inscription_id: '09a812f72275892b4858880cf3821004a6e8885817159b340639afe9952ac053i0',
+            updated_address: address2,
+            satpoint_pre_transfer:
+              '486815e61723d03af344e1256d7e0c028a8e9e71eb38157f4bf069eb94292ee1:0:0',
+            satpoint_post_transfer:
+              '26c0c3acbb1c87e682ade86220ba06e649d7599ecfc49a71495f1bdd04efbbb4:0:0',
+            post_transfer_output_value: null,
+            tx_index: 0,
+          })
+          .build()
+      );
+      response = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/balances/${address2}`,
+      });
+      expect(response.json().results).toStrictEqual([
+        {
+          available_balance: '20.000000000000000000',
+          overall_balance: '20.000000000000000000',
+          ticker: 'PEPE',
+          transferrable_balance: '0.000000000000000000',
+        },
+      ]);
+    });
   });
 
   describe('routes', () => {
