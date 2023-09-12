@@ -1,3 +1,10 @@
+## [1.0.0-brc-20.27](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.26...v1.0.0-brc-20.27) (2023-09-12)
+
+
+### Bug Fixes
+
+* return to sender balance calculation ([#218](https://github.com/hirosystems/ordinals-api/issues/218)) ([226dfe6](https://github.com/hirosystems/ordinals-api/commit/226dfe6f9744f5b6713757fe460897839fe3bb68))
+
 ## [1.0.0-brc-20.26](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.25...v1.0.0-brc-20.26) (2023-09-11)
 
 
