@@ -6,7 +6,6 @@ on:
       - master
       - develop
       - beta
-      - brc-20
     tags-ignore:
       - '**'
     paths-ignore:
