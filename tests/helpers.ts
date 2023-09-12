@@ -1,5 +1,3 @@
-import { FastifyBaseLogger, FastifyInstance } from 'fastify';
-import { IncomingMessage, Server, ServerResponse } from 'http';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import {
   BitcoinCursedInscriptionRevealed,
@@ -9,6 +7,9 @@ import {
   BitcoinTransaction,
   Payload,
 } from '@hirosystems/chainhook-client';
+import { FastifyBaseLogger, FastifyInstance } from 'fastify';
+import { IncomingMessage, Server, ServerResponse } from 'http';
+import { Brc20 } from '../src/pg/brc20/helpers';
 
 export type TestFastifyServer = FastifyInstance<
   Server,
@@ -105,6 +106,46 @@ export class TestChainhookPayloadBuilder {
   }
 }
 
+export function brc20Reveal(args: {
+  json: Brc20;
+  number: number;
+  address: string;
+  tx_id: string;
+}): BitcoinInscriptionRevealed {
+  const content = Buffer.from(JSON.stringify(args.json), 'utf-8');
+  const reveal: BitcoinInscriptionRevealed = {
+    content_bytes: `0x${content.toString('hex')}`,
+    content_type: 'text/plain;charset=utf-8',
+    content_length: content.length,
+    inscription_number: args.number,
+    inscription_fee: 2000,
+    inscription_id: `${args.tx_id}i0`,
+    inscription_output_value: 10000,
+    inscriber_address: args.address,
+    ordinal_number: 0,
+    ordinal_block_height: 0,
+    ordinal_offset: 0,
+    satpoint_post_inscription: `${args.tx_id}:0:0`,
+    inscription_input_index: 0,
+    transfers_pre_inscription: 0,
+    tx_index: 0,
+  };
+  return reveal;
+}
+
 /** Generate a random hash like string for testing */
 export const randomHash = () =>
   [...Array(64)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+
+/** Generator for incrementing numbers */
+export function* incrementing(
+  start: number = 0,
+  step: number = 1
+): Generator<number, number, 'next'> {
+  let current = start;
+
+  while (true) {
+    yield current;
+    current += step;
+  }
+}

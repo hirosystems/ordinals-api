@@ -6,6 +6,7 @@ on:
       - master
       - develop
       - beta
+      - brc-20
     tags-ignore:
       - '**'
     paths-ignore:
@@ -118,7 +119,7 @@ jobs:
           persist-credentials: false
 
       - name: Semantic Release
-        uses: cycjimmy/semantic-release-action@v3.2.0
+        uses: cycjimmy/semantic-release-action@v3
         id: semantic
         # Only run on non-PR events or only PRs that aren't from forks
         if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
@@ -128,9 +129,9 @@ jobs:
         with:
           semantic_version: 19
           extra_plugins: |
-            @semantic-release/changelog
-            @semantic-release/git
-            conventional-changelog-conventionalcommits
+            @semantic-release/changelog@6.0.3
+            @semantic-release/git@10.0.1
+            conventional-changelog-conventionalcommits@6.1.0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1

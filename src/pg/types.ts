@@ -30,6 +30,8 @@ export type DbFullyLocatedInscriptionResult = {
   content_length: string;
   timestamp: Date;
   curse_type: string | null;
+  recursive: boolean;
+  recursion_refs: string | null;
 };
 
 export type DbLocationInsert = {
@@ -62,6 +64,14 @@ export type DbLocation = {
   prev_offset: string | null;
   value: string | null;
   timestamp: Date;
+};
+
+export type DbLocationPointer = {
+  inscription_id: number;
+  location_id: number;
+  block_height: number;
+  tx_index: number;
+  address: string | null;
 };
 
 export type DbLocationPointerInsert = {
@@ -128,6 +138,13 @@ export type DbInscriptionInsert = {
   sat_ordinal: PgNumeric;
   sat_rarity: string;
   sat_coinbase_height: number;
+  recursive: boolean;
+};
+
+export type DbRevealInsert = {
+  inscription?: DbInscriptionInsert;
+  recursive_refs?: string[];
+  location: DbLocationInsert;
 };
 
 export type DbInscription = {
@@ -171,9 +188,9 @@ export type DbInscriptionIndexPaging = {
 export type DbInscriptionIndexFilters = {
   genesis_id?: string[];
   genesis_block_height?: number;
-  genesis_block_hash?: string;
   from_genesis_block_height?: number;
   to_genesis_block_height?: number;
+  genesis_block_hash?: string;
   from_genesis_timestamp?: number;
   to_genesis_timestamp?: number;
   from_sat_coinbase_height?: number;
@@ -182,12 +199,15 @@ export type DbInscriptionIndexFilters = {
   from_number?: number;
   to_number?: number;
   address?: string[];
+  genesis_address?: string[];
   mime_type?: string[];
   output?: string;
   sat_rarity?: SatoshiRarity[];
   sat_ordinal?: bigint;
   from_sat_ordinal?: bigint;
   to_sat_ordinal?: bigint;
+  recursive?: boolean;
+  cursed?: boolean;
 };
 
 export type DbInscriptionIndexOrder = {
@@ -195,20 +215,9 @@ export type DbInscriptionIndexOrder = {
   order?: Order;
 };
 
-/** Type of row count required for an inscription index endpoint call */
-export enum DbInscriptionIndexResultCountType {
-  /** All inscriptions */
-  all,
-  /** Filtered by mime type */
-  mimeType,
-  /** Filtered by sat rarity */
-  satRarity,
-  /** Filtered by address */
-  address,
-  /** Filtered by some param that yields a single result (easy to count) */
-  singleResult,
-  /** Filtered by custom arguments (very hard to count) */
-  intractable,
+export enum DbInscriptionType {
+  blessed = 'blessed',
+  cursed = 'cursed',
 }
 
 export type DbInscriptionCountPerBlockFilters = {
