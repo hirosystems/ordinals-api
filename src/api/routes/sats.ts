@@ -4,8 +4,8 @@ import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import {
   InscriptionResponse,
+  InvalidSatoshiNumberResponse,
   LimitParam,
-  NotFoundResponse,
   OffsetParam,
   OrdinalParam,
   PaginatedResponse,
@@ -32,7 +32,7 @@ export const SatRoutes: FastifyPluginCallback<Record<never, never>, Server, Type
         }),
         response: {
           200: SatoshiResponse,
-          404: NotFoundResponse,
+          400: InvalidSatoshiNumberResponse,
         },
       },
     },
@@ -41,7 +41,7 @@ export const SatRoutes: FastifyPluginCallback<Record<never, never>, Server, Type
       try {
         sat = new OrdinalSatoshi(request.params.ordinal);
       } catch (error) {
-        await reply.code(400).send({ error: 'Not found' });
+        await reply.code(400).send({ error: 'Invalid satoshi ordinal number' });
         return;
       }
       const inscriptions = await fastify.db.getInscriptions(
@@ -82,15 +82,23 @@ export const SatRoutes: FastifyPluginCallback<Record<never, never>, Server, Type
         }),
         response: {
           200: PaginatedResponse(InscriptionResponse, 'Paginated Satoshi Inscriptions Response'),
+          400: InvalidSatoshiNumberResponse,
         },
       },
     },
     async (request, reply) => {
+      let sat: OrdinalSatoshi;
+      try {
+        sat = new OrdinalSatoshi(request.params.ordinal);
+      } catch (error) {
+        await reply.code(400).send({ error: 'Invalid satoshi ordinal number' });
+        return;
+      }
       const limit = request.query.limit ?? DEFAULT_API_LIMIT;
       const offset = request.query.offset ?? 0;
       const inscriptions = await fastify.db.getInscriptions(
         { limit, offset },
-        { sat_ordinal: BigInt(request.params.ordinal) }
+        { sat_ordinal: BigInt(sat.ordinal) }
       );
       await reply.send({
         limit,
