@@ -203,6 +203,7 @@ export const Brc20Routes: FastifyPluginCallback<
           ticker: Type.Optional(Brc20TickersParam),
           block_height: Type.Optional(BlockHeightParam),
           operation: Type.Optional(Brc20OperationsParam),
+          address: Type.Optional(AddressParam),
           // Pagination
           offset: Type.Optional(OffsetParam),
           limit: Type.Optional(LimitParam),
@@ -223,6 +224,7 @@ export const Brc20Routes: FastifyPluginCallback<
             ? parseInt(request.query.block_height)
             : undefined,
           operation: request.query.operation,
+          address: request.query.address,
         }
       );
       await reply.send({
