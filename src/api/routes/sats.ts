@@ -37,24 +37,28 @@ export const SatRoutes: FastifyPluginCallback<Record<never, never>, Server, Type
       },
     },
     async (request, reply) => {
-      const sat = new OrdinalSatoshi(request.params.ordinal);
-      const inscriptions = await fastify.db.getInscriptions(
-        { limit: 1, offset: 0 },
-        { sat_ordinal: BigInt(request.params.ordinal) }
-      );
-      await reply.send({
-        coinbase_height: sat.blockHeight,
-        cycle: sat.cycle,
-        epoch: sat.epoch,
-        period: sat.period,
-        offset: sat.offset,
-        decimal: sat.decimal,
-        degree: sat.degree,
-        name: sat.name,
-        rarity: sat.rarity,
-        percentile: sat.percentile,
-        inscription_id: inscriptions.results[0]?.genesis_id,
-      });
+      try {
+        const sat = new OrdinalSatoshi(request.params.ordinal);
+        const inscriptions = await fastify.db.getInscriptions(
+          { limit: 1, offset: 0 },
+          { sat_ordinal: BigInt(request.params.ordinal) }
+        );
+        await reply.send({
+          coinbase_height: sat.blockHeight,
+          cycle: sat.cycle,
+          epoch: sat.epoch,
+          period: sat.period,
+          offset: sat.offset,
+          decimal: sat.decimal,
+          degree: sat.degree,
+          name: sat.name,
+          rarity: sat.rarity,
+          percentile: sat.percentile,
+          inscription_id: inscriptions.results[0]?.genesis_id,
+        });
+      } catch (error) {
+        await reply.code(400).send({ error: 'Not found' });
+      }
     }
   );
 
