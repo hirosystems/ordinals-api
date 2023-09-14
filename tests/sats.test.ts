@@ -208,5 +208,11 @@ describe('/sats', () => {
       url: '/ordinals/v1/sats/-1',
     });
     expect(response2.statusCode).toBe(400);
+
+    const response3 = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/sats/Infinity',
+    });
+    expect(response3.statusCode).toBe(400);
   });
 });

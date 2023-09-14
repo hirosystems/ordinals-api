@@ -512,6 +512,13 @@ export const NotFoundResponse = Type.Object(
   { title: 'Not Found Response' }
 );
 
+export const InvalidSatoshiNumberResponse = Type.Object(
+  {
+    error: Type.Literal('Invalid satoshi ordinal number'),
+  },
+  { title: 'Invalid Satoshi Number Response' }
+);
+
 export const InscriptionsPerBlock = Type.Object({
   block_height: Type.String({ examples: ['778921'] }),
   block_hash: Type.String({
