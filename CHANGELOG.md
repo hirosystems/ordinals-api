@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/hirosystems/ordinals-api/compare/v1.1.0...v1.1.1) (2023-09-14)
+
+
+### Bug Fixes
+
+* validation for satoshi ordinal numbers ([#223](https://github.com/hirosystems/ordinals-api/issues/223)) ([c3cf8c0](https://github.com/hirosystems/ordinals-api/commit/c3cf8c09995da5bb26b9c432dea8149cc61de0d6))
+
 ## [1.1.0](https://github.com/hirosystems/ordinals-api/compare/v1.0.0...v1.1.0) (2023-09-12)
 
 
