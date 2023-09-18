@@ -1,3 +1,27 @@
+## [1.1.1](https://github.com/hirosystems/ordinals-api/compare/v1.1.0...v1.1.1) (2023-09-14)
+
+
+### Bug Fixes
+
+* validation for satoshi ordinal numbers ([#223](https://github.com/hirosystems/ordinals-api/issues/223)) ([c3cf8c0](https://github.com/hirosystems/ordinals-api/commit/c3cf8c09995da5bb26b9c432dea8149cc61de0d6))
+
+## [1.1.0](https://github.com/hirosystems/ordinals-api/compare/v1.0.0...v1.1.0) (2023-09-12)
+
+
+### Features
+
+* BRC-20 token support ([#78](https://github.com/hirosystems/ordinals-api/issues/78)) ([a39bfd3](https://github.com/hirosystems/ordinals-api/commit/a39bfd352cb4c58d83e0db9b7ad680a87e50b11d)), closes [#147](https://github.com/hirosystems/ordinals-api/issues/147) [#147](https://github.com/hirosystems/ordinals-api/issues/147) [#156](https://github.com/hirosystems/ordinals-api/issues/156) [#154](https://github.com/hirosystems/ordinals-api/issues/154) [#147](https://github.com/hirosystems/ordinals-api/issues/147) [#165](https://github.com/hirosystems/ordinals-api/issues/165) [#147](https://github.com/hirosystems/ordinals-api/issues/147) [#165](https://github.com/hirosystems/ordinals-api/issues/165) [#168](https://github.com/hirosystems/ordinals-api/issues/168) [#168](https://github.com/hirosystems/ordinals-api/issues/168) [#167](https://github.com/hirosystems/ordinals-api/issues/167) [#167](https://github.com/hirosystems/ordinals-api/issues/167) [#174](https://github.com/hirosystems/ordinals-api/issues/174) [#174](https://github.com/hirosystems/ordinals-api/issues/174) [#175](https://github.com/hirosystems/ordinals-api/issues/175) [#175](https://github.com/hirosystems/ordinals-api/issues/175) [#177](https://github.com/hirosystems/ordinals-api/issues/177) [#177](https://github.com/hirosystems/ordinals-api/issues/177) [#178](https://github.com/hirosystems/ordinals-api/issues/178) [#178](https://github.com/hirosystems/ordinals-api/issues/178) [#186](https://github.com/hirosystems/ordinals-api/issues/186) [#129](https://github.com/hirosystems/ordinals-api/issues/129) [#168](https://github.com/hirosystems/ordinals-api/issues/168) [#70](https://github.com/hirosystems/ordinals-api/issues/70) [#186](https://github.com/hirosystems/ordinals-api/issues/186) [#167](https://github.com/hirosystems/ordinals-api/issues/167) [#129](https://github.com/hirosystems/ordinals-api/issues/129) [#177](https://github.com/hirosystems/ordinals-api/issues/177) [#132](https://github.com/hirosystems/ordinals-api/issues/132) [#105](https://github.com/hirosystems/ordinals-api/issues/105) [#178](https://github.com/hirosystems/ordinals-api/issues/178) [#147](https://github.com/hirosystems/ordinals-api/issues/147) [#156](https://github.com/hirosystems/ordinals-api/issues/156) [#175](https://github.com/hirosystems/ordinals-api/issues/175) [#154](https://github.com/hirosystems/ordinals-api/issues/154) [#165](https://github.com/hirosystems/ordinals-api/issues/165) [#174](https://github.com/hirosystems/ordinals-api/issues/174) [#145](https://github.com/hirosystems/ordinals-api/issues/145) [#183](https://github.com/hirosystems/ordinals-api/issues/183)
+
+
+### Bug Fixes
+
+* lint errors ([#220](https://github.com/hirosystems/ordinals-api/issues/220)) ([f6bc735](https://github.com/hirosystems/ordinals-api/commit/f6bc73545852eae7649e4780d05ef5100e599109))
+
+
+### Reverts
+
+* Revert "Added H1 to the overview page" ([8fedf86](https://github.com/hirosystems/ordinals-api/commit/8fedf86060d92996bb71ab1bfe1024ced5639569))
+
 ## [1.0.0-brc-20.27](https://github.com/hirosystems/ordinals-api/compare/v1.0.0-brc-20.26...v1.0.0-brc-20.27) (2023-09-12)
 
 

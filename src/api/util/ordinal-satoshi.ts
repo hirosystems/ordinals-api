@@ -32,6 +32,7 @@ export class OrdinalSatoshi {
   private third: number;
 
   constructor(ordinal: number) {
+    if (ordinal > SAT_SUPPLY || ordinal < 0) throw Error('Invalid satoshi ordinal number');
     let satAccum = 0;
     let subsidy = INITIAL_SUBSIDY;
     let epoch = 0;
