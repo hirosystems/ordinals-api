@@ -2595,6 +2595,33 @@ describe('BRC-20', () => {
             } as Brc20ActivityResponse),
           ])
         );
+        response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/activity?ticker=PEPE&address=${addressA}`,
+        });
+        expect(response.statusCode).toBe(200);
+        json = response.json();
+        expect(json.total).toBe(2);
+        expect(json.results).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              operation: 'deploy',
+              ticker: 'PEPE',
+              address: addressA,
+              deploy: expect.objectContaining({
+                max_supply: '21000000.000000000000000000',
+              }),
+            } as Brc20ActivityResponse),
+            expect.objectContaining({
+              operation: 'mint',
+              ticker: 'PEPE',
+              address: addressA,
+              mint: {
+                amount: '1000.000000000000000000',
+              },
+            } as Brc20ActivityResponse),
+          ])
+        );
 
         // Step 3: B mints 2000 of the token
         await db.updateInscriptions(
@@ -2684,6 +2711,27 @@ describe('BRC-20', () => {
             } as Brc20ActivityResponse),
           ])
         );
+        response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/activity?ticker=PEPE&address=${addressA}`,
+        });
+        expect(response.statusCode).toBe(200);
+        json = response.json();
+        expect(json.total).toBe(3);
+        expect(json.results).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              operation: 'transfer',
+              ticker: 'PEPE',
+              address: addressA,
+              tx_id: transferHashAB,
+              transfer: {
+                amount: '1000.000000000000000000',
+                from_address: addressA,
+              },
+            } as Brc20ActivityResponse),
+          ])
+        );
 
         // Step 5: B creates a transfer to C
         const transferHashBC = randomHash();
@@ -2748,6 +2796,52 @@ describe('BRC-20', () => {
             })
             .build()
         );
+        // A gets the transfer send in its feed
+        response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/activity?ticker=PEPE&address=${addressA}`,
+        });
+        expect(response.statusCode).toBe(200);
+        json = response.json();
+        expect(json.total).toBe(4);
+        expect(json.results).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              operation: 'transfer_send',
+              ticker: 'PEPE',
+              tx_id: expect.not.stringMatching(transferHashAB),
+              address: addressB,
+              transfer_send: {
+                amount: '1000.000000000000000000',
+                from_address: addressA,
+                to_address: addressB,
+              },
+            } as Brc20ActivityResponse),
+          ])
+        );
+        // B gets the transfer send in its feed
+        response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/activity?ticker=PEPE&address=${addressB}`,
+        });
+        expect(response.statusCode).toBe(200);
+        json = response.json();
+        expect(json.total).toBe(3);
+        expect(json.results).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              operation: 'transfer_send',
+              ticker: 'PEPE',
+              tx_id: expect.not.stringMatching(transferHashAB),
+              address: addressB,
+              transfer_send: {
+                amount: '1000.000000000000000000',
+                from_address: addressA,
+                to_address: addressB,
+              },
+            } as Brc20ActivityResponse),
+          ])
+        );
 
         // Verify that the PEPE transfer_send is in the activity feed
         response = await fastify.inject({
@@ -2799,6 +2893,52 @@ describe('BRC-20', () => {
         expect(response.statusCode).toBe(200);
         json = response.json();
         expect(json.total).toBe(7);
+        expect(json.results).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              operation: 'transfer_send',
+              ticker: 'PEPE',
+              tx_id: expect.not.stringMatching(transferHashBC),
+              address: addressC,
+              transfer_send: {
+                amount: '2000.000000000000000000',
+                from_address: addressB,
+                to_address: addressC,
+              },
+            } as Brc20ActivityResponse),
+          ])
+        );
+        // B gets the transfer send in its feed
+        response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/activity?ticker=PEPE&address=${addressB}`,
+        });
+        expect(response.statusCode).toBe(200);
+        json = response.json();
+        expect(json.total).toBe(4);
+        expect(json.results).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              operation: 'transfer_send',
+              ticker: 'PEPE',
+              tx_id: expect.not.stringMatching(transferHashBC),
+              address: addressC,
+              transfer_send: {
+                amount: '2000.000000000000000000',
+                from_address: addressB,
+                to_address: addressC,
+              },
+            } as Brc20ActivityResponse),
+          ])
+        );
+        // C gets the transfer send in its feed
+        response = await fastify.inject({
+          method: 'GET',
+          url: `/ordinals/brc-20/activity?ticker=PEPE&address=${addressC}`,
+        });
+        expect(response.statusCode).toBe(200);
+        json = response.json();
+        expect(json.total).toBe(1);
         expect(json.results).toEqual(
           expect.arrayContaining([
             expect.objectContaining({
@@ -3209,6 +3349,14 @@ describe('BRC-20', () => {
       expect(json.total).toBe(6);
       expect(json.results).toHaveLength(6);
       expect(json.results[0].operation).toBe('mint');
+      request = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/activity?block_height=775622`,
+      });
+      json = request.json();
+      expect(json.total).toBe(1);
+      expect(json.results).toHaveLength(1);
+      expect(json.results[0].operation).toBe('mint');
 
       // Rollback 1: 🔥 is un-minted
       await db.updateInscriptions(
@@ -3264,6 +3412,13 @@ describe('BRC-20', () => {
       expect(json.total).toBe(5);
       expect(json.results).toHaveLength(5);
       expect(json.results[0].operation).toBe('deploy');
+      request = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/activity?block_height=775622`,
+      });
+      json = request.json();
+      expect(json.total).toBe(0);
+      expect(json.results).toHaveLength(0);
 
       // Rollback 2: 🔥 is un-deployed
       await db.updateInscriptions(
