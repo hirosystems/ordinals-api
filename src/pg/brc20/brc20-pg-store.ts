@@ -666,6 +666,7 @@ export class Brc20PgStore extends BasePgStoreModule {
       ticker?: string[];
       block_height?: number;
       operation?: string[];
+      address?: string;
     }
   ): Promise<DbPaginatedResult<DbBrc20Activity>> {
     objRemoveUndefinedValues(filters);
@@ -710,14 +711,22 @@ export class Brc20PgStore extends BasePgStoreModule {
       FROM brc20_events AS e
       INNER JOIN brc20_deploys AS d ON e.brc20_deploy_id = d.id
       INNER JOIN locations AS l ON e.genesis_location_id = l.id
+      ${
+        filters.address
+          ? this.sql`LEFT JOIN brc20_transfers AS t ON t.id = e.transfer_id`
+          : this.sql``
+      }
       WHERE TRUE
         ${
           filters.operation ? this.sql`AND operation IN ${this.sql(filters.operation)}` : this.sql``
         }
         ${tickerConditions ? this.sql`AND (${tickerConditions})` : this.sql``}
         ${
-          filters.block_height
-            ? this.sql`AND l.block_height <= ${filters.block_height}`
+          filters.block_height ? this.sql`AND l.block_height = ${filters.block_height}` : this.sql``
+        }
+        ${
+          filters.address
+            ? this.sql`AND (l.address = ${filters.address} OR t.from_address = ${filters.address})`
             : this.sql``
         }
       ORDER BY l.block_height DESC, l.tx_index DESC

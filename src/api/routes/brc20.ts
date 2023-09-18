@@ -197,12 +197,14 @@ export const Brc20Routes: FastifyPluginCallback<
       schema: {
         operationId: 'getBrc20Activity',
         summary: 'BRC-20 Activity',
-        description: 'Retrieves BRC-20 activity',
+        description:
+          'Retrieves BRC-20 activity filtered by ticker, address, operation, or at a specific block height',
         tags: ['BRC-20'],
         querystring: Type.Object({
           ticker: Type.Optional(Brc20TickersParam),
           block_height: Type.Optional(BlockHeightParam),
           operation: Type.Optional(Brc20OperationsParam),
+          address: Type.Optional(AddressParam),
           // Pagination
           offset: Type.Optional(OffsetParam),
           limit: Type.Optional(LimitParam),
@@ -223,6 +225,7 @@ export const Brc20Routes: FastifyPluginCallback<
             ? parseInt(request.query.block_height)
             : undefined,
           operation: request.query.operation,
+          address: request.query.address,
         }
       );
       await reply.send({
