@@ -197,7 +197,8 @@ export const Brc20Routes: FastifyPluginCallback<
       schema: {
         operationId: 'getBrc20Activity',
         summary: 'BRC-20 Activity',
-        description: 'Retrieves BRC-20 activity',
+        description:
+          'Retrieves BRC-20 activity filtered by ticker, address, operation, or at a specific block height',
         tags: ['BRC-20'],
         querystring: Type.Object({
           ticker: Type.Optional(Brc20TickersParam),

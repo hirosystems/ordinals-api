@@ -722,9 +722,7 @@ export class Brc20PgStore extends BasePgStoreModule {
         }
         ${tickerConditions ? this.sql`AND (${tickerConditions})` : this.sql``}
         ${
-          filters.block_height
-            ? this.sql`AND l.block_height <= ${filters.block_height}`
-            : this.sql``
+          filters.block_height ? this.sql`AND l.block_height = ${filters.block_height}` : this.sql``
         }
         ${
           filters.address
