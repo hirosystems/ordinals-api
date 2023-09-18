@@ -3349,6 +3349,14 @@ describe('BRC-20', () => {
       expect(json.total).toBe(6);
       expect(json.results).toHaveLength(6);
       expect(json.results[0].operation).toBe('mint');
+      request = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/activity?block_height=775622`,
+      });
+      json = request.json();
+      expect(json.total).toBe(1);
+      expect(json.results).toHaveLength(1);
+      expect(json.results[0].operation).toBe('mint');
 
       // Rollback 1: 🔥 is un-minted
       await db.updateInscriptions(
@@ -3404,6 +3412,13 @@ describe('BRC-20', () => {
       expect(json.total).toBe(5);
       expect(json.results).toHaveLength(5);
       expect(json.results[0].operation).toBe('deploy');
+      request = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/activity?block_height=775622`,
+      });
+      json = request.json();
+      expect(json.total).toBe(0);
+      expect(json.results).toHaveLength(0);
 
       // Rollback 2: 🔥 is un-deployed
       await db.updateInscriptions(
