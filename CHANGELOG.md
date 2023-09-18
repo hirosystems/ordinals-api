@@ -1,3 +1,10 @@
+## [1.2.0](https://github.com/hirosystems/ordinals-api/compare/v1.1.1...v1.2.0) (2023-09-18)
+
+
+### Features
+
+* filter BRC-20 activity by address ([#226](https://github.com/hirosystems/ordinals-api/issues/226)) ([55eaeac](https://github.com/hirosystems/ordinals-api/commit/55eaeacb23daf9b52f29a9f824b9166e09999152))
+
 ## [1.1.1](https://github.com/hirosystems/ordinals-api/compare/v1.1.0...v1.1.1) (2023-09-14)
 
 
