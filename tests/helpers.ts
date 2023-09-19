@@ -106,6 +106,14 @@ export class TestChainhookPayloadBuilder {
   }
 }
 
+export function rollBack(payload: Payload) {
+  return {
+    ...payload,
+    apply: [],
+    rollback: payload.apply,
+  };
+}
+
 export function brc20Reveal(args: {
   json: Brc20;
   number: number;

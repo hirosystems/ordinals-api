@@ -566,8 +566,8 @@ export class Brc20PgStore extends BasePgStoreModule {
                 ),
                 undo_sent_balance AS (
                   UPDATE brc20_total_balances SET
-                    trans_balance = trans_balance + (SELECT trans_balance FROM sent_balance_from),
-                    avail_balance = avail_balance - (SELECT trans_balance FROM sent_balance_from)
+                    trans_balance = trans_balance - (SELECT trans_balance FROM sent_balance_from),
+                    avail_balance = avail_balance + (SELECT trans_balance FROM sent_balance_from)
                   WHERE address = (SELECT address FROM sent_balance_from)
                     AND brc20_deploy_id = ${activity.brc20_deploy_id}
                 )
