@@ -1,3 +1,10 @@
+## [1.2.1-beta.2](https://github.com/hirosystems/ordinals-api/compare/v1.2.1-beta.1...v1.2.1-beta.2) (2023-09-20)
+
+
+### Bug Fixes
+
+* save addresses in brc20 events table for faster queries ([#230](https://github.com/hirosystems/ordinals-api/issues/230)) ([13761f7](https://github.com/hirosystems/ordinals-api/commit/13761f711f1e8fb1029434d58aea507ffab5a215))
+
 ## [1.2.1-beta.1](https://github.com/hirosystems/ordinals-api/compare/v1.2.0...v1.2.1-beta.1) (2023-09-20)
 
 
