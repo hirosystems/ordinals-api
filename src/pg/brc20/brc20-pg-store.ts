@@ -4,6 +4,7 @@ import { hexToBuffer } from '../../api/util/helpers';
 import { DbInscription, DbInscriptionIndexPaging, DbLocation, DbPaginatedResult } from '../types';
 import {
   BRC20_DEPLOYS_COLUMNS,
+  BRC20_OPERATIONS,
   DbBrc20Activity,
   DbBrc20Balance,
   DbBrc20BalanceTypeId,
@@ -156,6 +157,11 @@ export class Brc20PgStore extends BasePgStoreModule {
                     trans_balance = trans_balance - (SELECT amount FROM validated_transfer)
                   WHERE brc20_deploy_id = (SELECT brc20_deploy_id FROM validated_transfer)
                     AND address = (SELECT from_address FROM validated_transfer)
+                ),
+                address_event_type_count_increase AS (
+                  INSERT INTO brc20_counts_by_address_event_type (address, transfer_send)
+                  (SELECT from_address, 1 FROM validated_transfer)
+                  ON CONFLICT (address) DO UPDATE SET transfer_send = brc20_counts_by_address_event_type.transfer_send + EXCLUDED.transfer_send
                 )
               `
             : sql`
@@ -174,6 +180,16 @@ export class Brc20PgStore extends BasePgStoreModule {
                   ON CONFLICT ON CONSTRAINT brc20_total_balances_unique DO UPDATE SET
                     avail_balance = brc20_total_balances.avail_balance + EXCLUDED.avail_balance,
                     total_balance = brc20_total_balances.total_balance + EXCLUDED.total_balance
+                ),
+                address_event_type_count_increase_from AS (
+                  INSERT INTO brc20_counts_by_address_event_type (address, transfer_send)
+                  (SELECT from_address, 1 FROM validated_transfer)
+                  ON CONFLICT (address) DO UPDATE SET transfer_send = brc20_counts_by_address_event_type.transfer_send + EXCLUDED.transfer_send
+                ),
+                address_event_type_count_increase_to AS (
+                  INSERT INTO brc20_counts_by_address_event_type (address, transfer_send)
+                  (SELECT ${toAddress}, 1 FROM validated_transfer)
+                  ON CONFLICT (address) DO UPDATE SET transfer_send = brc20_counts_by_address_event_type.transfer_send + EXCLUDED.transfer_send
                 )
               `
         }, deploy_update AS (
@@ -222,6 +238,11 @@ export class Brc20PgStore extends BasePgStoreModule {
         INSERT INTO brc20_counts_by_event_type (event_type, count)
         (SELECT 'deploy', COALESCE(COUNT(*), 0) FROM deploy_insert)
         ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + EXCLUDED.count
+      ),
+      address_event_type_count_increase AS (
+        INSERT INTO brc20_counts_by_address_event_type (address, deploy)
+        (SELECT ${deploy.location.address}, COALESCE(COUNT(*), 0) FROM deploy_insert)
+        ON CONFLICT (address) DO UPDATE SET deploy = brc20_counts_by_address_event_type.deploy + EXCLUDED.deploy
       ),
       token_count_increase AS (
         INSERT INTO brc20_counts_by_tokens (token_type, count)
@@ -296,6 +317,11 @@ export class Brc20PgStore extends BasePgStoreModule {
         INSERT INTO brc20_counts_by_event_type (event_type, count)
         (SELECT 'mint', COALESCE(COUNT(*), 0) FROM validated_mint)
         ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + EXCLUDED.count
+      ),
+      address_event_type_count_increase AS (
+        INSERT INTO brc20_counts_by_address_event_type (address, mint)
+        (SELECT ${mint.location.address}, COALESCE(COUNT(*), 0) FROM validated_mint)
+        ON CONFLICT (address) DO UPDATE SET mint = brc20_counts_by_address_event_type.mint + EXCLUDED.mint
       )
       INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, mint_id) (
         SELECT 'mint', ${mint.location.inscription_id}, ${mint.location.id}, brc20_deploy_id, id
@@ -363,6 +389,11 @@ export class Brc20PgStore extends BasePgStoreModule {
         INSERT INTO brc20_counts_by_event_type (event_type, count)
         (SELECT 'transfer', COALESCE(COUNT(*), 0) FROM validated_transfer)
         ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + EXCLUDED.count
+      ),
+      address_event_type_count_increase AS (
+        INSERT INTO brc20_counts_by_address_event_type (address, transfer)
+        (SELECT ${transfer.location.address}, COALESCE(COUNT(*), 0) FROM validated_transfer)
+        ON CONFLICT (address) DO UPDATE SET transfer = brc20_counts_by_address_event_type.transfer + EXCLUDED.transfer
       )
       INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id) (
         SELECT 'transfer', ${transfer.location.inscription_id}, ${transfer.location.id}, brc20_deploy_id, id
@@ -420,6 +451,11 @@ export class Brc20PgStore extends BasePgStoreModule {
         UPDATE brc20_counts_by_event_type
         SET count = count - 1
         WHERE event_type = 'deploy'
+      ),
+      decrease_address_event_count AS (
+        UPDATE brc20_counts_by_address_event_type
+        SET deploy = deploy - 1
+        WHERE address = (SELECT address FROM locations WHERE id = ${activity.genesis_location_id})
       )
       UPDATE brc20_counts_by_tokens
       SET count = count - 1
@@ -445,6 +481,11 @@ export class Brc20PgStore extends BasePgStoreModule {
         UPDATE brc20_counts_by_event_type
         SET count = count - 1
         WHERE event_type = 'mint'
+      ),
+      decrease_address_event_count AS (
+        UPDATE brc20_counts_by_address_event_type
+        SET mint = mint - 1
+        WHERE address = (SELECT address FROM locations WHERE id = ${activity.genesis_location_id})
       )
       UPDATE brc20_total_balances SET
         avail_balance = avail_balance - (SELECT avail_balance FROM minted_balance),
@@ -468,6 +509,11 @@ export class Brc20PgStore extends BasePgStoreModule {
         SET count = count - 1
         WHERE event_type = 'transfer'
       ),
+      decrease_address_event_count AS (
+        UPDATE brc20_counts_by_address_event_type
+        SET transfer = transfer - 1
+        WHERE address = (SELECT address FROM locations WHERE id = ${activity.genesis_location_id})
+      ),
       decrease_tx_count AS (
         UPDATE brc20_deploys
         SET tx_count = tx_count - 1
@@ -482,40 +528,82 @@ export class Brc20PgStore extends BasePgStoreModule {
   }
 
   private async rollBackTransferSend(activity: DbBrc20TransferEvent): Promise<void> {
-    await this.sql`
-      WITH sent_balance_from AS (
-        SELECT address, trans_balance
-        FROM brc20_balances
-        WHERE inscription_id = ${activity.inscription_id} AND type = ${DbBrc20BalanceTypeId.transferFrom}
-      ),
-      sent_balance_to AS (
-        SELECT address, avail_balance
-        FROM brc20_balances
-        WHERE inscription_id = ${activity.inscription_id} AND type = ${DbBrc20BalanceTypeId.transferTo}
-      ),
-      decrease_event_count AS (
-        UPDATE brc20_counts_by_event_type
-        SET count = count - 1
-        WHERE event_type = 'transfer_send'
-      ),
-      decrease_tx_count AS (
+    await this.sqlWriteTransaction(async sql => {
+      // Get the sender/receiver address for this transfer. We need to get this in a separate query
+      // to know if we should alter the write query to accomodate a "return to sender" scenario.
+      const addressRes = await sql<{ returned_to_sender: boolean }[]>`
+        SELECT from_address = to_address AS returned_to_sender
+        FROM brc20_transfers
+        WHERE inscription_id = ${activity.inscription_id}
+      `;
+      if (addressRes.count === 0) return;
+      const returnedToSender = addressRes[0].returned_to_sender;
+      await sql`
+        WITH sent_balance_from AS (
+          SELECT address, trans_balance
+          FROM brc20_balances
+          WHERE inscription_id = ${activity.inscription_id}
+          AND type = ${DbBrc20BalanceTypeId.transferFrom}
+        ),
+        sent_balance_to AS (
+          SELECT address, avail_balance
+          FROM brc20_balances
+          WHERE inscription_id = ${activity.inscription_id}
+          AND type = ${DbBrc20BalanceTypeId.transferTo}
+        ),
+        decrease_event_count AS (
+          UPDATE brc20_counts_by_event_type
+          SET count = count - 1
+          WHERE event_type = 'transfer_send'
+        ),
+        ${
+          returnedToSender
+            ? sql`
+                decrease_address_event_count AS (
+                  UPDATE brc20_counts_by_address_event_type
+                  SET transfer_send = transfer_send - 1
+                  WHERE address = (SELECT address FROM sent_balance_from)
+                ),
+                undo_sent_balance AS (
+                  UPDATE brc20_total_balances SET
+                    trans_balance = trans_balance - (SELECT trans_balance FROM sent_balance_from),
+                    avail_balance = avail_balance + (SELECT trans_balance FROM sent_balance_from)
+                  WHERE address = (SELECT address FROM sent_balance_from)
+                    AND brc20_deploy_id = ${activity.brc20_deploy_id}
+                )
+              `
+            : sql`
+                decrease_address_event_count_from AS (
+                  UPDATE brc20_counts_by_address_event_type
+                  SET transfer_send = transfer_send - 1
+                  WHERE address = (SELECT address FROM sent_balance_from)
+                ),
+                decrease_address_event_count_to AS (
+                  UPDATE brc20_counts_by_address_event_type
+                  SET transfer_send = transfer_send - 1
+                  WHERE address = (SELECT address FROM sent_balance_to)
+                ),
+                undo_sent_balance_from AS (
+                  UPDATE brc20_total_balances SET
+                    trans_balance = trans_balance - (SELECT trans_balance FROM sent_balance_from),
+                    total_balance = total_balance - (SELECT trans_balance FROM sent_balance_from)
+                  WHERE address = (SELECT address FROM sent_balance_from)
+                    AND brc20_deploy_id = ${activity.brc20_deploy_id}
+                ),
+                undo_sent_balance_to AS (
+                  UPDATE brc20_total_balances SET
+                    avail_balance = avail_balance - (SELECT avail_balance FROM sent_balance_to),
+                    total_balance = total_balance - (SELECT avail_balance FROM sent_balance_to)
+                  WHERE address = (SELECT address FROM sent_balance_to)
+                    AND brc20_deploy_id = ${activity.brc20_deploy_id}
+                )
+              `
+        }
         UPDATE brc20_deploys
         SET tx_count = tx_count - 1
         WHERE id = ${activity.brc20_deploy_id}
-      ),
-      undo_sent_balance_from AS (
-        UPDATE brc20_total_balances SET
-          trans_balance = trans_balance - (SELECT trans_balance FROM sent_balance_from),
-          total_balance = total_balance - (SELECT trans_balance FROM sent_balance_from)
-        WHERE address = (SELECT address FROM sent_balance_from)
-          AND brc20_deploy_id = ${activity.brc20_deploy_id}
-      )
-      UPDATE brc20_total_balances SET
-        avail_balance = avail_balance - (SELECT avail_balance FROM sent_balance_to),
-        total_balance = total_balance - (SELECT avail_balance FROM sent_balance_to)
-      WHERE address = (SELECT address FROM sent_balance_to)
-        AND brc20_deploy_id = ${activity.brc20_deploy_id}
-    `;
+      `;
+    });
   }
 
   async getTokens(
@@ -670,15 +758,26 @@ export class Brc20PgStore extends BasePgStoreModule {
     }
   ): Promise<DbPaginatedResult<DbBrc20Activity>> {
     objRemoveUndefinedValues(filters);
+    const filterLength = Object.keys(filters).length;
+    // Do we need a specific result count such as total activity or activity per address?
+    const needsGlobalEventCount = filterLength === 0 || (filterLength === 1 && filters.operation);
+    const needsAddressEventCount =
+      (filterLength === 1 && filters.address) ||
+      (filterLength === 2 && filters.operation && filters.address);
+    // Which operations do we need if we're filtering by address?
+    const sanitizedOperations: DbBrc20EventOperation[] = [];
+    for (const i of filters.operation ?? BRC20_OPERATIONS)
+      if (BRC20_OPERATIONS.includes(i)) sanitizedOperations?.push(i as DbBrc20EventOperation);
+    // Which tickers are we filtering for?
     const tickerConditions = this.sqlOr(
       filters.ticker?.map(t => this.sql`d.ticker_lower = LOWER(${t})`)
     );
-    const isGlobalCount =
-      Object.keys(filters).length === 0 || (Object.keys(filters).length === 1 && filters.operation);
+
     const results = await this.sql<(DbBrc20Activity & { total: number })[]>`
-      ${
-        isGlobalCount
-          ? this.sql`WITH global_count AS (
+      WITH event_count AS (${
+        // Select count from the correct count cache table.
+        needsGlobalEventCount
+          ? this.sql`
               SELECT COALESCE(SUM(count), 0) AS count
               FROM brc20_counts_by_event_type
               ${
@@ -686,9 +785,15 @@ export class Brc20PgStore extends BasePgStoreModule {
                   ? this.sql`WHERE event_type IN ${this.sql(filters.operation)}`
                   : this.sql``
               }
-            )`
-          : this.sql``
-      }
+            `
+          : needsAddressEventCount
+          ? this.sql`
+              SELECT COALESCE(${this.sql.unsafe(sanitizedOperations.join('+'))}, 0) AS count
+              FROM brc20_counts_by_address_event_type
+              WHERE address = ${filters.address}
+            `
+          : this.sql`SELECT NULL AS count`
+      })
       SELECT
         e.operation,
         d.ticker,
@@ -706,7 +811,9 @@ export class Brc20PgStore extends BasePgStoreModule {
         (SELECT amount FROM brc20_mints WHERE id = e.mint_id) AS mint_amount,
         (SELECT amount || ';' || from_address || ';' || COALESCE(to_address, '') FROM brc20_transfers WHERE id = e.transfer_id) AS transfer_data,
         ${
-          isGlobalCount ? this.sql`(SELECT count FROM global_count)` : this.sql`COUNT(*) OVER()`
+          needsGlobalEventCount || needsAddressEventCount
+            ? this.sql`(SELECT count FROM event_count)`
+            : this.sql`COUNT(*) OVER()`
         } AS total
       FROM brc20_events AS e
       INNER JOIN brc20_deploys AS d ON e.brc20_deploy_id = d.id

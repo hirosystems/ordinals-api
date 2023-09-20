@@ -2,6 +2,7 @@ import BigNumber from 'bignumber.js';
 import {
   DbBrc20Activity,
   DbBrc20Balance,
+  DbBrc20EventOperation,
   DbBrc20Holder,
   DbBrc20Token,
   DbBrc20TokenWithSupply,
@@ -153,7 +154,7 @@ export function parseBrc20Activities(items: DbBrc20Activity[]): Brc20ActivityRes
       timestamp: i.timestamp.valueOf(),
     };
     switch (i.operation) {
-      case 'deploy': {
+      case DbBrc20EventOperation.deploy: {
         return {
           ...activity,
           deploy: {
@@ -163,7 +164,7 @@ export function parseBrc20Activities(items: DbBrc20Activity[]): Brc20ActivityRes
           },
         };
       }
-      case 'mint': {
+      case DbBrc20EventOperation.mint: {
         return {
           ...activity,
           mint: {
@@ -171,14 +172,14 @@ export function parseBrc20Activities(items: DbBrc20Activity[]): Brc20ActivityRes
           },
         };
       }
-      case 'transfer': {
+      case DbBrc20EventOperation.transfer: {
         const [amount, from_address] = i.transfer_data.split(';');
         return {
           ...activity,
           transfer: { amount: decimals(amount, i.deploy_decimals), from_address },
         };
       }
-      case 'transfer_send': {
+      case DbBrc20EventOperation.transferSend: {
         const [amount, from_address, to_address] = i.transfer_data.split(';');
         return {
           ...activity,
