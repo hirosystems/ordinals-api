@@ -202,8 +202,9 @@ export class Brc20PgStore extends BasePgStoreModule {
           (SELECT 'transfer_send', COALESCE(COUNT(*), 0) FROM validated_transfer)
           ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + EXCLUDED.count
         )
-        INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id) (
-          SELECT 'transfer_send', ${location.inscription_id}, ${location.id}, brc20_deploy_id, id
+        INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id, address, from_address) (
+          SELECT 'transfer_send', ${location.inscription_id}, ${location.id}, brc20_deploy_id, id,
+            ${location.address}, from_address
           FROM validated_transfer
         )
       `;
@@ -249,8 +250,9 @@ export class Brc20PgStore extends BasePgStoreModule {
         (SELECT 'token', COALESCE(COUNT(*), 0) FROM deploy_insert)
         ON CONFLICT (token_type) DO UPDATE SET count = brc20_counts_by_tokens.count + EXCLUDED.count
       )
-      INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, deploy_id) (
-        SELECT 'deploy', ${deploy.location.inscription_id}, ${deploy.location.id}, id, id
+      INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, deploy_id, address) (
+        SELECT 'deploy', ${deploy.location.inscription_id}, ${deploy.location.id}, id, id,
+          ${deploy.location.address}
         FROM deploy_insert
       )
     `;
@@ -323,8 +325,8 @@ export class Brc20PgStore extends BasePgStoreModule {
         (SELECT ${mint.location.address}, COALESCE(COUNT(*), 0) FROM validated_mint)
         ON CONFLICT (address) DO UPDATE SET mint = brc20_counts_by_address_event_type.mint + EXCLUDED.mint
       )
-      INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, mint_id) (
-        SELECT 'mint', ${mint.location.inscription_id}, ${mint.location.id}, brc20_deploy_id, id
+      INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, mint_id, address) (
+        SELECT 'mint', ${mint.location.inscription_id}, ${mint.location.id}, brc20_deploy_id, id, ${mint.location.address}
         FROM mint_insert
       )
     `;
@@ -395,8 +397,8 @@ export class Brc20PgStore extends BasePgStoreModule {
         (SELECT ${transfer.location.address}, COALESCE(COUNT(*), 0) FROM validated_transfer)
         ON CONFLICT (address) DO UPDATE SET transfer = brc20_counts_by_address_event_type.transfer + EXCLUDED.transfer
       )
-      INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id) (
-        SELECT 'transfer', ${transfer.location.inscription_id}, ${transfer.location.id}, brc20_deploy_id, id
+      INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id, address) (
+        SELECT 'transfer', ${transfer.location.inscription_id}, ${transfer.location.id}, brc20_deploy_id, id, ${transfer.location.address}
         FROM transfer_insert
       )
     `;
@@ -818,11 +820,6 @@ export class Brc20PgStore extends BasePgStoreModule {
       FROM brc20_events AS e
       INNER JOIN brc20_deploys AS d ON e.brc20_deploy_id = d.id
       INNER JOIN locations AS l ON e.genesis_location_id = l.id
-      ${
-        filters.address
-          ? this.sql`LEFT JOIN brc20_transfers AS t ON t.id = e.transfer_id`
-          : this.sql``
-      }
       WHERE TRUE
         ${
           filters.operation ? this.sql`AND operation IN ${this.sql(filters.operation)}` : this.sql``
@@ -833,7 +830,7 @@ export class Brc20PgStore extends BasePgStoreModule {
         }
         ${
           filters.address
-            ? this.sql`AND (l.address = ${filters.address} OR t.from_address = ${filters.address})`
+            ? this.sql`AND (e.address = ${filters.address} OR e.from_address = ${filters.address})`
             : this.sql``
         }
       ORDER BY l.block_height DESC, l.tx_index DESC
