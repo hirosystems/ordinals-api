@@ -1,3 +1,10 @@
+## [1.2.1-beta.1](https://github.com/hirosystems/ordinals-api/compare/v1.2.0...v1.2.1-beta.1) (2023-09-20)
+
+
+### Bug Fixes
+
+* keep count of brc-20 activity per address ([#229](https://github.com/hirosystems/ordinals-api/issues/229)) ([eebe8e7](https://github.com/hirosystems/ordinals-api/commit/eebe8e77360c6fb6a0c546546f11234f3dbc6736))
+
 ## [1.2.0](https://github.com/hirosystems/ordinals-api/compare/v1.1.1...v1.2.0) (2023-09-18)
 
 
