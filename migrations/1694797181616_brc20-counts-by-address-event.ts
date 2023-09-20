@@ -60,7 +60,7 @@ export function up(pgm: MigrationBuilder): void {
       FROM brc20_transfers
       WHERE to_address <> from_address
       GROUP BY to_address
-    ) ON CONFLICT (address) DO UPDATE SET transfer_send = EXCLUDED.transfer_send
+    ) ON CONFLICT (address) DO UPDATE SET transfer_send = brc20_counts_by_address_event_type.transfer_send + EXCLUDED.transfer_send
   `);
 }
 
