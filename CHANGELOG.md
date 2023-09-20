@@ -1,14 +1,9 @@
-## [1.2.0-beta.1](https://github.com/hirosystems/ordinals-api/compare/v1.1.1...v1.2.0-beta.1) (2023-09-20)
+## [1.2.0](https://github.com/hirosystems/ordinals-api/compare/v1.1.1...v1.2.0) (2023-09-18)
 
 
 ### Features
 
 * filter BRC-20 activity by address ([#226](https://github.com/hirosystems/ordinals-api/issues/226)) ([55eaeac](https://github.com/hirosystems/ordinals-api/commit/55eaeacb23daf9b52f29a9f824b9166e09999152))
-
-
-### Bug Fixes
-
-* keep count of brc-20 activity per address ([#229](https://github.com/hirosystems/ordinals-api/issues/229)) ([eebe8e7](https://github.com/hirosystems/ordinals-api/commit/eebe8e77360c6fb6a0c546546f11234f3dbc6736))
 
 ## [1.1.1](https://github.com/hirosystems/ordinals-api/compare/v1.1.0...v1.1.1) (2023-09-14)
 
