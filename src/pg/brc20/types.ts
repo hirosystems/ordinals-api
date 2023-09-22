@@ -107,7 +107,13 @@ export enum DbBrc20BalanceTypeId {
   transferTo = 3,
 }
 
-export type DbBrc20EventOperation = 'deploy' | 'mint' | 'transfer' | 'transfer_send';
+export enum DbBrc20EventOperation {
+  deploy = 'deploy',
+  mint = 'mint',
+  transfer = 'transfer',
+  transferSend = 'transfer_send',
+}
+export const BRC20_OPERATIONS = ['deploy', 'mint', 'transfer', 'transfer_send'];
 
 type BaseEvent = {
   inscription_id: string;
@@ -156,16 +162,16 @@ type BaseActivity = {
 };
 
 export type DbBrc20DeployActivity = BaseActivity & {
-  operation: 'deploy';
+  operation: DbBrc20EventOperation.deploy;
 };
 
 export type DbBrc20MintActivity = BaseActivity & {
-  operation: 'mint';
+  operation: DbBrc20EventOperation.mint;
   mint_amount: string;
 };
 
 export type DbBrc20TransferActivity = BaseActivity & {
-  operation: 'transfer' | 'transfer_send';
+  operation: DbBrc20EventOperation.transfer | DbBrc20EventOperation.transferSend;
   transfer_data: string;
 };
 
