@@ -1,3 +1,40 @@
+## [1.2.1](https://github.com/hirosystems/ordinals-api/compare/v1.2.0...v1.2.1) (2023-09-22)
+
+
+### Bug Fixes
+
+* keep count of brc-20 activity per address ([#229](https://github.com/hirosystems/ordinals-api/issues/229)) ([eebe8e7](https://github.com/hirosystems/ordinals-api/commit/eebe8e77360c6fb6a0c546546f11234f3dbc6736))
+* optimize inscriptions pagination query ([#231](https://github.com/hirosystems/ordinals-api/issues/231)) ([9c46ade](https://github.com/hirosystems/ordinals-api/commit/9c46adee3080273bbdb8e31623943bfd959a00dc))
+* save addresses in brc20 events table for faster queries ([#230](https://github.com/hirosystems/ordinals-api/issues/230)) ([13761f7](https://github.com/hirosystems/ordinals-api/commit/13761f711f1e8fb1029434d58aea507ffab5a215))
+
+## [1.2.1-beta.3](https://github.com/hirosystems/ordinals-api/compare/v1.2.1-beta.2...v1.2.1-beta.3) (2023-09-21)
+
+
+### Bug Fixes
+
+* optimize inscriptions pagination query ([#231](https://github.com/hirosystems/ordinals-api/issues/231)) ([9c46ade](https://github.com/hirosystems/ordinals-api/commit/9c46adee3080273bbdb8e31623943bfd959a00dc))
+
+## [1.2.1-beta.2](https://github.com/hirosystems/ordinals-api/compare/v1.2.1-beta.1...v1.2.1-beta.2) (2023-09-20)
+
+
+### Bug Fixes
+
+* save addresses in brc20 events table for faster queries ([#230](https://github.com/hirosystems/ordinals-api/issues/230)) ([13761f7](https://github.com/hirosystems/ordinals-api/commit/13761f711f1e8fb1029434d58aea507ffab5a215))
+
+## [1.2.1-beta.1](https://github.com/hirosystems/ordinals-api/compare/v1.2.0...v1.2.1-beta.1) (2023-09-20)
+
+
+### Bug Fixes
+
+* keep count of brc-20 activity per address ([#229](https://github.com/hirosystems/ordinals-api/issues/229)) ([eebe8e7](https://github.com/hirosystems/ordinals-api/commit/eebe8e77360c6fb6a0c546546f11234f3dbc6736))
+
+## [1.2.0](https://github.com/hirosystems/ordinals-api/compare/v1.1.1...v1.2.0) (2023-09-18)
+
+
+### Features
+
+* filter BRC-20 activity by address ([#226](https://github.com/hirosystems/ordinals-api/issues/226)) ([55eaeac](https://github.com/hirosystems/ordinals-api/commit/55eaeacb23daf9b52f29a9f824b9166e09999152))
+
 ## [1.1.1](https://github.com/hirosystems/ordinals-api/compare/v1.1.0...v1.1.1) (2023-09-14)
 
 

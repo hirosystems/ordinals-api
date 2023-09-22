@@ -323,7 +323,7 @@ export class PgStore extends BasePgStore {
       let orderBy = sql`i.number ${order}`;
       switch (sort?.order_by) {
         case OrderBy.genesis_block_height:
-          orderBy = sql`gen.block_height ${order}, i.number DESC`;
+          orderBy = sql`gen.block_height ${order}, gen.tx_index ${order}`;
           break;
         case OrderBy.ordinal:
           orderBy = sql`i.sat_ordinal ${order}`;
@@ -337,18 +337,12 @@ export class PgStore extends BasePgStore {
         columns: postgres.PendingQuery<postgres.Row[]>,
         sorting: postgres.PendingQuery<postgres.Row[]>
       ) => sql`
-        WITH gen_locations AS (
-          SELECT l.* FROM locations AS l
-          INNER JOIN genesis_locations AS g ON l.id = g.location_id
-        ),
-        cur_locations AS (
-          SELECT l.* FROM locations AS l
-          INNER JOIN current_locations AS c ON l.id = c.location_id
-        )
         SELECT ${columns}
         FROM inscriptions AS i
-        INNER JOIN cur_locations AS loc ON loc.inscription_id = i.id
-        INNER JOIN gen_locations AS gen ON gen.inscription_id = i.id
+        INNER JOIN current_locations AS cur ON cur.inscription_id = i.id
+        INNER JOIN locations AS cur_l ON cur_l.id = cur.location_id
+        INNER JOIN genesis_locations AS gen ON gen.inscription_id = i.id
+        INNER JOIN locations AS gen_l ON gen_l.id = gen.location_id
         WHERE TRUE
           ${
             filters?.genesis_id?.length
@@ -362,7 +356,7 @@ export class PgStore extends BasePgStore {
           }
           ${
             filters?.genesis_block_hash
-              ? sql`AND gen.block_hash = ${filters.genesis_block_hash}`
+              ? sql`AND gen_l.block_hash = ${filters.genesis_block_hash}`
               : sql``
           }
           ${
@@ -387,12 +381,12 @@ export class PgStore extends BasePgStore {
           }
           ${
             filters?.from_genesis_timestamp
-              ? sql`AND gen.timestamp >= to_timestamp(${filters.from_genesis_timestamp})`
+              ? sql`AND gen_l.timestamp >= to_timestamp(${filters.from_genesis_timestamp})`
               : sql``
           }
           ${
             filters?.to_genesis_timestamp
-              ? sql`AND gen.timestamp <= to_timestamp(${filters.to_genesis_timestamp})`
+              ? sql`AND gen_l.timestamp <= to_timestamp(${filters.to_genesis_timestamp})`
               : sql``
           }
           ${
@@ -404,9 +398,9 @@ export class PgStore extends BasePgStore {
           ${filters?.number?.length ? sql`AND i.number IN ${sql(filters.number)}` : sql``}
           ${filters?.from_number ? sql`AND i.number >= ${filters.from_number}` : sql``}
           ${filters?.to_number ? sql`AND i.number <= ${filters.to_number}` : sql``}
-          ${filters?.address?.length ? sql`AND loc.address IN ${sql(filters.address)}` : sql``}
+          ${filters?.address?.length ? sql`AND cur.address IN ${sql(filters.address)}` : sql``}
           ${filters?.mime_type?.length ? sql`AND i.mime_type IN ${sql(filters.mime_type)}` : sql``}
-          ${filters?.output ? sql`AND loc.output = ${filters.output}` : sql``}
+          ${filters?.output ? sql`AND cur_l.output = ${filters.output}` : sql``}
           ${
             filters?.sat_rarity?.length
               ? sql`AND i.sat_rarity IN ${sql(filters.sat_rarity)}`
@@ -443,16 +437,16 @@ export class PgStore extends BasePgStore {
             WHERE ir.inscription_id = i.id
           ) AS recursion_refs,
           gen.block_height AS genesis_block_height,
-          gen.block_hash AS genesis_block_hash,
-          gen.tx_id AS genesis_tx_id,
-          gen.timestamp AS genesis_timestamp,
+          gen_l.block_hash AS genesis_block_hash,
+          gen_l.tx_id AS genesis_tx_id,
+          gen_l.timestamp AS genesis_timestamp,
           gen.address AS genesis_address,
-          loc.tx_id,
-          loc.address,
-          loc.output,
-          loc.offset,
-          loc.timestamp,
-          loc.value
+          cur_l.tx_id,
+          cur.address,
+          cur_l.output,
+          cur_l.offset,
+          cur_l.timestamp,
+          cur_l.value
         `,
         sql`ORDER BY ${orderBy} LIMIT ${page.limit} OFFSET ${page.offset}`
       )}`;
