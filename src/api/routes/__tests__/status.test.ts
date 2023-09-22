@@ -1,7 +1,7 @@
 import { cycleMigrations } from '@hirosystems/api-toolkit';
-import { buildApiServer } from '../src/api/init';
-import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
-import { TestChainhookPayloadBuilder, TestFastifyServer } from './helpers';
+import { TestFastifyServer, TestChainhookPayloadBuilder } from '../../../../tests/helpers';
+import { PgStore, MIGRATIONS_DIR } from '../../../pg/pg-store';
+import { buildApiServer } from '../../init';
 
 describe('Status', () => {
   let db: PgStore;

@@ -45,7 +45,7 @@ async function handleCache(type: ETagType, request: FastifyRequest, reply: Fasti
       etag = await getInscriptionsIndexEtag(request);
       break;
     case ETagType.inscriptionsPerBlock:
-      etag = await request.server.db.getInscriptionsPerBlockETag();
+      etag = await request.server.db.cache.getInscriptionsPerBlockETag();
       break;
   }
   if (etag) {
@@ -75,9 +75,9 @@ async function getInscriptionLocationEtag(request: FastifyRequest): Promise<stri
       const lastElement = components.pop();
       if (lastElement && lastElement.length) {
         if (InscriptionIdParamCType.Check(lastElement)) {
-          return await request.server.db.getInscriptionETag({ genesis_id: lastElement });
+          return await request.server.db.cache.getInscriptionETag({ genesis_id: lastElement });
         } else if (InscriptionNumberParamCType.Check(parseInt(lastElement))) {
-          return await request.server.db.getInscriptionETag({ number: lastElement });
+          return await request.server.db.cache.getInscriptionETag({ number: lastElement });
         }
       }
     } while (components.length);
@@ -93,7 +93,7 @@ async function getInscriptionLocationEtag(request: FastifyRequest): Promise<stri
  */
 async function getInscriptionsIndexEtag(request: FastifyRequest): Promise<string | undefined> {
   try {
-    return await request.server.db.getInscriptionsIndexETag();
+    return await request.server.db.cache.getInscriptionsIndexETag();
   } catch (error) {
     return;
   }
