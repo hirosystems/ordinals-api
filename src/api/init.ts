@@ -5,7 +5,7 @@ import Fastify, { FastifyPluginAsync } from 'fastify';
 import FastifyMetrics, { IFastifyMetrics } from 'fastify-metrics';
 import { Server } from 'http';
 import { PgStore } from '../pg/pg-store';
-import { Brc20Routes } from './routes/brc20';
+import { Brc20Routes } from '../meta-protocols/brc-20/api/brc20';
 import { InscriptionsRoutes } from './routes/inscriptions';
 import { SatRoutes } from './routes/sats';
 import { StatsRoutes } from './routes/stats';
