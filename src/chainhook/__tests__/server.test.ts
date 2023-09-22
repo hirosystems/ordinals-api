@@ -1,13 +1,13 @@
-import { PREDICATE_UUID, startChainhookServer } from '../src/chainhook/server';
-import { ENV } from '../src/env';
-import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
-import { TestChainhookPayloadBuilder, TestFastifyServer } from './helpers';
+import { PREDICATE_UUID, startChainhookServer } from '../server';
+import { ENV } from '../../env';
+import { MIGRATIONS_DIR, PgStore } from '../../pg/pg-store';
+import { TestChainhookPayloadBuilder, TestFastifyServer } from '../../../tests/helpers';
 import {
   BitcoinInscriptionRevealed,
   BitcoinInscriptionTransferred,
   ChainhookEventObserver,
 } from '@hirosystems/chainhook-client';
-import { buildApiServer } from '../src/api/init';
+import { buildApiServer } from '../../api/init';
 import { cycleMigrations } from '@hirosystems/api-toolkit';
 
 describe('EventServer', () => {
