@@ -14,7 +14,7 @@ import { Order, OrderBy } from '../api/schemas';
 import { normalizedHexString, parseSatPoint } from '../api/util/helpers';
 import { OrdinalSatoshi } from '../api/util/ordinal-satoshi';
 import { ENV } from '../env';
-import { Brc20PgStore } from './brc20/brc20-pg-store';
+import { Brc20PgStore } from '../meta-protocols/brc-20/pg/brc20-pg-store';
 import { CountsPgStore } from './counts/counts-pg-store';
 import { getIndexResultCountType } from './counts/helpers';
 import { chunkArray, getInscriptionRecursion } from './helpers';

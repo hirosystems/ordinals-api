@@ -19,16 +19,16 @@ import {
   NotFoundResponse,
   OffsetParam,
   PaginatedResponse,
-} from '../schemas';
-import { handleInscriptionTransfersCache } from '../util/cache';
+} from '../../../api/schemas';
+import { handleInscriptionTransfersCache } from '../../../api/util/cache';
+import { DEFAULT_API_LIMIT } from '../../../api/util/helpers';
 import {
-  DEFAULT_API_LIMIT,
-  parseBrc20Activities,
-  parseBrc20Balances,
-  parseBrc20Holders,
-  parseBrc20Supply,
   parseBrc20Tokens,
-} from '../util/helpers';
+  parseBrc20Supply,
+  parseBrc20Holders,
+  parseBrc20Balances,
+  parseBrc20Activities,
+} from './helpers';
 
 export const Brc20Routes: FastifyPluginCallback<
   Record<never, never>,

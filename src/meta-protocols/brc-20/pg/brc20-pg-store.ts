@@ -1,7 +1,12 @@
 import { BasePgStoreModule, logger } from '@hirosystems/api-toolkit';
 import * as postgres from 'postgres';
-import { hexToBuffer } from '../../api/util/helpers';
-import { DbInscription, DbInscriptionIndexPaging, DbLocation, DbPaginatedResult } from '../types';
+import { hexToBuffer } from '../../../api/util/helpers';
+import {
+  DbInscription,
+  DbInscriptionIndexPaging,
+  DbLocation,
+  DbPaginatedResult,
+} from '../../../pg/types';
 import {
   BRC20_DEPLOYS_COLUMNS,
   BRC20_OPERATIONS,
@@ -29,8 +34,8 @@ import {
   isAddressSentAsFee,
 } from './helpers';
 
-import { Brc20TokenOrderBy } from '../../api/schemas';
-import { objRemoveUndefinedValues } from '../helpers';
+import { Brc20TokenOrderBy } from '../../../api/schemas';
+import { objRemoveUndefinedValues } from '../../../pg/helpers';
 
 export class Brc20PgStore extends BasePgStoreModule {
   sqlOr(partials: postgres.PendingQuery<postgres.Row[]>[] | undefined) {

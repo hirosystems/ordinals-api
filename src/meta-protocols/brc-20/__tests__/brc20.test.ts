@@ -1,17 +1,17 @@
 import { cycleMigrations } from '@hirosystems/api-toolkit';
-import { buildApiServer } from '../src/api/init';
-import { Brc20ActivityResponse, Brc20TokenResponse } from '../src/api/schemas';
-import { brc20FromInscription } from '../src/pg/brc20/helpers';
-import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
-import { DbInscriptionInsert } from '../src/pg/types';
+import { buildApiServer } from '../../../api/init';
+import { Brc20ActivityResponse, Brc20TokenResponse } from '../../../api/schemas';
+import { MIGRATIONS_DIR, PgStore } from '../../../pg/pg-store';
+import { DbInscriptionInsert } from '../../../pg/types';
 import {
   TestChainhookPayloadBuilder,
   TestFastifyServer,
-  brc20Reveal,
   incrementing,
   randomHash,
   rollBack,
-} from './helpers';
+} from '../../../../tests/helpers';
+import { brc20FromInscription } from '../pg/helpers';
+import { brc20Reveal } from './helpers';
 
 describe('BRC-20', () => {
   let db: PgStore;
