@@ -1,7 +1,11 @@
 import { cycleMigrations } from '@hirosystems/api-toolkit';
-import { buildApiServer } from '../src/api/init';
-import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
-import { TestChainhookPayloadBuilder, TestFastifyServer, randomHash } from './helpers';
+import { buildApiServer } from '../../../api/init';
+import { MIGRATIONS_DIR, PgStore } from '../../pg-store';
+import {
+  TestFastifyServer,
+  TestChainhookPayloadBuilder,
+  randomHash,
+} from '../../../../tests/helpers';
 
 describe('ETag cache', () => {
   let db: PgStore;

@@ -37,15 +37,17 @@ import {
   INSCRIPTIONS_COLUMNS,
   LOCATIONS_COLUMNS,
 } from './types';
+import { CachePgStore } from './cache/cache-pg-store';
 
 export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 
-type InscriptionIdentifier = { genesis_id: string } | { number: number };
+export type InscriptionIdentifier = { genesis_id: string } | { number: number };
 type PgQueryFragment = postgres.PendingQuery<postgres.Row[]>; // TODO: Move to api-toolkit
 
 export class PgStore extends BasePgStore {
   readonly brc20: Brc20PgStore;
   readonly counts: CountsPgStore;
+  readonly cache: CachePgStore;
 
   static async connect(opts?: { skipMigrations: boolean }): Promise<PgStore> {
     const pgConfig: PgConnectionVars = {
@@ -75,6 +77,7 @@ export class PgStore extends BasePgStore {
     super(sql);
     this.brc20 = new Brc20PgStore(this);
     this.counts = new CountsPgStore(this);
+    this.cache = new CachePgStore(this);
   }
 
   /**
@@ -264,23 +267,6 @@ export class PgStore extends BasePgStore {
     }
   }
 
-  async getInscriptionsIndexETag(): Promise<string> {
-    const result = await this.sql<{ etag: string }[]>`
-      SELECT date_part('epoch', MAX(updated_at))::text AS etag FROM inscriptions
-    `;
-    return result[0].etag;
-  }
-
-  async getInscriptionsPerBlockETag(): Promise<string> {
-    const result = await this.sql<{ block_hash: string; inscription_count: string }[]>`
-      SELECT block_hash, inscription_count
-      FROM inscriptions_per_block
-      ORDER BY block_height DESC
-      LIMIT 1
-    `;
-    return `${result[0].block_hash}:${result[0].inscription_count}`;
-  }
-
   async getInscriptionContent(
     args: InscriptionIdentifier
   ): Promise<DbInscriptionContent | undefined> {
@@ -295,21 +281,6 @@ export class PgStore extends BasePgStore {
     `;
     if (result.count > 0) {
       return result[0];
-    }
-  }
-
-  async getInscriptionETag(args: InscriptionIdentifier): Promise<string | undefined> {
-    const result = await this.sql<{ etag: string }[]>`
-      SELECT date_part('epoch', updated_at)::text AS etag
-      FROM inscriptions
-      WHERE ${
-        'genesis_id' in args
-          ? this.sql`genesis_id = ${args.genesis_id}`
-          : this.sql`number = ${args.number}`
-      }
-    `;
-    if (result.count > 0) {
-      return result[0].etag;
     }
   }
 
