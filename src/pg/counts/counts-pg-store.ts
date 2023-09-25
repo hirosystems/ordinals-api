@@ -31,7 +31,7 @@ export class CountsPgStore extends BasePgStoreModule {
         return await this.getSatRarityCount(filters?.sat_rarity);
       case DbInscriptionIndexResultCountType.address:
         return await this.getAddressCount(filters?.address);
-      case DbInscriptionIndexResultCountType.recursion:
+      case DbInscriptionIndexResultCountType.recursive:
         return await this.getRecursiveCount(filters?.recursive);
       case DbInscriptionIndexResultCountType.genesisAddress:
         return await this.getGenesisAddressCount(filters?.genesis_address);
