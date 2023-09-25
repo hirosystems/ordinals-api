@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/hirosystems/ordinals-api/compare/v1.2.1...v1.2.2) (2023-09-25)
+
+
+### Bug Fixes
+
+* create table for recursive inscriptions count ([#237](https://github.com/hirosystems/ordinals-api/issues/237)) ([e27fa41](https://github.com/hirosystems/ordinals-api/commit/e27fa41761ca6eb2b267377b5ac36105fc41c017))
+
 ## [1.2.1](https://github.com/hirosystems/ordinals-api/compare/v1.2.0...v1.2.1) (2023-09-22)
 
 
