@@ -76,7 +76,8 @@ export class CountsPgStore extends BasePgStoreModule {
       });
       type.set(t, { type: t, count: type.get(t)?.count ?? 0 + 1 });
     }
-    // `counts_by_address` and `counts_by_genesis_address` are handled in `applyLocations`.
+    // `counts_by_address` and `counts_by_genesis_address` count increases are handled in
+    // `applyLocations`.
     await this.sql`
       WITH increase_mime_type AS (
         INSERT INTO counts_by_mime_type ${this.sql([...mimeType.values()])}
@@ -115,6 +116,11 @@ export class CountsPgStore extends BasePgStoreModule {
             ? DbInscriptionType.cursed
             : DbInscriptionType.blessed
         }
+      ),
+      decrease_genesis AS (
+        UPDATE counts_by_genesis_address SET count = count - 1 WHERE address = (
+          SELECT address FROM current_locations WHERE inscription_id = ${args.inscription.id}
+        )
       )
       UPDATE counts_by_address SET count = count - 1 WHERE address = (
         SELECT address FROM current_locations WHERE inscription_id = ${args.inscription.id}

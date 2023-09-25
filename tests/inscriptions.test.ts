@@ -1,7 +1,7 @@
 import { cycleMigrations } from '@hirosystems/api-toolkit';
 import { buildApiServer } from '../src/api/init';
 import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
-import { TestChainhookPayloadBuilder, TestFastifyServer } from './helpers';
+import { TestChainhookPayloadBuilder, TestFastifyServer, rollBack } from './helpers';
 import {
   BitcoinInscriptionRevealed,
   BitcoinInscriptionTransferred,
@@ -2958,37 +2958,36 @@ describe('/inscriptions', () => {
             })
             .build()
         );
-        await db.updateInscriptions(
-          new TestChainhookPayloadBuilder()
-            .apply()
-            .block({
-              height: 775617,
-              hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
-              timestamp: 1675312161,
-            })
-            .transaction({
-              hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
-            })
-            .inscriptionRevealed({
-              content_bytes: '0x48656C6C6F',
-              content_type: 'image/png',
-              content_length: 5,
-              inscription_number: 1,
-              inscription_fee: 2805,
-              inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-              inscription_output_value: 10000,
-              inscriber_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-              ordinal_number: 1000000000000,
-              ordinal_block_height: 650000,
-              ordinal_offset: 0,
-              satpoint_post_inscription:
-                '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
-              inscription_input_index: 0,
-              transfers_pre_inscription: 0,
-              tx_index: 0,
-            })
-            .build()
-        );
+        const genesis2 = new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 775617,
+            hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+            timestamp: 1675312161,
+          })
+          .transaction({
+            hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+          })
+          .inscriptionRevealed({
+            content_bytes: '0x48656C6C6F',
+            content_type: 'image/png',
+            content_length: 5,
+            inscription_number: 1,
+            inscription_fee: 2805,
+            inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+            inscription_output_value: 10000,
+            inscriber_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+            ordinal_number: 1000000000000,
+            ordinal_block_height: 650000,
+            ordinal_offset: 0,
+            satpoint_post_inscription:
+              '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+            inscription_input_index: 0,
+            transfers_pre_inscription: 0,
+            tx_index: 0,
+          })
+          .build();
+        await db.updateInscriptions(genesis2);
 
         const response1 = await fastify.inject({
           method: 'GET',
@@ -3010,6 +3009,17 @@ describe('/inscriptions', () => {
         const responseJson2 = response2.json();
         expect(responseJson2.total).toBe(2);
         expect(responseJson2.results.length).toBe(2);
+
+        // Roll back genesis and check if count is still correct
+        await db.updateInscriptions(rollBack(genesis2));
+        const response3 = await fastify.inject({
+          method: 'GET',
+          url: '/ordinals/v1/inscriptions?genesis_address=bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+        });
+        expect(response3.statusCode).toBe(200);
+        const responseJson3 = response3.json();
+        expect(responseJson3.total).toBe(0);
+        expect(responseJson3.results.length).toBe(0);
       });
     });
 
