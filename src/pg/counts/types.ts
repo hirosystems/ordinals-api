@@ -18,6 +18,8 @@ export enum DbInscriptionIndexResultCountType {
   blockHeightRange,
   /** Filtered by block hash */
   blockHash,
+  /** Filtered by recursive */
+  recursive,
   /** Filtered by some other param that yields a single result (easy to count) */
   singleResult,
   /** Filtered by custom arguments (tough to count) */

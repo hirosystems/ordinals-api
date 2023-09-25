@@ -158,6 +158,7 @@ export type DbInscription = {
   sat_ordinal: string;
   sat_rarity: string;
   sat_coinbase_height: string;
+  recursive: boolean;
 };
 
 export type DbInscriptionContent = {
@@ -178,6 +179,7 @@ export const INSCRIPTIONS_COLUMNS = [
   'sat_ordinal',
   'sat_rarity',
   'sat_coinbase_height',
+  'recursive',
 ];
 
 export type DbInscriptionIndexPaging = {
