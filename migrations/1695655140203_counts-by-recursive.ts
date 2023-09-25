@@ -4,7 +4,7 @@ import { MigrationBuilder, ColumnDefinitions } from 'node-pg-migrate';
 export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export function up(pgm: MigrationBuilder): void {
-  pgm.createTable('counts_by_recursion', {
+  pgm.createTable('counts_by_recursive', {
     recursive: {
       type: 'boolean',
       notNull: true,
@@ -17,11 +17,11 @@ export function up(pgm: MigrationBuilder): void {
     },
   });
   pgm.sql(`
-    INSERT INTO counts_by_recursion (recursive, count)
+    INSERT INTO counts_by_recursive (recursive, count)
     (SELECT recursive, COUNT(*) AS count FROM inscriptions GROUP BY recursive)
   `);
 }
 
 export function down(pgm: MigrationBuilder): void {
-  pgm.dropTable('counts_by_recursion');
+  pgm.dropTable('counts_by_recursive');
 }

@@ -87,9 +87,9 @@ export class CountsPgStore extends BasePgStoreModule {
         INSERT INTO counts_by_sat_rarity ${this.sql([...rarity.values()])}
         ON CONFLICT (sat_rarity) DO UPDATE SET count = counts_by_sat_rarity.count + EXCLUDED.count
       ),
-      increase_recursion AS (
-        INSERT INTO counts_by_recursion ${this.sql([...recursion.values()])}
-        ON CONFLICT (recursive) DO UPDATE SET count = counts_by_recursion.count + EXCLUDED.count
+      increase_recursive AS (
+        INSERT INTO counts_by_recursive ${this.sql([...recursion.values()])}
+        ON CONFLICT (recursive) DO UPDATE SET count = counts_by_recursive.count + EXCLUDED.count
       )
       INSERT INTO counts_by_type ${this.sql([...type.values()])}
       ON CONFLICT (type) DO UPDATE SET count = counts_by_type.count + EXCLUDED.count
@@ -106,8 +106,8 @@ export class CountsPgStore extends BasePgStoreModule {
         UPDATE counts_by_sat_rarity SET count = count - 1
         WHERE sat_rarity = ${args.inscription.sat_rarity}
       ),
-      decrease_recursion AS (
-        UPDATE counts_by_recursion SET count = count - 1
+      decrease_recursive AS (
+        UPDATE counts_by_recursive SET count = count - 1
         WHERE recursive = ${args.inscription.recursive}
       ),
       decrease_type AS (
@@ -237,7 +237,7 @@ export class CountsPgStore extends BasePgStoreModule {
     const rec = recursive !== undefined ? [recursive] : [true, false];
     const result = await this.sql<{ count: number }[]>`
       SELECT COALESCE(SUM(count), 0) AS count
-      FROM counts_by_recursion
+      FROM counts_by_recursive
       WHERE recursive IN ${this.sql(rec)}
     `;
     return result[0].count;
