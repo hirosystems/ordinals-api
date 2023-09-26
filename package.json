@@ -52,6 +52,7 @@
     "@fastify/type-provider-typebox": "^3.2.0",
     "@hirosystems/api-toolkit": "^1.1.0",
     "@hirosystems/chainhook-client": "^1.3.1",
+    "@hirosystems/ordhook-sdk-js": "file:../ordhook/components/ordhook-sdk-js",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/commit-analyzer": "^10.0.4",
     "@semantic-release/git": "^10.0.1",
