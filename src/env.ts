@@ -5,8 +5,8 @@ const schema = Type.Object({
   /**
    * Run mode for this service. Allows you to control how the API runs, typically in an auto-scaled
    * environment. Available values are:
-   * * `default`: Runs the chainhook server and the REST API server (this is the default)
-   * * `writeonly`: Runs only the chainhook server
+   * * `default`: Runs the ordhook indexer and the REST API server (this is the default)
+   * * `writeonly`: Runs only the ordhook indexer
    * * `readonly`: Runs only the REST API server
    */
   RUN_MODE: Type.Enum(
@@ -20,6 +20,30 @@ const schema = Type.Object({
   API_PORT: Type.Number({ default: 3000, minimum: 0, maximum: 65535 }),
   /** Port in which to serve the Admin RPC interface */
   ADMIN_RPC_PORT: Type.Number({ default: 3001, minimum: 0, maximum: 65535 }),
+
+  PGHOST: Type.String(),
+  PGPORT: Type.Number({ default: 5432, minimum: 0, maximum: 65535 }),
+  PGUSER: Type.String(),
+  PGPASSWORD: Type.String(),
+  PGDATABASE: Type.String(),
+  /** Limit to how many concurrent connections can be created */
+  PG_CONNECTION_POOL_MAX: Type.Number({ default: 10 }),
+  PG_IDLE_TIMEOUT: Type.Number({ default: 30 }),
+  PG_MAX_LIFETIME: Type.Number({ default: 60 }),
+  PG_STATEMENT_TIMEOUT: Type.Number({ default: 60_000 }),
+
+  /** Bitcoin node RPC URL */
+  BITCOIN_RPC_URL: Type.String(),
+  /** Bitcoin node RPC username */
+  BITCOIN_RPC_USERNAME: Type.String(),
+  /** Bitcoin node RPC password */
+  BITCOIN_RPC_PASSWORD: Type.String(),
+
+  /** Local directory where ordhook storage will live */
+  ORDHOOK_WORKING_DIR: Type.String(),
+
+  // start DEPRECATED
+
   /** Port in which to receive chainhook events */
   EVENT_PORT: Type.Number({ default: 3099, minimum: 0, maximum: 65535 }),
   /** Event server body limit (bytes) */
@@ -42,17 +66,6 @@ const schema = Type.Object({
    */
   CHAINHOOK_AUTO_PREDICATE_REGISTRATION: Type.Boolean({ default: true }),
 
-  PGHOST: Type.String(),
-  PGPORT: Type.Number({ default: 5432, minimum: 0, maximum: 65535 }),
-  PGUSER: Type.String(),
-  PGPASSWORD: Type.String(),
-  PGDATABASE: Type.String(),
-  /** Limit to how many concurrent connections can be created */
-  PG_CONNECTION_POOL_MAX: Type.Number({ default: 10 }),
-  PG_IDLE_TIMEOUT: Type.Number({ default: 30 }),
-  PG_MAX_LIFETIME: Type.Number({ default: 60 }),
-  PG_STATEMENT_TIMEOUT: Type.Number({ default: 60_000 }),
-
   /** Enables BRC-20 processing in write mode APIs */
   BRC20_BLOCK_SCAN_ENABLED: Type.Boolean({ default: true }),
   /**
@@ -60,6 +73,8 @@ const schema = Type.Object({
    * can be ingested faster during a full replay.
    */
   FAST_INGESTION_MODE: Type.Boolean({ default: false }),
+
+  // end DEPRECATED
 });
 type Env = Static<typeof schema>;
 

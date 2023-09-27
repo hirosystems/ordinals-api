@@ -38,6 +38,7 @@ import {
   LOCATIONS_COLUMNS,
 } from './types';
 import { CachePgStore } from './cache/cache-pg-store';
+import { OrdhookBlock } from '../ordhook';
 
 export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 
@@ -80,168 +81,175 @@ export class PgStore extends BasePgStore {
     this.cache = new CachePgStore(this);
   }
 
+  async insertBlock(data: OrdhookBlock): Promise<void> {
+    await this.sqlWriteTransaction(async _ => {
+      // let updatedBlockHeightMin = Infinity;
+      const event = data.block;
+      const block_height = event.block_identifier.index;
+      const block_hash = normalizedHexString(event.block_identifier.hash);
+      const writes: DbRevealInsert[] = [];
+      for (const tx of event.transactions) {
+        const tx_id = normalizedHexString(tx.transaction_identifier.hash);
+        for (const operation of tx.metadata.ordinal_operations) {
+          if (operation.inscription_revealed) {
+            const reveal = operation.inscription_revealed;
+            const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
+            const satpoint = parseSatPoint(reveal.satpoint_post_inscription);
+            const recursive_refs = getInscriptionRecursion(reveal.content_bytes);
+            writes.push({
+              inscription: {
+                genesis_id: reveal.inscription_id,
+                mime_type: reveal.content_type.split(';')[0],
+                content_type: reveal.content_type,
+                content_length: reveal.content_length,
+                number: reveal.inscription_number,
+                content: reveal.content_bytes,
+                fee: reveal.inscription_fee.toString(),
+                curse_type: null,
+                sat_ordinal: reveal.ordinal_number.toString(),
+                sat_rarity: satoshi.rarity,
+                sat_coinbase_height: satoshi.blockHeight,
+                recursive: recursive_refs.length > 0,
+              },
+              location: {
+                block_hash,
+                block_height,
+                tx_id,
+                tx_index: reveal.tx_index,
+                genesis_id: reveal.inscription_id,
+                address: reveal.inscriber_address,
+                output: `${satpoint.tx_id}:${satpoint.vout}`,
+                offset: satpoint.offset ?? null,
+                prev_output: null,
+                prev_offset: null,
+                value: reveal.inscription_output_value.toString(),
+                timestamp: event.timestamp,
+              },
+              recursive_refs,
+            });
+          }
+          if (operation.cursed_inscription_revealed) {
+            const reveal = operation.cursed_inscription_revealed;
+            const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
+            const satpoint = parseSatPoint(reveal.satpoint_post_inscription);
+            const recursive_refs = getInscriptionRecursion(reveal.content_bytes);
+            writes.push({
+              inscription: {
+                genesis_id: reveal.inscription_id,
+                mime_type: reveal.content_type.split(';')[0],
+                content_type: reveal.content_type,
+                content_length: reveal.content_length,
+                number: reveal.inscription_number,
+                content: reveal.content_bytes,
+                fee: reveal.inscription_fee.toString(),
+                curse_type: JSON.stringify(reveal.curse_type),
+                sat_ordinal: reveal.ordinal_number.toString(),
+                sat_rarity: satoshi.rarity,
+                sat_coinbase_height: satoshi.blockHeight,
+                recursive: recursive_refs.length > 0,
+              },
+              location: {
+                block_hash,
+                block_height,
+                tx_id,
+                tx_index: reveal.tx_index,
+                genesis_id: reveal.inscription_id,
+                address: reveal.inscriber_address,
+                output: `${satpoint.tx_id}:${satpoint.vout}`,
+                offset: satpoint.offset ?? null,
+                prev_output: null,
+                prev_offset: null,
+                value: reveal.inscription_output_value.toString(),
+                timestamp: event.timestamp,
+              },
+              recursive_refs,
+            });
+          }
+          if (operation.inscription_transferred) {
+            const transfer = operation.inscription_transferred;
+            const satpoint = parseSatPoint(transfer.satpoint_post_transfer);
+            const prevSatpoint = parseSatPoint(transfer.satpoint_pre_transfer);
+            writes.push({
+              location: {
+                block_hash,
+                block_height,
+                tx_id,
+                tx_index: transfer.tx_index,
+                genesis_id: transfer.inscription_id,
+                address: transfer.updated_address,
+                output: `${satpoint.tx_id}:${satpoint.vout}`,
+                offset: satpoint.offset ?? null,
+                prev_output: `${prevSatpoint.tx_id}:${prevSatpoint.vout}`,
+                prev_offset: prevSatpoint.offset ?? null,
+                value: transfer.post_transfer_output_value
+                  ? transfer.post_transfer_output_value.toString()
+                  : null,
+                timestamp: event.timestamp,
+              },
+            });
+          }
+        }
+      }
+      // Divide insertion array into chunks of 5000 in order to avoid the postgres limit of 65534
+      // query params.
+      for (const writeChunk of chunkArray(writes, 5000)) await this.insertInscriptions(writeChunk);
+      // updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
+      await this.brc20.scanBlocks(event.block_identifier.index, event.block_identifier.index);
+    });
+    await this.refreshMaterializedView('chain_tip');
+    // Skip expensive view refreshes if we're not streaming live blocks.
+    // if (payload.chainhook.is_streaming_blocks) {
+    //   // We'll issue materialized view refreshes in parallel. We will not wait for them to finish so
+    //   // we can respond to the chainhook node with a `200` HTTP code as soon as possible.
+    //   const views = [this.normalizeInscriptionCount({ min_block_height: updatedBlockHeightMin })];
+    //   const viewRefresh = Promise.allSettled(views);
+    //   // Only wait for these on tests.
+    //   if (isTestEnv) await viewRefresh;
+    // }
+  }
+
+  async rollBackBlock(data: OrdhookBlock): Promise<void> {
+    await this.sqlWriteTransaction(async sql => {
+      // TODO: Optimize rollbacks just as we optimized applys.
+      const event = data.block;
+      const block_height = event.block_identifier.index;
+      for (const tx of event.transactions) {
+        for (const operation of tx.metadata.ordinal_operations) {
+          if (operation.inscription_revealed) {
+            const number = operation.inscription_revealed.inscription_number;
+            const genesis_id = operation.inscription_revealed.inscription_id;
+            await this.rollBackInscription({ genesis_id, number, block_height });
+          }
+          if (operation.cursed_inscription_revealed) {
+            const number = operation.cursed_inscription_revealed.inscription_number;
+            const genesis_id = operation.cursed_inscription_revealed.inscription_id;
+            await this.rollBackInscription({ genesis_id, number, block_height });
+          }
+          if (operation.inscription_transferred) {
+            const genesis_id = operation.inscription_transferred.inscription_id;
+            const satpoint = parseSatPoint(
+              operation.inscription_transferred.satpoint_post_transfer
+            );
+            const output = `${satpoint.tx_id}:${satpoint.vout}`;
+            await this.rollBackLocation({ genesis_id, output, block_height });
+          }
+        }
+        // updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
+      }
+    });
+  }
+
   /**
    * Inserts inscription genesis and transfers from Chainhook events. Also handles rollbacks from
    * chain re-orgs and materialized view refreshes.
    * @param args - Apply/Rollback Chainhook events
    */
   async updateInscriptions(payload: Payload): Promise<void> {
-    let updatedBlockHeightMin = Infinity;
-    await this.sqlWriteTransaction(async sql => {
-      for (const rollbackEvent of payload.rollback) {
-        // TODO: Optimize rollbacks just as we optimized applys.
-        const event = rollbackEvent as BitcoinEvent;
-        const block_height = event.block_identifier.index;
-        for (const tx of event.transactions) {
-          for (const operation of tx.metadata.ordinal_operations) {
-            if (operation.inscription_revealed) {
-              const number = operation.inscription_revealed.inscription_number;
-              const genesis_id = operation.inscription_revealed.inscription_id;
-              await this.rollBackInscription({ genesis_id, number, block_height });
-            }
-            if (operation.cursed_inscription_revealed) {
-              const number = operation.cursed_inscription_revealed.inscription_number;
-              const genesis_id = operation.cursed_inscription_revealed.inscription_id;
-              await this.rollBackInscription({ genesis_id, number, block_height });
-            }
-            if (operation.inscription_transferred) {
-              const genesis_id = operation.inscription_transferred.inscription_id;
-              const satpoint = parseSatPoint(
-                operation.inscription_transferred.satpoint_post_transfer
-              );
-              const output = `${satpoint.tx_id}:${satpoint.vout}`;
-              await this.rollBackLocation({ genesis_id, output, block_height });
-            }
-          }
-        }
-        updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
-      }
-      for (const applyEvent of payload.apply) {
-        const event = applyEvent as BitcoinEvent;
-        const block_height = event.block_identifier.index;
-        const block_hash = normalizedHexString(event.block_identifier.hash);
-        const writes: DbRevealInsert[] = [];
-        for (const tx of event.transactions) {
-          const tx_id = normalizedHexString(tx.transaction_identifier.hash);
-          for (const operation of tx.metadata.ordinal_operations) {
-            if (operation.inscription_revealed) {
-              const reveal = operation.inscription_revealed;
-              const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
-              const satpoint = parseSatPoint(reveal.satpoint_post_inscription);
-              const recursive_refs = getInscriptionRecursion(reveal.content_bytes);
-              writes.push({
-                inscription: {
-                  genesis_id: reveal.inscription_id,
-                  mime_type: reveal.content_type.split(';')[0],
-                  content_type: reveal.content_type,
-                  content_length: reveal.content_length,
-                  number: reveal.inscription_number,
-                  content: reveal.content_bytes,
-                  fee: reveal.inscription_fee.toString(),
-                  curse_type: null,
-                  sat_ordinal: reveal.ordinal_number.toString(),
-                  sat_rarity: satoshi.rarity,
-                  sat_coinbase_height: satoshi.blockHeight,
-                  recursive: recursive_refs.length > 0,
-                },
-                location: {
-                  block_hash,
-                  block_height,
-                  tx_id,
-                  tx_index: reveal.tx_index,
-                  genesis_id: reveal.inscription_id,
-                  address: reveal.inscriber_address,
-                  output: `${satpoint.tx_id}:${satpoint.vout}`,
-                  offset: satpoint.offset ?? null,
-                  prev_output: null,
-                  prev_offset: null,
-                  value: reveal.inscription_output_value.toString(),
-                  timestamp: event.timestamp,
-                },
-                recursive_refs,
-              });
-            }
-            if (operation.cursed_inscription_revealed) {
-              const reveal = operation.cursed_inscription_revealed;
-              const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
-              const satpoint = parseSatPoint(reveal.satpoint_post_inscription);
-              const recursive_refs = getInscriptionRecursion(reveal.content_bytes);
-              writes.push({
-                inscription: {
-                  genesis_id: reveal.inscription_id,
-                  mime_type: reveal.content_type.split(';')[0],
-                  content_type: reveal.content_type,
-                  content_length: reveal.content_length,
-                  number: reveal.inscription_number,
-                  content: reveal.content_bytes,
-                  fee: reveal.inscription_fee.toString(),
-                  curse_type: JSON.stringify(reveal.curse_type),
-                  sat_ordinal: reveal.ordinal_number.toString(),
-                  sat_rarity: satoshi.rarity,
-                  sat_coinbase_height: satoshi.blockHeight,
-                  recursive: recursive_refs.length > 0,
-                },
-                location: {
-                  block_hash,
-                  block_height,
-                  tx_id,
-                  tx_index: reveal.tx_index,
-                  genesis_id: reveal.inscription_id,
-                  address: reveal.inscriber_address,
-                  output: `${satpoint.tx_id}:${satpoint.vout}`,
-                  offset: satpoint.offset ?? null,
-                  prev_output: null,
-                  prev_offset: null,
-                  value: reveal.inscription_output_value.toString(),
-                  timestamp: event.timestamp,
-                },
-                recursive_refs,
-              });
-            }
-            if (operation.inscription_transferred) {
-              const transfer = operation.inscription_transferred;
-              const satpoint = parseSatPoint(transfer.satpoint_post_transfer);
-              const prevSatpoint = parseSatPoint(transfer.satpoint_pre_transfer);
-              writes.push({
-                location: {
-                  block_hash,
-                  block_height,
-                  tx_id,
-                  tx_index: transfer.tx_index,
-                  genesis_id: transfer.inscription_id,
-                  address: transfer.updated_address,
-                  output: `${satpoint.tx_id}:${satpoint.vout}`,
-                  offset: satpoint.offset ?? null,
-                  prev_output: `${prevSatpoint.tx_id}:${prevSatpoint.vout}`,
-                  prev_offset: prevSatpoint.offset ?? null,
-                  value: transfer.post_transfer_output_value
-                    ? transfer.post_transfer_output_value.toString()
-                    : null,
-                  timestamp: event.timestamp,
-                },
-              });
-            }
-          }
-        }
-        // Divide insertion array into chunks of 5000 in order to avoid the postgres limit of 65534
-        // query params.
-        for (const writeChunk of chunkArray(writes, 5000))
-          await this.insertInscriptions(writeChunk);
-        updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
-        if (ENV.BRC20_BLOCK_SCAN_ENABLED)
-          await this.brc20.scanBlocks(event.block_identifier.index, event.block_identifier.index);
-      }
+    await this.sqlWriteTransaction(async _ => {
+      for (const block of payload.rollback)
+        await this.rollBackBlock({ block: block as BitcoinEvent });
+      for (const block of payload.apply) await this.insertBlock({ block: block as BitcoinEvent });
     });
-    await this.refreshMaterializedView('chain_tip');
-    // Skip expensive view refreshes if we're not streaming live blocks.
-    if (payload.chainhook.is_streaming_blocks) {
-      // We'll issue materialized view refreshes in parallel. We will not wait for them to finish so
-      // we can respond to the chainhook node with a `200` HTTP code as soon as possible.
-      const views = [this.normalizeInscriptionCount({ min_block_height: updatedBlockHeightMin })];
-      const viewRefresh = Promise.allSettled(views);
-      // Only wait for these on tests.
-      if (isTestEnv) await viewRefresh;
-    }
   }
 
   async getChainTipBlockHeight(): Promise<number> {

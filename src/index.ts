@@ -5,27 +5,24 @@ import { ENV } from './env';
 import { ApiMetrics } from './metrics/metrics';
 import { PgStore } from './pg/pg-store';
 import { buildAdminRpcServer } from './admin-rpc/init';
+import { buildOrdhookIndexer } from './ordhook';
+
+function numberRange(start: number, end: number) {
+  return Array.from(Array(end - start + 1).keys()).map(x => x + start);
+}
 
 async function initBackgroundServices(db: PgStore) {
   logger.info('Initializing background services...');
-  const server = await startChainhookServer({ db });
+  const ordhook = buildOrdhookIndexer({ db });
   registerShutdownConfig({
-    name: 'Chainhook Server',
+    name: 'Ordhook Indexer',
     forceKillable: false,
     handler: async () => {
-      await server.close();
+      await ordhook.terminate();
     },
   });
-
-  const adminRpcServer = await buildAdminRpcServer({ db });
-  registerShutdownConfig({
-    name: 'Admin RPC Server',
-    forceKillable: false,
-    handler: async () => {
-      await adminRpcServer.close();
-    },
-  });
-  await adminRpcServer.listen({ host: ENV.API_HOST, port: ENV.ADMIN_RPC_PORT });
+  await ordhook.streamBlocks();
+  // await ordhook.replayBlocks(numberRange(767430, 809386));
 }
 
 async function initApiService(db: PgStore) {
