@@ -1,3 +1,10 @@
+## [1.2.3](https://github.com/hirosystems/ordinals-api/compare/v1.2.2...v1.2.3) (2023-09-29)
+
+
+### Bug Fixes
+
+* save brc20 event correctly when returning to sender ([#240](https://github.com/hirosystems/ordinals-api/issues/240)) ([ea99595](https://github.com/hirosystems/ordinals-api/commit/ea99595e3d123bcb4946c1ad40402965ae726a8c))
+
 ## [1.2.2](https://github.com/hirosystems/ordinals-api/compare/v1.2.1...v1.2.2) (2023-09-25)
 
 
