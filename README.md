@@ -1,9 +1,7 @@
-# Ordinals API
 
-A service that indexes Bitcoin Ordinals data and exposes it via REST API
-endpoints.
-
-## Table of Contents
+       /     /   ▶ Ordinals API   
+      / --- /      A service that ingests Bitcoin ordinal inscriptions to expose them via REST API endpoints.
+     /     /       
 
 * [Features](#features)
 * [API Reference](#api-reference)
@@ -16,51 +14,59 @@ endpoints.
 * [Contribute](#contribute)
 * [Community](#community)
 
-## Features
+***
 
-* Complete ordinal inscription ingestion
+# Features
+
+* Inscription endpoints
     * Genesis block and transaction information
     * Transfer history
+    * Transfers per block
     * Current location and ownership information
+    * Blessed and cursed inscriptions
+* BRC-20 endpoints
+    * Full token deploy, mint and transfer history
+    * Activities per token and per address
+    * Address balances
 * Satoshi ordinal notation endpoints
-* Easy to use REST JSON endpoints with ETag caching
+* ETag cache support
 * Run modes for auto-scaling
 
-## API Reference
+# API Reference
 
 See the [Ordinals API Reference](https://docs.hiro.so/ordinals/) for more
 information.
 
-## Quick Start
+# Quick Start
 
-### System Requirements
+## System Requirements
 
-The Ordinals API is a microservice that has hard dependencies on other systems.
+The Ordinals API has hard dependencies on other systems.
 Before you start, you'll need to have access to:
 
 1. An [Ordhook node](https://github.com/hirosystems/ordhook) with a fully
    indexed Ordinals database.
 1. A local writeable Postgres database for data storage
 
-### Running the API
+## Running the API
 
-Clone the repo.
+1. Clone the repo.
 
-Create an `.env` file and specify the appropriate values to configure the local
+1. Create an `.env` file and specify the appropriate values to configure the local
 API server, postgres DB and Ordhook node reachability. See
 [`env.ts`](https://github.com/hirosystems/ordinals-api/blob/develop/src/env.ts)
 for all available configuration options.
 
-Build the app (NodeJS v18+ is required)
-```
-npm install
-npm run build
-```
+1. Build the app (NodeJS v18+ is required)
+    ```
+    npm install
+    npm run build
+    ```
 
-Start the service
-```
-npm run start
-```
+1. Start the service
+    ```
+    npm run start
+    ```
 
 ### Run Modes
 
@@ -82,7 +88,7 @@ When shutting down, you should always prefer to send the `SIGINT` signal instead
 of `SIGKILL` so the service has time to finish any pending background work and
 all dependencies are gracefully disconnected.
 
-## Bugs and feature requests
+# Bugs and feature requests
 
 If you encounter a bug or have a feature request, we encourage you to follow the
 steps below:
@@ -103,22 +109,22 @@ for the status of a transaction. You'll find help at the [#support Discord
 channel](https://discord.gg/SK3DxdsP).
 
 
-## Contribute
+# Contribute
 
 Development of this product happens in the open on GitHub, and we are grateful
 to the community for contributing bugfixes and improvements. Read below to learn
 how you can take part in improving the product.
 
-### Code of Conduct
+## Code of Conduct
 Please read our [Code of conduct](../../../.github/blob/main/CODE_OF_CONDUCT.md)
 since we expect project participants to adhere to it. 
 
-### Contributing Guide
+## Contributing Guide
 Read our [contributing guide](.github/CONTRIBUTING.md) to learn about our
 development process, how to propose bugfixes and improvements, and how to build
 and test your changes.
 
-## Community
+# Community
 
 Join our community and stay connected with the latest updates and discussions:
 
