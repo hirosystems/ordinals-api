@@ -4,7 +4,7 @@ Title: Overview
 
 # Ordinals API Overview
 
-The Ordinals API is a protocol that allows for Bitcoin inscriptions based on Ordinal theory. It provides a service that indexes Bitcoin Ordinals data and offers a REST API to access and query this data.
+The Ordinals API is a REST API for querying data about Bitcoin inscriptions based on Ordinals theory as indexed by Hiro's Ordinals indexer.
 
 > **_NOTE:_**
 >
@@ -12,13 +12,13 @@ The Ordinals API is a protocol that allows for Bitcoin inscriptions based on Ord
 >
 > The source code for this project is available in our [GitHub repository](https://github.com/hirosystems/ordinals-api). You can explore the codebase, [contribute](https://docs.hiro.so/contributors-guide), and raise [issues](https://github.com/hirosystems/ordinals-api/issues) or [pull requests](https://github.com/hirosystems/ordinals-api/pulls).
 
-Here are the key features of the Ordinals API:
+Key features of the Ordinals API include:
 
-**Ordinal Inscription Ingestion**: The API helps with the complete ingestion of ordinal inscriptions. This includes information about the Genesis block, transactions, timestamps, and the history of inscriptions associated with each transaction. It also provides location and ownership information.
+**Ordinal Inscription Ingestion**: The API provides complete ingestion of ordinal inscriptions. This includes information about the Genesis block, transactions, timestamps, and the history of inscriptions associated with each transaction. It also provides location and ownership information.
 
 **Satoshi Ordinal Notation Endpoints**: The API offers endpoints to retrieve ordinal information using Satoshi ordinal notation. This allows you to query specific ordinals and obtain relevant data.
 
-**REST JSON Endpoints with ETag Caching**: The API provides easy-to-use REST endpoints that return responses in JSON format. It also supports *ETag caching*, which allows you to cache responses based on inscriptions. This helps optimize performance and reduce unnecessary requests.
+**REST JSON Endpoints with ETag Caching**: The API provides easy-to-use REST endpoints that return responses in JSON format. It also supports *ETag caching*, which allows you to cache responses based on inscriptions, otimizizing performance and reducing unnecessary requests.
 
 **Auto-Scale Server Configurations**: The Ordinals API supports three run modes based on the `RUN_MODE` environment variable:
 
