@@ -66,6 +66,7 @@
     "node-pg-migrate": "^6.2.2",
     "pino": "^8.10.0",
     "postgres": "^3.3.4",
+    "queue": "^6.0.0",
     "undici": "^5.8.0"
   }
 }

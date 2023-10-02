@@ -6,14 +6,15 @@ import { ApiMetrics } from './metrics/metrics';
 import { PgStore } from './pg/pg-store';
 import { buildAdminRpcServer } from './admin-rpc/init';
 import { buildOrdhookIndexer } from './ordhook';
+import Queue from 'queue';
 
 function numberRange(start: number, end: number) {
   return Array.from(Array(end - start + 1).keys()).map(x => x + start);
 }
 
-async function initBackgroundServices(db: PgStore) {
+async function initBackgroundServices(jobQueue: Queue, db: PgStore) {
   logger.info('Initializing background services...');
-  const ordhook = buildOrdhookIndexer({ db });
+  const ordhook = buildOrdhookIndexer(jobQueue, db);
   registerShutdownConfig({
     name: 'Ordhook Indexer',
     forceKillable: false,
@@ -21,7 +22,7 @@ async function initBackgroundServices(db: PgStore) {
       await ordhook.terminate();
     },
   });
-  await ordhook.streamBlocks();
+  await ordhook.replayBlockRange(767430, 807750);
   // await ordhook.replayBlocks(numberRange(767430, 809386));
 }
 
@@ -57,8 +58,13 @@ async function initApp() {
   logger.info(`Initializing in ${ENV.RUN_MODE} run mode...`);
   const db = await PgStore.connect({ skipMigrations: ENV.RUN_MODE === 'readonly' });
 
+  const jobQueue = new Queue({ 
+    concurrency: 1,
+    autostart: true,
+  });
+
   if (['default', 'writeonly'].includes(ENV.RUN_MODE)) {
-    await initBackgroundServices(db);
+    await initBackgroundServices(jobQueue, db);
   }
   if (['default', 'readonly'].includes(ENV.RUN_MODE)) {
     await initApiService(db);
