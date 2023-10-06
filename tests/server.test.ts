@@ -6,9 +6,11 @@ import {
   BitcoinInscriptionRevealed,
   BitcoinInscriptionTransferred,
   ChainhookEventObserver,
+  Payload,
 } from '@hirosystems/chainhook-client';
 import { buildApiServer } from '../src/api/init';
 import { cycleMigrations } from '@hirosystems/api-toolkit';
+import { testBlock } from './808382';
 
 describe('EventServer', () => {
   let db: PgStore;
@@ -385,6 +387,72 @@ describe('EventServer', () => {
         url: '/ordinals/v1/inscriptions/38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0/transfers',
       });
       expect(api4.json().total).toBe(3);
+    });
+
+    test('multiple inscription events on the same block are compared correctly', async () => {
+      const address = 'bc1q92zytmqgczsrg4xuhpc2asz6h4h7ke5hagw8k6';
+      const address2 = 'bc1qtpm0fsaawxjsthfdrxhmrzunnpjx0g9hncgvp7';
+      // ENV.INSCRIPTION_WRITE_CHUNK_LIMIT = 1;
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 808382,
+            hash: '00000000000000000002b14f0c5dde0b2fc74d022e860696bd64f1f652756674',
+          })
+          .transaction({
+            hash: '6046f17804eb8396285567a20c09598ae1273b6f744b23700ba95593c380ce02',
+          })
+          .inscriptionRevealed({
+            content_bytes: '0x48656C6C6F',
+            content_type: 'image/png',
+            content_length: 5,
+            inscription_number: 33224825,
+            inscription_fee: 2805,
+            inscription_id: '6046f17804eb8396285567a20c09598ae1273b6f744b23700ba95593c380ce02i0',
+            inscription_output_value: 10000,
+            inscriber_address: address,
+            ordinal_number: 5,
+            ordinal_block_height: 0,
+            ordinal_offset: 0,
+            satpoint_post_inscription:
+              '6046f17804eb8396285567a20c09598ae1273b6f744b23700ba95593c380ce02:0:0',
+            inscription_input_index: 0,
+            transfers_pre_inscription: 0,
+            tx_index: 995,
+          })
+          .transaction({
+            hash: '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac',
+          })
+          .inscriptionTransferred({
+            inscription_id: '6046f17804eb8396285567a20c09598ae1273b6f744b23700ba95593c380ce02i0',
+            updated_address: address2,
+            satpoint_pre_transfer:
+              '6046f17804eb8396285567a20c09598ae1273b6f744b23700ba95593c380ce02:0:0',
+            satpoint_post_transfer:
+              '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac:0:0',
+            post_transfer_output_value: null,
+            tx_index: 1019,
+          })
+          .build()
+      );
+      // ENV.INSCRIPTION_WRITE_CHUNK_LIMIT = 5000;
+      // await db.updateInscriptions(testBlock as Payload);
+      const response = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/inscriptions/6046f17804eb8396285567a20c09598ae1273b6f744b23700ba95593c380ce02i0`,
+      });
+      expect(response.statusCode).toBe(200);
+      const json = response.json();
+      expect(json.genesis_address).toBe(address);
+      // expect(json.results).toStrictEqual([
+      //   {
+      //     available_balance: '1000.000000000000000000',
+      //     overall_balance: '10000.000000000000000000',
+      //     ticker: 'PEPE',
+      //     transferrable_balance: '9000.000000000000000000',
+      //   },
+      // ]);
     });
   });
 });
