@@ -1,3 +1,10 @@
+## [1.2.4](https://github.com/hirosystems/ordinals-api/compare/v1.2.3...v1.2.4) (2023-10-06)
+
+
+### Bug Fixes
+
+* same-block inscription location pointer comparison ([#248](https://github.com/hirosystems/ordinals-api/issues/248)) ([6fabb40](https://github.com/hirosystems/ordinals-api/commit/6fabb408373906ffbf3651cfa49121211b2cea98))
+
 ## [1.2.3](https://github.com/hirosystems/ordinals-api/compare/v1.2.2...v1.2.3) (2023-09-29)
 
 
