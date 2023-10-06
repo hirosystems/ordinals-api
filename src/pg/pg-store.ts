@@ -753,7 +753,8 @@ export class PgStore extends BasePgStore {
       const genesisPtrs = distinctPointers(
         (a, b) =>
           parseInt(a.block_height) < parseInt(b.block_height) ||
-          (parseInt(a.block_height) === parseInt(b.block_height) && parseInt(a.tx_index) < parseInt(b.tx_index))
+          (parseInt(a.block_height) === parseInt(b.block_height) &&
+            parseInt(a.tx_index) < parseInt(b.tx_index))
       );
       if (genesisPtrs.length) {
         const genesis = await sql<{ old_address: string | null; new_address: string | null }[]>`
@@ -785,7 +786,8 @@ export class PgStore extends BasePgStore {
       const currentPtrs = distinctPointers(
         (a, b) =>
           parseInt(a.block_height) > parseInt(b.block_height) ||
-          (parseInt(a.block_height) === parseInt(b.block_height) && parseInt(a.tx_index) > parseInt(b.tx_index))
+          (parseInt(a.block_height) === parseInt(b.block_height) &&
+            parseInt(a.tx_index) > parseInt(b.tx_index))
       );
       if (currentPtrs.length) {
         const current = await sql<{ old_address: string | null; new_address: string | null }[]>`
