@@ -10,7 +10,6 @@ import {
 } from '@hirosystems/chainhook-client';
 import { buildApiServer } from '../src/api/init';
 import { cycleMigrations } from '@hirosystems/api-toolkit';
-import { testBlock } from './808382';
 
 describe('EventServer', () => {
   let db: PgStore;
