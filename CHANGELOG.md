@@ -1,3 +1,10 @@
+## [1.2.5](https://github.com/hirosystems/ordinals-api/compare/v1.2.4...v1.2.5) (2023-10-06)
+
+
+### Bug Fixes
+
+* use ENV for server body limit ([#249](https://github.com/hirosystems/ordinals-api/issues/249)) ([d00fb8e](https://github.com/hirosystems/ordinals-api/commit/d00fb8e8e702c92232ebd82779a2ed29cf9eeaaa))
+
 ## [1.2.4](https://github.com/hirosystems/ordinals-api/compare/v1.2.3...v1.2.4) (2023-10-06)
 
 
