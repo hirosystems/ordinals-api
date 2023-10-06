@@ -737,7 +737,7 @@ export class PgStore extends BasePgStore {
     const distinctPointers = (
       cond: (a: DbLocationPointerInsert, b: DbLocationPointerInsert) => boolean
     ): DbLocationPointerInsert[] => {
-      const out = new Map<number, DbLocationPointerInsert>();
+      const out = new Map<string, DbLocationPointerInsert>();
       for (const ptr of pointers) {
         if (ptr.inscription_id === null) continue;
         const current = out.get(ptr.inscription_id);
@@ -748,12 +748,13 @@ export class PgStore extends BasePgStore {
 
     await this.sqlWriteTransaction(async sql => {
       const distinctIds = [
-        ...new Set<number>(pointers.map(i => i.inscription_id).filter(v => v !== null)),
+        ...new Set<string>(pointers.map(i => i.inscription_id).filter(v => v !== null)),
       ];
       const genesisPtrs = distinctPointers(
         (a, b) =>
-          a.block_height < b.block_height ||
-          (a.block_height === b.block_height && a.tx_index < b.tx_index)
+          parseInt(a.block_height) < parseInt(b.block_height) ||
+          (parseInt(a.block_height) === parseInt(b.block_height) &&
+            parseInt(a.tx_index) < parseInt(b.tx_index))
       );
       if (genesisPtrs.length) {
         const genesis = await sql<{ old_address: string | null; new_address: string | null }[]>`
@@ -784,8 +785,9 @@ export class PgStore extends BasePgStore {
 
       const currentPtrs = distinctPointers(
         (a, b) =>
-          a.block_height > b.block_height ||
-          (a.block_height === b.block_height && a.tx_index > b.tx_index)
+          parseInt(a.block_height) > parseInt(b.block_height) ||
+          (parseInt(a.block_height) === parseInt(b.block_height) &&
+            parseInt(a.tx_index) > parseInt(b.tx_index))
       );
       if (currentPtrs.length) {
         const current = await sql<{ old_address: string | null; new_address: string | null }[]>`
