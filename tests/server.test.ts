@@ -6,7 +6,6 @@ import {
   BitcoinInscriptionRevealed,
   BitcoinInscriptionTransferred,
   ChainhookEventObserver,
-  Payload,
 } from '@hirosystems/chainhook-client';
 import { buildApiServer } from '../src/api/init';
 import { cycleMigrations } from '@hirosystems/api-toolkit';
