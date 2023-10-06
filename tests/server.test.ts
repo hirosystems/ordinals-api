@@ -389,10 +389,9 @@ describe('EventServer', () => {
       expect(api4.json().total).toBe(3);
     });
 
-    test('multiple inscription events on the same block are compared correctly', async () => {
+    test('multiple inscription pointers on the same block are compared correctly', async () => {
       const address = 'bc1q92zytmqgczsrg4xuhpc2asz6h4h7ke5hagw8k6';
       const address2 = 'bc1qtpm0fsaawxjsthfdrxhmrzunnpjx0g9hncgvp7';
-      // ENV.INSCRIPTION_WRITE_CHUNK_LIMIT = 1;
       await db.updateInscriptions(
         new TestChainhookPayloadBuilder()
           .apply()
@@ -432,12 +431,10 @@ describe('EventServer', () => {
             satpoint_post_transfer:
               '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac:0:0',
             post_transfer_output_value: null,
-            tx_index: 1019,
+            tx_index: 1019, // '1019' is less than '995' when compared as a string
           })
           .build()
       );
-      // ENV.INSCRIPTION_WRITE_CHUNK_LIMIT = 5000;
-      // await db.updateInscriptions(testBlock as Payload);
       const response = await fastify.inject({
         method: 'GET',
         url: `/ordinals/inscriptions/6046f17804eb8396285567a20c09598ae1273b6f744b23700ba95593c380ce02i0`,
@@ -445,14 +442,6 @@ describe('EventServer', () => {
       expect(response.statusCode).toBe(200);
       const json = response.json();
       expect(json.genesis_address).toBe(address);
-      // expect(json.results).toStrictEqual([
-      //   {
-      //     available_balance: '1000.000000000000000000',
-      //     overall_balance: '10000.000000000000000000',
-      //     ticker: 'PEPE',
-      //     transferrable_balance: '9000.000000000000000000',
-      //   },
-      // ]);
     });
   });
 });

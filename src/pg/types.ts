@@ -75,10 +75,10 @@ export type DbLocationPointer = {
 };
 
 export type DbLocationPointerInsert = {
-  inscription_id: number;
-  location_id: number;
-  block_height: number;
-  tx_index: number;
+  inscription_id: string;
+  location_id: string;
+  block_height: string;
+  tx_index: string;
   address: string | null;
 };
 
