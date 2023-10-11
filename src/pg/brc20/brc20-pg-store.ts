@@ -47,7 +47,7 @@ export class Brc20PgStore extends BasePgStoreModule {
     for (let blockHeight = startBlock; blockHeight <= endBlock; blockHeight++) {
       logger.info(`Brc20PgStore scanning block ${blockHeight}`);
       await this.sqlWriteTransaction(async sql => {
-        const block = await sql<DbBrc20ScannedInscription[]>`
+        const cursor = sql<DbBrc20ScannedInscription[]>`
           SELECT
             EXISTS(SELECT location_id FROM genesis_locations WHERE location_id = l.id) AS genesis,
             l.id, l.inscription_id, l.block_height, l.tx_id, l.tx_index, l.address
@@ -57,8 +57,10 @@ export class Brc20PgStore extends BasePgStoreModule {
             AND i.number >= 0
             AND i.mime_type IN ('application/json', 'text/plain')
           ORDER BY tx_index ASC
-        `;
-        await this.insertOperations(block);
+        `.cursor(100_000);
+        for await (const chunk of cursor) {
+          await this.insertOperations(chunk);
+        }
       });
     }
   }
