@@ -57,7 +57,7 @@ export class Brc20PgStore extends BasePgStoreModule {
             AND i.number >= 0
             AND i.mime_type IN ('application/json', 'text/plain')
           ORDER BY tx_index ASC
-        `.cursor(5000);
+        `.cursor(100_000);
         for await (const chunk of cursor) {
           await this.insertOperations(chunk);
         }
