@@ -65,6 +65,7 @@ export class Brc20PgStore extends BasePgStoreModule {
           `;
           if (block.count === 0) break;
           await this.insertOperations(block);
+          if (block.count < limit) break;
           offset += limit;
         } while (true);
       });
