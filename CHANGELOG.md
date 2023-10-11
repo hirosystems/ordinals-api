@@ -1,3 +1,10 @@
+## [1.2.6-beta.1](https://github.com/hirosystems/ordinals-api/compare/v1.2.5...v1.2.6-beta.1) (2023-10-11)
+
+
+### Bug Fixes
+
+* scan brc-20 blocks using a cursor ([#251](https://github.com/hirosystems/ordinals-api/issues/251)) ([a1bf4b4](https://github.com/hirosystems/ordinals-api/commit/a1bf4b45eddc002610c6c6588c5ec45a2b64b0bb))
+
 ## [1.2.5](https://github.com/hirosystems/ordinals-api/compare/v1.2.4...v1.2.5) (2023-10-06)
 
 
