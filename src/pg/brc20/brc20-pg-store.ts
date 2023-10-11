@@ -47,18 +47,27 @@ export class Brc20PgStore extends BasePgStoreModule {
     for (let blockHeight = startBlock; blockHeight <= endBlock; blockHeight++) {
       logger.info(`Brc20PgStore scanning block ${blockHeight}`);
       await this.sqlWriteTransaction(async sql => {
-        const block = await sql<DbBrc20ScannedInscription[]>`
-          SELECT
-            EXISTS(SELECT location_id FROM genesis_locations WHERE location_id = l.id) AS genesis,
-            l.id, l.inscription_id, l.block_height, l.tx_id, l.tx_index, l.address
-          FROM locations AS l
-          INNER JOIN inscriptions AS i ON l.inscription_id = i.id
-          WHERE l.block_height = ${blockHeight}
-            AND i.number >= 0
-            AND i.mime_type IN ('application/json', 'text/plain')
-          ORDER BY tx_index ASC
-        `;
-        await this.insertOperations(block);
+        const limit = 100_000;
+        let offset = 0;
+        do {
+          const block = await sql<DbBrc20ScannedInscription[]>`
+            SELECT
+              EXISTS(SELECT location_id FROM genesis_locations WHERE location_id = l.id) AS genesis,
+              l.id, l.inscription_id, l.block_height, l.tx_id, l.tx_index, l.address
+            FROM locations AS l
+            INNER JOIN inscriptions AS i ON l.inscription_id = i.id
+            WHERE l.block_height = ${blockHeight}
+              AND i.number >= 0
+              AND i.mime_type IN ('application/json', 'text/plain')
+            ORDER BY tx_index ASC
+            LIMIT ${limit}
+            OFFSET ${offset}
+          `;
+          if (block.count === 0) break;
+          await this.insertOperations(block);
+          if (block.count < limit) break;
+          offset += limit;
+        } while (true);
       });
     }
   }

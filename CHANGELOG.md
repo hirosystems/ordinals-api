@@ -1,3 +1,17 @@
+## [1.2.6-beta.2](https://github.com/hirosystems/ordinals-api/compare/v1.2.6-beta.1...v1.2.6-beta.2) (2023-10-11)
+
+
+### Bug Fixes
+
+* use limit/offset instead of a cursor ([#252](https://github.com/hirosystems/ordinals-api/issues/252)) ([e4e9819](https://github.com/hirosystems/ordinals-api/commit/e4e98194973a36936d0adcf5069580e39a4ebbf5))
+
+## [1.2.6-beta.1](https://github.com/hirosystems/ordinals-api/compare/v1.2.5...v1.2.6-beta.1) (2023-10-11)
+
+
+### Bug Fixes
+
+* scan brc-20 blocks using a cursor ([#251](https://github.com/hirosystems/ordinals-api/issues/251)) ([a1bf4b4](https://github.com/hirosystems/ordinals-api/commit/a1bf4b45eddc002610c6c6588c5ec45a2b64b0bb))
+
 ## [1.2.5](https://github.com/hirosystems/ordinals-api/compare/v1.2.4...v1.2.5) (2023-10-06)
 
 
