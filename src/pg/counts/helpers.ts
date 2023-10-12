@@ -27,6 +27,7 @@ export function getIndexResultCountType(
       if (filters.to_genesis_block_height) return DbInscriptionIndexResultCountType.toblockHeight;
       if (filters.genesis_block_hash) return DbInscriptionIndexResultCountType.blockHash;
       if (filters.cursed !== undefined) return DbInscriptionIndexResultCountType.cursed;
+      if (filters.recursive !== undefined) return DbInscriptionIndexResultCountType.recursive;
       if (filters.number || filters.genesis_id || filters.output || filters.sat_ordinal)
         return DbInscriptionIndexResultCountType.singleResult;
     case 2:

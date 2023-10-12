@@ -1,3 +1,53 @@
+## [1.2.6](https://github.com/hirosystems/ordinals-api/compare/v1.2.5...v1.2.6) (2023-10-11)
+
+
+### Bug Fixes
+
+* scan brc-20 blocks using a cursor ([#251](https://github.com/hirosystems/ordinals-api/issues/251)) ([a1bf4b4](https://github.com/hirosystems/ordinals-api/commit/a1bf4b45eddc002610c6c6588c5ec45a2b64b0bb))
+* use limit/offset instead of a cursor ([#252](https://github.com/hirosystems/ordinals-api/issues/252)) ([e4e9819](https://github.com/hirosystems/ordinals-api/commit/e4e98194973a36936d0adcf5069580e39a4ebbf5))
+
+## [1.2.6-beta.2](https://github.com/hirosystems/ordinals-api/compare/v1.2.6-beta.1...v1.2.6-beta.2) (2023-10-11)
+
+
+### Bug Fixes
+
+* use limit/offset instead of a cursor ([#252](https://github.com/hirosystems/ordinals-api/issues/252)) ([e4e9819](https://github.com/hirosystems/ordinals-api/commit/e4e98194973a36936d0adcf5069580e39a4ebbf5))
+
+## [1.2.6-beta.1](https://github.com/hirosystems/ordinals-api/compare/v1.2.5...v1.2.6-beta.1) (2023-10-11)
+
+
+### Bug Fixes
+
+* scan brc-20 blocks using a cursor ([#251](https://github.com/hirosystems/ordinals-api/issues/251)) ([a1bf4b4](https://github.com/hirosystems/ordinals-api/commit/a1bf4b45eddc002610c6c6588c5ec45a2b64b0bb))
+
+## [1.2.5](https://github.com/hirosystems/ordinals-api/compare/v1.2.4...v1.2.5) (2023-10-06)
+
+
+### Bug Fixes
+
+* use ENV for server body limit ([#249](https://github.com/hirosystems/ordinals-api/issues/249)) ([d00fb8e](https://github.com/hirosystems/ordinals-api/commit/d00fb8e8e702c92232ebd82779a2ed29cf9eeaaa))
+
+## [1.2.4](https://github.com/hirosystems/ordinals-api/compare/v1.2.3...v1.2.4) (2023-10-06)
+
+
+### Bug Fixes
+
+* same-block inscription location pointer comparison ([#248](https://github.com/hirosystems/ordinals-api/issues/248)) ([6fabb40](https://github.com/hirosystems/ordinals-api/commit/6fabb408373906ffbf3651cfa49121211b2cea98))
+
+## [1.2.3](https://github.com/hirosystems/ordinals-api/compare/v1.2.2...v1.2.3) (2023-09-29)
+
+
+### Bug Fixes
+
+* save brc20 event correctly when returning to sender ([#240](https://github.com/hirosystems/ordinals-api/issues/240)) ([ea99595](https://github.com/hirosystems/ordinals-api/commit/ea99595e3d123bcb4946c1ad40402965ae726a8c))
+
+## [1.2.2](https://github.com/hirosystems/ordinals-api/compare/v1.2.1...v1.2.2) (2023-09-25)
+
+
+### Bug Fixes
+
+* create table for recursive inscriptions count ([#237](https://github.com/hirosystems/ordinals-api/issues/237)) ([e27fa41](https://github.com/hirosystems/ordinals-api/commit/e27fa41761ca6eb2b267377b5ac36105fc41c017))
+
 ## [1.2.1](https://github.com/hirosystems/ordinals-api/compare/v1.2.0...v1.2.1) (2023-09-22)
 
 

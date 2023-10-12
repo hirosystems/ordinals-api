@@ -47,7 +47,7 @@ export async function startChainhookServer(args: { db: PgStore }): Promise<Chain
     external_base_url: `http://${ENV.EXTERNAL_HOSTNAME}`,
     wait_for_chainhook_node: ENV.CHAINHOOK_AUTO_PREDICATE_REGISTRATION,
     validate_chainhook_payloads: true,
-    body_limit: 41943040, // 40MB
+    body_limit: ENV.EVENT_SERVER_BODY_LIMIT,
   };
   const chainhookOpts: ChainhookNodeOptions = {
     base_url: CHAINHOOK_BASE_PATH,

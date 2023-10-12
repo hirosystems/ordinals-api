@@ -386,5 +386,60 @@ describe('EventServer', () => {
       });
       expect(api4.json().total).toBe(3);
     });
+
+    test('multiple inscription pointers on the same block are compared correctly', async () => {
+      const address = 'bc1q92zytmqgczsrg4xuhpc2asz6h4h7ke5hagw8k6';
+      const address2 = 'bc1qtpm0fsaawxjsthfdrxhmrzunnpjx0g9hncgvp7';
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 808382,
+            hash: '00000000000000000002b14f0c5dde0b2fc74d022e860696bd64f1f652756674',
+          })
+          .transaction({
+            hash: '6046f17804eb8396285567a20c09598ae1273b6f744b23700ba95593c380ce02',
+          })
+          .inscriptionRevealed({
+            content_bytes: '0x48656C6C6F',
+            content_type: 'image/png',
+            content_length: 5,
+            inscription_number: 33224825,
+            inscription_fee: 2805,
+            inscription_id: '6046f17804eb8396285567a20c09598ae1273b6f744b23700ba95593c380ce02i0',
+            inscription_output_value: 10000,
+            inscriber_address: address,
+            ordinal_number: 5,
+            ordinal_block_height: 0,
+            ordinal_offset: 0,
+            satpoint_post_inscription:
+              '6046f17804eb8396285567a20c09598ae1273b6f744b23700ba95593c380ce02:0:0',
+            inscription_input_index: 0,
+            transfers_pre_inscription: 0,
+            tx_index: 995,
+          })
+          .transaction({
+            hash: '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac',
+          })
+          .inscriptionTransferred({
+            inscription_id: '6046f17804eb8396285567a20c09598ae1273b6f744b23700ba95593c380ce02i0',
+            updated_address: address2,
+            satpoint_pre_transfer:
+              '6046f17804eb8396285567a20c09598ae1273b6f744b23700ba95593c380ce02:0:0',
+            satpoint_post_transfer:
+              '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac:0:0',
+            post_transfer_output_value: null,
+            tx_index: 1019, // '1019' is less than '995' when compared as a string
+          })
+          .build()
+      );
+      const response = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/inscriptions/6046f17804eb8396285567a20c09598ae1273b6f744b23700ba95593c380ce02i0`,
+      });
+      expect(response.statusCode).toBe(200);
+      const json = response.json();
+      expect(json.genesis_address).toBe(address);
+    });
   });
 });

@@ -21,30 +21,30 @@ export function buildOrdhookIndexer(jobQueue: Queue, db: PgStore): OrdinalsIndex
 
     // Early return: if the queue is full, reject the block
     if (jobQueue.length > 10) {
-      console.log("Blocking");
+      console.log('Blocking');
       return false;
     }
 
     // Enqueue
     jobQueue.push(async () => {
-      await db.insertBlock(block as OrdhookBlock)
-    })
+      await db.insertBlock(block as OrdhookBlock);
+    });
     return true;
   });
- 
+
   ordhook.onBlockRollBack(block => {
     console.log(`Queue size: ${jobQueue.length}`);
 
     // Early return: if the queue is full, reject the block
     if (jobQueue.length > 10) {
-      console.log("Blocking");
+      console.log('Blocking');
       return false;
     }
 
     // Enqueue
     jobQueue.push(async () => {
       await db.rollBackBlock(block as OrdhookBlock);
-    })
+    });
     return true;
   });
   return ordhook;
