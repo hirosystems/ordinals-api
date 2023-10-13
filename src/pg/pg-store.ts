@@ -82,7 +82,6 @@ export class PgStore extends BasePgStore {
 
   async insertBlock(data: OrdhookBlock): Promise<void> {
     await this.sqlWriteTransaction(async _ => {
-      // let updatedBlockHeightMin = Infinity;
       const event = data.block;
       const block_height = event.block_identifier.index;
       const block_hash = normalizedHexString(event.block_identifier.hash);
@@ -192,19 +191,10 @@ export class PgStore extends BasePgStore {
       // Divide insertion array into chunks of 5000 in order to avoid the postgres limit of 65534
       // query params.
       for (const writeChunk of chunkArray(writes, 5000)) await this.insertInscriptions(writeChunk);
-      // updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
+      await this.normalizeInscriptionCount({ min_block_height: data.block.block_identifier.index });
       await this.brc20.scanBlocks(event.block_identifier.index, event.block_identifier.index);
     });
     await this.refreshMaterializedView('chain_tip');
-    // Skip expensive view refreshes if we're not streaming live blocks.
-    // if (payload.chainhook.is_streaming_blocks) {
-    //   // We'll issue materialized view refreshes in parallel. We will not wait for them to finish so
-    //   // we can respond to the chainhook node with a `200` HTTP code as soon as possible.
-    //   const views = [this.normalizeInscriptionCount({ min_block_height: updatedBlockHeightMin })];
-    //   const viewRefresh = Promise.allSettled(views);
-    //   // Only wait for these on tests.
-    //   if (isTestEnv) await viewRefresh;
-    // }
   }
 
   async rollBackBlock(data: OrdhookBlock): Promise<void> {
