@@ -1,3 +1,19 @@
+## [1.3.0-ordhook.1](https://github.com/hirosystems/ordinals-api/compare/v1.2.6...v1.3.0-ordhook.1) (2023-10-13)
+
+
+### Features
+
+* build docker container from ordhook ([cd17f60](https://github.com/hirosystems/ordinals-api/commit/cd17f60b59ba032a7a8b564769dbf204db2939e2))
+* draft queue mechanism ([78b666b](https://github.com/hirosystems/ordinals-api/commit/78b666b47400a2da3093bff6c5b13e318bcade7a))
+
+
+### Bug Fixes
+
+* add required env for tests ([bbafcf9](https://github.com/hirosystems/ordinals-api/commit/bbafcf9e20ee26f624281204654d84cf266c87e3))
+* block stats ([587bc1a](https://github.com/hirosystems/ordinals-api/commit/587bc1a7243a74e3eaa9677d4560b6b5837705ba))
+* insert transfer_send event correctly when spent as fee ([fe56ee9](https://github.com/hirosystems/ordinals-api/commit/fe56ee9492b3bad559b8c1f753a2bbe7628d30ad))
+* lint errors ([bcc0273](https://github.com/hirosystems/ordinals-api/commit/bcc0273383552901a27af082dd9865e9936b3683))
+
 ## [1.2.6](https://github.com/hirosystems/ordinals-api/compare/v1.2.5...v1.2.6) (2023-10-11)
 
 
