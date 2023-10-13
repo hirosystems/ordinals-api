@@ -1,3 +1,10 @@
+## [1.3.0-ordhook.3](https://github.com/hirosystems/ordinals-api/compare/v1.3.0-ordhook.2...v1.3.0-ordhook.3) (2023-10-13)
+
+
+### Bug Fixes
+
+* downgrade p-queue to v6 ([52d80ca](https://github.com/hirosystems/ordinals-api/commit/52d80caab47fcdf7b482efde495ce71e1bc40bf9))
+
 ## [1.3.0-ordhook.2](https://github.com/hirosystems/ordinals-api/compare/v1.3.0-ordhook.1...v1.3.0-ordhook.2) (2023-10-13)
 
 
