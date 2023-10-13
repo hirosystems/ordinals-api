@@ -1,3 +1,10 @@
+## [1.3.0-ordhook.2](https://github.com/hirosystems/ordinals-api/compare/v1.3.0-ordhook.1...v1.3.0-ordhook.2) (2023-10-13)
+
+
+### Bug Fixes
+
+* trigger new release ([0c3eecc](https://github.com/hirosystems/ordinals-api/commit/0c3eecc02e97338af2e4a0a8f6f1c7a6b4d9d08b))
+
 ## [1.3.0-ordhook.1](https://github.com/hirosystems/ordinals-api/compare/v1.2.6...v1.3.0-ordhook.1) (2023-10-13)
 
 
