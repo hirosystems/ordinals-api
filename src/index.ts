@@ -5,22 +5,18 @@ import { ApiMetrics } from './metrics/metrics';
 import { PgStore } from './pg/pg-store';
 import { buildOrdhookIndexer } from './ordhook';
 
-function numberRange(start: number, end: number) {
-  return Array.from(Array(end - start + 1).keys()).map(x => x + start);
-}
-
 async function initBackgroundServices(db: PgStore) {
   logger.info('Initializing background services...');
   const ordhook = buildOrdhookIndexer(db);
   registerShutdownConfig({
     name: 'Ordhook Indexer',
     forceKillable: false,
-    handler: async () => {
-      await ordhook.terminate();
+    handler: () => {
+      ordhook.terminate();
     },
   });
-  await ordhook.replayBlockRange(767430, 807750);
-  // await ordhook.replayBlocks(numberRange(767430, 809386));
+  ordhook.replayBlockRange(767430, 807750);
+  await Promise.resolve();
 }
 
 async function initApiService(db: PgStore) {

@@ -3,7 +3,6 @@ import {
   PgConnectionVars,
   PgSqlClient,
   connectPostgres,
-  isTestEnv,
   logger,
   runMigrations,
 } from '@hirosystems/api-toolkit';
