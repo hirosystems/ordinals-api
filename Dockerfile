@@ -1,9 +1,8 @@
 FROM node:18-bullseye
 
-COPY --from=hirosystems/ordhook /bin/ordhook /bin/ordhook
-
 WORKDIR /app
 COPY . .
+COPY --from=hirosystems/ordhook /bin/ordhook /bin/ordhook
 
 RUN apt-get update && apt-get install -y git
 RUN npm ci && \
