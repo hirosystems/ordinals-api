@@ -13,8 +13,8 @@ export function buildOrdhookIndexer(db: PgStore): OrdinalsIndexer {
     bitcoinRpcUrl: ENV.BITCOIN_RPC_URL,
     bitcoinRpcUsername: ENV.BITCOIN_RPC_USERNAME,
     bitcoinRpcPassword: ENV.BITCOIN_RPC_PASSWORD,
-    workingDirectory: ENV.ORDHOOK_WORKING_DIR,
-    logs: true,
+    workingDir: ENV.ORDHOOK_WORKING_DIR,
+    logsEnabled: true,
   });
   const jobQueue = new PQueue({
     concurrency: 1,
