@@ -1,3 +1,14 @@
+## [2.0.0-beta.1](https://github.com/hirosystems/ordinals-api/compare/v1.2.6...v2.0.0-beta.1) (2023-11-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* handle transfer types and consider them for BRC-20 indexing (#258)
+
+### Features
+
+* handle transfer types and consider them for BRC-20 indexing ([#258](https://github.com/hirosystems/ordinals-api/issues/258)) ([7b83761](https://github.com/hirosystems/ordinals-api/commit/7b83761818ab4a178796a1867d143ff75ef338b0))
+
 ## [1.2.6](https://github.com/hirosystems/ordinals-api/compare/v1.2.5...v1.2.6) (2023-10-11)
 
 
