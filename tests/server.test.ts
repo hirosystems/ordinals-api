@@ -171,7 +171,10 @@ describe('EventServer', () => {
 
       const transfer: BitcoinInscriptionTransferred = {
         inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-        updated_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf00000',
+        destination: {
+          type: 'transferred',
+          value: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf00000',
+        },
         satpoint_pre_transfer:
           '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
         satpoint_post_transfer:
@@ -281,7 +284,10 @@ describe('EventServer', () => {
           })
           .inscriptionTransferred({
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-            updated_address: 'bc1qcf3dgqgvylmd5ayl4njm4ephqfdazy93ssu28j',
+            destination: {
+              type: 'transferred',
+              value: 'bc1qcf3dgqgvylmd5ayl4njm4ephqfdazy93ssu28j',
+            },
             satpoint_pre_transfer:
               '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
             satpoint_post_transfer:
@@ -304,7 +310,10 @@ describe('EventServer', () => {
           })
           .inscriptionTransferred({
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-            updated_address: 'bc1qcf3dgqgvylmd5ayl4njm4ephqfdazy93ssu28j',
+            destination: {
+              type: 'transferred',
+              value: 'bc1qcf3dgqgvylmd5ayl4njm4ephqfdazy93ssu28j',
+            },
             satpoint_pre_transfer:
               '9e2414153b1893f799477f7e1a00a52fafc235de72fd215cb3321f253c4464ac:0:0',
             satpoint_post_transfer:
@@ -423,7 +432,7 @@ describe('EventServer', () => {
           })
           .inscriptionTransferred({
             inscription_id: '6046f17804eb8396285567a20c09598ae1273b6f744b23700ba95593c380ce02i0',
-            updated_address: address2,
+            destination: { type: 'transferred', value: address2 },
             satpoint_pre_transfer:
               '6046f17804eb8396285567a20c09598ae1273b6f744b23700ba95593c380ce02:0:0',
             satpoint_post_transfer:

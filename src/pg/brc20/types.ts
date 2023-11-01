@@ -1,3 +1,5 @@
+import { DbLocationTransferType } from '../types';
+
 export type DbBrc20Location = {
   id: string;
   inscription_id: string | null;
@@ -5,6 +7,7 @@ export type DbBrc20Location = {
   tx_id: string;
   tx_index: number;
   address: string | null;
+  transfer_type: DbLocationTransferType;
 };
 
 export type DbBrc20ScannedInscription = DbBrc20Location & {

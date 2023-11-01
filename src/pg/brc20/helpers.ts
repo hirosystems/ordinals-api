@@ -79,7 +79,3 @@ export function brc20FromInscriptionContent(content: string): Brc20 | undefined 
     // Not a BRC-20 inscription.
   }
 }
-
-export function isAddressSentAsFee(address: string | null): boolean {
-  return address === null || address.length === 0;
-}
