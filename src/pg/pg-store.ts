@@ -32,11 +32,13 @@ import {
   DbLocation,
   DbLocationPointer,
   DbLocationPointerInsert,
+  DbLocationTransferType,
   DbPaginatedResult,
   DbRevealInsert,
   INSCRIPTIONS_COLUMNS,
   LOCATIONS_COLUMNS,
 } from './types';
+import { toEnumValue } from '@hirosystems/api-toolkit';
 
 export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 
@@ -154,6 +156,7 @@ export class PgStore extends BasePgStore {
                   prev_offset: null,
                   value: reveal.inscription_output_value.toString(),
                   timestamp: event.timestamp,
+                  transfer_type: DbLocationTransferType.transferred,
                 },
                 recursive_refs,
               });
@@ -191,6 +194,7 @@ export class PgStore extends BasePgStore {
                   prev_offset: null,
                   value: reveal.inscription_output_value.toString(),
                   timestamp: event.timestamp,
+                  transfer_type: DbLocationTransferType.transferred,
                 },
                 recursive_refs,
               });
@@ -206,7 +210,7 @@ export class PgStore extends BasePgStore {
                   tx_id,
                   tx_index: transfer.tx_index,
                   genesis_id: transfer.inscription_id,
-                  address: transfer.updated_address,
+                  address: transfer.destination.value ?? null,
                   output: `${satpoint.tx_id}:${satpoint.vout}`,
                   offset: satpoint.offset ?? null,
                   prev_output: `${prevSatpoint.tx_id}:${prevSatpoint.vout}`,
@@ -215,6 +219,9 @@ export class PgStore extends BasePgStore {
                     ? transfer.post_transfer_output_value.toString()
                     : null,
                   timestamp: event.timestamp,
+                  transfer_type:
+                    toEnumValue(DbLocationTransferType, transfer.destination.type) ??
+                    DbLocationTransferType.transferred,
                 },
               });
             }

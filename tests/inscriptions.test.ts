@@ -506,7 +506,10 @@ describe('/inscriptions', () => {
           })
           .inscriptionTransferred({
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-            updated_address: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+            destination: {
+              type: 'transferred',
+              value: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+            },
             satpoint_pre_transfer:
               '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
             satpoint_post_transfer:
@@ -558,7 +561,10 @@ describe('/inscriptions', () => {
           })
           .inscriptionTransferred({
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-            updated_address: 'bc1pkjq7cerr6h53qm86k9t3dq0gqg8lcfz5jx7z4aj2mpqrjggrnass0u7qqj',
+            destination: {
+              type: 'transferred',
+              value: 'bc1pkjq7cerr6h53qm86k9t3dq0gqg8lcfz5jx7z4aj2mpqrjggrnass0u7qqj',
+            },
             satpoint_pre_transfer:
               'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
             satpoint_post_transfer:
@@ -676,7 +682,10 @@ describe('/inscriptions', () => {
           })
           .inscriptionTransferred({
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-            updated_address: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+            destination: {
+              type: 'transferred',
+              value: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+            },
             satpoint_pre_transfer:
               '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
             satpoint_post_transfer:
@@ -763,7 +772,10 @@ describe('/inscriptions', () => {
           // Transfer 1
           .inscriptionTransferred({
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-            updated_address: 'bc1qv7d2dgyvtctv7ya4t3ysy4c2s8qz4nm8t6dvm3',
+            destination: {
+              type: 'transferred',
+              value: 'bc1qv7d2dgyvtctv7ya4t3ysy4c2s8qz4nm8t6dvm3',
+            },
             satpoint_pre_transfer:
               'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
             satpoint_post_transfer:
@@ -774,7 +786,10 @@ describe('/inscriptions', () => {
           // Transfer 2
           .inscriptionTransferred({
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-            updated_address: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+            destination: {
+              type: 'transferred',
+              value: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+            },
             satpoint_pre_transfer:
               '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
             satpoint_post_transfer:
@@ -861,7 +876,10 @@ describe('/inscriptions', () => {
           })
           .inscriptionTransferred({
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-            updated_address: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+            destination: {
+              type: 'transferred',
+              value: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+            },
             satpoint_pre_transfer:
               '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
             satpoint_post_transfer:
@@ -913,7 +931,10 @@ describe('/inscriptions', () => {
           })
           .inscriptionTransferred({
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-            updated_address: 'bc1pkjq7cerr6h53qm86k9t3dq0gqg8lcfz5jx7z4aj2mpqrjggrnass0u7qqj',
+            destination: {
+              type: 'transferred',
+              value: 'bc1pkjq7cerr6h53qm86k9t3dq0gqg8lcfz5jx7z4aj2mpqrjggrnass0u7qqj',
+            },
             satpoint_pre_transfer:
               'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
             satpoint_post_transfer:
@@ -1005,7 +1026,10 @@ describe('/inscriptions', () => {
           })
           .inscriptionTransferred({
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-            updated_address: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+            destination: {
+              type: 'transferred',
+              value: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+            },
             satpoint_pre_transfer:
               '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
             satpoint_post_transfer:
@@ -1061,7 +1085,10 @@ describe('/inscriptions', () => {
           })
           .inscriptionTransferred({
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-            updated_address: 'bc1pkjq7cerr6h53qm86k9t3dq0gqg8lcfz5jx7z4aj2mpqrjggrnass0u7qqj',
+            destination: {
+              type: 'transferred',
+              value: 'bc1pkjq7cerr6h53qm86k9t3dq0gqg8lcfz5jx7z4aj2mpqrjggrnass0u7qqj',
+            },
             satpoint_pre_transfer:
               'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
             satpoint_post_transfer:
@@ -1193,7 +1220,10 @@ describe('/inscriptions', () => {
           })
           .inscriptionTransferred({
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-            updated_address: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+            destination: {
+              type: 'transferred',
+              value: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+            },
             satpoint_pre_transfer:
               '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
             satpoint_post_transfer:
@@ -1206,7 +1236,10 @@ describe('/inscriptions', () => {
           })
           .inscriptionTransferred({
             inscription_id: '7ac73ecd01b9da4a7eab904655416dbfe8e03f193e091761b5a63ad0963570cdi0',
-            updated_address: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+            destination: {
+              type: 'transferred',
+              value: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+            },
             satpoint_pre_transfer:
               '7ac73ecd01b9da4a7eab904655416dbfe8e03f193e091761b5a63ad0963570cd:0:0',
             satpoint_post_transfer:
@@ -1292,7 +1325,10 @@ describe('/inscriptions', () => {
           })
           .inscriptionTransferred({
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-            updated_address: 'bc1pkx5me775s748lzchytzdsw4f0lq04wssxnyk27g8fn3gee8zhjjqsn9tfp',
+            destination: {
+              type: 'transferred',
+              value: 'bc1pkx5me775s748lzchytzdsw4f0lq04wssxnyk27g8fn3gee8zhjjqsn9tfp',
+            },
             satpoint_pre_transfer:
               'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
             satpoint_post_transfer:
@@ -1303,7 +1339,10 @@ describe('/inscriptions', () => {
           // Transfer for same inscription in same block
           .inscriptionTransferred({
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-            updated_address: 'bc1pkx5me775s748lzchytzdsw4f0lq04wssxnyk27g8fn3gee8zhjjqsn9tfp',
+            destination: {
+              type: 'transferred',
+              value: 'bc1pkx5me775s748lzchytzdsw4f0lq04wssxnyk27g8fn3gee8zhjjqsn9tfp',
+            },
             satpoint_pre_transfer:
               '5cabafe04aaf98b1f325b0c3ffcbff904dbdb6f3d2e9e451102fda36f1056b5e:0:0',
             satpoint_post_transfer:
@@ -2646,7 +2685,10 @@ describe('/inscriptions', () => {
         // Transfers affect result totals correctly
         const transfer2: BitcoinInscriptionTransferred = {
           inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-          updated_address: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+          destination: {
+            type: 'transferred',
+            value: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+          },
           satpoint_pre_transfer:
             '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
           satpoint_post_transfer:

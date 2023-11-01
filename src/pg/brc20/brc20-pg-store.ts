@@ -1,7 +1,13 @@
 import { BasePgStoreModule, logger } from '@hirosystems/api-toolkit';
 import * as postgres from 'postgres';
 import { hexToBuffer } from '../../api/util/helpers';
-import { DbInscription, DbInscriptionIndexPaging, DbLocation, DbPaginatedResult } from '../types';
+import {
+  DbInscription,
+  DbInscriptionIndexPaging,
+  DbLocation,
+  DbLocationTransferType,
+  DbPaginatedResult,
+} from '../types';
 import {
   BRC20_DEPLOYS_COLUMNS,
   BRC20_OPERATIONS,
@@ -20,15 +26,7 @@ import {
   DbBrc20TokenWithSupply,
   DbBrc20TransferEvent,
 } from './types';
-
-import {
-  Brc20Deploy,
-  Brc20Mint,
-  Brc20Transfer,
-  brc20FromInscriptionContent,
-  isAddressSentAsFee,
-} from './helpers';
-
+import { Brc20Deploy, Brc20Mint, Brc20Transfer, brc20FromInscriptionContent } from './helpers';
 import { Brc20TokenOrderBy } from '../../api/schemas';
 import { objRemoveUndefinedValues } from '../helpers';
 
@@ -53,7 +51,8 @@ export class Brc20PgStore extends BasePgStoreModule {
           const block = await sql<DbBrc20ScannedInscription[]>`
             SELECT
               EXISTS(SELECT location_id FROM genesis_locations WHERE location_id = l.id) AS genesis,
-              l.id, l.inscription_id, l.block_height, l.tx_id, l.tx_index, l.address
+              l.id, l.inscription_id, l.block_height, l.tx_id, l.tx_index, l.address,
+              l.transfer_type
             FROM locations AS l
             INNER JOIN inscriptions AS i ON l.inscription_id = i.id
             WHERE l.block_height = ${blockHeight}
@@ -76,7 +75,7 @@ export class Brc20PgStore extends BasePgStoreModule {
     if (writes.length === 0) return;
     for (const write of writes) {
       if (write.genesis) {
-        if (isAddressSentAsFee(write.address)) continue;
+        if (write.transfer_type != DbLocationTransferType.transferred) continue;
         const content = await this.sql<{ content: string }[]>`
           SELECT content FROM inscriptions WHERE id = ${write.inscription_id}
         `;
@@ -113,9 +112,15 @@ export class Brc20PgStore extends BasePgStoreModule {
       if (fromAddressRes.count === 0) return;
       const fromAddress = fromAddressRes[0].from_address;
       // Is this transfer sent as fee or from the same sender? If so, we'll return the balance.
+      // Is it burnt? Mark as empty owner.
       const returnToSender =
-        isAddressSentAsFee(location.address) || fromAddress == location.address;
-      const toAddress = returnToSender ? fromAddress : location.address;
+        location.transfer_type == DbLocationTransferType.spentInFees ||
+        fromAddress == location.address;
+      const toAddress = returnToSender
+        ? fromAddress
+        : location.transfer_type == DbLocationTransferType.burnt
+        ? ''
+        : location.address;
       // Check if we have a valid transfer inscription emitted by this address that hasn't been sent
       // to another address before. Use `LIMIT 3` as a quick way of checking if we have just inserted
       // the first transfer for this inscription (genesis + transfer).
@@ -226,7 +231,11 @@ export class Brc20PgStore extends BasePgStoreModule {
     op: Brc20Deploy;
     location: DbBrc20Location;
   }): Promise<void> {
-    if (!deploy.location.inscription_id || isAddressSentAsFee(deploy.location.address)) return;
+    if (
+      deploy.location.transfer_type != DbLocationTransferType.transferred ||
+      !deploy.location.inscription_id
+    )
+      return;
     const insert: DbBrc20DeployInsert = {
       inscription_id: deploy.location.inscription_id,
       block_height: deploy.location.block_height,
@@ -272,7 +281,11 @@ export class Brc20PgStore extends BasePgStoreModule {
   }
 
   private async insertMint(mint: { op: Brc20Mint; location: DbBrc20Location }): Promise<void> {
-    if (!mint.location.inscription_id || isAddressSentAsFee(mint.location.address)) return;
+    if (
+      mint.location.transfer_type != DbLocationTransferType.transferred ||
+      !mint.location.inscription_id
+    )
+      return;
     // Check the following conditions:
     // * Is the mint amount within the allowed token limits?
     // * Is the number of decimals correct?
@@ -349,7 +362,11 @@ export class Brc20PgStore extends BasePgStoreModule {
     op: Brc20Transfer;
     location: DbBrc20Location;
   }): Promise<void> {
-    if (!transfer.location.inscription_id || isAddressSentAsFee(transfer.location.address)) return;
+    if (
+      transfer.location.transfer_type != DbLocationTransferType.transferred ||
+      !transfer.location.inscription_id
+    )
+      return;
     // Check the following conditions:
     // * Do we have enough available balance to do this transfer?
     const transferRes = await this.sql`

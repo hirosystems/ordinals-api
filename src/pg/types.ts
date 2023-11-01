@@ -34,6 +34,12 @@ export type DbFullyLocatedInscriptionResult = {
   recursion_refs: string | null;
 };
 
+export enum DbLocationTransferType {
+  transferred = 'transferred',
+  spentInFees = 'spent_in_fees',
+  burnt = 'burnt',
+}
+
 export type DbLocationInsert = {
   genesis_id: string;
   block_height: number;
@@ -47,6 +53,7 @@ export type DbLocationInsert = {
   prev_offset: PgNumeric | null;
   value: PgNumeric | null;
   timestamp: number;
+  transfer_type: DbLocationTransferType;
 };
 
 export type DbLocation = {

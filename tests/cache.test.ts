@@ -85,7 +85,10 @@ describe('ETag cache', () => {
         })
         .inscriptionTransferred({
           inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-          updated_address: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+          destination: {
+            type: 'transferred',
+            value: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+          },
           satpoint_pre_transfer:
             'da2da520f055e9fadaf1a78b3e01bc53596dcbb88e9c9f53bcb61b98310b1006:0:0',
           satpoint_post_transfer:
@@ -119,7 +122,10 @@ describe('ETag cache', () => {
         })
         .inscriptionTransferred({
           inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-          updated_address: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+          destination: {
+            type: 'transferred',
+            value: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+          },
           satpoint_pre_transfer:
             '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
           satpoint_post_transfer:
@@ -217,7 +223,10 @@ describe('ETag cache', () => {
       .transaction({ hash: 'ae9d273a10e899f0d2cad47ee2b0e77ab8a9addd9dd5bb5e4b03d6971c060d52' })
       .inscriptionTransferred({
         inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-        updated_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+        destination: {
+          type: 'transferred',
+          value: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+        },
         satpoint_pre_transfer:
           '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
         satpoint_post_transfer:
