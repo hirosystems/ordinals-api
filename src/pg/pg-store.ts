@@ -125,7 +125,7 @@ export class PgStore extends BasePgStore {
       for (const applyEvent of payload.apply) {
         const event = applyEvent as BitcoinEvent;
         const block_height = event.block_identifier.index;
-        if (block_height <= currentBlockHeight) {
+        if (block_height <= currentBlockHeight && block_height !== 767430) {
           logger.info(
             `PgStore skipping ingestion for block ${block_height}, current chain tip is at ${currentBlockHeight}`
           );
@@ -661,7 +661,6 @@ export class PgStore extends BasePgStore {
             SET updated_at = NOW()
             WHERE genesis_id IN ${sql([...transferGenesisIds])}
           `;
-        await this.backfillOrphanLocations();
         await this.updateInscriptionLocationPointers(locations);
         await this.counts.applyInscriptions(inscriptions);
       }
@@ -835,21 +834,6 @@ export class PgStore extends BasePgStore {
         `;
         await this.counts.applyLocations(current, false);
       }
-    });
-  }
-
-  private async backfillOrphanLocations(): Promise<void> {
-    await this.sqlWriteTransaction(async sql => {
-      await sql`
-        UPDATE locations AS l
-        SET inscription_id = (SELECT id FROM inscriptions WHERE genesis_id = l.genesis_id)
-        WHERE l.inscription_id IS NULL
-      `;
-      await sql`
-        UPDATE inscription_recursions AS l
-        SET ref_inscription_id = (SELECT id FROM inscriptions WHERE genesis_id = l.ref_inscription_genesis_id)
-        WHERE l.ref_inscription_id IS NULL
-      `;
     });
   }
 
