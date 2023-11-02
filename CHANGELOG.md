@@ -1,3 +1,11 @@
+## [2.0.0-beta.6](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.5...v2.0.0-beta.6) (2023-11-02)
+
+
+### Bug Fixes
+
+* only scan BRC-20 after its genesis height ([#263](https://github.com/hirosystems/ordinals-api/issues/263)) ([6381760](https://github.com/hirosystems/ordinals-api/commit/6381760f3860a96c3abfd485b612cd212927dca4))
+* reduce batching to 4500 ([8fd770b](https://github.com/hirosystems/ordinals-api/commit/8fd770bc4e83be6ddaa4fdead1d1be55c42f870b))
+
 ## [2.0.0-beta.5](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.4...v2.0.0-beta.5) (2023-11-02)
 
 
