@@ -87,6 +87,13 @@ export class PgStore extends BasePgStore {
   async updateInscriptions(payload: Payload): Promise<void> {
     let updatedBlockHeightMin = Infinity;
     await this.sqlWriteTransaction(async sql => {
+      // Check where we're at in terms of ingestion, e.g. block height and max blessed inscription
+      // number. This will let us determine if we should skip ingesting this block or throw an error
+      // if a gap is detected.
+      const maxDbBlessed = await this.getMaxInscriptionNumber();
+      const currentBlockHeight = await this.getChainTipBlockHeight();
+      let gapChecked = false;
+
       for (const rollbackEvent of payload.rollback) {
         // TODO: Optimize rollbacks just as we optimized applys.
         const event = rollbackEvent as BitcoinEvent;
@@ -118,6 +125,12 @@ export class PgStore extends BasePgStore {
       for (const applyEvent of payload.apply) {
         const event = applyEvent as BitcoinEvent;
         const block_height = event.block_identifier.index;
+        if (block_height <= currentBlockHeight) {
+          logger.info(
+            `PgStore skipping ingestion for block ${block_height}, current chain tip is at ${currentBlockHeight}`
+          );
+          return;
+        }
         const block_hash = normalizedHexString(event.block_identifier.hash);
         const writes: DbRevealInsert[] = [];
         for (const tx of event.transactions) {
@@ -125,6 +138,11 @@ export class PgStore extends BasePgStore {
           for (const operation of tx.metadata.ordinal_operations) {
             if (operation.inscription_revealed) {
               const reveal = operation.inscription_revealed;
+              if (!gapChecked && reveal.inscription_number - 1 !== (maxDbBlessed ?? -1))
+                throw Error(
+                  `PgStore blessed inscription gap detected: attempting to insert #${reveal.inscription_number} (${block_height}) but current max is #${maxDbBlessed} (${currentBlockHeight})`
+                );
+              gapChecked = true;
               const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
               const satpoint = parseSatPoint(reveal.satpoint_post_inscription);
               const recursive_refs = getInscriptionRecursion(reveal.content_bytes);
@@ -237,15 +255,8 @@ export class PgStore extends BasePgStore {
       }
     });
     await this.refreshMaterializedView('chain_tip');
-    // Skip expensive view refreshes if we're not streaming live blocks.
-    if (payload.chainhook.is_streaming_blocks) {
-      // We'll issue materialized view refreshes in parallel. We will not wait for them to finish so
-      // we can respond to the chainhook node with a `200` HTTP code as soon as possible.
-      const views = [this.normalizeInscriptionCount({ min_block_height: updatedBlockHeightMin })];
-      const viewRefresh = Promise.allSettled(views);
-      // Only wait for these on tests.
-      if (isTestEnv) await viewRefresh;
-    }
+    if (updatedBlockHeightMin !== Infinity)
+      await this.normalizeInscriptionCount({ min_block_height: updatedBlockHeightMin });
   }
 
   async getChainTipBlockHeight(): Promise<number> {
@@ -403,8 +414,10 @@ export class PgStore extends BasePgStore {
           }
           ${filters?.to_sat_ordinal ? sql`AND i.sat_ordinal <= ${filters.to_sat_ordinal}` : sql``}
           ${filters?.number?.length ? sql`AND i.number IN ${sql(filters.number)}` : sql``}
-          ${filters?.from_number ? sql`AND i.number >= ${filters.from_number}` : sql``}
-          ${filters?.to_number ? sql`AND i.number <= ${filters.to_number}` : sql``}
+          ${
+            filters?.from_number !== undefined ? sql`AND i.number >= ${filters.from_number}` : sql``
+          }
+          ${filters?.to_number !== undefined ? sql`AND i.number <= ${filters.to_number}` : sql``}
           ${filters?.address?.length ? sql`AND cur.address IN ${sql(filters.address)}` : sql``}
           ${filters?.mime_type?.length ? sql`AND i.mime_type IN ${sql(filters.mime_type)}` : sql``}
           ${filters?.output ? sql`AND cur_l.output = ${filters.output}` : sql``}
