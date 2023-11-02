@@ -48,7 +48,7 @@ describe('/sats', () => {
           content_bytes: '0x48656C6C6F',
           content_type: 'image/png',
           content_length: 5,
-          inscription_number: 7,
+          inscription_number: 0,
           inscription_fee: 2805,
           inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
           inscription_output_value: 10000,
@@ -105,7 +105,7 @@ describe('/sats', () => {
       new TestChainhookPayloadBuilder()
         .apply()
         .block({
-          height: 775617,
+          height: 775618,
           hash: '000000000000000000002a244dc7dfcf8ab85e42d182531c27197fc125086f19',
           timestamp: 1676913207,
         })
@@ -147,7 +147,7 @@ describe('/sats', () => {
         content_type: 'image/png',
         genesis_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
         genesis_block_hash: '000000000000000000002a244dc7dfcf8ab85e42d182531c27197fc125086f19',
-        genesis_block_height: 775617,
+        genesis_block_height: 775618,
         genesis_fee: '2805',
         genesis_timestamp: 1676913207000,
         genesis_tx_id: 'b9cd9489fe30b81d007f753663d12766f1368721a87f4c69056c8215caa57993',
