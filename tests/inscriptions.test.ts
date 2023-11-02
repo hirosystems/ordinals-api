@@ -1195,6 +1195,7 @@ describe('/inscriptions', () => {
       expect(response3.statusCode).toBe(200);
       const json3 = response3.json();
       expect(json3.total).toBe(2);
+      expect(json3.results).toHaveLength(2);
       expect(json3.results).toStrictEqual([
         {
           id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
@@ -1222,6 +1223,80 @@ describe('/inscriptions', () => {
             value: '7500',
           },
         },
+        {
+          id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+          number: 0,
+          from: {
+            address: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
+            block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7bbbb',
+            block_height: 775700,
+            location: 'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0:0',
+            offset: '0',
+            output: 'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444:0',
+            timestamp: 1678122360000,
+            tx_id: 'bdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444',
+            value: '9000',
+          },
+          to: {
+            address: 'bc1pkx5me775s748lzchytzdsw4f0lq04wssxnyk27g8fn3gee8zhjjqsn9tfp',
+            block_hash: '000000000000000000044b12039abd3112963959d9fd7510ac503ea84dc17002',
+            block_height: 775701,
+            location: '5cabafe04aaf98b1f325b0c3ffcbff904dbdb6f3d2e9e451102fda36f1056b5e:0:0',
+            offset: '0',
+            output: '5cabafe04aaf98b1f325b0c3ffcbff904dbdb6f3d2e9e451102fda36f1056b5e:0',
+            timestamp: 1676913208000,
+            tx_id: '5cabafe04aaf98b1f325b0c3ffcbff904dbdb6f3d2e9e451102fda36f1056b5e',
+            value: '8000',
+          },
+        },
+      ]);
+
+      // Test pagination
+      const response4 = await fastify.inject({
+        method: 'GET',
+        url: '/ordinals/v1/inscriptions/transfers?block=775701&limit=1&offset=0',
+      });
+      expect(response4.statusCode).toBe(200);
+      const json4 = response4.json();
+      expect(json4.total).toBe(2);
+      expect(json4.results).toHaveLength(1);
+      expect(json4.results).toStrictEqual([
+        {
+          id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+          number: 0,
+          from: {
+            address: 'bc1pkx5me775s748lzchytzdsw4f0lq04wssxnyk27g8fn3gee8zhjjqsn9tfp',
+            block_hash: '000000000000000000044b12039abd3112963959d9fd7510ac503ea84dc17002',
+            block_height: 775701,
+            location: '5cabafe04aaf98b1f325b0c3ffcbff904dbdb6f3d2e9e451102fda36f1056b5e:0:0',
+            offset: '0',
+            output: '5cabafe04aaf98b1f325b0c3ffcbff904dbdb6f3d2e9e451102fda36f1056b5e:0',
+            timestamp: 1676913208000,
+            tx_id: '5cabafe04aaf98b1f325b0c3ffcbff904dbdb6f3d2e9e451102fda36f1056b5e',
+            value: '8000',
+          },
+          to: {
+            address: 'bc1pkx5me775s748lzchytzdsw4f0lq04wssxnyk27g8fn3gee8zhjjqsn9tfp',
+            block_hash: '000000000000000000044b12039abd3112963959d9fd7510ac503ea84dc17002',
+            block_height: 775701,
+            location: '5cabafe04aaf98b1f325b0c3ffcbff904dbdb6f3d2e9e451102fda36f1056b5e:1:0',
+            offset: '0',
+            output: '5cabafe04aaf98b1f325b0c3ffcbff904dbdb6f3d2e9e451102fda36f1056b5e:1',
+            timestamp: 1676913208000,
+            tx_id: '5cabafe04aaf98b1f325b0c3ffcbff904dbdb6f3d2e9e451102fda36f1056b5e',
+            value: '7500',
+          },
+        },
+      ]);
+      const response5 = await fastify.inject({
+        method: 'GET',
+        url: '/ordinals/v1/inscriptions/transfers?block=775701&limit=1&offset=1',
+      });
+      expect(response5.statusCode).toBe(200);
+      const json5 = response5.json();
+      expect(json5.total).toBe(2);
+      expect(json5.results).toHaveLength(1);
+      expect(json5.results).toStrictEqual([
         {
           id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
           number: 0,
