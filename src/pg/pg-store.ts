@@ -251,9 +251,9 @@ export class PgStore extends BasePgStore {
             }
           }
         }
-        // Divide insertion array into chunks of 5000 in order to avoid the postgres limit of 65534
+        // Divide insertion array into chunks of 4500 in order to avoid the postgres limit of 65534
         // query params.
-        for (const writeChunk of chunkArray(writes, 5000))
+        for (const writeChunk of chunkArray(writes, 4500))
           await this.insertInscriptions(writeChunk);
         updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
         if (ENV.BRC20_BLOCK_SCAN_ENABLED)
