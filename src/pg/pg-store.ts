@@ -90,9 +90,8 @@ export class PgStore extends BasePgStore {
       // Check where we're at in terms of ingestion, e.g. block height and max blessed inscription
       // number. This will let us determine if we should skip ingesting this block or throw an error
       // if a gap is detected.
-      const maxDbBlessed = await this.getMaxInscriptionNumber();
+      let blessedNumber = (await this.getMaxInscriptionNumber()) ?? -1;
       const currentBlockHeight = await this.getChainTipBlockHeight();
-      let gapChecked = false;
 
       for (const rollbackEvent of payload.rollback) {
         // TODO: Optimize rollbacks just as we optimized applys.
@@ -138,11 +137,11 @@ export class PgStore extends BasePgStore {
           for (const operation of tx.metadata.ordinal_operations) {
             if (operation.inscription_revealed) {
               const reveal = operation.inscription_revealed;
-              if (!gapChecked && reveal.inscription_number - 1 !== (maxDbBlessed ?? -1))
+              if (blessedNumber + 1 !== reveal.inscription_number)
                 throw Error(
-                  `PgStore blessed inscription gap detected: Attempting to insert #${reveal.inscription_number} (${block_height}) but current max is #${maxDbBlessed} (${currentBlockHeight})`
+                  `PgStore inscription gap detected: Attempting to insert #${reveal.inscription_number} (${block_height}) but current max is #${blessedNumber}`
                 );
-              gapChecked = true;
+              blessedNumber = reveal.inscription_number;
               const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
               const satpoint = parseSatPoint(reveal.satpoint_post_inscription);
               const recursive_refs = getInscriptionRecursion(reveal.content_bytes);
