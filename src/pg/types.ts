@@ -54,6 +54,7 @@ export type DbLocationInsert = {
   value: PgNumeric | null;
   timestamp: number;
   transfer_type: DbLocationTransferType;
+  block_transfer_index: number | null;
 };
 
 export type DbLocation = {
