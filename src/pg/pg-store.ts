@@ -41,6 +41,7 @@ import {
 import { toEnumValue } from '@hirosystems/api-toolkit';
 
 export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
+export const ORDINALS_GENESIS_BLOCK = 767430;
 
 type InscriptionIdentifier = { genesis_id: string } | { number: number };
 
@@ -125,7 +126,7 @@ export class PgStore extends BasePgStore {
       for (const applyEvent of payload.apply) {
         const event = applyEvent as BitcoinEvent;
         const block_height = event.block_identifier.index;
-        if (block_height <= currentBlockHeight && block_height !== 767430) {
+        if (block_height <= currentBlockHeight && block_height !== ORDINALS_GENESIS_BLOCK) {
           logger.info(
             `PgStore skipping ingestion for previously seen block ${block_height}, current chain tip is at ${currentBlockHeight}`
           );

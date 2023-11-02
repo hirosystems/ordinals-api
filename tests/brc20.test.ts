@@ -12,6 +12,7 @@ import {
   randomHash,
   rollBack,
 } from './helpers';
+import { BRC20_GENESIS_BLOCK } from '../src/pg/brc20/brc20-pg-store';
 
 describe('BRC-20', () => {
   let db: PgStore;
@@ -22,7 +23,7 @@ describe('BRC-20', () => {
       new TestChainhookPayloadBuilder()
         .apply()
         .block({
-          height: 775617,
+          height: BRC20_GENESIS_BLOCK,
           hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
         })
         .transaction({
@@ -47,7 +48,7 @@ describe('BRC-20', () => {
       new TestChainhookPayloadBuilder()
         .apply()
         .block({
-          height: 775618,
+          height: BRC20_GENESIS_BLOCK + 1,
           hash: '0000000000000000000098d8f2663891d439f6bb7de230d4e9f6bcc2e85452bf',
         })
         .transaction({
@@ -472,7 +473,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775617,
+            height: BRC20_GENESIS_BLOCK,
             hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             timestamp: 1677811111,
           })
@@ -504,7 +505,7 @@ describe('BRC-20', () => {
       expect(responseJson1.results).toStrictEqual([
         {
           address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-          block_height: 775617,
+          block_height: BRC20_GENESIS_BLOCK,
           decimals: 18,
           id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
           number: 0,
@@ -524,7 +525,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775617,
+            height: BRC20_GENESIS_BLOCK,
             hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
           })
           .transaction({
@@ -549,7 +550,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775618,
+            height: BRC20_GENESIS_BLOCK + 1,
             hash: '000000000000000000021a0207fa97024506baaa74396822fb0a07ac20e70148',
           })
           .transaction({
@@ -580,7 +581,7 @@ describe('BRC-20', () => {
       expect(responseJson1.results).toStrictEqual([
         {
           address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-          block_height: 775617,
+          block_height: BRC20_GENESIS_BLOCK,
           decimals: 18,
           id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
           max_supply: '21000000.000000000000000000',
@@ -600,7 +601,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775617,
+            height: BRC20_GENESIS_BLOCK,
             hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
           })
           .transaction({
@@ -625,7 +626,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775618,
+            height: BRC20_GENESIS_BLOCK + 1,
             hash: '000000000000000000021a0207fa97024506baaa74396822fb0a07ac20e70148',
           })
           .transaction({
@@ -656,7 +657,7 @@ describe('BRC-20', () => {
       expect(responseJson1.results).toStrictEqual([
         {
           address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-          block_height: 775617,
+          block_height: BRC20_GENESIS_BLOCK,
           decimals: 18,
           id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
           max_supply: '21000000.000000000000000000',
@@ -679,7 +680,7 @@ describe('BRC-20', () => {
       expect(responseJson2.results).toStrictEqual([
         {
           address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-          block_height: 775617,
+          block_height: BRC20_GENESIS_BLOCK,
           decimals: 18,
           id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
           max_supply: '21000000.000000000000000000',
@@ -702,7 +703,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775617,
+            height: BRC20_GENESIS_BLOCK,
             hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
           })
           .transaction({
@@ -727,7 +728,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775618,
+            height: BRC20_GENESIS_BLOCK + 1,
             hash: '0000000000000000000098d8f2663891d439f6bb7de230d4e9f6bcc2e85452bf',
           })
           .transaction({
@@ -770,7 +771,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775619,
+            height: BRC20_GENESIS_BLOCK + 2,
             hash: '0000000000000000000077163227125e51d838787d6af031bc9b55a3a1cc1b2c',
           })
           .transaction({
@@ -828,7 +829,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775617,
+            height: BRC20_GENESIS_BLOCK,
             hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
           })
           .transaction({
@@ -853,7 +854,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775618,
+            height: BRC20_GENESIS_BLOCK + 1,
             hash: '0000000000000000000098d8f2663891d439f6bb7de230d4e9f6bcc2e85452bf',
           })
           .transaction({
@@ -879,7 +880,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .rollback()
           .block({
-            height: 775619,
+            height: BRC20_GENESIS_BLOCK + 2,
             hash: '0000000000000000000077163227125e51d838787d6af031bc9b55a3a1cc1b2c',
           })
           .transaction({
@@ -923,7 +924,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775617,
+            height: BRC20_GENESIS_BLOCK,
             hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
           })
           .transaction({
@@ -949,7 +950,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775618,
+            height: BRC20_GENESIS_BLOCK + 1,
             hash: '0000000000000000000098d8f2663891d439f6bb7de230d4e9f6bcc2e85452bf',
           })
           .transaction({
@@ -987,7 +988,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775617,
+            height: BRC20_GENESIS_BLOCK,
             hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
           })
           .transaction({
@@ -1013,7 +1014,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775618,
+            height: BRC20_GENESIS_BLOCK + 1,
             hash: '0000000000000000000098d8f2663891d439f6bb7de230d4e9f6bcc2e85452bf',
           })
           .transaction({
@@ -1088,7 +1089,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775619,
+            height: BRC20_GENESIS_BLOCK + 2,
             hash: '000000000000000000001f14513d722146fddab04a1855665a5eca22df288c3c',
           })
           .transaction({
@@ -1125,7 +1126,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775618,
+            height: BRC20_GENESIS_BLOCK + 1,
             hash: '0000000000000000000098d8f2663891d439f6bb7de230d4e9f6bcc2e85452bf',
           })
           .transaction({
@@ -1163,7 +1164,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775617,
+            height: BRC20_GENESIS_BLOCK,
             hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
           })
           .transaction({
@@ -1190,7 +1191,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775618,
+            height: BRC20_GENESIS_BLOCK + 1,
             hash: '0000000000000000000098d8f2663891d439f6bb7de230d4e9f6bcc2e85452bf',
           })
           .transaction({
@@ -1231,7 +1232,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775619,
+            height: BRC20_GENESIS_BLOCK + 2,
             hash: '00000000000000000002b14f0c5dde0b2fc74d022e860696bd64f1f652756674',
           })
           .transaction({
@@ -1272,7 +1273,7 @@ describe('BRC-20', () => {
       // Balance at previous block
       const response2 = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/balances/${address}?block_height=775618`,
+        url: `/ordinals/brc-20/balances/${address}?block_height=779833`,
       });
       const json2 = response2.json();
       expect(json2.results[0].available_balance).toBe('10000.000000000000000000');
@@ -1285,7 +1286,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775619,
+            height: BRC20_GENESIS_BLOCK + 2,
             hash: '00000000000000000002b14f0c5dde0b2fc74d022e860696bd64f1f652756674',
           })
           .transaction({
@@ -1331,7 +1332,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775619,
+            height: BRC20_GENESIS_BLOCK + 2,
             hash: '00000000000000000002b14f0c5dde0b2fc74d022e860696bd64f1f652756674',
           })
           .transaction({
@@ -1377,7 +1378,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775619,
+            height: BRC20_GENESIS_BLOCK + 2,
             hash: '00000000000000000002b14f0c5dde0b2fc74d022e860696bd64f1f652756674',
           })
           .transaction({
@@ -1440,7 +1441,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775619,
+            height: BRC20_GENESIS_BLOCK + 2,
             hash: '00000000000000000002b14f0c5dde0b2fc74d022e860696bd64f1f652756674',
           })
           .transaction({
@@ -1465,7 +1466,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775620,
+            height: BRC20_GENESIS_BLOCK + 3,
             hash: '00000000000000000003feae13d107f0f2c4fb4dd08fb2a8b1ab553512e77f03',
           })
           .transaction({
@@ -1519,13 +1520,13 @@ describe('BRC-20', () => {
       // Balance at previous block
       const prevBlock1 = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/balances/${address}?block_height=775618`,
+        url: `/ordinals/brc-20/balances/${address}?block_height=779833`,
       });
       const prevBlockJson1 = prevBlock1.json();
       expect(prevBlockJson1.results[0].available_balance).toBe('10000.000000000000000000');
       const prevBlock2 = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/balances/${address2}?block_height=775618`,
+        url: `/ordinals/brc-20/balances/${address2}?block_height=779833`,
       });
       const prevBlockJson2 = prevBlock2.json();
       expect(prevBlockJson2.results[0]).toBeUndefined();
@@ -1538,7 +1539,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775619,
+            height: BRC20_GENESIS_BLOCK + 2,
             hash: '00000000000000000002b14f0c5dde0b2fc74d022e860696bd64f1f652756674',
           })
           .transaction({
@@ -1563,7 +1564,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775620,
+            height: BRC20_GENESIS_BLOCK + 3,
             hash: '00000000000000000003feae13d107f0f2c4fb4dd08fb2a8b1ab553512e77f03',
           })
           .transaction({
@@ -1606,7 +1607,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775619,
+            height: BRC20_GENESIS_BLOCK + 2,
             hash: '00000000000000000002b14f0c5dde0b2fc74d022e860696bd64f1f652756674',
           })
           .transaction({
@@ -1631,7 +1632,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775620,
+            height: BRC20_GENESIS_BLOCK + 3,
             hash: '00000000000000000003feae13d107f0f2c4fb4dd08fb2a8b1ab553512e77f03',
           })
           .transaction({
@@ -1675,7 +1676,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775619,
+            height: BRC20_GENESIS_BLOCK + 2,
             hash: '00000000000000000002b14f0c5dde0b2fc74d022e860696bd64f1f652756674',
           })
           .transaction({
@@ -1700,7 +1701,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775620,
+            height: BRC20_GENESIS_BLOCK + 3,
             hash: '000000000000000000016ddf56d0fe72476165acee9500d48d3e2aaf8412f489',
           })
           .transaction({
@@ -1724,7 +1725,7 @@ describe('BRC-20', () => {
         new TestChainhookPayloadBuilder()
           .apply()
           .block({
-            height: 775621,
+            height: BRC20_GENESIS_BLOCK + 4,
             hash: '00000000000000000003feae13d107f0f2c4fb4dd08fb2a8b1ab553512e77f03',
           })
           .transaction({
@@ -1920,7 +1921,7 @@ describe('BRC-20', () => {
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
-            .block({ height: 775617 })
+            .block({ height: BRC20_GENESIS_BLOCK })
             .transaction({
               hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
             })
@@ -1948,7 +1949,7 @@ describe('BRC-20', () => {
           token: {
             id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
             number: 0,
-            block_height: 775617,
+            block_height: BRC20_GENESIS_BLOCK,
             tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
             address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
             ticker: 'PEPE',
@@ -1969,7 +1970,7 @@ describe('BRC-20', () => {
 
       test('tokens filter by ticker prefix', async () => {
         const inscriptionNumbers = incrementing(0);
-        const blockHeights = incrementing(775600);
+        const blockHeights = incrementing(BRC20_GENESIS_BLOCK);
 
         let transferHash = randomHash();
         await db.updateInscriptions(
@@ -2077,7 +2078,7 @@ describe('BRC-20', () => {
       test('tokens using order_by tx_count', async () => {
         // Setup
         const inscriptionNumbers = incrementing(0);
-        const blockHeights = incrementing(775600);
+        const blockHeights = incrementing(BRC20_GENESIS_BLOCK);
         const addressA = 'bc1q6uwuet65rm6xvlz7ztw2gvdmmay5uaycu03mqz';
         const addressB = 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4';
 
@@ -2318,7 +2319,7 @@ describe('BRC-20', () => {
       test('activity for token transfers', async () => {
         // Setup
         const inscriptionNumbers = incrementing(0);
-        const blockHeights = incrementing(775600);
+        const blockHeights = incrementing(BRC20_GENESIS_BLOCK);
         const addressA = 'bc1q6uwuet65rm6xvlz7ztw2gvdmmay5uaycu03mqz';
         const addressB = 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4';
 
@@ -2574,7 +2575,7 @@ describe('BRC-20', () => {
 
         // Setup
         const inscriptionNumbers = incrementing(0);
-        const blockHeights = incrementing(775600);
+        const blockHeights = incrementing(BRC20_GENESIS_BLOCK);
         const addressA = 'bc1q6uwuet65rm6xvlz7ztw2gvdmmay5uaycu03mqz';
         const addressB = 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4';
         const addressC = 'bc1q9d80h0q5d3f54w7w8c3l2sguf9uset4ydw9xj2';
@@ -3027,7 +3028,7 @@ describe('BRC-20', () => {
 
       test('activity for multiple token creation', async () => {
         const inscriptionNumbers = incrementing(0);
-        const blockHeights = incrementing(775600);
+        const blockHeights = incrementing(BRC20_GENESIS_BLOCK);
         const addressA = 'bc1q6uwuet65rm6xvlz7ztw2gvdmmay5uaycu03mqz';
 
         // Step 1: Create a token PEPE
@@ -3119,7 +3120,7 @@ describe('BRC-20', () => {
         // Verify that no events are available before the first block height
         response = await fastify.inject({
           method: 'GET',
-          url: `/ordinals/brc-20/activity?ticker=PEER&block_height=${775600}`,
+          url: `/ordinals/brc-20/activity?ticker=PEER&block_height=${BRC20_GENESIS_BLOCK}`,
         });
         expect(response.statusCode).toBe(200);
         json = response.json();
@@ -3129,7 +3130,7 @@ describe('BRC-20', () => {
         // Verify that the PEER deploy is not in the activity feed when using block_height parameter
         response = await fastify.inject({
           method: 'GET',
-          url: `/ordinals/brc-20/activity?block_height=${775600}`,
+          url: `/ordinals/brc-20/activity?block_height=${BRC20_GENESIS_BLOCK}`,
         });
         expect(response.statusCode).toBe(200);
         json = response.json();
@@ -3165,7 +3166,7 @@ describe('BRC-20', () => {
           new TestChainhookPayloadBuilder()
             .apply()
             .block({
-              height: 775619,
+              height: BRC20_GENESIS_BLOCK + 2,
               hash: '0000000000000000000034dd2daec375371800da441b17651459b2220cbc1a6e',
             })
             .transaction({
@@ -3211,7 +3212,7 @@ describe('BRC-20', () => {
           new TestChainhookPayloadBuilder()
             .apply()
             .block({
-              height: 775617,
+              height: BRC20_GENESIS_BLOCK,
               hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
             })
             .transaction({
@@ -3262,7 +3263,7 @@ describe('BRC-20', () => {
       const transferPEPE = new TestChainhookPayloadBuilder()
         .apply()
         .block({
-          height: 775619,
+          height: BRC20_GENESIS_BLOCK + 2,
           hash: '00000000000000000002b14f0c5dde0b2fc74d022e860696bd64f1f652756674',
         })
         .transaction({
@@ -3286,7 +3287,7 @@ describe('BRC-20', () => {
       const sendPEPE = new TestChainhookPayloadBuilder()
         .apply()
         .block({
-          height: 775620,
+          height: BRC20_GENESIS_BLOCK + 3,
           hash: '000000000000000000016ddf56d0fe72476165acee9500d48d3e2aaf8412f489',
         })
         .transaction({
@@ -3308,7 +3309,7 @@ describe('BRC-20', () => {
       const deployFIRE = new TestChainhookPayloadBuilder()
         .apply()
         .block({
-          height: 775621,
+          height: BRC20_GENESIS_BLOCK + 4,
           hash: '000000000000000000033b0b78ff68c5767109f45ee42696bd4db9b2845a7ea8',
         })
         .transaction({
@@ -3332,7 +3333,7 @@ describe('BRC-20', () => {
       const mintFIRE = new TestChainhookPayloadBuilder()
         .apply()
         .block({
-          height: 775622,
+          height: BRC20_GENESIS_BLOCK + 5,
           hash: '00000000000000000001f022fadbd930ccf6acbe00a07626e3a0898fb5799bc9',
         })
         .transaction({
@@ -3357,7 +3358,7 @@ describe('BRC-20', () => {
       const transferFIRE = new TestChainhookPayloadBuilder()
         .apply()
         .block({
-          height: 775623,
+          height: BRC20_GENESIS_BLOCK + 6,
           hash: '00000000000000000002bfcb8860d4730fcd3986b026b9629ea6106fe2cb9197',
         })
         .transaction({
@@ -3381,7 +3382,7 @@ describe('BRC-20', () => {
       const sendFIRE = new TestChainhookPayloadBuilder()
         .apply()
         .block({
-          height: 775624,
+          height: BRC20_GENESIS_BLOCK + 7,
           hash: '00000000000000000003cbbe6d21f03f531cee6e96f33f4a8277a3d8bce5c759',
         })
         .transaction({
@@ -3463,7 +3464,7 @@ describe('BRC-20', () => {
       expect(json.results[0].operation).toBe('transfer_send');
       request = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/activity?block_height=775622`,
+        url: `/ordinals/brc-20/activity?block_height=${BRC20_GENESIS_BLOCK + 5}`,
       });
       json = request.json();
       expect(json.total).toBe(1);
@@ -3558,7 +3559,7 @@ describe('BRC-20', () => {
       expect(json.results[0].operation).toBe('deploy');
       request = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/activity?block_height=775622`,
+        url: `/ordinals/brc-20/activity?block_height=${BRC20_GENESIS_BLOCK + 5}`,
       });
       json = request.json();
       expect(json.total).toBe(0);
