@@ -1,3 +1,10 @@
+## [2.0.0-beta.2](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.1...v2.0.0-beta.2) (2023-11-02)
+
+
+### Bug Fixes
+
+* reject blocks that would create blessed inscription gaps ([#259](https://github.com/hirosystems/ordinals-api/issues/259)) ([18cd028](https://github.com/hirosystems/ordinals-api/commit/18cd028b636184a96597fa0b0978ba9e4d23f55c))
+
 ## [2.0.0-beta.1](https://github.com/hirosystems/ordinals-api/compare/v1.2.6...v2.0.0-beta.1) (2023-11-01)
 
 
