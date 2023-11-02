@@ -138,11 +138,13 @@ export class PgStore extends BasePgStore {
           for (const operation of tx.metadata.ordinal_operations) {
             if (operation.inscription_revealed) {
               const reveal = operation.inscription_revealed;
-              if (reveal.inscription_number >= 0 && blessedNumber + 1 !== reveal.inscription_number)
-                throw Error(
-                  `PgStore inscription gap detected: Attempting to insert #${reveal.inscription_number} (${block_height}) but current max is #${blessedNumber}`
-                );
-              blessedNumber = reveal.inscription_number;
+              if (reveal.inscription_number >= 0) {
+                if (blessedNumber + 1 !== reveal.inscription_number)
+                  throw Error(
+                    `PgStore inscription gap detected: Attempting to insert #${reveal.inscription_number} (${block_height}) but current max is #${blessedNumber}`
+                  );
+                blessedNumber = reveal.inscription_number;
+              }
               const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
               const satpoint = parseSatPoint(reveal.satpoint_post_inscription);
               const recursive_refs = getInscriptionRecursion(reveal.content_bytes);
