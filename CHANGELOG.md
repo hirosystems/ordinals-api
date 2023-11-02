@@ -1,3 +1,10 @@
+## [2.0.0-beta.4](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.3...v2.0.0-beta.4) (2023-11-02)
+
+
+### Bug Fixes
+
+* only validate gaps for blessed numbers ([#262](https://github.com/hirosystems/ordinals-api/issues/262)) ([29aaeda](https://github.com/hirosystems/ordinals-api/commit/29aaeda39527c88b63b7c82739d8ed858c48a74b))
+
 ## [2.0.0-beta.3](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.2...v2.0.0-beta.3) (2023-11-02)
 
 
