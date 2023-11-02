@@ -1,3 +1,10 @@
+## [2.0.0-beta.3](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.2...v2.0.0-beta.3) (2023-11-02)
+
+
+### Bug Fixes
+
+* keep block transfer index ([#260](https://github.com/hirosystems/ordinals-api/issues/260)) ([0e33a64](https://github.com/hirosystems/ordinals-api/commit/0e33a644773990531fa3f68e93ca97f83105a621))
+
 ## [2.0.0-beta.2](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.1...v2.0.0-beta.2) (2023-11-02)
 
 
