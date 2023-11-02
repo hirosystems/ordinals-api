@@ -126,7 +126,7 @@ export class PgStore extends BasePgStore {
         const block_height = event.block_identifier.index;
         if (block_height <= currentBlockHeight && block_height !== 767430) {
           logger.info(
-            `PgStore skipping ingestion for block ${block_height}, current chain tip is at ${currentBlockHeight}`
+            `PgStore skipping ingestion for previously seen block ${block_height}, current chain tip is at ${currentBlockHeight}`
           );
           return;
         }

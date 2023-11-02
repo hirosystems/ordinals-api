@@ -478,5 +478,46 @@ describe('EventServer', () => {
         /inscription gap detected/
       );
     });
+
+    test('server ignores past blocks', async () => {
+      const payload = new TestChainhookPayloadBuilder()
+        .apply()
+        .block({
+          height: 778575,
+          hash: '0x00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+          timestamp: 1676913207,
+        })
+        .transaction({
+          hash: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
+        })
+        .inscriptionRevealed({
+          content_bytes: '0x48656C6C6F',
+          content_type: 'text/plain;charset=utf-8',
+          content_length: 5,
+          inscription_number: 0,
+          inscription_fee: 705,
+          inscription_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
+          inscription_output_value: 10000,
+          inscriber_address: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+          ordinal_number: 257418248345364,
+          ordinal_block_height: 650000,
+          ordinal_offset: 0,
+          satpoint_post_inscription:
+            '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+          inscription_input_index: 0,
+          transfers_pre_inscription: 0,
+          tx_index: 0,
+        })
+        .build();
+      await db.updateInscriptions(payload);
+
+      const response = await server['fastify'].inject({
+        method: 'POST',
+        url: `/chainhook/${PREDICATE_UUID}`,
+        headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
+        payload: payload,
+      });
+      expect(response.statusCode).toBe(200);
+    });
   });
 });
