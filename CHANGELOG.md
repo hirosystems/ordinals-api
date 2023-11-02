@@ -1,3 +1,10 @@
+## [2.0.0-beta.7](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.6...v2.0.0-beta.7) (2023-11-02)
+
+
+### Bug Fixes
+
+* reduce to 4000 chunk size ([3373422](https://github.com/hirosystems/ordinals-api/commit/337342251987d546600fe331154b3e8cd38dcd18))
+
 ## [2.0.0-beta.6](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.5...v2.0.0-beta.6) (2023-11-02)
 
 
