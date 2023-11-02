@@ -36,7 +36,7 @@ describe('BRC-20', () => {
               tick: 'PEPE',
               max: '250000',
             },
-            number: 5,
+            number: 0,
             tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
             address: address,
           })
@@ -61,7 +61,7 @@ describe('BRC-20', () => {
               tick: 'PEPE',
               amt: '10000',
             },
-            number: 6,
+            number: 1,
             tx_id: '3b55f624eaa4f8de6c42e0c490176b67123a83094384f658611faf7bfb85dd0f',
             address: address,
           })
@@ -86,7 +86,7 @@ describe('BRC-20', () => {
       const content = Buffer.from(JSON.stringify(json), 'utf-8');
       const insert: DbInscriptionInsert = {
         genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-        number: 1,
+        number: 0,
         mime_type: 'application/json',
         content_type: 'application/json',
         content_length: content.length,
@@ -113,7 +113,7 @@ describe('BRC-20', () => {
       );
       const insert: DbInscriptionInsert = {
         genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-        number: 1,
+        number: 0,
         mime_type: 'foo/bar',
         content_type: 'foo/bar;x=1',
         content_length: content.length,
@@ -141,7 +141,7 @@ describe('BRC-20', () => {
       );
       const insert: DbInscriptionInsert = {
         genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-        number: 1,
+        number: 0,
         mime_type: 'application/json',
         content_type: 'application/json',
         content_length: content.length,
@@ -487,7 +487,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 max: '21000000',
               },
-              number: 5,
+              number: 0,
               tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
               address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
             })
@@ -507,7 +507,7 @@ describe('BRC-20', () => {
           block_height: 775617,
           decimals: 18,
           id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-          number: 5,
+          number: 0,
           mint_limit: null,
           max_supply: '21000000.000000000000000000',
           ticker: 'PEPE',
@@ -538,7 +538,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 max: '21000000',
               },
-              number: 5,
+              number: 0,
               tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
               address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
             })
@@ -563,7 +563,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 max: '19000000',
               },
-              number: 6,
+              number: 1,
               tx_id: '3f8067a6e9b45308b5a090c2987feeb2d08cbaf814ef2ffabad7c381b62f5f7e',
               address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
             })
@@ -585,7 +585,7 @@ describe('BRC-20', () => {
           id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
           max_supply: '21000000.000000000000000000',
           mint_limit: null,
-          number: 5,
+          number: 0,
           ticker: 'PEPE',
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           deploy_timestamp: 1677803510000,
@@ -614,7 +614,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 max: '21000000',
               },
-              number: 5,
+              number: 0,
               tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
               address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
             })
@@ -639,7 +639,7 @@ describe('BRC-20', () => {
                 tick: 'pepe',
                 max: '19000000',
               },
-              number: 6,
+              number: 1,
               tx_id: '3f8067a6e9b45308b5a090c2987feeb2d08cbaf814ef2ffabad7c381b62f5f7e',
               address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
             })
@@ -661,7 +661,7 @@ describe('BRC-20', () => {
           id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
           max_supply: '21000000.000000000000000000',
           mint_limit: null,
-          number: 5,
+          number: 0,
           ticker: 'PEPE',
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           deploy_timestamp: 1677803510000,
@@ -684,7 +684,7 @@ describe('BRC-20', () => {
           id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
           max_supply: '21000000.000000000000000000',
           mint_limit: null,
-          number: 5,
+          number: 0,
           ticker: 'PEPE',
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           deploy_timestamp: 1677803510000,
@@ -716,7 +716,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 max: '21000000',
               },
-              number: 5,
+              number: 0,
               tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
               address: address,
             })
@@ -741,7 +741,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 amt: '250000',
               },
-              number: 6,
+              number: 1,
               tx_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
               address: address,
             })
@@ -784,7 +784,7 @@ describe('BRC-20', () => {
                 tick: 'pepe',
                 amt: '100000',
               },
-              number: 7,
+              number: 2,
               tx_id: '7a1adbc3e93ddf8d7c4e0ba75aa11c98c431521dd850be8b955feedb716d8bec',
               address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
             })
@@ -842,7 +842,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 max: '21000000',
               },
-              number: 5,
+              number: 0,
               tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
               address: address,
             })
@@ -867,7 +867,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 amt: '250000',
               },
-              number: 6,
+              number: 1,
               tx_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
               address: address,
             })
@@ -893,7 +893,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 amt: '250000',
               },
-              number: 6,
+              number: 1,
               tx_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
               address: address,
             })
@@ -938,7 +938,7 @@ describe('BRC-20', () => {
                 max: '21000000',
                 dec: '1',
               },
-              number: 5,
+              number: 0,
               tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
               address: address,
             })
@@ -963,7 +963,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 amt: '250000.000', // Invalid decimal count
               },
-              number: 6,
+              number: 1,
               tx_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
               address: address,
             })
@@ -1002,7 +1002,7 @@ describe('BRC-20', () => {
                 max: '2500',
                 dec: '1',
               },
-              number: 5,
+              number: 0,
               tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
               address: address,
             })
@@ -1027,7 +1027,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 amt: '1000',
               },
-              number: 6,
+              number: 1,
               tx_id: '3b55f624eaa4f8de6c42e0c490176b67123a83094384f658611faf7bfb85dd0f',
               address: address,
             })
@@ -1043,7 +1043,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 amt: '1000',
               },
-              number: 7,
+              number: 2,
               tx_id: '7e09bda2cba34bca648cca6d79a074940d39b6137150d3a3edcf80c0e01419a5',
               address: address,
             })
@@ -1059,7 +1059,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 amt: '5000000000', // Exceeds supply
               },
-              number: 8,
+              number: 3,
               tx_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
               address: address,
             })
@@ -1102,7 +1102,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 amt: '1000',
               },
-              number: 9,
+              number: 4,
               tx_id: 'bf7a3e1a0647ca88f6539119b2defaec302683704ea270b3302e709597643548',
               address: address,
             })
@@ -1139,7 +1139,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 amt: '1000',
               },
-              number: 6,
+              number: 0,
               tx_id: '3b55f624eaa4f8de6c42e0c490176b67123a83094384f658611faf7bfb85dd0f',
               address: address,
             })
@@ -1179,7 +1179,7 @@ describe('BRC-20', () => {
                 dec: '1',
                 lim: '100',
               },
-              number: 5,
+              number: 0,
               tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
               address: address,
             })
@@ -1204,7 +1204,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 amt: '1000', // Greater than limit
               },
-              number: 6,
+              number: 1,
               tx_id: '3b55f624eaa4f8de6c42e0c490176b67123a83094384f658611faf7bfb85dd0f',
               address: address,
             })
@@ -1245,7 +1245,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 amt: '2000',
               },
-              number: 7,
+              number: 2,
               tx_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
               address: address,
             })
@@ -1299,7 +1299,7 @@ describe('BRC-20', () => {
                 tick: 'TEST', // Not found
                 amt: '2000',
               },
-              number: 7,
+              number: 2,
               tx_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
               address: address,
             })
@@ -1345,7 +1345,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 amt: '5000000000', // More than was minted
               },
-              number: 7,
+              number: 2,
               tx_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
               address: address,
             })
@@ -1391,7 +1391,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 amt: '9000',
               },
-              number: 7,
+              number: 2,
               tx_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
               address: address,
             })
@@ -1407,7 +1407,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 amt: '2000', // Will exceed available balance
               },
-              number: 8,
+              number: 3,
               tx_id: '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac',
               address: address,
             })
@@ -1454,7 +1454,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 amt: '9000',
               },
-              number: 7,
+              number: 2,
               tx_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
               address: address,
             })
@@ -1552,7 +1552,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 amt: '9000',
               },
-              number: 7,
+              number: 2,
               tx_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
               address: address,
             })
@@ -1620,7 +1620,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 amt: '9000',
               },
-              number: 7,
+              number: 2,
               tx_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
               address: address,
             })
@@ -1689,7 +1689,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 amt: '9000',
               },
-              number: 7,
+              number: 2,
               tx_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
               address: address,
             })
@@ -1799,7 +1799,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 amt: '20',
               },
-              number: 10,
+              number: 2,
               tx_id: '825a25b64b5d99ca30e04e53cc9a3020412e1054eb2a7523eb075ddd6d983205',
               address: address,
             })
@@ -1858,7 +1858,7 @@ describe('BRC-20', () => {
                 tick: 'PEPE',
                 amt: '20',
               },
-              number: 11,
+              number: 3,
               tx_id: '09a812f72275892b4858880cf3821004a6e8885817159b340639afe9952ac053',
               address: address2,
             })
@@ -1932,7 +1932,7 @@ describe('BRC-20', () => {
                   tick: 'PEPE',
                   max: '21000000',
                 },
-                number: 5,
+                number: 0,
                 tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
                 address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
               })
@@ -1947,7 +1947,7 @@ describe('BRC-20', () => {
         expect(response.json()).toStrictEqual({
           token: {
             id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-            number: 5,
+            number: 0,
             block_height: 775617,
             tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
             address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
@@ -1968,7 +1968,7 @@ describe('BRC-20', () => {
       });
 
       test('tokens filter by ticker prefix', async () => {
-        const inscriptionNumbers = incrementing(1);
+        const inscriptionNumbers = incrementing(0);
         const blockHeights = incrementing(775600);
 
         let transferHash = randomHash();
@@ -2076,7 +2076,7 @@ describe('BRC-20', () => {
 
       test('tokens using order_by tx_count', async () => {
         // Setup
-        const inscriptionNumbers = incrementing(1);
+        const inscriptionNumbers = incrementing(0);
         const blockHeights = incrementing(775600);
         const addressA = 'bc1q6uwuet65rm6xvlz7ztw2gvdmmay5uaycu03mqz';
         const addressB = 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4';
@@ -2317,7 +2317,7 @@ describe('BRC-20', () => {
     describe('/brc-20/activity', () => {
       test('activity for token transfers', async () => {
         // Setup
-        const inscriptionNumbers = incrementing(1);
+        const inscriptionNumbers = incrementing(0);
         const blockHeights = incrementing(775600);
         const addressA = 'bc1q6uwuet65rm6xvlz7ztw2gvdmmay5uaycu03mqz';
         const addressB = 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4';
@@ -2573,7 +2573,7 @@ describe('BRC-20', () => {
         // Step 7: B transfer_send the transfer to C
 
         // Setup
-        const inscriptionNumbers = incrementing(1);
+        const inscriptionNumbers = incrementing(0);
         const blockHeights = incrementing(775600);
         const addressA = 'bc1q6uwuet65rm6xvlz7ztw2gvdmmay5uaycu03mqz';
         const addressB = 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4';
@@ -3026,7 +3026,7 @@ describe('BRC-20', () => {
       });
 
       test('activity for multiple token creation', async () => {
-        const inscriptionNumbers = incrementing(1);
+        const inscriptionNumbers = incrementing(0);
         const blockHeights = incrementing(775600);
         const addressA = 'bc1q6uwuet65rm6xvlz7ztw2gvdmmay5uaycu03mqz';
 
@@ -3179,7 +3179,7 @@ describe('BRC-20', () => {
                   tick: 'PEPE',
                   amt: '2000',
                 },
-                number: 999,
+                number: 2,
                 tx_id: '633648e0e1ddcab8dea0496a561f2b08c486ae619b5634d7bb55d7f0cd32ef16',
                 address: 'bc1qp9jgp9qtlhgvwjnxclj6kav6nr2fq09c206pyl',
               })
@@ -3225,7 +3225,7 @@ describe('BRC-20', () => {
                   tick: 'PEPE',
                   max: '250000',
                 },
-                number: 5,
+                number: 0,
                 tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
                 address: 'bc1qp9jgp9qtlhgvwjnxclj6kav6nr2fq09c206pyl',
               })
@@ -3276,7 +3276,7 @@ describe('BRC-20', () => {
               tick: 'PEPE',
               amt: '9000',
             },
-            number: 7,
+            number: 2,
             tx_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
             address: address,
           })
@@ -3322,7 +3322,7 @@ describe('BRC-20', () => {
               tick: '🔥',
               max: '1000',
             },
-            number: 50,
+            number: 3,
             tx_id: '8354e85e87fa2df8b3a06ec0b9d395559b95174530cb19447fc4df5f6d4ca84d',
             address: address,
           })
@@ -3346,7 +3346,7 @@ describe('BRC-20', () => {
               tick: '🔥',
               amt: '500',
             },
-            number: 60,
+            number: 4,
             tx_id: '81f4ee2c247c5f5c0d3a6753fef706df410ea61c2aa6d370003b98beb041b887',
             address: address,
           })
@@ -3371,7 +3371,7 @@ describe('BRC-20', () => {
               tick: '🔥',
               amt: '100',
             },
-            number: 90,
+            number: 5,
             tx_id: 'c1c7f1d5c10a30605a8a5285ca3465a4f75758ed9b7f201e5ef62727e179966f',
             address: address,
           })
