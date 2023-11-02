@@ -64,34 +64,11 @@ describe('/stats', () => {
       };
 
       test('returns stats when processing blocks in order', async () => {
-        await db.updateInscriptions(testRevealApply(778_000));
-        await db.updateInscriptions(testRevealApply(778_000));
-        await db.updateInscriptions(testRevealApply(778_001));
-        await db.updateInscriptions(testRevealApply(778_002));
-        await db.updateInscriptions(testRevealApply(778_005));
-        await db.updateInscriptions(testRevealApply(778_005));
-        await db.updateInscriptions(testRevealApply(778_010));
-        await db.updateInscriptions(testRevealApply(778_010));
-        await db.updateInscriptions(testRevealApply(778_010));
-
-        const response = await fastify.inject({
-          method: 'GET',
-          url: '/ordinals/v1/stats/inscriptions',
-        });
-        expect(response.statusCode).toBe(200);
-        expect(response.json()).toStrictEqual(EXPECTED);
-      });
-
-      test('returns stats when processing blocks out-of-order', async () => {
-        await db.updateInscriptions(testRevealApply(778_001));
-        await db.updateInscriptions(testRevealApply(778_010));
-        await db.updateInscriptions(testRevealApply(778_000));
-        await db.updateInscriptions(testRevealApply(778_000));
-        await db.updateInscriptions(testRevealApply(778_005));
-        await db.updateInscriptions(testRevealApply(778_010));
-        await db.updateInscriptions(testRevealApply(778_002));
-        await db.updateInscriptions(testRevealApply(778_010));
-        await db.updateInscriptions(testRevealApply(778_005));
+        await db.updateInscriptions(testRevealApply(778_000, [0, 1]));
+        await db.updateInscriptions(testRevealApply(778_001, [2]));
+        await db.updateInscriptions(testRevealApply(778_002, [3]));
+        await db.updateInscriptions(testRevealApply(778_005, [4, 5]));
+        await db.updateInscriptions(testRevealApply(778_010, [6, 7, 8]));
 
         const response = await fastify.inject({
           method: 'GET',
@@ -102,20 +79,16 @@ describe('/stats', () => {
       });
 
       test('returns stats when processing rollbacks', async () => {
-        const payloadApply = testRevealApply(778_004);
+        const payloadApply = testRevealApply(778_004, [4]);
         const payloadRollback = { ...payloadApply, apply: [], rollback: payloadApply.apply };
 
-        await db.updateInscriptions(testRevealApply(778_001));
-        await db.updateInscriptions(testRevealApply(778_010));
-        await db.updateInscriptions(testRevealApply(778_000));
+        await db.updateInscriptions(testRevealApply(778_000, [0, 1]));
+        await db.updateInscriptions(testRevealApply(778_001, [2]));
+        await db.updateInscriptions(testRevealApply(778_002, [3]));
         await db.updateInscriptions(payloadApply);
-        await db.updateInscriptions(testRevealApply(778_005));
-        await db.updateInscriptions(testRevealApply(778_000));
         await db.updateInscriptions(payloadRollback);
-        await db.updateInscriptions(testRevealApply(778_010));
-        await db.updateInscriptions(testRevealApply(778_002));
-        await db.updateInscriptions(testRevealApply(778_010));
-        await db.updateInscriptions(testRevealApply(778_005));
+        await db.updateInscriptions(testRevealApply(778_005, [4, 5]));
+        await db.updateInscriptions(testRevealApply(778_010, [6, 7, 8]));
 
         const response = await fastify.inject({
           method: 'GET',
@@ -127,12 +100,11 @@ describe('/stats', () => {
     });
 
     test('range filters', async () => {
-      await db.updateInscriptions(testRevealApply(778_000));
-      await db.updateInscriptions(testRevealApply(778_001));
-      await db.updateInscriptions(testRevealApply(778_002));
-      await db.updateInscriptions(testRevealApply(778_005));
-      await db.updateInscriptions(testRevealApply(778_005));
-      await db.updateInscriptions(testRevealApply(778_010));
+      await db.updateInscriptions(testRevealApply(778_000, [0]));
+      await db.updateInscriptions(testRevealApply(778_001, [1]));
+      await db.updateInscriptions(testRevealApply(778_002, [2]));
+      await db.updateInscriptions(testRevealApply(778_005, [3, 4]));
+      await db.updateInscriptions(testRevealApply(778_010, [5]));
 
       const responseFrom = await fastify.inject({
         method: 'GET',
@@ -222,34 +194,35 @@ describe('/stats', () => {
   });
 });
 
-function testRevealApply(blockHeight: number) {
-  const randomHex = randomHash();
-  return new TestChainhookPayloadBuilder()
-    .apply()
-    .block({
-      height: blockHeight,
-      hash: '0x00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
-      timestamp: 1676913207,
-    })
-    .transaction({
-      hash: `0x${randomHex}`,
-    })
-    .inscriptionRevealed({
-      content_bytes: '0x48656C6C6F',
-      content_type: 'image/png',
-      content_length: 5,
-      inscription_number: Math.floor(Math.random() * 100000),
-      inscription_fee: 2805,
-      inscription_id: `${randomHex}i0`,
-      inscription_output_value: 10000,
-      inscriber_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-      ordinal_number: Math.floor(Math.random() * 1000000),
-      ordinal_block_height: Math.floor(Math.random() * 777000),
-      ordinal_offset: 0,
-      satpoint_post_inscription: `${randomHex}:0:0`,
-      inscription_input_index: 0,
-      transfers_pre_inscription: 0,
-      tx_index: 0,
-    })
-    .build();
+function testRevealApply(blockHeight: number, numbers: number[]) {
+  const block = new TestChainhookPayloadBuilder().apply().block({
+    height: blockHeight,
+    hash: '0x00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+    timestamp: 1676913207,
+  });
+  for (const number of numbers) {
+    const randomHex = randomHash();
+    block
+      .transaction({
+        hash: `0x${randomHex}`,
+      })
+      .inscriptionRevealed({
+        content_bytes: '0x48656C6C6F',
+        content_type: 'image/png',
+        content_length: 5,
+        inscription_number: number,
+        inscription_fee: 2805,
+        inscription_id: `${randomHex}i0`,
+        inscription_output_value: 10000,
+        inscriber_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+        ordinal_number: Math.floor(Math.random() * 1000000),
+        ordinal_block_height: Math.floor(Math.random() * 777000),
+        ordinal_offset: 0,
+        satpoint_post_inscription: `${randomHex}:0:0`,
+        inscription_input_index: 0,
+        transfers_pre_inscription: 0,
+        tx_index: 0,
+      });
+  }
+  return block.build();
 }

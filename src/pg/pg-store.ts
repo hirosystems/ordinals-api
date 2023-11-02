@@ -140,7 +140,7 @@ export class PgStore extends BasePgStore {
               const reveal = operation.inscription_revealed;
               if (!gapChecked && reveal.inscription_number - 1 !== (maxDbBlessed ?? -1))
                 throw Error(
-                  `PgStore blessed inscription gap detected: attempting to insert #${reveal.inscription_number} (${block_height}) but current max is #${maxDbBlessed} (${currentBlockHeight})`
+                  `PgStore blessed inscription gap detected: Attempting to insert #${reveal.inscription_number} (${block_height}) but current max is #${maxDbBlessed} (${currentBlockHeight})`
                 );
               gapChecked = true;
               const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
