@@ -27,7 +27,7 @@ describe('ETag cache', () => {
         content_bytes: '0x48656C6C6F',
         content_type: 'image/png',
         content_length: 5,
-        inscription_number: 7,
+        inscription_number: 0,
         inscription_fee: 2805,
         inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
         inscription_output_value: 10000,
@@ -54,7 +54,7 @@ describe('ETag cache', () => {
     // Check on numbered id too
     const nResponse = await fastify.inject({
       method: 'GET',
-      url: '/ordinals/v1/inscriptions/7',
+      url: '/ordinals/v1/inscriptions/0',
     });
     expect(nResponse.statusCode).toBe(200);
     expect(nResponse.headers.etag).not.toBeUndefined();
@@ -70,7 +70,7 @@ describe('ETag cache', () => {
     expect(cached.statusCode).toBe(304);
     const nCached = await fastify.inject({
       method: 'GET',
-      url: '/ordinals/v1/inscriptions/7',
+      url: '/ordinals/v1/inscriptions/0',
       headers: { 'if-none-match': etag1 },
     });
     expect(nCached.statusCode).toBe(304);
@@ -79,7 +79,7 @@ describe('ETag cache', () => {
     await db.updateInscriptions(
       new TestChainhookPayloadBuilder()
         .apply()
-        .block({ height: 775700, timestamp: 1678122360 })
+        .block({ height: 775618, timestamp: 1678122360 })
         .transaction({
           hash: '0xbdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444',
         })
@@ -106,7 +106,7 @@ describe('ETag cache', () => {
     expect(cached2.statusCode).toBe(200);
     const nCached2 = await fastify.inject({
       method: 'GET',
-      url: '/ordinals/v1/inscriptions/7',
+      url: '/ordinals/v1/inscriptions/0',
       headers: { 'if-none-match': etag1 },
     });
     expect(nCached2.statusCode).toBe(200);
@@ -116,7 +116,7 @@ describe('ETag cache', () => {
     await db.updateInscriptions(
       new TestChainhookPayloadBuilder()
         .apply()
-        .block({ height: 775690, timestamp: 1678122360 })
+        .block({ height: 775619, timestamp: 1678122360 })
         .transaction({
           hash: 'bebb1357c97d2348eb8ef24e1d8639ff79c8847bf12999ca7fef463489b40f0f',
         })
@@ -143,7 +143,7 @@ describe('ETag cache', () => {
     expect(cached3.statusCode).toBe(200);
     const nCached3 = await fastify.inject({
       method: 'GET',
-      url: '/ordinals/v1/inscriptions/7',
+      url: '/ordinals/v1/inscriptions/0',
       headers: { 'if-none-match': etag2 },
     });
     expect(nCached3.statusCode).toBe(200);
@@ -158,7 +158,7 @@ describe('ETag cache', () => {
         content_bytes: '0x48656C6C6F',
         content_type: 'text/plain',
         content_length: 5,
-        inscription_number: 7,
+        inscription_number: 0,
         inscription_fee: 705,
         inscription_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
         inscription_output_value: 10000,
@@ -176,13 +176,13 @@ describe('ETag cache', () => {
     await db.updateInscriptions(block1);
     const block2 = new TestChainhookPayloadBuilder()
       .apply()
-      .block({ height: 775617 })
+      .block({ height: 778576 })
       .transaction({ hash: '0x00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d' })
       .inscriptionRevealed({
         content_bytes: '0x48656C6C6F',
         content_type: 'image/png',
         content_length: 5,
-        inscription_number: 2,
+        inscription_number: 1,
         inscription_fee: 2805,
         inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
         inscription_output_value: 10000,
@@ -219,7 +219,7 @@ describe('ETag cache', () => {
     // New location
     const block3 = new TestChainhookPayloadBuilder()
       .apply()
-      .block({ height: 775618 })
+      .block({ height: 778577 })
       .transaction({ hash: 'ae9d273a10e899f0d2cad47ee2b0e77ab8a9addd9dd5bb5e4b03d6971c060d52' })
       .inscriptionTransferred({
         inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
@@ -242,39 +242,6 @@ describe('ETag cache', () => {
       headers: { 'if-none-match': etag },
     });
     expect(cached2.statusCode).toBe(200);
-    const etag2 = cached2.headers.etag;
-
-    // Upsert genesis location
-    const block4 = new TestChainhookPayloadBuilder()
-      .apply()
-      .block({ height: 778575 })
-      .transaction({ hash: '0x9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201' })
-      .inscriptionRevealed({
-        content_bytes: '0x48656C6C6F',
-        content_type: 'text/plain',
-        content_length: 5,
-        inscription_number: 7,
-        inscription_fee: 705,
-        inscription_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
-        inscription_output_value: 10000,
-        inscriber_address: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
-        ordinal_number: 257418248345364,
-        ordinal_block_height: 650000,
-        ordinal_offset: 0,
-        satpoint_post_inscription:
-          '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
-        inscription_input_index: 0,
-        transfers_pre_inscription: 0,
-        tx_index: 0,
-      })
-      .build();
-    await db.updateInscriptions(block4);
-    const cached3 = await fastify.inject({
-      method: 'GET',
-      url: '/ordinals/v1/inscriptions',
-      headers: { 'if-none-match': etag2 },
-    });
-    expect(cached3.statusCode).toBe(200);
   });
 
   test('inscriptions stats per block cache control', async () => {
@@ -286,7 +253,7 @@ describe('ETag cache', () => {
         content_bytes: '0x48656C6C6F',
         content_type: 'text/plain',
         content_length: 5,
-        inscription_number: 7,
+        inscription_number: 0,
         inscription_fee: 705,
         inscription_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
         inscription_output_value: 10000,
@@ -323,13 +290,13 @@ describe('ETag cache', () => {
     // New block
     const block2 = new TestChainhookPayloadBuilder()
       .apply()
-      .block({ height: 778577, hash: randomHash() })
+      .block({ height: 778576, hash: randomHash() })
       .transaction({ hash: '0x00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d' })
       .inscriptionRevealed({
         content_bytes: '0x48656C6C6F',
         content_type: 'image/png',
         content_length: 5,
-        inscription_number: 2,
+        inscription_number: 1,
         inscription_fee: 2805,
         inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
         inscription_output_value: 10000,
@@ -364,7 +331,7 @@ describe('ETag cache', () => {
         content_bytes: '0x48656C6C6F',
         content_type: 'text/plain',
         content_length: 5,
-        inscription_number: 7,
+        inscription_number: 0,
         inscription_fee: 705,
         inscription_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
         inscription_output_value: 10000,
@@ -401,13 +368,13 @@ describe('ETag cache', () => {
     // New block
     const block2 = new TestChainhookPayloadBuilder()
       .apply()
-      .block({ height: 778577, hash: randomHash() })
+      .block({ height: 778576, hash: randomHash() })
       .transaction({ hash: '0x00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d' })
       .inscriptionRevealed({
         content_bytes: '0x48656C6C6F',
         content_type: 'image/png',
         content_length: 5,
-        inscription_number: 2,
+        inscription_number: 1,
         inscription_fee: 2805,
         inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
         inscription_output_value: 10000,

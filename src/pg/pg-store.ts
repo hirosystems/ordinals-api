@@ -87,6 +87,12 @@ export class PgStore extends BasePgStore {
   async updateInscriptions(payload: Payload): Promise<void> {
     let updatedBlockHeightMin = Infinity;
     await this.sqlWriteTransaction(async sql => {
+      // Check where we're at in terms of ingestion, e.g. block height and max blessed inscription
+      // number. This will let us determine if we should skip ingesting this block or throw an error
+      // if a gap is detected.
+      let blessedNumber = (await this.getMaxInscriptionNumber()) ?? -1;
+      const currentBlockHeight = await this.getChainTipBlockHeight();
+
       for (const rollbackEvent of payload.rollback) {
         // TODO: Optimize rollbacks just as we optimized applys.
         const event = rollbackEvent as BitcoinEvent;
@@ -118,6 +124,12 @@ export class PgStore extends BasePgStore {
       for (const applyEvent of payload.apply) {
         const event = applyEvent as BitcoinEvent;
         const block_height = event.block_identifier.index;
+        if (block_height <= currentBlockHeight && block_height !== 767430) {
+          logger.info(
+            `PgStore skipping ingestion for previously seen block ${block_height}, current chain tip is at ${currentBlockHeight}`
+          );
+          return;
+        }
         const block_hash = normalizedHexString(event.block_identifier.hash);
         const writes: DbRevealInsert[] = [];
         for (const tx of event.transactions) {
@@ -125,6 +137,11 @@ export class PgStore extends BasePgStore {
           for (const operation of tx.metadata.ordinal_operations) {
             if (operation.inscription_revealed) {
               const reveal = operation.inscription_revealed;
+              if (blessedNumber + 1 !== reveal.inscription_number)
+                throw Error(
+                  `PgStore inscription gap detected: Attempting to insert #${reveal.inscription_number} (${block_height}) but current max is #${blessedNumber}`
+                );
+              blessedNumber = reveal.inscription_number;
               const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
               const satpoint = parseSatPoint(reveal.satpoint_post_inscription);
               const recursive_refs = getInscriptionRecursion(reveal.content_bytes);
@@ -237,15 +254,8 @@ export class PgStore extends BasePgStore {
       }
     });
     await this.refreshMaterializedView('chain_tip');
-    // Skip expensive view refreshes if we're not streaming live blocks.
-    if (payload.chainhook.is_streaming_blocks) {
-      // We'll issue materialized view refreshes in parallel. We will not wait for them to finish so
-      // we can respond to the chainhook node with a `200` HTTP code as soon as possible.
-      const views = [this.normalizeInscriptionCount({ min_block_height: updatedBlockHeightMin })];
-      const viewRefresh = Promise.allSettled(views);
-      // Only wait for these on tests.
-      if (isTestEnv) await viewRefresh;
-    }
+    if (updatedBlockHeightMin !== Infinity)
+      await this.normalizeInscriptionCount({ min_block_height: updatedBlockHeightMin });
   }
 
   async getChainTipBlockHeight(): Promise<number> {
@@ -403,8 +413,10 @@ export class PgStore extends BasePgStore {
           }
           ${filters?.to_sat_ordinal ? sql`AND i.sat_ordinal <= ${filters.to_sat_ordinal}` : sql``}
           ${filters?.number?.length ? sql`AND i.number IN ${sql(filters.number)}` : sql``}
-          ${filters?.from_number ? sql`AND i.number >= ${filters.from_number}` : sql``}
-          ${filters?.to_number ? sql`AND i.number <= ${filters.to_number}` : sql``}
+          ${
+            filters?.from_number !== undefined ? sql`AND i.number >= ${filters.from_number}` : sql``
+          }
+          ${filters?.to_number !== undefined ? sql`AND i.number <= ${filters.to_number}` : sql``}
           ${filters?.address?.length ? sql`AND cur.address IN ${sql(filters.address)}` : sql``}
           ${filters?.mime_type?.length ? sql`AND i.mime_type IN ${sql(filters.mime_type)}` : sql``}
           ${filters?.output ? sql`AND cur_l.output = ${filters.output}` : sql``}
@@ -648,7 +660,6 @@ export class PgStore extends BasePgStore {
             SET updated_at = NOW()
             WHERE genesis_id IN ${sql([...transferGenesisIds])}
           `;
-        await this.backfillOrphanLocations();
         await this.updateInscriptionLocationPointers(locations);
         await this.counts.applyInscriptions(inscriptions);
       }
@@ -822,21 +833,6 @@ export class PgStore extends BasePgStore {
         `;
         await this.counts.applyLocations(current, false);
       }
-    });
-  }
-
-  private async backfillOrphanLocations(): Promise<void> {
-    await this.sqlWriteTransaction(async sql => {
-      await sql`
-        UPDATE locations AS l
-        SET inscription_id = (SELECT id FROM inscriptions WHERE genesis_id = l.genesis_id)
-        WHERE l.inscription_id IS NULL
-      `;
-      await sql`
-        UPDATE inscription_recursions AS l
-        SET ref_inscription_id = (SELECT id FROM inscriptions WHERE genesis_id = l.ref_inscription_genesis_id)
-        WHERE l.ref_inscription_id IS NULL
-      `;
     });
   }
 
