@@ -30,6 +30,9 @@ import { Brc20Deploy, Brc20Mint, Brc20Transfer, brc20FromInscriptionContent } fr
 import { Brc20TokenOrderBy } from '../../api/schemas';
 import { objRemoveUndefinedValues } from '../helpers';
 
+/** The block at which BRC-20 activity began */
+export const BRC20_GENESIS_BLOCK = 779832;
+
 export class Brc20PgStore extends BasePgStoreModule {
   sqlOr(partials: postgres.PendingQuery<postgres.Row[]>[] | undefined) {
     return partials?.reduce((acc, curr) => this.sql`${acc} OR ${curr}`);
@@ -43,6 +46,7 @@ export class Brc20PgStore extends BasePgStoreModule {
    */
   async scanBlocks(startBlock: number, endBlock: number): Promise<void> {
     for (let blockHeight = startBlock; blockHeight <= endBlock; blockHeight++) {
+      if (blockHeight < BRC20_GENESIS_BLOCK) continue;
       logger.info(`Brc20PgStore scanning block ${blockHeight}`);
       await this.sqlWriteTransaction(async sql => {
         const limit = 100_000;
