@@ -1,3 +1,10 @@
+## [2.0.0-beta.5](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.4...v2.0.0-beta.5) (2023-11-02)
+
+
+### Bug Fixes
+
+* only advance blessed number after gap detection ([c8f3c81](https://github.com/hirosystems/ordinals-api/commit/c8f3c81a657cd28283bdd89e0a17af06cad93d63))
+
 ## [2.0.0-beta.4](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.3...v2.0.0-beta.4) (2023-11-02)
 
 
