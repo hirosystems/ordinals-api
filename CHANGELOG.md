@@ -1,3 +1,10 @@
+## [2.0.0-beta.8](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.7...v2.0.0-beta.8) (2023-11-03)
+
+
+### Bug Fixes
+
+* do not reject unbounded inscriptions that come in disorder ([#264](https://github.com/hirosystems/ordinals-api/issues/264)) ([56e2235](https://github.com/hirosystems/ordinals-api/commit/56e2235a3823a94493bbe978c2f8e5be48c6cf46))
+
 ## [2.0.0-beta.7](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.6...v2.0.0-beta.7) (2023-11-02)
 
 
