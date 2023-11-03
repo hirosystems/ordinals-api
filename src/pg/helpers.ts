@@ -1,5 +1,28 @@
 import { PgBytea } from '@hirosystems/api-toolkit';
 import { hexToBuffer } from '../api/util/helpers';
+import { BadPayloadRequestError } from '@hirosystems/chainhook-client';
+
+/**
+ * Check if writing a block would create an inscription number gap
+ * @param currentNumber - Current max blessed number
+ * @param newNumbers - New blessed numbers to be inserted
+ */
+export function assertNoBlockInscriptionGap(args: {
+  currentNumber: number;
+  newNumbers: number[];
+  currentBlockHeight: number;
+  newBlockHeight: number;
+}) {
+  args.newNumbers.sort();
+  for (let n = 0; n < args.newNumbers.length; n++) {
+    const curr = args.currentNumber + n;
+    const next = args.newNumbers[n];
+    if (next !== curr + 1)
+      throw new BadPayloadRequestError(
+        `Block inscription gap detected: Attempting to insert #${next} (${args.newBlockHeight}) but current max is #${curr}. Chain tip is at ${args.currentBlockHeight}.`
+      );
+  }
+}
 
 /**
  * Returns a list of referenced inscription ids from inscription content.

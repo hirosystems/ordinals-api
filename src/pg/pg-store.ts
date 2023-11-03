@@ -17,7 +17,7 @@ import { ENV } from '../env';
 import { Brc20PgStore } from './brc20/brc20-pg-store';
 import { CountsPgStore } from './counts/counts-pg-store';
 import { getIndexResultCountType } from './counts/helpers';
-import { chunkArray, getInscriptionRecursion } from './helpers';
+import { assertNoBlockInscriptionGap, chunkArray, getInscriptionRecursion } from './helpers';
 import {
   DbFullyLocatedInscriptionResult,
   DbInscription,
@@ -90,8 +90,9 @@ export class PgStore extends BasePgStore {
       // Check where we're at in terms of ingestion, e.g. block height and max blessed inscription
       // number. This will let us determine if we should skip ingesting this block or throw an error
       // if a gap is detected.
-      let blessedNumber = (await this.getMaxInscriptionNumber()) ?? -1;
+      const currentBlessedNumber = (await this.getMaxInscriptionNumber()) ?? -1;
       const currentBlockHeight = await this.getChainTipBlockHeight();
+      const newBlessedNumbers: number[] = [];
 
       for (const rollbackEvent of payload.rollback) {
         // TODO: Optimize rollbacks just as we optimized applys.
@@ -139,13 +140,7 @@ export class PgStore extends BasePgStore {
           for (const operation of tx.metadata.ordinal_operations) {
             if (operation.inscription_revealed) {
               const reveal = operation.inscription_revealed;
-              if (reveal.inscription_number >= 0) {
-                if (blessedNumber + 1 !== reveal.inscription_number)
-                  throw Error(
-                    `PgStore inscription gap detected: Attempting to insert #${reveal.inscription_number} (${block_height}) but current max is #${blessedNumber}`
-                  );
-                blessedNumber = reveal.inscription_number;
-              }
+              if (reveal.inscription_number >= 0) newBlessedNumbers.push(reveal.inscription_number);
               const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
               const satpoint = parseSatPoint(reveal.satpoint_post_inscription);
               const recursive_refs = getInscriptionRecursion(reveal.content_bytes);
@@ -251,6 +246,12 @@ export class PgStore extends BasePgStore {
             }
           }
         }
+        assertNoBlockInscriptionGap({
+          currentNumber: currentBlessedNumber,
+          newNumbers: newBlessedNumbers,
+          currentBlockHeight: currentBlockHeight,
+          newBlockHeight: block_height,
+        });
         // Divide insertion array into chunks of 4000 in order to avoid the postgres limit of 65534
         // query params.
         for (const writeChunk of chunkArray(writes, 4000))
