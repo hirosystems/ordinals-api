@@ -140,7 +140,8 @@ export class PgStore extends BasePgStore {
           for (const operation of tx.metadata.ordinal_operations) {
             if (operation.inscription_revealed) {
               const reveal = operation.inscription_revealed;
-              if (reveal.inscription_number >= 0) newBlessedNumbers.push(reveal.inscription_number);
+              if (reveal.inscription_number >= 0)
+                newBlessedNumbers.push(parseInt(`${reveal.inscription_number}`));
               const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
               const satpoint = parseSatPoint(reveal.satpoint_post_inscription);
               const recursive_refs = getInscriptionRecursion(reveal.content_bytes);

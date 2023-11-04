@@ -13,7 +13,7 @@ export function assertNoBlockInscriptionGap(args: {
   currentBlockHeight: number;
   newBlockHeight: number;
 }) {
-  args.newNumbers.sort();
+  args.newNumbers.sort((a, b) => a - b);
   for (let n = 0; n < args.newNumbers.length; n++) {
     const curr = args.currentNumber + n;
     const next = args.newNumbers[n];
