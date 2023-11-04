@@ -1,3 +1,10 @@
+## [2.0.0-beta.9](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.8...v2.0.0-beta.9) (2023-11-04)
+
+
+### Bug Fixes
+
+* guarantee gap detection is comparing numbers ([0f3f51a](https://github.com/hirosystems/ordinals-api/commit/0f3f51a0186dd2f677e21669d2359cba02122acf))
+
 ## [2.0.0-beta.8](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.7...v2.0.0-beta.8) (2023-11-03)
 
 
