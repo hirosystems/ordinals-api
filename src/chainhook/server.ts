@@ -44,7 +44,7 @@ export async function startChainhookServer(args: { db: PgStore }): Promise<Chain
     hostname: ENV.API_HOST,
     port: ENV.EVENT_PORT,
     auth_token: ENV.CHAINHOOK_NODE_AUTH_TOKEN,
-    external_base_url: `http://${ENV.EXTERNAL_HOSTNAME}`,
+    external_base_url: `http://${ENV.EXTERNAL_HOSTNAME}:${ENV.EVENT_PORT}`,
     wait_for_chainhook_node: ENV.CHAINHOOK_AUTO_PREDICATE_REGISTRATION,
     validate_chainhook_payloads: true,
     body_limit: 41943040, // 40MB
