@@ -49,7 +49,7 @@ export class Brc20PgStore extends BasePgStoreModule {
       if (blockHeight < BRC20_GENESIS_BLOCK) continue;
       logger.info(`Brc20PgStore scanning block ${blockHeight}`);
       await this.sqlWriteTransaction(async sql => {
-        const limit = 100_000;
+        const limit = 50_000;
         let offset = 0;
         do {
           const block = await sql<DbBrc20ScannedInscription[]>`
