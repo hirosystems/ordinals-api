@@ -1,3 +1,10 @@
+## [2.0.0-beta.14](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.13...v2.0.0-beta.14) (2023-11-12)
+
+
+### Bug Fixes
+
+* try batch iterator generator ([e2ed039](https://github.com/hirosystems/ordinals-api/commit/e2ed039120958fde07297c6760022770dab710a8))
+
 ## [2.0.0-beta.13](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.12...v2.0.0-beta.13) (2023-11-12)
 
 
