@@ -1,3 +1,10 @@
+## [2.0.0-beta.11](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.10...v2.0.0-beta.11) (2023-11-12)
+
+
+### Bug Fixes
+
+* bump docker image ([08688da](https://github.com/hirosystems/ordinals-api/commit/08688da84e7695156aa0e822c6f264e9085c5f1a))
+
 ## [2.0.0-beta.10](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.9...v2.0.0-beta.10) (2023-11-11)
 
 
