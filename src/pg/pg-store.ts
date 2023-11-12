@@ -18,7 +18,7 @@ import { ENV } from '../env';
 import { Brc20PgStore } from './brc20/brc20-pg-store';
 import { CountsPgStore } from './counts/counts-pg-store';
 import { getIndexResultCountType } from './counts/helpers';
-import { assertNoBlockInscriptionGap, chunkArray, getInscriptionRecursion } from './helpers';
+import { assertNoBlockInscriptionGap, getInscriptionRecursion } from './helpers';
 import {
   DbFullyLocatedInscriptionResult,
   DbInscription,
@@ -254,9 +254,9 @@ export class PgStore extends BasePgStore {
           currentBlockHeight: currentBlockHeight,
           newBlockHeight: block_height,
         });
-        // Divide insertion array into chunks of 2000 in order to avoid the postgres limit of 65534
+        // Divide insertion array into chunks of 4000 in order to avoid the postgres limit of 65534
         // query params.
-        for (const writeChunk of batchIterate(writes, 2000))
+        for (const writeChunk of batchIterate(writes, 4000))
           await this.insertInscriptions(writeChunk);
         updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
         if (ENV.BRC20_BLOCK_SCAN_ENABLED)
@@ -903,7 +903,7 @@ export class PgStore extends BasePgStore {
       }
     if (inserts.length === 0) return;
     await this.sqlWriteTransaction(async sql => {
-      for (const chunk of chunkArray(inserts, 500))
+      for (const chunk of batchIterate(inserts, 500))
         await sql`
           INSERT INTO inscription_recursions ${sql(chunk)}
           ON CONFLICT ON CONSTRAINT inscription_recursions_unique DO NOTHING
