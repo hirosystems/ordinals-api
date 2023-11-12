@@ -1,3 +1,10 @@
+## [2.0.0-beta.16](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.15...v2.0.0-beta.16) (2023-11-12)
+
+
+### Bug Fixes
+
+* try returning brc20 batch to normal, use batchIterate everywhere ([1d3a24b](https://github.com/hirosystems/ordinals-api/commit/1d3a24b8bb1d852eb1ae198d84a5940eec997ded))
+
 ## [2.0.0-beta.15](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.14...v2.0.0-beta.15) (2023-11-12)
 
 
