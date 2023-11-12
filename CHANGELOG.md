@@ -1,3 +1,10 @@
+## [2.0.0-beta.13](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.12...v2.0.0-beta.13) (2023-11-12)
+
+
+### Bug Fixes
+
+* reduce brc-20 batch to 5k ([2037647](https://github.com/hirosystems/ordinals-api/commit/20376470455a0887d81f3128047d330e7d97e438))
+
 ## [2.0.0-beta.12](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.11...v2.0.0-beta.12) (2023-11-12)
 
 
