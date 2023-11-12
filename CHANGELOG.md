@@ -1,3 +1,10 @@
+## [2.0.0-beta.15](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.14...v2.0.0-beta.15) (2023-11-12)
+
+
+### Bug Fixes
+
+* batch size to 2000 ([9cf9230](https://github.com/hirosystems/ordinals-api/commit/9cf9230fe193a2075a0cd2e45a5fa316ecc225c5))
+
 ## [2.0.0-beta.14](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.13...v2.0.0-beta.14) (2023-11-12)
 
 
