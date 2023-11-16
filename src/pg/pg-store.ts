@@ -69,7 +69,7 @@ export class PgStore extends BasePgStore {
       },
     });
     if (opts?.skipMigrations !== true) {
-      // await runMigrations(MIGRATIONS_DIR, 'up');
+      await runMigrations(MIGRATIONS_DIR, 'up');
     }
     return new PgStore(sql);
   }
