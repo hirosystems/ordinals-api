@@ -8,10 +8,10 @@ export function up(pgm: MigrationBuilder): void {
   pgm.addColumn('locations', {
     transfer_type: {
       type: 'transfer_type',
-      notNull: true,
-      default: 'transferred',
     },
   });
+  pgm.sql(`UPDATE locations SET transfer_type = 'transferred'`);
+  pgm.alterColumn('locations', 'transfer_type', { notNull: true });
 }
 
 export function down(pgm: MigrationBuilder): void {
