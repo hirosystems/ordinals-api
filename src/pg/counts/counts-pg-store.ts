@@ -56,42 +56,49 @@ export class CountsPgStore extends BasePgStoreModule {
 
   async applyInscriptions(writes: DbInscriptionInsert[]): Promise<void> {
     if (writes.length === 0) return;
-    const mimeType = new Map<string, any>();
-    const rarity = new Map<string, any>();
-    const recursion = new Map<boolean, any>();
-    const type = new Map<string, any>();
+    const mimeType = new Map<string, number>();
+    const rarity = new Map<string, number>();
+    const recursion = new Map<boolean, number>();
+    const typeMap = new Map<string, number>();
     for (const i of writes) {
-      const t = i.number < 0 ? 'cursed' : 'blessed';
-      mimeType.set(i.mime_type, {
-        mime_type: i.mime_type,
-        count: mimeType.get(i.mime_type)?.count ?? 0 + 1,
-      });
-      rarity.set(i.sat_rarity, {
-        sat_rarity: i.sat_rarity,
-        count: rarity.get(i.sat_rarity)?.count ?? 0 + 1,
-      });
-      recursion.set(i.recursive, {
-        recursive: i.recursive,
-        count: recursion.get(i.recursive)?.count ?? 0 + 1,
-      });
-      type.set(t, { type: t, count: type.get(t)?.count ?? 0 + 1 });
+      mimeType.set(i.mime_type, (mimeType.get(i.mime_type) ?? 0) + 1);
+      rarity.set(i.sat_rarity, (rarity.get(i.sat_rarity) ?? 0) + 1);
+      recursion.set(i.recursive, (recursion.get(i.recursive) ?? 0) + 1);
+      const inscrType = i.number < 0 ? 'cursed' : 'blessed';
+      typeMap.set(inscrType, (typeMap.get(inscrType) ?? 0) + 1);
     }
+    const mimeTypeInsert = Array.from(mimeType.entries()).map(k => ({
+      mime_type: k[0],
+      count: k[1],
+    }));
+    const rarityInsert = Array.from(rarity.entries()).map(k => ({
+      sat_rarity: k[0],
+      count: k[1],
+    }));
+    const recursionInsert = Array.from(recursion.entries()).map(k => ({
+      recursive: k[0],
+      count: k[1],
+    }));
+    const typeInsert = Array.from(typeMap.entries()).map(k => ({
+      type: k[0],
+      count: k[1],
+    }));
     // `counts_by_address` and `counts_by_genesis_address` count increases are handled in
     // `applyLocations`.
     await this.sql`
       WITH increase_mime_type AS (
-        INSERT INTO counts_by_mime_type ${this.sql([...mimeType.values()])}
+        INSERT INTO counts_by_mime_type ${this.sql(mimeTypeInsert)}
         ON CONFLICT (mime_type) DO UPDATE SET count = counts_by_mime_type.count + EXCLUDED.count
       ),
       increase_rarity AS (
-        INSERT INTO counts_by_sat_rarity ${this.sql([...rarity.values()])}
+        INSERT INTO counts_by_sat_rarity ${this.sql(rarityInsert)}
         ON CONFLICT (sat_rarity) DO UPDATE SET count = counts_by_sat_rarity.count + EXCLUDED.count
       ),
       increase_recursive AS (
-        INSERT INTO counts_by_recursive ${this.sql([...recursion.values()])}
+        INSERT INTO counts_by_recursive ${this.sql(recursionInsert)}
         ON CONFLICT (recursive) DO UPDATE SET count = counts_by_recursive.count + EXCLUDED.count
       )
-      INSERT INTO counts_by_type ${this.sql([...type.values()])}
+      INSERT INTO counts_by_type ${this.sql(typeInsert)}
       ON CONFLICT (type) DO UPDATE SET count = counts_by_type.count + EXCLUDED.count
     `;
   }

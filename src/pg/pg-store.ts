@@ -669,16 +669,14 @@ export class PgStore extends BasePgStore {
         RETURNING inscription_id, id AS location_id, block_height, tx_index, address
       `;
       await this.updateInscriptionRecursions(writes);
-      if (!ENV.FAST_INGESTION_MODE) {
-        if (transferGenesisIds.size)
-          await sql`
-            UPDATE inscriptions
-            SET updated_at = NOW()
-            WHERE genesis_id IN ${sql([...transferGenesisIds])}
-          `;
-        await this.updateInscriptionLocationPointers(locations);
-        await this.counts.applyInscriptions(inscriptions);
-      }
+      if (transferGenesisIds.size)
+        await sql`
+          UPDATE inscriptions
+          SET updated_at = NOW()
+          WHERE genesis_id IN ${sql([...transferGenesisIds])}
+        `;
+      await this.updateInscriptionLocationPointers(locations);
+      await this.counts.applyInscriptions(inscriptions);
       for (const reveal of writes) {
         const action = reveal.inscription ? `reveal #${reveal.inscription.number}` : `transfer`;
         logger.info(

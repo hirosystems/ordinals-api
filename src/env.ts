@@ -55,11 +55,6 @@ const schema = Type.Object({
 
   /** Enables BRC-20 processing in write mode APIs */
   BRC20_BLOCK_SCAN_ENABLED: Type.Boolean({ default: true }),
-  /**
-   * Disables inscription genesis/current location calculation, count aggregation, etc. so blocks
-   * can be ingested faster during a full replay.
-   */
-  FAST_INGESTION_MODE: Type.Boolean({ default: false }),
 });
 type Env = Static<typeof schema>;
 
