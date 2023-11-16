@@ -9,6 +9,12 @@ export function up(pgm: MigrationBuilder): void {
     transfer_type: {
       type: 'transfer_type',
       notNull: true,
+      default: 'transferred',
     },
   });
+}
+
+export function down(pgm: MigrationBuilder): void {
+  pgm.dropColumn('locations', ['transfer_type']);
+  pgm.dropType('transfer_type');
 }
