@@ -9,7 +9,7 @@ import {
   ChainhookEventObserver,
 } from '@hirosystems/chainhook-client';
 import { buildApiServer } from '../src/api/init';
-import { cycleMigrations } from '@hirosystems/api-toolkit';
+import { runMigrations } from '@hirosystems/api-toolkit';
 
 describe('EventServer', () => {
   let db: PgStore;
@@ -18,13 +18,14 @@ describe('EventServer', () => {
 
   beforeEach(async () => {
     db = await PgStore.connect({ skipMigrations: true });
-    await cycleMigrations(MIGRATIONS_DIR);
+    await runMigrations(MIGRATIONS_DIR, 'up', undefined, { logMigrations: true });
     ENV.CHAINHOOK_AUTO_PREDICATE_REGISTRATION = false;
     server = await startChainhookServer({ db });
     fastify = await buildApiServer({ db });
   });
 
   afterEach(async () => {
+    await runMigrations(MIGRATIONS_DIR, 'down', undefined, { logMigrations: true });
     await server.close();
     await fastify.close();
     await db.close();
