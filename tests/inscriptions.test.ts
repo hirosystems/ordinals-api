@@ -12,15 +12,15 @@ describe('/inscriptions', () => {
   let fastify: TestFastifyServer;
 
   beforeEach(async () => {
+    await runMigrations(MIGRATIONS_DIR, 'up', undefined, { logMigrations: true });
     db = await PgStore.connect({ skipMigrations: true });
     fastify = await buildApiServer({ db });
-    await runMigrations(MIGRATIONS_DIR, 'up', undefined, { logMigrations: true });
   });
 
   afterEach(async () => {
-    await runMigrations(MIGRATIONS_DIR, 'down', undefined, { logMigrations: true });
     await fastify.close();
     await db.close();
+    await runMigrations(MIGRATIONS_DIR, 'down', undefined, { logMigrations: true });
   });
 
   describe('show', () => {
