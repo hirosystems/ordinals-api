@@ -142,28 +142,28 @@ export class CountsPgStore extends BasePgStoreModule {
     if (writes.length === 0) return;
     await this.sqlWriteTransaction(async sql => {
       const table = genesis ? sql`counts_by_genesis_address` : sql`counts_by_address`;
-      const oldAddr = new Map<string, any>();
-      const newAddr = new Map<string, any>();
+      const oldAddr = new Map<string, number>();
+      const newAddr = new Map<string, number>();
       for (const i of writes) {
-        if (i.old_address)
-          oldAddr.set(i.old_address, {
-            address: i.old_address,
-            count: oldAddr.get(i.old_address)?.count ?? 0 + 1,
-          });
-        if (i.new_address)
-          newAddr.set(i.new_address, {
-            address: i.new_address,
-            count: newAddr.get(i.new_address)?.count ?? 0 + 1,
-          });
+        if (i.old_address) oldAddr.set(i.old_address, (oldAddr.get(i.old_address) ?? 0) + 1);
+        if (i.new_address) newAddr.set(i.new_address, (newAddr.get(i.new_address) ?? 0) + 1);
       }
-      if (oldAddr.size)
+      const oldAddrInsert = Array.from(oldAddr.entries()).map(k => ({
+        address: k[0],
+        count: k[1],
+      }));
+      const newAddrInsert = Array.from(newAddr.entries()).map(k => ({
+        address: k[0],
+        count: k[1],
+      }));
+      if (oldAddrInsert.length > 0)
         await sql`
-          INSERT INTO ${table} ${sql([...oldAddr.values()])}
+          INSERT INTO ${table} ${sql(oldAddrInsert)}
           ON CONFLICT (address) DO UPDATE SET count = ${table}.count - EXCLUDED.count
         `;
-      if (newAddr.size)
+      if (newAddrInsert.length > 0)
         await sql`
-          INSERT INTO ${table} ${sql([...newAddr.values()])}
+          INSERT INTO ${table} ${sql(newAddrInsert)}
           ON CONFLICT (address) DO UPDATE SET count = ${table}.count + EXCLUDED.count
         `;
     });
