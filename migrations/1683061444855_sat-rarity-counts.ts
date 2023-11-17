@@ -6,7 +6,7 @@ export const shorthands: ColumnDefinitions | undefined = undefined;
 export function up(pgm: MigrationBuilder): void {
   pgm.createMaterializedView(
     'sat_rarity_counts',
-    {},
+    { data: true },
     `
     SELECT sat_rarity, COUNT(*) AS count
     FROM inscriptions AS i

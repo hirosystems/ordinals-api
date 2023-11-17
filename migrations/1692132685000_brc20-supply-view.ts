@@ -6,7 +6,7 @@ export const shorthands: ColumnDefinitions | undefined = undefined;
 export function up(pgm: MigrationBuilder): void {
   pgm.createMaterializedView(
     'brc20_supplies',
-    {},
+    { data: true },
     `
       SELECT brc20_deploy_id, SUM(amount) as minted_supply, MAX(block_height) as block_height
       FROM brc20_mints

@@ -110,7 +110,7 @@ export function down(pgm: MigrationBuilder): void {
   pgm.dropTable('counts_by_mime_type');
   pgm.createMaterializedView(
     'mime_type_counts',
-    {},
+    { data: true },
     `SELECT mime_type, COUNT(*) AS count FROM inscriptions GROUP BY mime_type`
   );
   pgm.createIndex('mime_type_counts', ['mime_type'], { unique: true });
@@ -118,7 +118,7 @@ export function down(pgm: MigrationBuilder): void {
   pgm.dropTable('counts_by_sat_rarity');
   pgm.createMaterializedView(
     'sat_rarity_counts',
-    {},
+    { data: true },
     `
     SELECT sat_rarity, COUNT(*) AS count
     FROM inscriptions AS i
@@ -130,13 +130,17 @@ export function down(pgm: MigrationBuilder): void {
   pgm.dropTable('counts_by_address');
   pgm.createMaterializedView(
     'address_counts',
-    {},
+    { data: true },
     `SELECT address, COUNT(*) AS count FROM current_locations GROUP BY address`
   );
   pgm.createIndex('address_counts', ['address'], { unique: true });
 
   pgm.dropTable('counts_by_type');
-  pgm.createMaterializedView('inscription_count', {}, `SELECT COUNT(*) AS count FROM inscriptions`);
+  pgm.createMaterializedView(
+    'inscription_count',
+    { data: true },
+    `SELECT COUNT(*) AS count FROM inscriptions`
+  );
   pgm.createIndex('inscription_count', ['count'], { unique: true });
 
   pgm.dropIndex('inscriptions_per_block', ['block_hash']);
