@@ -1,4 +1,4 @@
-import { cycleMigrations } from '@hirosystems/api-toolkit';
+import { runMigrations } from '@hirosystems/api-toolkit';
 import { buildApiServer } from '../src/api/init';
 import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
 import { TestChainhookPayloadBuilder, TestFastifyServer, rollBack } from './helpers';
@@ -12,14 +12,15 @@ describe('/inscriptions', () => {
   let fastify: TestFastifyServer;
 
   beforeEach(async () => {
+    await runMigrations(MIGRATIONS_DIR, 'up');
     db = await PgStore.connect({ skipMigrations: true });
     fastify = await buildApiServer({ db });
-    await cycleMigrations(MIGRATIONS_DIR);
   });
 
   afterEach(async () => {
     await fastify.close();
     await db.close();
+    await runMigrations(MIGRATIONS_DIR, 'down');
   });
 
   describe('show', () => {

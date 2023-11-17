@@ -1,4 +1,4 @@
-import { cycleMigrations } from '@hirosystems/api-toolkit';
+import { runMigrations } from '@hirosystems/api-toolkit';
 import { buildApiServer } from '../src/api/init';
 import { Brc20ActivityResponse, Brc20TokenResponse } from '../src/api/schemas';
 import { brc20FromInscription } from '../src/pg/brc20/helpers';
@@ -72,14 +72,15 @@ describe('BRC-20', () => {
   };
 
   beforeEach(async () => {
+    await runMigrations(MIGRATIONS_DIR, 'up');
     db = await PgStore.connect({ skipMigrations: true });
     fastify = await buildApiServer({ db });
-    await cycleMigrations(MIGRATIONS_DIR);
   });
 
   afterEach(async () => {
     await fastify.close();
     await db.close();
+    await runMigrations(MIGRATIONS_DIR, 'down');
   });
 
   describe('token standard validation', () => {
