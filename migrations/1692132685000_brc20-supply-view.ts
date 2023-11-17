@@ -5,13 +5,13 @@ export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export function up(pgm: MigrationBuilder): void {
   pgm.createMaterializedView(
-    'sat_rarity_counts',
+    'brc20_supplies',
     {},
     `
-    SELECT sat_rarity, COUNT(*) AS count
-    FROM inscriptions AS i
-    GROUP BY sat_rarity
+      SELECT brc20_deploy_id, SUM(amount) as minted_supply, MAX(block_height) as block_height
+      FROM brc20_mints
+      GROUP BY brc20_deploy_id
     `
   );
-  pgm.createIndex('sat_rarity_counts', ['sat_rarity'], { unique: true });
+  pgm.createIndex('brc20_supplies', ['brc20_deploy_id'], { unique: true });
 }

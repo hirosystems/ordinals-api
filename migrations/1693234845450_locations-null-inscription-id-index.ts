@@ -4,6 +4,5 @@ import { MigrationBuilder, ColumnDefinitions } from 'node-pg-migrate';
 export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export function up(pgm: MigrationBuilder): void {
-  pgm.createMaterializedView('inscription_count', {}, `SELECT COUNT(*) AS count FROM inscriptions`);
-  pgm.createIndex('inscription_count', ['count'], { unique: true });
+  pgm.createIndex('locations', ['inscription_id'], { where: 'inscription_id IS NULL' });
 }

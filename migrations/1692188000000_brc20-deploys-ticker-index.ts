@@ -4,6 +4,12 @@ import { MigrationBuilder, ColumnDefinitions } from 'node-pg-migrate';
 export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export function up(pgm: MigrationBuilder): void {
-  pgm.createMaterializedView('inscription_count', {}, `SELECT COUNT(*) AS count FROM inscriptions`);
-  pgm.createIndex('inscription_count', ['count'], { unique: true });
+  pgm.addColumns('brc20_deploys', {
+    ticker_lower: {
+      type: 'text',
+      notNull: true,
+      expressionGenerated: '(LOWER(ticker))',
+    },
+  });
+  pgm.createIndex('brc20_deploys', ['ticker_lower']);
 }

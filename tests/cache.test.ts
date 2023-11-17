@@ -8,7 +8,7 @@ describe('ETag cache', () => {
   let fastify: TestFastifyServer;
 
   beforeEach(async () => {
-    await runMigrations(MIGRATIONS_DIR, 'up', undefined, { logMigrations: true });
+    await runMigrations(MIGRATIONS_DIR, 'up');
     db = await PgStore.connect({ skipMigrations: true });
     fastify = await buildApiServer({ db });
   });
@@ -16,7 +16,7 @@ describe('ETag cache', () => {
   afterEach(async () => {
     await fastify.close();
     await db.close();
-    await runMigrations(MIGRATIONS_DIR, 'down', undefined, { logMigrations: true });
+    await runMigrations(MIGRATIONS_DIR, 'down');
   });
 
   test('inscription cache control', async () => {

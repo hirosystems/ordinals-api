@@ -72,7 +72,7 @@ describe('BRC-20', () => {
   };
 
   beforeEach(async () => {
-    await runMigrations(MIGRATIONS_DIR, 'up', undefined, { logMigrations: true });
+    await runMigrations(MIGRATIONS_DIR, 'up');
     db = await PgStore.connect({ skipMigrations: true });
     fastify = await buildApiServer({ db });
   });
@@ -80,7 +80,7 @@ describe('BRC-20', () => {
   afterEach(async () => {
     await fastify.close();
     await db.close();
-    await runMigrations(MIGRATIONS_DIR, 'down', undefined, { logMigrations: true });
+    await runMigrations(MIGRATIONS_DIR, 'down');
   });
 
   describe('token standard validation', () => {
