@@ -1,3 +1,10 @@
+## [2.0.0-beta.18](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.17...v2.0.0-beta.18) (2023-11-17)
+
+
+### Bug Fixes
+
+* address location counts ([#273](https://github.com/hirosystems/ordinals-api/issues/273)) ([86efc3a](https://github.com/hirosystems/ordinals-api/commit/86efc3acf8d743b22edc11e137458a51c892c1c7))
+
 ## [2.0.0-beta.17](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.16...v2.0.0-beta.17) (2023-11-17)
 
 
