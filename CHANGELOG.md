@@ -1,3 +1,10 @@
+## [2.0.0-beta.17](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.16...v2.0.0-beta.17) (2023-11-17)
+
+
+### Bug Fixes
+
+* inscription count generation ([13e1f16](https://github.com/hirosystems/ordinals-api/commit/13e1f16f6980b6743abe8d95644703329f07fe3f))
+
 ## [2.0.0-beta.16](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.15...v2.0.0-beta.16) (2023-11-12)
 
 
