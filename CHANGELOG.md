@@ -1,3 +1,10 @@
+## [2.0.0-beta.20](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.19...v2.0.0-beta.20) (2023-11-20)
+
+
+### Bug Fixes
+
+* also remove null bytes in blessed inscriptions ([7e8d412](https://github.com/hirosystems/ordinals-api/commit/7e8d4127bc4b27917c59349abe9f5fbf98da98ab))
+
 ## [2.0.0-beta.19](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.18...v2.0.0-beta.19) (2023-11-20)
 
 
