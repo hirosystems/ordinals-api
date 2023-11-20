@@ -64,3 +64,8 @@ export function throwOnFirstRejected<T extends any[]>(settles: {
 export function objRemoveUndefinedValues(obj: object) {
   Object.keys(obj).forEach(key => (obj as any)[key] === undefined && delete (obj as any)[key]);
 }
+
+export function removeNullBytes(input: string): string {
+  // Replace null byte with an empty string
+  return input.replace(/\x00/g, '');
+}

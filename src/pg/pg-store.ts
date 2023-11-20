@@ -18,7 +18,7 @@ import { ENV } from '../env';
 import { Brc20PgStore } from './brc20/brc20-pg-store';
 import { CountsPgStore } from './counts/counts-pg-store';
 import { getIndexResultCountType } from './counts/helpers';
-import { assertNoBlockInscriptionGap, getInscriptionRecursion } from './helpers';
+import { assertNoBlockInscriptionGap, getInscriptionRecursion, removeNullBytes } from './helpers';
 import {
   DbFullyLocatedInscriptionResult,
   DbInscription,
@@ -188,11 +188,11 @@ export class PgStore extends BasePgStore {
               writes.push({
                 inscription: {
                   genesis_id: reveal.inscription_id,
-                  mime_type: reveal.content_type.split(';')[0],
+                  mime_type: removeNullBytes(reveal.content_type.split(';')[0]),
                   content_type: reveal.content_type,
                   content_length: reveal.content_length,
                   number: reveal.inscription_number,
-                  content: reveal.content_bytes,
+                  content: removeNullBytes(reveal.content_bytes),
                   fee: reveal.inscription_fee.toString(),
                   curse_type: JSON.stringify(reveal.curse_type),
                   sat_ordinal: reveal.ordinal_number.toString(),
