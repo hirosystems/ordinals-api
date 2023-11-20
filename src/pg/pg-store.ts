@@ -146,14 +146,15 @@ export class PgStore extends BasePgStore {
               const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
               const satpoint = parseSatPoint(reveal.satpoint_post_inscription);
               const recursive_refs = getInscriptionRecursion(reveal.content_bytes);
+              const contentType = removeNullBytes(reveal.content_type);
               writes.push({
                 inscription: {
                   genesis_id: reveal.inscription_id,
-                  mime_type: reveal.content_type.split(';')[0],
-                  content_type: reveal.content_type,
+                  mime_type: contentType.split(';')[0],
+                  content_type: contentType,
                   content_length: reveal.content_length,
                   number: reveal.inscription_number,
-                  content: reveal.content_bytes,
+                  content: removeNullBytes(reveal.content_bytes),
                   fee: reveal.inscription_fee.toString(),
                   curse_type: null,
                   sat_ordinal: reveal.ordinal_number.toString(),
