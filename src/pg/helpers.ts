@@ -1,5 +1,28 @@
 import { PgBytea } from '@hirosystems/api-toolkit';
 import { hexToBuffer } from '../api/util/helpers';
+import { BadPayloadRequestError } from '@hirosystems/chainhook-client';
+
+/**
+ * Check if writing a block would create an inscription number gap
+ * @param currentNumber - Current max blessed number
+ * @param newNumbers - New blessed numbers to be inserted
+ */
+export function assertNoBlockInscriptionGap(args: {
+  currentNumber: number;
+  newNumbers: number[];
+  currentBlockHeight: number;
+  newBlockHeight: number;
+}) {
+  args.newNumbers.sort((a, b) => a - b);
+  for (let n = 0; n < args.newNumbers.length; n++) {
+    const curr = args.currentNumber + n;
+    const next = args.newNumbers[n];
+    if (next !== curr + 1)
+      throw new BadPayloadRequestError(
+        `Block inscription gap detected: Attempting to insert #${next} (${args.newBlockHeight}) but current max is #${curr}. Chain tip is at ${args.currentBlockHeight}.`
+      );
+  }
+}
 
 /**
  * Returns a list of referenced inscription ids from inscription content.
@@ -38,18 +61,11 @@ export function throwOnFirstRejected<T extends any[]>(settles: {
   return values;
 }
 
-/**
- * Divides array into equal chunks
- * @param arr - Array
- * @param chunkSize - Chunk size
- * @returns Array of arrays
- */
-export function chunkArray<T>(arr: T[], chunkSize: number): T[][] {
-  const result: T[][] = [];
-  for (let i = 0; i < arr.length; i += chunkSize) result.push(arr.slice(i, i + chunkSize));
-  return result;
-}
-
 export function objRemoveUndefinedValues(obj: object) {
   Object.keys(obj).forEach(key => (obj as any)[key] === undefined && delete (obj as any)[key]);
+}
+
+export function removeNullBytes(input: string): string {
+  // Replace null byte with an empty string
+  return input.replace(/\x00/g, '');
 }

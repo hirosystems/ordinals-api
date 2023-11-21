@@ -1,4 +1,4 @@
-import { cycleMigrations } from '@hirosystems/api-toolkit';
+import { runMigrations } from '@hirosystems/api-toolkit';
 import { buildApiServer } from '../src/api/init';
 import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
 import { TestChainhookPayloadBuilder, TestFastifyServer } from './helpers';
@@ -8,14 +8,15 @@ describe('Status', () => {
   let fastify: TestFastifyServer;
 
   beforeEach(async () => {
+    await runMigrations(MIGRATIONS_DIR, 'up');
     db = await PgStore.connect({ skipMigrations: true });
     fastify = await buildApiServer({ db });
-    await cycleMigrations(MIGRATIONS_DIR);
   });
 
   afterEach(async () => {
     await fastify.close();
     await db.close();
+    await runMigrations(MIGRATIONS_DIR, 'down');
   });
 
   test('returns status when db is empty', async () => {
@@ -41,7 +42,7 @@ describe('Status', () => {
           content_bytes: '0x48656C6C6F',
           content_type: 'text/plain;charset=utf-8',
           content_length: 5,
-          inscription_number: 7,
+          inscription_number: 0,
           inscription_fee: 2805,
           inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
           inscription_output_value: 10000,
@@ -90,7 +91,7 @@ describe('Status', () => {
       server_version: 'ordinals-api v0.0.1 (test:123456)',
       status: 'ready',
       block_height: 791975,
-      max_inscription_number: 7,
+      max_inscription_number: 0,
       max_cursed_inscription_number: -2,
     });
   });
