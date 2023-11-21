@@ -1,3 +1,38 @@
+## [2.0.0](https://github.com/hirosystems/ordinals-api/compare/v1.2.6...v2.0.0) (2023-11-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* handle transfer types and consider them for BRC-20 indexing (#258)
+
+### Features
+
+* handle transfer types and consider them for BRC-20 indexing ([#258](https://github.com/hirosystems/ordinals-api/issues/258)) ([7b83761](https://github.com/hirosystems/ordinals-api/commit/7b83761818ab4a178796a1867d143ff75ef338b0))
+
+
+### Bug Fixes
+
+* address location counts ([#273](https://github.com/hirosystems/ordinals-api/issues/273)) ([86efc3a](https://github.com/hirosystems/ordinals-api/commit/86efc3acf8d743b22edc11e137458a51c892c1c7))
+* also remove null bytes in blessed inscriptions ([7e8d412](https://github.com/hirosystems/ordinals-api/commit/7e8d4127bc4b27917c59349abe9f5fbf98da98ab))
+* batch size to 2000 ([9cf9230](https://github.com/hirosystems/ordinals-api/commit/9cf9230fe193a2075a0cd2e45a5fa316ecc225c5))
+* bump docker image ([08688da](https://github.com/hirosystems/ordinals-api/commit/08688da84e7695156aa0e822c6f264e9085c5f1a))
+* do not reject unbounded inscriptions that come in disorder ([#264](https://github.com/hirosystems/ordinals-api/issues/264)) ([56e2235](https://github.com/hirosystems/ordinals-api/commit/56e2235a3823a94493bbe978c2f8e5be48c6cf46))
+* guarantee gap detection is comparing numbers ([0f3f51a](https://github.com/hirosystems/ordinals-api/commit/0f3f51a0186dd2f677e21669d2359cba02122acf))
+* inscription count generation ([13e1f16](https://github.com/hirosystems/ordinals-api/commit/13e1f16f6980b6743abe8d95644703329f07fe3f))
+* keep block transfer index ([#260](https://github.com/hirosystems/ordinals-api/issues/260)) ([0e33a64](https://github.com/hirosystems/ordinals-api/commit/0e33a644773990531fa3f68e93ca97f83105a621))
+* only advance blessed number after gap detection ([c8f3c81](https://github.com/hirosystems/ordinals-api/commit/c8f3c81a657cd28283bdd89e0a17af06cad93d63))
+* only scan BRC-20 after its genesis height ([#263](https://github.com/hirosystems/ordinals-api/issues/263)) ([6381760](https://github.com/hirosystems/ordinals-api/commit/6381760f3860a96c3abfd485b612cd212927dca4))
+* only validate gaps for blessed numbers ([#262](https://github.com/hirosystems/ordinals-api/issues/262)) ([29aaeda](https://github.com/hirosystems/ordinals-api/commit/29aaeda39527c88b63b7c82739d8ed858c48a74b))
+* reduce batching to 4500 ([8fd770b](https://github.com/hirosystems/ordinals-api/commit/8fd770bc4e83be6ddaa4fdead1d1be55c42f870b))
+* reduce brc-20 batch to 5k ([2037647](https://github.com/hirosystems/ordinals-api/commit/20376470455a0887d81f3128047d330e7d97e438))
+* reduce brc20 processing batch size to half ([7079dc0](https://github.com/hirosystems/ordinals-api/commit/7079dc079bfec5fbde7018dacbf20c1701d7ccb9))
+* reduce chunk size to 3000 ([9556148](https://github.com/hirosystems/ordinals-api/commit/95561481a140685d27e68c0c4e03d879882354f4))
+* reduce to 4000 chunk size ([3373422](https://github.com/hirosystems/ordinals-api/commit/337342251987d546600fe331154b3e8cd38dcd18))
+* reject blocks that would create blessed inscription gaps ([#259](https://github.com/hirosystems/ordinals-api/issues/259)) ([18cd028](https://github.com/hirosystems/ordinals-api/commit/18cd028b636184a96597fa0b0978ba9e4d23f55c))
+* remove null bytes before inserting inscriptions ([#274](https://github.com/hirosystems/ordinals-api/issues/274)) ([cec3de0](https://github.com/hirosystems/ordinals-api/commit/cec3de061a5b475161b2d11369fc13b63ad8bc27))
+* try batch iterator generator ([e2ed039](https://github.com/hirosystems/ordinals-api/commit/e2ed039120958fde07297c6760022770dab710a8))
+* try returning brc20 batch to normal, use batchIterate everywhere ([1d3a24b](https://github.com/hirosystems/ordinals-api/commit/1d3a24b8bb1d852eb1ae198d84a5940eec997ded))
+
 ## [2.0.0-beta.20](https://github.com/hirosystems/ordinals-api/compare/v2.0.0-beta.19...v2.0.0-beta.20) (2023-11-20)
 
 
