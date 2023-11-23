@@ -1,3 +1,10 @@
+## [2.0.1-beta.2](https://github.com/hirosystems/ordinals-api/compare/v2.0.1-beta.1...v2.0.1-beta.2) (2023-11-23)
+
+
+### Bug Fixes
+
+* select only the first inscription id match ([106368e](https://github.com/hirosystems/ordinals-api/commit/106368e9fa415db0657988de28a541906f74d28a))
+
 ## [2.0.1-beta.1](https://github.com/hirosystems/ordinals-api/compare/v2.0.0...v2.0.1-beta.1) (2023-11-23)
 
 
