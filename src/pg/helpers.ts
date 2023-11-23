@@ -1,6 +1,7 @@
 import { PgBytea } from '@hirosystems/api-toolkit';
 import { hexToBuffer } from '../api/util/helpers';
 import { BadPayloadRequestError } from '@hirosystems/chainhook-client';
+import { ENV } from '../env';
 
 /**
  * Check if writing a block would create an inscription number gap
@@ -13,6 +14,7 @@ export function assertNoBlockInscriptionGap(args: {
   currentBlockHeight: number;
   newBlockHeight: number;
 }) {
+  if (!ENV.INSCRIPTION_GAP_DETECTION_ENABLED) return;
   args.newNumbers.sort((a, b) => a - b);
   for (let n = 0; n < args.newNumbers.length; n++) {
     const curr = args.currentNumber + n;

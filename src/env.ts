@@ -55,6 +55,8 @@ const schema = Type.Object({
 
   /** Enables BRC-20 processing in write mode APIs */
   BRC20_BLOCK_SCAN_ENABLED: Type.Boolean({ default: true }),
+  /** Enables inscription gap detection to prevent ingesting unordered blocks */
+  INSCRIPTION_GAP_DETECTION_ENABLED: Type.Boolean({ default: true }),
 });
 type Env = Static<typeof schema>;
 
