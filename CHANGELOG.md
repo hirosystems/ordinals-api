@@ -1,3 +1,10 @@
+## [2.0.1-beta.1](https://github.com/hirosystems/ordinals-api/compare/v2.0.0...v2.0.1-beta.1) (2023-11-23)
+
+
+### Bug Fixes
+
+* add ENV to toggle inscription gap detection ([56ab283](https://github.com/hirosystems/ordinals-api/commit/56ab283cdfaf95efe058e5f057fb5559b9dfede0))
+
 ## [2.0.0](https://github.com/hirosystems/ordinals-api/compare/v1.2.6...v2.0.0) (2023-11-21)
 
 
