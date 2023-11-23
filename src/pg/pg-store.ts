@@ -128,7 +128,11 @@ export class PgStore extends BasePgStore {
       for (const applyEvent of payload.apply) {
         const event = applyEvent as BitcoinEvent;
         const block_height = event.block_identifier.index;
-        if (block_height <= currentBlockHeight && block_height !== ORDINALS_GENESIS_BLOCK) {
+        if (
+          ENV.INSCRIPTION_GAP_DETECTION_ENABLED &&
+          block_height <= currentBlockHeight &&
+          block_height !== ORDINALS_GENESIS_BLOCK
+        ) {
           logger.info(
             `PgStore skipping ingestion for previously seen block ${block_height}, current chain tip is at ${currentBlockHeight}`
           );
@@ -654,7 +658,7 @@ export class PgStore extends BasePgStore {
         `;
       const locationData = writes.map(i => ({
         ...i.location,
-        inscription_id: sql`(SELECT id FROM inscriptions WHERE genesis_id = ${i.location.genesis_id})`,
+        inscription_id: sql`(SELECT id FROM inscriptions WHERE genesis_id = ${i.location.genesis_id} LIMIT 1)`,
         timestamp: sql`TO_TIMESTAMP(${i.location.timestamp})`,
       }));
       const locations = await sql<DbLocationPointerInsert[]>`
@@ -896,8 +900,9 @@ export class PgStore extends BasePgStore {
         for (const ref of refSet)
           inserts.push({
             inscription_id: this
-              .sql`(SELECT id FROM inscriptions WHERE genesis_id = ${i.inscription.genesis_id})`,
-            ref_inscription_id: this.sql`(SELECT id FROM inscriptions WHERE genesis_id = ${ref})`,
+              .sql`(SELECT id FROM inscriptions WHERE genesis_id = ${i.inscription.genesis_id} LIMIT 1)`,
+            ref_inscription_id: this
+              .sql`(SELECT id FROM inscriptions WHERE genesis_id = ${ref} LIMIT 1)`,
             ref_inscription_genesis_id: ref,
           });
       }
