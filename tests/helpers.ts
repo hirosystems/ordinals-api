@@ -1,6 +1,5 @@
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import {
-  BitcoinCursedInscriptionRevealed,
   BitcoinEvent,
   BitcoinInscriptionRevealed,
   BitcoinInscriptionTransferred,
@@ -91,11 +90,6 @@ export class TestChainhookPayloadBuilder {
     return this;
   }
 
-  cursedInscriptionRevealed(args: BitcoinCursedInscriptionRevealed): this {
-    this.lastBlockTx.metadata.ordinal_operations.push({ cursed_inscription_revealed: args });
-    return this;
-  }
-
   inscriptionTransferred(args: BitcoinInscriptionTransferred): this {
     this.lastBlockTx.metadata.ordinal_operations.push({ inscription_transferred: args });
     return this;
@@ -137,6 +131,7 @@ export function brc20Reveal(args: {
     inscription_input_index: 0,
     transfers_pre_inscription: 0,
     tx_index: 0,
+    curse_type: null,
   };
   return reveal;
 }

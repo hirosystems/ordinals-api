@@ -5,8 +5,8 @@ const schema = Type.Object({
   /**
    * Run mode for this service. Allows you to control how the API runs, typically in an auto-scaled
    * environment. Available values are:
-   * * `default`: Runs the chainhook server and the REST API server (this is the default)
-   * * `writeonly`: Runs only the chainhook server
+   * * `default`: Runs the ordhook server and the REST API server (this is the default)
+   * * `writeonly`: Runs only the ordhook server
    * * `readonly`: Runs only the REST API server
    */
   RUN_MODE: Type.Enum(
@@ -20,24 +20,24 @@ const schema = Type.Object({
   API_PORT: Type.Number({ default: 3000, minimum: 0, maximum: 65535 }),
   /** Port in which to serve the Admin RPC interface */
   ADMIN_RPC_PORT: Type.Number({ default: 3001, minimum: 0, maximum: 65535 }),
-  /** Port in which to receive chainhook events */
+  /** Port in which to receive ordhook events */
   EVENT_PORT: Type.Number({ default: 3099, minimum: 0, maximum: 65535 }),
   /** Event server body limit (bytes) */
   EVENT_SERVER_BODY_LIMIT: Type.Integer({ default: 20971520 }),
-  /** Hostname that will be reported to the chainhook node so it can call us back with events */
+  /** Hostname that will be reported to the ordhook node so it can call us back with events */
   EXTERNAL_HOSTNAME: Type.String({ default: '127.0.0.1' }),
 
-  /** Hostname of the chainhook node we'll use to register predicates */
+  /** Hostname of the ordhook node we'll use to register predicates */
   CHAINHOOK_NODE_RPC_HOST: Type.String({ default: '127.0.0.1' }),
-  /** Control port of the chainhook node */
+  /** Control port of the ordhook node */
   CHAINHOOK_NODE_RPC_PORT: Type.Number({ default: 20456, minimum: 0, maximum: 65535 }),
   /**
-   * Authorization token that the chainhook node must send with every event to make sure it's
+   * Authorization token that the ordhook node must send with every event to make sure it's
    * coming from the valid instance
    */
   CHAINHOOK_NODE_AUTH_TOKEN: Type.String(),
   /**
-   * Register chainhook predicates automatically when the API is first launched. Set this to `false`
+   * Register ordhook predicates automatically when the API is first launched. Set this to `false`
    * if you're configuring your predicates manually for any reason.
    */
   CHAINHOOK_AUTO_PREDICATE_REGISTRATION: Type.Boolean({ default: true }),

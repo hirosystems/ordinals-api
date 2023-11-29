@@ -41,6 +41,7 @@ describe('ETag cache', () => {
         inscription_input_index: 0,
         transfers_pre_inscription: 0,
         tx_index: 0,
+        curse_type: null,
       })
       .build();
     await db.updateInscriptions(block);
@@ -172,6 +173,7 @@ describe('ETag cache', () => {
         inscription_input_index: 0,
         transfers_pre_inscription: 0,
         tx_index: 0,
+        curse_type: null,
       })
       .build();
     await db.updateInscriptions(block1);
@@ -196,6 +198,7 @@ describe('ETag cache', () => {
         inscription_input_index: 0,
         transfers_pre_inscription: 0,
         tx_index: 0,
+        curse_type: null,
       })
       .build();
     await db.updateInscriptions(block2);
@@ -267,6 +270,7 @@ describe('ETag cache', () => {
         inscription_input_index: 0,
         transfers_pre_inscription: 0,
         tx_index: 0,
+        curse_type: null,
       })
       .build();
     await db.updateInscriptions(block1);
@@ -310,6 +314,7 @@ describe('ETag cache', () => {
         inscription_input_index: 0,
         transfers_pre_inscription: 0,
         tx_index: 0,
+        curse_type: null,
       })
       .build();
     await db.updateInscriptions(block2);
@@ -345,6 +350,7 @@ describe('ETag cache', () => {
         inscription_input_index: 0,
         transfers_pre_inscription: 0,
         tx_index: 0,
+        curse_type: null,
       })
       .build();
     await db.updateInscriptions(block1);
@@ -388,6 +394,7 @@ describe('ETag cache', () => {
         inscription_input_index: 0,
         transfers_pre_inscription: 0,
         tx_index: 0,
+        curse_type: null,
       })
       .build();
     await db.updateInscriptions(block2);
