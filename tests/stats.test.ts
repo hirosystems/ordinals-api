@@ -223,6 +223,7 @@ function testRevealApply(blockHeight: number, numbers: number[]) {
         inscription_input_index: 0,
         transfers_pre_inscription: 0,
         tx_index: 0,
+        curse_type: null,
       });
   }
   return block.build();

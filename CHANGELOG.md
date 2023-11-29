@@ -1,3 +1,10 @@
+## [2.0.1-beta.3](https://github.com/hirosystems/ordinals-api/compare/v2.0.1-beta.2...v2.0.1-beta.3) (2023-11-29)
+
+
+### Bug Fixes
+
+* upgrade chainhook client to v1.4.2 ([#277](https://github.com/hirosystems/ordinals-api/issues/277)) ([67ba3d4](https://github.com/hirosystems/ordinals-api/commit/67ba3d4f48e6ce8e955c08fd75cbf009786c0160))
+
 ## [2.0.1-beta.2](https://github.com/hirosystems/ordinals-api/compare/v2.0.1-beta.1...v2.0.1-beta.2) (2023-11-23)
 
 

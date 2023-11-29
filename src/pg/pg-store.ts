@@ -712,21 +712,23 @@ export class PgStore extends BasePgStore {
     });
   }
 
-  // FIXME: here
   private async recalculateCurrentLocationPointerFromLocationRollBack(args: {
     location: DbLocationInsert;
   }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
       // Is the location we're rolling back *the* current location?
       const current = await sql<DbLocationPointer[]>`
-        SELECT * FROM current_locations WHERE location_id = ${args.location.id}
+        SELECT *
+        FROM current_locations AS c
+        INNER JOIN locations AS l ON l.id = c.location_id
+        WHERE l.output = ${args.location.output} AND l.offset = ${args.location.offset}
       `;
       if (current.count > 0) {
         const update = await sql<DbLocationPointer[]>`
           WITH prev AS (
             SELECT id, block_height, tx_index, address
             FROM locations
-            WHERE inscription_id = ${args.location.inscription_id} AND id <> ${args.location.id}
+            WHERE inscription_id = ${current[0].inscription_id} AND id <> ${current[0].location_id}
             ORDER BY block_height DESC, tx_index DESC
             LIMIT 1
           )
@@ -736,7 +738,7 @@ export class PgStore extends BasePgStore {
             tx_index = prev.tx_index,
             address = prev.address
           FROM prev
-          WHERE c.inscription_id = ${args.location.inscription_id}
+          WHERE c.inscription_id = ${current[0].inscription_id}
           RETURNING *
         `;
         await this.counts.rollBackCurrentLocation({ curr: current[0], prev: update[0] });
