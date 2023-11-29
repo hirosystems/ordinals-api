@@ -106,11 +106,6 @@ export class PgStore extends BasePgStore {
               const genesis_id = operation.inscription_revealed.inscription_id;
               await this.rollBackInscription({ genesis_id, number, block_height });
             }
-            if (operation.cursed_inscription_revealed) {
-              const number = operation.cursed_inscription_revealed.inscription_number;
-              const genesis_id = operation.cursed_inscription_revealed.inscription_id;
-              await this.rollBackInscription({ genesis_id, number, block_height });
-            }
             if (operation.inscription_transferred) {
               const genesis_id = operation.inscription_transferred.inscription_id;
               const satpoint = parseSatPoint(
@@ -160,47 +155,7 @@ export class PgStore extends BasePgStore {
                   number: reveal.inscription_number,
                   content: removeNullBytes(reveal.content_bytes),
                   fee: reveal.inscription_fee.toString(),
-                  curse_type: null,
-                  sat_ordinal: reveal.ordinal_number.toString(),
-                  sat_rarity: satoshi.rarity,
-                  sat_coinbase_height: satoshi.blockHeight,
-                  recursive: recursive_refs.length > 0,
-                },
-                location: {
-                  block_hash,
-                  block_height,
-                  tx_id,
-                  tx_index: reveal.tx_index,
-                  block_transfer_index: null,
-                  genesis_id: reveal.inscription_id,
-                  address: reveal.inscriber_address,
-                  output: `${satpoint.tx_id}:${satpoint.vout}`,
-                  offset: satpoint.offset ?? null,
-                  prev_output: null,
-                  prev_offset: null,
-                  value: reveal.inscription_output_value.toString(),
-                  timestamp: event.timestamp,
-                  transfer_type: DbLocationTransferType.transferred,
-                },
-                recursive_refs,
-              });
-            }
-            if (operation.cursed_inscription_revealed) {
-              const reveal = operation.cursed_inscription_revealed;
-              const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
-              const satpoint = parseSatPoint(reveal.satpoint_post_inscription);
-              const recursive_refs = getInscriptionRecursion(reveal.content_bytes);
-              const contentType = removeNullBytes(reveal.content_type);
-              writes.push({
-                inscription: {
-                  genesis_id: reveal.inscription_id,
-                  mime_type: contentType.split(';')[0],
-                  content_type: contentType,
-                  content_length: reveal.content_length,
-                  number: reveal.inscription_number,
-                  content: removeNullBytes(reveal.content_bytes),
-                  fee: reveal.inscription_fee.toString(),
-                  curse_type: JSON.stringify(reveal.curse_type),
+                  curse_type: reveal.curse_type ? JSON.stringify(reveal.curse_type) : null,
                   sat_ordinal: reveal.ordinal_number.toString(),
                   sat_rarity: satoshi.rarity,
                   sat_coinbase_height: satoshi.blockHeight,

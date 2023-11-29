@@ -62,6 +62,7 @@ describe('/sats', () => {
           inscription_input_index: 0,
           transfers_pre_inscription: 0,
           tx_index: 0,
+          curse_type: null,
         })
         .build()
     );
@@ -81,7 +82,7 @@ describe('/sats', () => {
         .apply()
         .block({ height: 775617 })
         .transaction({ hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc' })
-        .cursedInscriptionRevealed({
+        .inscriptionRevealed({
           content_bytes: '0x48656C6C6F',
           content_type: 'image/png',
           content_length: 5,
@@ -113,7 +114,7 @@ describe('/sats', () => {
         .transaction({
           hash: 'b9cd9489fe30b81d007f753663d12766f1368721a87f4c69056c8215caa57993',
         })
-        .cursedInscriptionRevealed({
+        .inscriptionRevealed({
           content_bytes: '0x48656C6C6F',
           content_type: 'image/png',
           content_length: 5,

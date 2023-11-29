@@ -50,6 +50,7 @@ describe('EventServer', () => {
         inscription_input_index: 0,
         transfers_pre_inscription: 0,
         tx_index: 0,
+        curse_type: null,
       };
 
       // Apply
@@ -67,7 +68,7 @@ describe('EventServer', () => {
         .build();
       const response = await server['fastify'].inject({
         method: 'POST',
-        url: `/chainhook/${PREDICATE_UUID}`,
+        url: `/payload`,
         headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
         payload: payload1,
       });
@@ -127,7 +128,7 @@ describe('EventServer', () => {
         .build();
       const response2 = await server['fastify'].inject({
         method: 'POST',
-        url: `/chainhook/${PREDICATE_UUID}`,
+        url: `/payload`,
         headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
         payload: payload2,
       });
@@ -167,6 +168,7 @@ describe('EventServer', () => {
             inscription_input_index: 0,
             transfers_pre_inscription: 0,
             tx_index: 0,
+            curse_type: null,
           })
           .build()
       );
@@ -200,7 +202,7 @@ describe('EventServer', () => {
         .build();
       const response = await server['fastify'].inject({
         method: 'POST',
-        url: `/chainhook/${PREDICATE_UUID}`,
+        url: `/payload`,
         headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
         payload: payload1,
       });
@@ -260,7 +262,7 @@ describe('EventServer', () => {
         .build();
       const response2 = await server['fastify'].inject({
         method: 'POST',
-        url: `/chainhook/${PREDICATE_UUID}`,
+        url: `/payload`,
         headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
         payload: payload2,
       });
@@ -301,6 +303,7 @@ describe('EventServer', () => {
             inscription_input_index: 0,
             transfers_pre_inscription: 0,
             tx_index: 995,
+            curse_type: null,
           })
           .transaction({
             hash: '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac',
@@ -357,6 +360,7 @@ describe('EventServer', () => {
             inscription_input_index: 0,
             transfers_pre_inscription: 0,
             tx_index: 0,
+            curse_type: null,
           })
           .build()
       );
@@ -387,12 +391,13 @@ describe('EventServer', () => {
           inscription_input_index: 0,
           transfers_pre_inscription: 0,
           tx_index: 0,
+          curse_type: null,
         })
         .build();
       await expect(db.updateInscriptions(errorPayload)).rejects.toThrow(BadPayloadRequestError);
       const response = await server['fastify'].inject({
         method: 'POST',
-        url: `/chainhook/${PREDICATE_UUID}`,
+        url: `/payload`,
         headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
         payload: errorPayload,
       });
@@ -428,6 +433,7 @@ describe('EventServer', () => {
             inscription_input_index: 0,
             transfers_pre_inscription: 0,
             tx_index: 0,
+            curse_type: null,
           })
           .build()
       );
@@ -458,6 +464,7 @@ describe('EventServer', () => {
           inscription_input_index: 0,
           transfers_pre_inscription: 0,
           tx_index: 0,
+          curse_type: null,
         })
         .transaction({
           hash: '6891d374a17ba85f6b5514f2f7edc301c1c860284dff5a5c6e88ab3a20fcd8a5',
@@ -479,12 +486,13 @@ describe('EventServer', () => {
           inscription_input_index: 0,
           transfers_pre_inscription: 0,
           tx_index: 0,
+          curse_type: null,
         })
         .build();
       await expect(db.updateInscriptions(errorPayload)).rejects.toThrow(BadPayloadRequestError);
       const response = await server['fastify'].inject({
         method: 'POST',
-        url: `/chainhook/${PREDICATE_UUID}`,
+        url: `/payload`,
         headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
         payload: errorPayload,
       });
@@ -520,6 +528,7 @@ describe('EventServer', () => {
             inscription_input_index: 0,
             transfers_pre_inscription: 0,
             tx_index: 0,
+            curse_type: null,
           })
           .build()
       );
@@ -550,6 +559,7 @@ describe('EventServer', () => {
           inscription_input_index: 0,
           transfers_pre_inscription: 0,
           tx_index: 0,
+          curse_type: null,
         })
         .transaction({
           hash: '6891d374a17ba85f6b5514f2f7edc301c1c860284dff5a5c6e88ab3a20fcd8a5',
@@ -571,6 +581,7 @@ describe('EventServer', () => {
           inscription_input_index: 0,
           transfers_pre_inscription: 0,
           tx_index: 0,
+          curse_type: null,
         })
         .build();
       await expect(db.updateInscriptions(unboundPayload)).resolves.not.toThrow(
@@ -606,13 +617,14 @@ describe('EventServer', () => {
           inscription_input_index: 0,
           transfers_pre_inscription: 0,
           tx_index: 0,
+          curse_type: null,
         })
         .build();
       await db.updateInscriptions(payload);
 
       const response = await server['fastify'].inject({
         method: 'POST',
-        url: `/chainhook/${PREDICATE_UUID}`,
+        url: `/payload`,
         headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
         payload: payload,
       });
