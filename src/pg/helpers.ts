@@ -103,7 +103,7 @@ function revealInsertFromOrdhookInscriptionRevealed(args: {
       number: args.reveal.inscription_number,
       content: removeNullBytes(args.reveal.content_bytes),
       fee: args.reveal.inscription_fee.toString(),
-      curse_type: null, //JSON.stringify(args.reveal.curse_type),
+      curse_type: args.reveal.curse_type ? JSON.stringify(args.reveal.curse_type) : null,
       sat_ordinal: args.reveal.ordinal_number.toString(),
       sat_rarity: satoshi.rarity,
       sat_coinbase_height: satoshi.blockHeight,

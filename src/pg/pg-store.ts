@@ -612,7 +612,7 @@ export class PgStore extends BasePgStore {
           });
           await sql`
             DELETE FROM locations
-            WHERE output = ${rollback.location.output} AND offset = ${rollback.location.offset}
+            WHERE output = ${rollback.location.output} AND "offset" = ${rollback.location.offset}
           `;
           logger.info(
             `PgStore rollback transfer for ${rollback.location.genesis_id} at block ${rollback.location.block_height}`
@@ -721,7 +721,7 @@ export class PgStore extends BasePgStore {
         SELECT *
         FROM current_locations AS c
         INNER JOIN locations AS l ON l.id = c.location_id
-        WHERE l.output = ${args.location.output} AND l.offset = ${args.location.offset}
+        WHERE l.output = ${args.location.output} AND l."offset" = ${args.location.offset}
       `;
       if (current.count > 0) {
         const update = await sql<DbLocationPointer[]>`
