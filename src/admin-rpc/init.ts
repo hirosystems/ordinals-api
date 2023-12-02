@@ -31,7 +31,7 @@ export const AdminApi: FastifyPluginCallback<Record<never, never>, Server, TypeB
       );
       // TODO: Provide a way to stop this scan without restarting.
       fastify.db.brc20
-        .scanBlocks(startBlock, endBlock)
+        .scanBlocksFromDb(startBlock, endBlock)
         .then(() => logger.info(`AdminRPC finished scanning for BRC-20 operations`))
         .catch(error => logger.error(error, `AdminRPC failed to scan for BRC-20`));
       await reply.code(200).send();
