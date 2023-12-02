@@ -98,6 +98,7 @@ export class PgStore extends BasePgStore {
             event.block_identifier.index
           } in ${time.getElapsedSeconds()}s`
         );
+        await this.updateChainTipBlockHeight(event.block_identifier.index - 1);
       }
 
       // APPLY
@@ -136,11 +137,15 @@ export class PgStore extends BasePgStore {
         logger.info(
           `PgStore ingested block ${event.block_identifier.index} in ${time.getElapsedSeconds()}s`
         );
+        await this.updateChainTipBlockHeight(event.block_identifier.index);
       }
     });
-    await this.refreshMaterializedView('chain_tip');
     if (updatedBlockHeightMin !== Infinity)
       await this.normalizeInscriptionCount({ min_block_height: updatedBlockHeightMin });
+  }
+
+  private async updateChainTipBlockHeight(block_height: number): Promise<void> {
+    await this.sql`UPDATE chain_tip SET block_height = ${block_height}`;
   }
 
   async getChainTipBlockHeight(): Promise<number> {
