@@ -1,13 +1,13 @@
 import { isProdEnv, logger, registerShutdownConfig } from '@hirosystems/api-toolkit';
 import { buildApiServer, buildPromServer } from './api/init';
-import { startChainhookServer } from './chainhook/server';
+import { startOrdhookServer } from './ordhook/server';
 import { ENV } from './env';
 import { ApiMetrics } from './metrics/metrics';
 import { PgStore } from './pg/pg-store';
 
 async function initBackgroundServices(db: PgStore) {
   logger.info('Initializing background services...');
-  const server = await startChainhookServer({ db });
+  const server = await startOrdhookServer({ db });
   registerShutdownConfig({
     name: 'Chainhook Server',
     forceKillable: false,

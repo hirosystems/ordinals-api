@@ -1,4 +1,4 @@
-import { PREDICATE_UUID, startChainhookServer } from '../src/chainhook/server';
+import { PREDICATE_UUID, startOrdhookServer } from '../src/ordhook/server';
 import { ENV } from '../src/env';
 import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
 import { TestChainhookPayloadBuilder, TestFastifyServer } from './helpers';
@@ -20,7 +20,7 @@ describe('EventServer', () => {
     await runMigrations(MIGRATIONS_DIR, 'up');
     ENV.CHAINHOOK_AUTO_PREDICATE_REGISTRATION = false;
     db = await PgStore.connect({ skipMigrations: true });
-    server = await startChainhookServer({ db });
+    server = await startOrdhookServer({ db });
     fastify = await buildApiServer({ db });
   });
 
