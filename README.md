@@ -38,8 +38,8 @@ information.
 The Ordinals API is a microservice that has hard dependencies on other systems.
 Before you start, you'll need to have access to:
 
-1. A [Chainhook node](https://github.com/hirosystems/chainhook) with a fully
-   indexed Ordinals `.redb` database.
+1. An [Ordhook node](https://github.com/hirosystems/ordhook) with a fully
+   indexed Ordinals database.
 1. A local writeable Postgres database for data storage
 
 ### Running the API
@@ -47,7 +47,7 @@ Before you start, you'll need to have access to:
 Clone the repo.
 
 Create an `.env` file and specify the appropriate values to configure the local
-API server, postgres DB and Chainhook node reachability. See
+API server, postgres DB and Ordhook node reachability. See
 [`env.ts`](https://github.com/hirosystems/ordinals-api/blob/develop/src/env.ts)
 for all available configuration options.
 

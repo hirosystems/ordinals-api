@@ -10,10 +10,6 @@ export type DbBrc20Location = {
   transfer_type: DbLocationTransferType;
 };
 
-export type DbBrc20ScannedInscription = DbBrc20Location & {
-  genesis: boolean;
-};
-
 export type DbBrc20DeployInsert = {
   inscription_id: string;
   block_height: string;

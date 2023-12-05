@@ -53,6 +53,7 @@ describe('/inscriptions', () => {
             tx_index: 0,
             inscription_input_index: 0,
             transfers_pre_inscription: 0,
+            curse_type: null,
           })
           .build()
       );
@@ -84,6 +85,7 @@ describe('/inscriptions', () => {
             inscription_input_index: 0,
             transfers_pre_inscription: 0,
             tx_index: 0,
+            curse_type: null,
           })
           .build()
       );
@@ -160,6 +162,7 @@ describe('/inscriptions', () => {
             tx_index: 0,
             inscription_input_index: 0,
             transfers_pre_inscription: 0,
+            curse_type: null,
           })
           .transaction({
             hash: '0xf351d86c6e6cae3c64e297e7463095732f216875bcc1f3c03f950a492bb25421',
@@ -181,6 +184,7 @@ describe('/inscriptions', () => {
             inscription_input_index: 0,
             transfers_pre_inscription: 0,
             tx_index: 0,
+            curse_type: null,
           })
           .build()
       );
@@ -218,6 +222,7 @@ describe('/inscriptions', () => {
             inscription_input_index: 0,
             transfers_pre_inscription: 0,
             tx_index: 0,
+            curse_type: null,
           })
           .build()
       );
@@ -297,6 +302,7 @@ describe('/inscriptions', () => {
             inscription_input_index: 0,
             transfers_pre_inscription: 0,
             tx_index: 0,
+            curse_type: null,
           })
           .build()
       );
@@ -356,7 +362,7 @@ describe('/inscriptions', () => {
           .transaction({
             hash: '0x38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           })
-          .cursedInscriptionRevealed({
+          .inscriptionRevealed({
             content_bytes: '0x48656C6C6F',
             content_type: 'image/png',
             content_length: 5,
@@ -450,6 +456,7 @@ describe('/inscriptions', () => {
             inscription_input_index: 0,
             transfers_pre_inscription: 0,
             tx_index: 0,
+            curse_type: null,
           })
           .build()
       );
@@ -594,6 +601,7 @@ describe('/inscriptions', () => {
             inscription_input_index: 0,
             transfers_pre_inscription: 0,
             tx_index: 0,
+            curse_type: null,
           })
           .build()
       );
@@ -681,7 +689,7 @@ describe('/inscriptions', () => {
           .transaction({
             hash: '0x38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           })
-          .cursedInscriptionRevealed({
+          .inscriptionRevealed({
             content_bytes: '0x48656C6C6F',
             content_type: 'image/png',
             content_length: 5,
@@ -845,6 +853,7 @@ describe('/inscriptions', () => {
             inscription_input_index: 0,
             transfers_pre_inscription: 0,
             tx_index: 0,
+            curse_type: null,
           })
           .build()
       );
@@ -1008,6 +1017,7 @@ describe('/inscriptions', () => {
             inscription_input_index: 0,
             transfers_pre_inscription: 0,
             tx_index: 0,
+            curse_type: null,
           })
           .transaction({
             hash: '7ac73ecd01b9da4a7eab904655416dbfe8e03f193e091761b5a63ad0963570cd',
@@ -1029,6 +1039,7 @@ describe('/inscriptions', () => {
             inscription_input_index: 0,
             transfers_pre_inscription: 0,
             tx_index: 1,
+            curse_type: null,
           })
           .build()
       );
@@ -1358,6 +1369,7 @@ describe('/inscriptions', () => {
             inscription_input_index: 0,
             transfers_pre_inscription: 0,
             tx_index: 0,
+            curse_type: null,
           })
           .build()
       );
@@ -1389,6 +1401,7 @@ describe('/inscriptions', () => {
             inscription_input_index: 0,
             transfers_pre_inscription: 0,
             tx_index: 0,
+            curse_type: null,
           })
           .build()
       );
@@ -1486,6 +1499,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -1517,6 +1531,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -1631,6 +1646,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -1662,6 +1678,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -1722,6 +1739,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -1753,6 +1771,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -1817,6 +1836,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -1848,6 +1868,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -1908,6 +1929,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -1939,6 +1961,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -2001,6 +2024,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -2045,6 +2069,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -2076,6 +2101,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -2122,6 +2148,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -2153,6 +2180,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -2207,6 +2235,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -2238,6 +2267,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -2292,6 +2322,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -2323,6 +2354,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -2377,6 +2409,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -2408,6 +2441,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -2461,6 +2495,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -2492,6 +2527,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -2526,6 +2562,7 @@ describe('/inscriptions', () => {
           inscription_input_index: 0,
           transfers_pre_inscription: 0,
           tx_index: 0,
+          curse_type: null,
         };
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
@@ -2569,6 +2606,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -2727,6 +2765,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -2760,6 +2799,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -2818,6 +2858,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -2832,7 +2873,7 @@ describe('/inscriptions', () => {
             .transaction({
               hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
             })
-            .cursedInscriptionRevealed({
+            .inscriptionRevealed({
               content_bytes: `0x${Buffer.from(
                 'Hello /content/9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0'
               ).toString('hex')}`,
@@ -2910,6 +2951,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -2940,6 +2982,7 @@ describe('/inscriptions', () => {
             inscription_input_index: 0,
             transfers_pre_inscription: 0,
             tx_index: 0,
+            curse_type: null,
           })
           .build();
         await db.updateInscriptions(genesis2);
@@ -3008,6 +3051,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -3039,6 +3083,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -3070,6 +3115,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -3126,6 +3172,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -3157,6 +3204,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -3188,6 +3236,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -3244,6 +3293,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -3275,6 +3325,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -3306,6 +3357,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -3362,6 +3414,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -3393,6 +3446,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );
@@ -3424,6 +3478,7 @@ describe('/inscriptions', () => {
               inscription_input_index: 0,
               transfers_pre_inscription: 0,
               tx_index: 0,
+              curse_type: null,
             })
             .build()
         );

@@ -10,15 +10,15 @@ import {
 } from '@hirosystems/chainhook-client';
 import { logger } from '@hirosystems/api-toolkit';
 
-export const CHAINHOOK_BASE_PATH = `http://${ENV.CHAINHOOK_NODE_RPC_HOST}:${ENV.CHAINHOOK_NODE_RPC_PORT}`;
+export const ORDHOOK_BASE_PATH = `http://${ENV.CHAINHOOK_NODE_RPC_HOST}:${ENV.CHAINHOOK_NODE_RPC_PORT}`;
 export const PREDICATE_UUID = randomUUID();
 
 /**
- * Starts the chainhooks event server.
+ * Starts the Ordhook event observer.
  * @param args - DB
  * @returns ChainhookEventObserver instance
  */
-export async function startChainhookServer(args: { db: PgStore }): Promise<ChainhookEventObserver> {
+export async function startOrdhookServer(args: { db: PgStore }): Promise<ChainhookEventObserver> {
   const predicates: ServerPredicate[] = [];
   if (ENV.CHAINHOOK_AUTO_PREDICATE_REGISTRATION) {
     const blockHeight = await args.db.getChainTipBlockHeight();
@@ -48,12 +48,14 @@ export async function startChainhookServer(args: { db: PgStore }): Promise<Chain
     wait_for_chainhook_node: ENV.CHAINHOOK_AUTO_PREDICATE_REGISTRATION,
     validate_chainhook_payloads: true,
     body_limit: ENV.EVENT_SERVER_BODY_LIMIT,
+    node_type: 'ordhook',
   };
-  const chainhookOpts: ChainhookNodeOptions = {
-    base_url: CHAINHOOK_BASE_PATH,
+  const ordhookOpts: ChainhookNodeOptions = {
+    base_url: ORDHOOK_BASE_PATH,
   };
-  const server = new ChainhookEventObserver(serverOpts, chainhookOpts);
-  await server.start(predicates, async (_uuid: string, payload: Payload) => {
+  const server = new ChainhookEventObserver(serverOpts, ordhookOpts);
+  await server.start(predicates, async (uuid: string, payload: Payload) => {
+    logger.info(`OrdhookServer received payload from predicate ${uuid}`);
     await args.db.updateInscriptions(payload);
   });
   return server;
