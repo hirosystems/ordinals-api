@@ -1,4 +1,4 @@
-import { PREDICATE_UUID, startChainhookServer } from '../src/chainhook/server';
+import { PREDICATE_UUID, startOrdhookServer } from '../src/ordhook/server';
 import { ENV } from '../src/env';
 import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
 import { TestChainhookPayloadBuilder, TestFastifyServer } from './helpers';
@@ -20,7 +20,7 @@ describe('EventServer', () => {
     await runMigrations(MIGRATIONS_DIR, 'up');
     ENV.CHAINHOOK_AUTO_PREDICATE_REGISTRATION = false;
     db = await PgStore.connect({ skipMigrations: true });
-    server = await startChainhookServer({ db });
+    server = await startOrdhookServer({ db });
     fastify = await buildApiServer({ db });
   });
 
@@ -172,6 +172,7 @@ describe('EventServer', () => {
           })
           .build()
       );
+      await expect(db.getChainTipBlockHeight()).resolves.toBe(775617);
 
       const transfer: BitcoinInscriptionTransferred = {
         inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
@@ -207,7 +208,7 @@ describe('EventServer', () => {
         payload: payload1,
       });
       expect(response.statusCode).toBe(200);
-
+      await expect(db.getChainTipBlockHeight()).resolves.toBe(775618);
       const query = await db.getInscriptions(
         {
           limit: 1,
@@ -271,6 +272,7 @@ describe('EventServer', () => {
       expect(c1[0].count).toBe(1);
       const c2 = await db.sql<{ count: number }[]>`SELECT COUNT(*)::int FROM locations`;
       expect(c2[0].count).toBe(1);
+      await expect(db.getChainTipBlockHeight()).resolves.toBe(775617);
     });
 
     test('multiple inscription pointers on the same block are compared correctly', async () => {

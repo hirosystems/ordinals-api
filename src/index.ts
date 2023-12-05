@@ -1,31 +1,20 @@
 import { isProdEnv, logger, registerShutdownConfig } from '@hirosystems/api-toolkit';
 import { buildApiServer, buildPromServer } from './api/init';
-import { startChainhookServer } from './chainhook/server';
+import { startOrdhookServer } from './ordhook/server';
 import { ENV } from './env';
 import { ApiMetrics } from './metrics/metrics';
 import { PgStore } from './pg/pg-store';
-import { buildAdminRpcServer } from './admin-rpc/init';
 
 async function initBackgroundServices(db: PgStore) {
   logger.info('Initializing background services...');
-  const server = await startChainhookServer({ db });
+  const server = await startOrdhookServer({ db });
   registerShutdownConfig({
-    name: 'Chainhook Server',
+    name: 'Ordhook Server',
     forceKillable: false,
     handler: async () => {
       await server.close();
     },
   });
-
-  const adminRpcServer = await buildAdminRpcServer({ db });
-  registerShutdownConfig({
-    name: 'Admin RPC Server',
-    forceKillable: false,
-    handler: async () => {
-      await adminRpcServer.close();
-    },
-  });
-  await adminRpcServer.listen({ host: ENV.API_HOST, port: ENV.ADMIN_RPC_PORT });
 }
 
 async function initApiService(db: PgStore) {

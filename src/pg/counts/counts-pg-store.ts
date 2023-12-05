@@ -5,6 +5,7 @@ import {
   DbInscriptionIndexFilters,
   DbInscriptionInsert,
   DbInscriptionType,
+  DbLocationInsert,
   DbLocationPointer,
 } from '../types';
 import { DbInscriptionIndexResultCountType } from './types';
@@ -103,7 +104,10 @@ export class CountsPgStore extends BasePgStoreModule {
     `;
   }
 
-  async rollBackInscription(args: { inscription: DbInscription }): Promise<void> {
+  async rollBackInscription(args: {
+    inscription: DbInscriptionInsert;
+    location: DbLocationInsert;
+  }): Promise<void> {
     await this.sql`
       WITH decrease_mime_type AS (
         UPDATE counts_by_mime_type SET count = count - 1
@@ -119,19 +123,14 @@ export class CountsPgStore extends BasePgStoreModule {
       ),
       decrease_type AS (
         UPDATE counts_by_type SET count = count - 1 WHERE type = ${
-          parseInt(args.inscription.number) < 0
-            ? DbInscriptionType.cursed
-            : DbInscriptionType.blessed
+          args.inscription.number < 0 ? DbInscriptionType.cursed : DbInscriptionType.blessed
         }
       ),
       decrease_genesis AS (
-        UPDATE counts_by_genesis_address SET count = count - 1 WHERE address = (
-          SELECT address FROM current_locations WHERE inscription_id = ${args.inscription.id}
-        )
+        UPDATE counts_by_genesis_address SET count = count - 1
+        WHERE address = ${args.location.address}
       )
-      UPDATE counts_by_address SET count = count - 1 WHERE address = (
-        SELECT address FROM current_locations WHERE inscription_id = ${args.inscription.id}
-      )
+      UPDATE counts_by_address SET count = count - 1 WHERE address = ${args.location.address}
     `;
   }
 

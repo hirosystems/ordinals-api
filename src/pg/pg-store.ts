@@ -7,21 +7,19 @@ import {
   connectPostgres,
   logger,
   runMigrations,
+  stopwatch,
 } from '@hirosystems/api-toolkit';
 import { BitcoinEvent, Payload } from '@hirosystems/chainhook-client';
 import * as path from 'path';
 import * as postgres from 'postgres';
 import { Order, OrderBy } from '../api/schemas';
-import { normalizedHexString, parseSatPoint } from '../api/util/helpers';
-import { OrdinalSatoshi } from '../api/util/ordinal-satoshi';
 import { ENV } from '../env';
 import { Brc20PgStore } from './brc20/brc20-pg-store';
 import { CountsPgStore } from './counts/counts-pg-store';
 import { getIndexResultCountType } from './counts/helpers';
-import { assertNoBlockInscriptionGap, getInscriptionRecursion, removeNullBytes } from './helpers';
+import { assertNoBlockInscriptionGap, revealInsertsFromOrdhookEvent } from './helpers';
 import {
   DbFullyLocatedInscriptionResult,
-  DbInscription,
   DbInscriptionContent,
   DbInscriptionCountPerBlock,
   DbInscriptionCountPerBlockFilters,
@@ -31,15 +29,13 @@ import {
   DbInscriptionInsert,
   DbInscriptionLocationChange,
   DbLocation,
+  DbLocationInsert,
   DbLocationPointer,
   DbLocationPointerInsert,
-  DbLocationTransferType,
   DbPaginatedResult,
   DbRevealInsert,
-  INSCRIPTIONS_COLUMNS,
   LOCATIONS_COLUMNS,
 } from './types';
-import { toEnumValue } from '@hirosystems/api-toolkit';
 
 export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 export const ORDINALS_GENESIS_BLOCK = 767430;
@@ -81,152 +77,75 @@ export class PgStore extends BasePgStore {
   }
 
   /**
-   * Inserts inscription genesis and transfers from Chainhook events. Also handles rollbacks from
-   * chain re-orgs and materialized view refreshes.
-   * @param args - Apply/Rollback Chainhook events
+   * Inserts inscription genesis and transfers from Ordhook events. Also handles rollbacks from
+   * chain re-orgs.
+   * @param args - Apply/Rollback Ordhook events
    */
   async updateInscriptions(payload: Payload): Promise<void> {
     let updatedBlockHeightMin = Infinity;
     await this.sqlWriteTransaction(async sql => {
-      // Check where we're at in terms of ingestion, e.g. block height and max blessed inscription
-      // number. This will let us determine if we should skip ingesting this block or throw an error
-      // if a gap is detected.
-      const currentBlessedNumber = (await this.getMaxInscriptionNumber()) ?? -1;
-      const currentBlockHeight = await this.getChainTipBlockHeight();
-      const newBlessedNumbers: number[] = [];
-
+      // ROLLBACK
       for (const rollbackEvent of payload.rollback) {
-        // TODO: Optimize rollbacks just as we optimized applys.
         const event = rollbackEvent as BitcoinEvent;
-        const block_height = event.block_identifier.index;
-        for (const tx of event.transactions) {
-          for (const operation of tx.metadata.ordinal_operations) {
-            if (operation.inscription_revealed) {
-              const number = operation.inscription_revealed.inscription_number;
-              const genesis_id = operation.inscription_revealed.inscription_id;
-              await this.rollBackInscription({ genesis_id, number, block_height });
-            }
-            if (operation.inscription_transferred) {
-              const genesis_id = operation.inscription_transferred.inscription_id;
-              const satpoint = parseSatPoint(
-                operation.inscription_transferred.satpoint_post_transfer
-              );
-              const output = `${satpoint.tx_id}:${satpoint.vout}`;
-              await this.rollBackLocation({ genesis_id, output, block_height });
-            }
-          }
-        }
+        logger.info(`PgStore rolling back block ${event.block_identifier.index}`);
+        const time = stopwatch();
+        const rollbacks = revealInsertsFromOrdhookEvent(event);
+        for (const writeChunk of batchIterate(rollbacks, 1000))
+          await this.rollBackInscriptions(writeChunk);
         updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
+        logger.info(
+          `PgStore rolled back block ${
+            event.block_identifier.index
+          } in ${time.getElapsedSeconds()}s`
+        );
+        await this.updateChainTipBlockHeight(event.block_identifier.index - 1);
       }
 
-      let blockTransferIndex = 0;
+      // APPLY
       for (const applyEvent of payload.apply) {
+        // Check where we're at in terms of ingestion, e.g. block height and max blessed inscription
+        // number. This will let us determine if we should skip ingesting this block or throw an
+        // error if a gap is detected.
+        const currentBlessedNumber = (await this.getMaxInscriptionNumber()) ?? -1;
+        const currentBlockHeight = await this.getChainTipBlockHeight();
         const event = applyEvent as BitcoinEvent;
-        const block_height = event.block_identifier.index;
         if (
           ENV.INSCRIPTION_GAP_DETECTION_ENABLED &&
-          block_height <= currentBlockHeight &&
-          block_height !== ORDINALS_GENESIS_BLOCK
+          event.block_identifier.index <= currentBlockHeight &&
+          event.block_identifier.index !== ORDINALS_GENESIS_BLOCK
         ) {
           logger.info(
-            `PgStore skipping ingestion for previously seen block ${block_height}, current chain tip is at ${currentBlockHeight}`
+            `PgStore skipping ingestion for previously seen block ${event.block_identifier.index}, current chain tip is at ${currentBlockHeight}`
           );
-          return;
+          continue;
         }
-        const block_hash = normalizedHexString(event.block_identifier.hash);
-        const writes: DbRevealInsert[] = [];
-        for (const tx of event.transactions) {
-          const tx_id = normalizedHexString(tx.transaction_identifier.hash);
-          for (const operation of tx.metadata.ordinal_operations) {
-            if (operation.inscription_revealed) {
-              const reveal = operation.inscription_revealed;
-              if (reveal.inscription_number >= 0)
-                newBlessedNumbers.push(parseInt(`${reveal.inscription_number}`));
-              const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
-              const satpoint = parseSatPoint(reveal.satpoint_post_inscription);
-              const recursive_refs = getInscriptionRecursion(reveal.content_bytes);
-              const contentType = removeNullBytes(reveal.content_type);
-              writes.push({
-                inscription: {
-                  genesis_id: reveal.inscription_id,
-                  mime_type: contentType.split(';')[0],
-                  content_type: contentType,
-                  content_length: reveal.content_length,
-                  number: reveal.inscription_number,
-                  content: removeNullBytes(reveal.content_bytes),
-                  fee: reveal.inscription_fee.toString(),
-                  curse_type: reveal.curse_type ? JSON.stringify(reveal.curse_type) : null,
-                  sat_ordinal: reveal.ordinal_number.toString(),
-                  sat_rarity: satoshi.rarity,
-                  sat_coinbase_height: satoshi.blockHeight,
-                  recursive: recursive_refs.length > 0,
-                },
-                location: {
-                  block_hash,
-                  block_height,
-                  tx_id,
-                  tx_index: reveal.tx_index,
-                  block_transfer_index: null,
-                  genesis_id: reveal.inscription_id,
-                  address: reveal.inscriber_address,
-                  output: `${satpoint.tx_id}:${satpoint.vout}`,
-                  offset: satpoint.offset ?? null,
-                  prev_output: null,
-                  prev_offset: null,
-                  value: reveal.inscription_output_value.toString(),
-                  timestamp: event.timestamp,
-                  transfer_type: DbLocationTransferType.transferred,
-                },
-                recursive_refs,
-              });
-            }
-            if (operation.inscription_transferred) {
-              const transfer = operation.inscription_transferred;
-              const satpoint = parseSatPoint(transfer.satpoint_post_transfer);
-              const prevSatpoint = parseSatPoint(transfer.satpoint_pre_transfer);
-              writes.push({
-                location: {
-                  block_hash,
-                  block_height,
-                  tx_id,
-                  tx_index: transfer.tx_index,
-                  block_transfer_index: blockTransferIndex++,
-                  genesis_id: transfer.inscription_id,
-                  address: transfer.destination.value ?? null,
-                  output: `${satpoint.tx_id}:${satpoint.vout}`,
-                  offset: satpoint.offset ?? null,
-                  prev_output: `${prevSatpoint.tx_id}:${prevSatpoint.vout}`,
-                  prev_offset: prevSatpoint.offset ?? null,
-                  value: transfer.post_transfer_output_value
-                    ? transfer.post_transfer_output_value.toString()
-                    : null,
-                  timestamp: event.timestamp,
-                  transfer_type:
-                    toEnumValue(DbLocationTransferType, transfer.destination.type) ??
-                    DbLocationTransferType.transferred,
-                },
-              });
-            }
-          }
-        }
+        logger.info(`PgStore ingesting block ${event.block_identifier.index}`);
+        const time = stopwatch();
+        const writes = revealInsertsFromOrdhookEvent(event);
+        const newBlessedNumbers = writes
+          .filter(w => w.inscription !== undefined && w.inscription.number >= 0)
+          .map(w => w.inscription?.number ?? 0);
         assertNoBlockInscriptionGap({
           currentNumber: currentBlessedNumber,
           newNumbers: newBlessedNumbers,
           currentBlockHeight: currentBlockHeight,
-          newBlockHeight: block_height,
+          newBlockHeight: event.block_identifier.index,
         });
-        // Divide insertion array into chunks of 4000 in order to avoid the postgres limit of 65534
-        // query params.
         for (const writeChunk of batchIterate(writes, 4000))
           await this.insertInscriptions(writeChunk);
         updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
-        if (ENV.BRC20_BLOCK_SCAN_ENABLED)
-          await this.brc20.scanBlocks(event.block_identifier.index, event.block_identifier.index);
+        logger.info(
+          `PgStore ingested block ${event.block_identifier.index} in ${time.getElapsedSeconds()}s`
+        );
+        await this.updateChainTipBlockHeight(event.block_identifier.index);
       }
     });
-    await this.refreshMaterializedView('chain_tip');
     if (updatedBlockHeightMin !== Infinity)
       await this.normalizeInscriptionCount({ min_block_height: updatedBlockHeightMin });
+  }
+
+  private async updateChainTipBlockHeight(block_height: number): Promise<void> {
+    await this.sql`UPDATE chain_tip SET block_height = ${block_height}`;
   }
 
   async getChainTipBlockHeight(): Promise<number> {
@@ -565,35 +484,12 @@ export class PgStore extends BasePgStore {
     `; // roughly 35 days of blocks, assuming 10 minute block times on a full database
   }
 
-  private async getInscription(args: { genesis_id: string }): Promise<DbInscription | undefined> {
-    const query = await this.sql<DbInscription[]>`
-      SELECT ${this.sql(INSCRIPTIONS_COLUMNS)}
-      FROM inscriptions
-      WHERE genesis_id = ${args.genesis_id}
-    `;
-    if (query.count === 0) return;
-    return query[0];
-  }
-
-  private async getLocation(args: {
-    genesis_id: string;
-    output: string;
-  }): Promise<DbLocation | undefined> {
-    const query = await this.sql<DbLocation[]>`
-      SELECT ${this.sql(LOCATIONS_COLUMNS)}
-      FROM locations
-      WHERE genesis_id = ${args.genesis_id} AND output = ${args.output}
-    `;
-    if (query.count === 0) return;
-    return query[0];
-  }
-
-  private async insertInscriptions(writes: DbRevealInsert[]): Promise<void> {
-    if (writes.length === 0) return;
+  private async insertInscriptions(reveals: DbRevealInsert[]): Promise<void> {
+    if (reveals.length === 0) return;
     await this.sqlWriteTransaction(async sql => {
       const inscriptions: DbInscriptionInsert[] = [];
       const transferGenesisIds = new Set<string>();
-      for (const r of writes)
+      for (const r of reveals)
         if (r.inscription) inscriptions.push(r.inscription);
         else transferGenesisIds.add(r.location.genesis_id);
       if (inscriptions.length)
@@ -611,12 +507,12 @@ export class PgStore extends BasePgStore {
             sat_coinbase_height = EXCLUDED.sat_coinbase_height,
             updated_at = NOW()
         `;
-      const locationData = writes.map(i => ({
+      const locationData = reveals.map(i => ({
         ...i.location,
         inscription_id: sql`(SELECT id FROM inscriptions WHERE genesis_id = ${i.location.genesis_id} LIMIT 1)`,
         timestamp: sql`TO_TIMESTAMP(${i.location.timestamp})`,
       }));
-      const locations = await sql<DbLocationPointerInsert[]>`
+      const pointers = await sql<DbLocationPointerInsert[]>`
         INSERT INTO locations ${sql(locationData)}
         ON CONFLICT ON CONSTRAINT locations_inscription_id_block_height_tx_index_unique DO UPDATE SET
           genesis_id = EXCLUDED.genesis_id,
@@ -629,21 +525,22 @@ export class PgStore extends BasePgStore {
           timestamp = EXCLUDED.timestamp
         RETURNING inscription_id, id AS location_id, block_height, tx_index, address
       `;
-      await this.updateInscriptionRecursions(writes);
+      await this.updateInscriptionRecursions(reveals);
       if (transferGenesisIds.size)
         await sql`
           UPDATE inscriptions
           SET updated_at = NOW()
           WHERE genesis_id IN ${sql([...transferGenesisIds])}
         `;
-      await this.updateInscriptionLocationPointers(locations);
-      await this.counts.applyInscriptions(inscriptions);
-      for (const reveal of writes) {
+      await this.updateInscriptionLocationPointers(pointers);
+      for (const reveal of reveals) {
         const action = reveal.inscription ? `reveal #${reveal.inscription.number}` : `transfer`;
         logger.info(
           `PgStore ${action} (${reveal.location.genesis_id}) at block ${reveal.location.block_height}`
         );
       }
+      await this.counts.applyInscriptions(inscriptions);
+      if (ENV.BRC20_BLOCK_SCAN_ENABLED) await this.brc20.insertOperations({ reveals, pointers });
     });
   }
 
@@ -687,37 +584,35 @@ export class PgStore extends BasePgStore {
     });
   }
 
-  private async rollBackInscription(args: {
-    genesis_id: string;
-    number: number;
-    block_height: number;
-  }): Promise<void> {
-    const inscription = await this.getInscription({ genesis_id: args.genesis_id });
-    if (!inscription) return;
+  private async rollBackInscriptions(rollbacks: DbRevealInsert[]): Promise<void> {
+    if (rollbacks.length === 0) return;
     await this.sqlWriteTransaction(async sql => {
-      await this.counts.rollBackInscription({ inscription });
-      await this.brc20.rollBackInscription({ inscription });
-      await sql`DELETE FROM inscriptions WHERE id = ${inscription.id}`;
-      logger.info(
-        `PgStore rollback reveal #${args.number} (${args.genesis_id}) at block ${args.block_height}`
-      );
-    });
-  }
-
-  private async rollBackLocation(args: {
-    genesis_id: string;
-    output: string;
-    block_height: number;
-  }): Promise<void> {
-    const location = await this.getLocation({ genesis_id: args.genesis_id, output: args.output });
-    if (!location) return;
-    await this.sqlWriteTransaction(async sql => {
-      await this.brc20.rollBackLocation({ location });
-      await this.recalculateCurrentLocationPointerFromLocationRollBack({ location });
-      await sql`DELETE FROM locations WHERE id = ${location.id}`;
-      logger.info(
-        `PgStore rollback transfer (${args.genesis_id}) on output ${args.output} at block ${args.block_height}`
-      );
+      // Roll back events in reverse so BRC-20 keeps a sane order.
+      for (const rollback of rollbacks.reverse()) {
+        if (rollback.inscription) {
+          await this.brc20.rollBackInscription({ inscription: rollback.inscription });
+          await this.counts.rollBackInscription({
+            inscription: rollback.inscription,
+            location: rollback.location,
+          });
+          await sql`DELETE FROM inscriptions WHERE genesis_id = ${rollback.inscription.genesis_id}`;
+          logger.info(
+            `PgStore rollback reveal #${rollback.inscription.number} (${rollback.inscription.genesis_id}) at block ${rollback.location.block_height}`
+          );
+        } else {
+          await this.brc20.rollBackLocation({ location: rollback.location });
+          await this.recalculateCurrentLocationPointerFromLocationRollBack({
+            location: rollback.location,
+          });
+          await sql`
+            DELETE FROM locations
+            WHERE output = ${rollback.location.output} AND "offset" = ${rollback.location.offset}
+          `;
+          logger.info(
+            `PgStore rollback transfer for ${rollback.location.genesis_id} at block ${rollback.location.block_height}`
+          );
+        }
+      }
     });
   }
 
@@ -812,19 +707,22 @@ export class PgStore extends BasePgStore {
   }
 
   private async recalculateCurrentLocationPointerFromLocationRollBack(args: {
-    location: DbLocation;
+    location: DbLocationInsert;
   }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
       // Is the location we're rolling back *the* current location?
       const current = await sql<DbLocationPointer[]>`
-        SELECT * FROM current_locations WHERE location_id = ${args.location.id}
+        SELECT *
+        FROM current_locations AS c
+        INNER JOIN locations AS l ON l.id = c.location_id
+        WHERE l.output = ${args.location.output} AND l."offset" = ${args.location.offset}
       `;
       if (current.count > 0) {
         const update = await sql<DbLocationPointer[]>`
           WITH prev AS (
             SELECT id, block_height, tx_index, address
             FROM locations
-            WHERE inscription_id = ${args.location.inscription_id} AND id <> ${args.location.id}
+            WHERE inscription_id = ${current[0].inscription_id} AND id <> ${current[0].location_id}
             ORDER BY block_height DESC, tx_index DESC
             LIMIT 1
           )
@@ -834,7 +732,7 @@ export class PgStore extends BasePgStore {
             tx_index = prev.tx_index,
             address = prev.address
           FROM prev
-          WHERE c.inscription_id = ${args.location.inscription_id}
+          WHERE c.inscription_id = ${current[0].inscription_id}
           RETURNING *
         `;
         await this.counts.rollBackCurrentLocation({ curr: current[0], prev: update[0] });
