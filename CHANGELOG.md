@@ -1,3 +1,10 @@
+## [2.0.1-beta.4](https://github.com/hirosystems/ordinals-api/compare/v2.0.1-beta.3...v2.0.1-beta.4) (2023-12-05)
+
+
+### Bug Fixes
+
+* optimize block rollback logic for re-orgs ([#279](https://github.com/hirosystems/ordinals-api/issues/279)) ([293c323](https://github.com/hirosystems/ordinals-api/commit/293c32391d5e71a3d6570526be3565a4e75572b7))
+
 ## [2.0.1-beta.3](https://github.com/hirosystems/ordinals-api/compare/v2.0.1-beta.2...v2.0.1-beta.3) (2023-11-29)
 
 
