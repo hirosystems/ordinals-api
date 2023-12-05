@@ -9,7 +9,7 @@ async function initBackgroundServices(db: PgStore) {
   logger.info('Initializing background services...');
   const server = await startOrdhookServer({ db });
   registerShutdownConfig({
-    name: 'Chainhook Server',
+    name: 'Ordhook Server',
     forceKillable: false,
     handler: async () => {
       await server.close();
