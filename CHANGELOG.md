@@ -1,3 +1,13 @@
+## [2.0.1](https://github.com/hirosystems/ordinals-api/compare/v2.0.0...v2.0.1) (2023-12-05)
+
+
+### Bug Fixes
+
+* add ENV to toggle inscription gap detection ([56ab283](https://github.com/hirosystems/ordinals-api/commit/56ab283cdfaf95efe058e5f057fb5559b9dfede0))
+* optimize block rollback logic for re-orgs ([#279](https://github.com/hirosystems/ordinals-api/issues/279)) ([293c323](https://github.com/hirosystems/ordinals-api/commit/293c32391d5e71a3d6570526be3565a4e75572b7))
+* select only the first inscription id match ([106368e](https://github.com/hirosystems/ordinals-api/commit/106368e9fa415db0657988de28a541906f74d28a))
+* upgrade chainhook client to v1.4.2 ([#277](https://github.com/hirosystems/ordinals-api/issues/277)) ([67ba3d4](https://github.com/hirosystems/ordinals-api/commit/67ba3d4f48e6ce8e955c08fd75cbf009786c0160))
+
 ## [2.0.1-beta.4](https://github.com/hirosystems/ordinals-api/compare/v2.0.1-beta.3...v2.0.1-beta.4) (2023-12-05)
 
 
