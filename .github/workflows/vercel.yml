@@ -65,6 +65,10 @@ jobs:
         id: deploy
         run: vercel deploy ${{ env.VERCEL_PROD }} --prebuilt --token=${{ secrets.VERCEL_TOKEN }} | awk '{print "deployment_url="$1}' >> $GITHUB_OUTPUT
 
+      - name: Trigger docs.hiro.so deployment
+        if: github.ref_name == 'master'
+        run: curl -X POST ${{ secrets.VERCEL_DOCS_DEPLOY_HOOK_URL }}
+
       - name: Add comment with Vercel deployment URL
         if: ${{ github.event_name == 'pull_request' }}
         uses: thollander/actions-comment-pull-request@v2
