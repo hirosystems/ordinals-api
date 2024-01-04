@@ -211,7 +211,7 @@ function testRevealApply(blockHeight: number, numbers: number[]) {
         content_bytes: '0x48656C6C6F',
         content_type: 'image/png',
         content_length: 5,
-        inscription_number: number,
+        inscription_number: { classic: number, jubilee: number },
         inscription_fee: 2805,
         inscription_id: `${randomHex}i0`,
         inscription_output_value: 10000,

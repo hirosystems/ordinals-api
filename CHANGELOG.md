@@ -1,3 +1,10 @@
+## [2.1.0-beta.1](https://github.com/hirosystems/ordinals-api/compare/v2.0.1...v2.1.0-beta.1) (2024-01-04)
+
+
+### Features
+
+* support ordinals jubilee, ignore classic cursed inscriptions for BRC-20 ([#286](https://github.com/hirosystems/ordinals-api/issues/286)) ([fde705c](https://github.com/hirosystems/ordinals-api/commit/fde705c9a3def85bac0b4f07a3cfefe24fbebc09))
+
 ## [2.0.1](https://github.com/hirosystems/ordinals-api/compare/v2.0.0...v2.0.1) (2023-12-05)
 
 

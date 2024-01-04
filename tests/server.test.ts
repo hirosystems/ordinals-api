@@ -37,7 +37,7 @@ describe('EventServer', () => {
         content_bytes: '0x303030303030303030303030',
         content_type: 'text/plain;charset=utf-8',
         content_length: 12,
-        inscription_number: 0,
+        inscription_number: { classic: 0, jubilee: 0 },
         inscription_fee: 3425,
         inscription_output_value: 10000,
         inscription_id: '0268dd9743c862d80ab02cb1d0228036cfe172522850eb96be60cfee14b31fb8i0',
@@ -155,7 +155,7 @@ describe('EventServer', () => {
             content_bytes: '0x48656C6C6F',
             content_type: 'image/png',
             content_length: 5,
-            inscription_number: 0,
+            inscription_number: { classic: 0, jubilee: 0 },
             inscription_fee: 2805,
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
             inscription_output_value: 10000,
@@ -292,7 +292,7 @@ describe('EventServer', () => {
             content_bytes: '0x48656C6C6F',
             content_type: 'image/png',
             content_length: 5,
-            inscription_number: 0,
+            inscription_number: { classic: 0, jubilee: 0 },
             inscription_fee: 2805,
             inscription_id: '6046f17804eb8396285567a20c09598ae1273b6f744b23700ba95593c380ce02i0',
             inscription_output_value: 10000,
@@ -349,7 +349,7 @@ describe('EventServer', () => {
             content_bytes: '0x48656C6C6F',
             content_type: 'text/plain;charset=utf-8',
             content_length: 5,
-            inscription_number: 0,
+            inscription_number: { classic: 0, jubilee: 0 },
             inscription_fee: 705,
             inscription_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
             inscription_output_value: 10000,
@@ -380,7 +380,7 @@ describe('EventServer', () => {
           content_bytes: '0x48656C6C6F',
           content_type: 'text/plain;charset=utf-8',
           content_length: 5,
-          inscription_number: 5, // Gap at 5
+          inscription_number: { classic: 5, jubilee: 5 }, // Gap at 5
           inscription_fee: 705,
           inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
           inscription_output_value: 10000,
@@ -422,7 +422,7 @@ describe('EventServer', () => {
             content_bytes: '0x48656C6C6F',
             content_type: 'text/plain;charset=utf-8',
             content_length: 5,
-            inscription_number: 0,
+            inscription_number: { classic: 0, jubilee: 0 },
             inscription_fee: 705,
             inscription_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
             inscription_output_value: 10000,
@@ -453,7 +453,7 @@ describe('EventServer', () => {
           content_bytes: '0x48656C6C6F',
           content_type: 'text/plain;charset=utf-8',
           content_length: 5,
-          inscription_number: 1,
+          inscription_number: { classic: 1, jubilee: 1 },
           inscription_fee: 705,
           inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
           inscription_output_value: 10000,
@@ -475,7 +475,7 @@ describe('EventServer', () => {
           content_bytes: '0x48656C6C6F',
           content_type: 'text/plain;charset=utf-8',
           content_length: 5,
-          inscription_number: 4, // Gap
+          inscription_number: { classic: 4, jubilee: 4 }, // Gap
           inscription_fee: 705,
           inscription_id: '6891d374a17ba85f6b5514f2f7edc301c1c860284dff5a5c6e88ab3a20fcd8a5o0',
           inscription_output_value: 10000,
@@ -517,7 +517,7 @@ describe('EventServer', () => {
             content_bytes: '0x48656C6C6F',
             content_type: 'text/plain;charset=utf-8',
             content_length: 5,
-            inscription_number: 0,
+            inscription_number: { classic: 0, jubilee: 0 },
             inscription_fee: 705,
             inscription_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
             inscription_output_value: 10000,
@@ -548,7 +548,7 @@ describe('EventServer', () => {
           content_bytes: '0x48656C6C6F',
           content_type: 'text/plain;charset=utf-8',
           content_length: 5,
-          inscription_number: 2,
+          inscription_number: { classic: 2, jubilee: 2 },
           inscription_fee: 705,
           inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
           inscription_output_value: 10000,
@@ -570,7 +570,7 @@ describe('EventServer', () => {
           content_bytes: '0x48656C6C6F',
           content_type: 'text/plain;charset=utf-8',
           content_length: 5,
-          inscription_number: 1,
+          inscription_number: { classic: 1, jubilee: 1 },
           inscription_fee: 705,
           inscription_id: '6891d374a17ba85f6b5514f2f7edc301c1c860284dff5a5c6e88ab3a20fcd8a5o0',
           inscription_output_value: 10000,
@@ -606,7 +606,7 @@ describe('EventServer', () => {
           content_bytes: '0x48656C6C6F',
           content_type: 'text/plain;charset=utf-8',
           content_length: 5,
-          inscription_number: 0,
+          inscription_number: { classic: 0, jubilee: 0 },
           inscription_fee: 705,
           inscription_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
           inscription_output_value: 10000,
@@ -631,6 +631,65 @@ describe('EventServer', () => {
         payload: payload,
       });
       expect(response.statusCode).toBe(200);
+    });
+  });
+
+  describe('jubilee', () => {
+    test('supports multiple inscriptions on the same sat', async () => {
+      await expect(
+        db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({
+              height: 778575,
+              hash: '0x00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+              timestamp: 1676913207,
+            })
+            .transaction({
+              hash: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
+            })
+            .inscriptionRevealed({
+              content_bytes: '0x48656C6C6F',
+              content_type: 'text/plain;charset=utf-8',
+              content_length: 5,
+              inscription_number: { classic: 0, jubilee: 0 },
+              inscription_fee: 705,
+              inscription_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
+              inscription_output_value: 10000,
+              inscriber_address: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+              ordinal_number: 257418248345364,
+              ordinal_block_height: 650000,
+              ordinal_offset: 0,
+              satpoint_post_inscription:
+                '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
+              curse_type: null,
+            })
+            .inscriptionRevealed({
+              content_bytes: '0x48656C6C6F',
+              content_type: 'text/plain;charset=utf-8',
+              content_length: 5,
+              inscription_number: { classic: -1, jubilee: 1 }, // Would have been cursed
+              inscription_fee: 705,
+              inscription_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i1',
+              inscription_output_value: 10000,
+              inscriber_address: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+              ordinal_number: 257418248345364, // Same sat
+              ordinal_block_height: 650000,
+              ordinal_offset: 0,
+              // Same satpoint
+              satpoint_post_inscription:
+                '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+              inscription_input_index: 0,
+              transfers_pre_inscription: 0,
+              tx_index: 0,
+              curse_type: null,
+            })
+            .build()
+        )
+      ).resolves.not.toThrow();
     });
   });
 });

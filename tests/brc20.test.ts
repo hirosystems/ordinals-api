@@ -89,6 +89,7 @@ describe('BRC-20', () => {
       const insert: DbInscriptionInsert = {
         genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
         number: 0,
+        classic_number: 0,
         mime_type: 'application/json',
         content_type: 'application/json',
         content_length: content.length,
@@ -116,6 +117,7 @@ describe('BRC-20', () => {
       const insert: DbInscriptionInsert = {
         genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
         number: 0,
+        classic_number: 0,
         mime_type: 'foo/bar',
         content_type: 'foo/bar;x=1',
         content_length: content.length,
@@ -144,6 +146,7 @@ describe('BRC-20', () => {
       const insert: DbInscriptionInsert = {
         genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
         number: 0,
+        classic_number: 0,
         mime_type: 'application/json',
         content_type: 'application/json',
         content_length: content.length,
@@ -694,6 +697,43 @@ describe('BRC-20', () => {
           tx_count: 1,
         },
       ]);
+    });
+
+    test('ignores deploy from classic cursed inscription', async () => {
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: BRC20_GENESIS_BLOCK,
+            hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+          })
+          .transaction({
+            hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'deploy',
+                tick: 'PEPE',
+                max: '21000000',
+              },
+              number: 0,
+              classic_number: -1,
+              tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+              address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+            })
+          )
+          .build()
+      );
+      const response1 = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/tokens?ticker=PEPE`,
+      });
+      expect(response1.statusCode).toBe(200);
+      const responseJson1 = response1.json();
+      expect(responseJson1.total).toBe(0);
+      expect(responseJson1.results).toHaveLength(0);
     });
   });
 

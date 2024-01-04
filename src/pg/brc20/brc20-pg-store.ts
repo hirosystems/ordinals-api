@@ -46,7 +46,12 @@ export class Brc20PgStore extends BasePgStoreModule {
       const pointer = args.pointers[i];
       if (parseInt(pointer.block_height) < BRC20_GENESIS_BLOCK) continue;
       if (reveal.inscription) {
-        if (reveal.location.transfer_type != DbLocationTransferType.transferred) continue;
+        if (
+          reveal.inscription.classic_number < 0 ||
+          reveal.inscription.number < 0 ||
+          reveal.location.transfer_type != DbLocationTransferType.transferred
+        )
+          continue;
         const brc20 = brc20FromInscriptionContent(
           hexToBuffer(reveal.inscription.content as string).toString('utf-8')
         );
