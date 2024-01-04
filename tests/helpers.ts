@@ -119,7 +119,10 @@ export function brc20Reveal(args: {
     content_bytes: `0x${content.toString('hex')}`,
     content_type: 'text/plain;charset=utf-8',
     content_length: content.length,
-    inscription_number: args.number,
+    inscription_number: {
+      classic: args.number,
+      jubilee: args.number,
+    },
     inscription_fee: 2000,
     inscription_id: `${args.tx_id}i0`,
     inscription_output_value: 10000,

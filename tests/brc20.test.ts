@@ -89,6 +89,7 @@ describe('BRC-20', () => {
       const insert: DbInscriptionInsert = {
         genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
         number: 0,
+        classic_number: 0,
         mime_type: 'application/json',
         content_type: 'application/json',
         content_length: content.length,
@@ -116,6 +117,7 @@ describe('BRC-20', () => {
       const insert: DbInscriptionInsert = {
         genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
         number: 0,
+        classic_number: 0,
         mime_type: 'foo/bar',
         content_type: 'foo/bar;x=1',
         content_length: content.length,
@@ -144,6 +146,7 @@ describe('BRC-20', () => {
       const insert: DbInscriptionInsert = {
         genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
         number: 0,
+        classic_number: 0,
         mime_type: 'application/json',
         content_type: 'application/json',
         content_length: content.length,

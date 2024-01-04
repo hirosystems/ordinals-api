@@ -137,6 +137,7 @@ export const LOCATIONS_COLUMNS = [
 export type DbInscriptionInsert = {
   genesis_id: string;
   number: number;
+  classic_number: number;
   mime_type: string;
   content_type: string;
   content_length: number;
