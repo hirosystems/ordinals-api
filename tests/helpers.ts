@@ -111,6 +111,7 @@ export function rollBack(payload: Payload) {
 export function brc20Reveal(args: {
   json: Brc20;
   number: number;
+  classic_number?: number;
   address: string;
   tx_id: string;
 }): BitcoinInscriptionRevealed {
@@ -120,8 +121,8 @@ export function brc20Reveal(args: {
     content_type: 'text/plain;charset=utf-8',
     content_length: content.length,
     inscription_number: {
-      classic: args.number,
       jubilee: args.number,
+      classic: args.classic_number ?? args.number,
     },
     inscription_fee: 2000,
     inscription_id: `${args.tx_id}i0`,
