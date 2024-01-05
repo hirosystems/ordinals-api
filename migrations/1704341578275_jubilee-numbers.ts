@@ -9,8 +9,6 @@ export function up(pgm: MigrationBuilder): void {
       type: 'bigint',
     },
   });
-  pgm.sql(`UPDATE inscriptions SET classic_number = number`);
-  pgm.alterColumn('inscriptions', 'classic_number', { notNull: true });
 }
 
 export function down(pgm: MigrationBuilder): void {
