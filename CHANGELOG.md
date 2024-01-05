@@ -1,3 +1,10 @@
+## [2.1.1-beta.1](https://github.com/hirosystems/ordinals-api/compare/v2.1.0...v2.1.1-beta.1) (2024-01-05)
+
+
+### Bug Fixes
+
+* remove problematic migration ([a82d078](https://github.com/hirosystems/ordinals-api/commit/a82d078fa9c30dddf15ec79746599c6dd527b7f1))
+
 ## [2.1.0](https://github.com/hirosystems/ordinals-api/compare/v2.0.1...v2.1.0) (2024-01-04)
 
 
