@@ -764,10 +764,17 @@ export class Brc20PgStore extends BasePgStoreModule {
     objRemoveUndefinedValues(filters);
     const filterLength = Object.keys(filters).length;
     // Do we need a specific result count such as total activity or activity per address?
-    const needsGlobalEventCount = filterLength === 0 || (filterLength === 1 && filters.operation);
+    const needsGlobalEventCount =
+      filterLength === 0 ||
+      (filterLength === 1 && filters.operation && filters.operation.length > 0);
     const needsAddressEventCount =
-      (filterLength === 1 && filters.address) ||
-      (filterLength === 2 && filters.operation && filters.address);
+      (filterLength === 1 && filters.address != undefined && filters.address != '') ||
+      (filterLength === 2 &&
+        filters.operation &&
+        filters.operation.length > 0 &&
+        filters.address != undefined &&
+        filters.address != '');
+    const needsTickerCount = filterLength === 1 && filters.ticker && filters.ticker.length > 0;
     // Which operations do we need if we're filtering by address?
     const sanitizedOperations: DbBrc20EventOperation[] = [];
     for (const i of filters.operation ?? BRC20_OPERATIONS)
@@ -796,6 +803,12 @@ export class Brc20PgStore extends BasePgStoreModule {
               FROM brc20_counts_by_address_event_type
               WHERE address = ${filters.address}
             `
+          : needsTickerCount
+          ? this.sql`
+              SELECT COALESCE(SUM(tx_count), 0) AS count
+              FROM brc20_deploys AS d
+              WHERE (${tickerConditions})
+            `
           : this.sql`SELECT NULL AS count`
       })
       SELECT
@@ -815,7 +828,7 @@ export class Brc20PgStore extends BasePgStoreModule {
         (SELECT amount FROM brc20_mints WHERE id = e.mint_id) AS mint_amount,
         (SELECT amount || ';' || from_address || ';' || COALESCE(to_address, '') FROM brc20_transfers WHERE id = e.transfer_id) AS transfer_data,
         ${
-          needsGlobalEventCount || needsAddressEventCount
+          needsGlobalEventCount || needsAddressEventCount || needsTickerCount
             ? this.sql`(SELECT count FROM event_count)`
             : this.sql`COUNT(*) OVER()`
         } AS total
