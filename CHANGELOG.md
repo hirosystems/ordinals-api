@@ -1,3 +1,10 @@
+## [2.1.1-beta.2](https://github.com/hirosystems/ordinals-api/compare/v2.1.1-beta.1...v2.1.1-beta.2) (2024-01-09)
+
+
+### Bug Fixes
+
+* optimize BRC-20 activity count by ticker ([#289](https://github.com/hirosystems/ordinals-api/issues/289)) ([0a7648e](https://github.com/hirosystems/ordinals-api/commit/0a7648ee899e5167a72422c1c0870accad4c2423))
+
 ## [2.1.1-beta.1](https://github.com/hirosystems/ordinals-api/compare/v2.1.0...v2.1.1-beta.1) (2024-01-05)
 
 
