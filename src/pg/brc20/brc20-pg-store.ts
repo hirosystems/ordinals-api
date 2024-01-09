@@ -764,11 +764,17 @@ export class Brc20PgStore extends BasePgStoreModule {
     objRemoveUndefinedValues(filters);
     const filterLength = Object.keys(filters).length;
     // Do we need a specific result count such as total activity or activity per address?
-    const needsGlobalEventCount = filterLength === 0 || (filterLength === 1 && filters.operation);
+    const needsGlobalEventCount =
+      filterLength === 0 ||
+      (filterLength === 1 && filters.operation && filters.operation.length > 0);
     const needsAddressEventCount =
-      (filterLength === 1 && filters.address) ||
-      (filterLength === 2 && filters.operation && filters.address);
-    const needsTickerCount = filterLength === 1 && filters.ticker;
+      (filterLength === 1 && filters.address != undefined && filters.address != '') ||
+      (filterLength === 2 &&
+        filters.operation &&
+        filters.operation.length > 0 &&
+        filters.address != undefined &&
+        filters.address != '');
+    const needsTickerCount = filterLength === 1 && filters.ticker && filters.ticker.length > 0;
     // Which operations do we need if we're filtering by address?
     const sanitizedOperations: DbBrc20EventOperation[] = [];
     for (const i of filters.operation ?? BRC20_OPERATIONS)
