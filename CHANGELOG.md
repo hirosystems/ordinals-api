@@ -1,3 +1,10 @@
+## [2.1.2-beta.1](https://github.com/hirosystems/ordinals-api/compare/v2.1.1...v2.1.2-beta.1) (2024-01-16)
+
+
+### Bug Fixes
+
+* offload ticker lookup from BRC-20 activity query ([#293](https://github.com/hirosystems/ordinals-api/issues/293)) ([e70c222](https://github.com/hirosystems/ordinals-api/commit/e70c2229b03a563f0218c5fcfabb2875451bb77c))
+
 ## [2.1.1](https://github.com/hirosystems/ordinals-api/compare/v2.1.0...v2.1.1) (2024-01-09)
 
 
