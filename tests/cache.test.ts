@@ -89,7 +89,7 @@ describe('ETag cache', () => {
           hash: '0xbdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444',
         })
         .inscriptionTransferred({
-          inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+          ordinal_number: 257418248345364,
           destination: {
             type: 'transferred',
             value: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
@@ -126,7 +126,7 @@ describe('ETag cache', () => {
           hash: 'bebb1357c97d2348eb8ef24e1d8639ff79c8847bf12999ca7fef463489b40f0f',
         })
         .inscriptionTransferred({
-          inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+          ordinal_number: 257418248345364,
           destination: {
             type: 'transferred',
             value: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
@@ -235,7 +235,7 @@ describe('ETag cache', () => {
       .block({ height: 778577 })
       .transaction({ hash: 'ae9d273a10e899f0d2cad47ee2b0e77ab8a9addd9dd5bb5e4b03d6971c060d52' })
       .inscriptionTransferred({
-        inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+        ordinal_number: 257418248345364,
         destination: {
           type: 'transferred',
           value: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',

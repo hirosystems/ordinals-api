@@ -7,7 +7,12 @@ import {
   BitcoinInscriptionTransferred,
 } from '@hirosystems/chainhook-client';
 import { ENV } from '../env';
-import { DbLocationTransferType, DbRevealInsert } from './types';
+import {
+  DbLocationTransferType,
+  InscriptionEventData,
+  InscriptionTransferData,
+  InscriptionRevealData,
+} from './types';
 import { OrdinalSatoshi } from '../api/util/ordinal-satoshi';
 
 /**
@@ -83,13 +88,13 @@ export function removeNullBytes(input: string): string {
   return input.replace(/\x00/g, '');
 }
 
-function revealInsertFromOrdhookInscriptionRevealed(args: {
+function updateFromOrdhookInscriptionRevealed(args: {
   block_height: number;
   block_hash: string;
   tx_id: string;
   timestamp: number;
   reveal: BitcoinInscriptionRevealed;
-}): DbRevealInsert {
+}): InscriptionRevealData {
   const satoshi = new OrdinalSatoshi(args.reveal.ordinal_number);
   const satpoint = parseSatPoint(args.reveal.satpoint_post_inscription);
   const recursive_refs = getInscriptionRecursion(args.reveal.content_bytes);
@@ -130,14 +135,14 @@ function revealInsertFromOrdhookInscriptionRevealed(args: {
   };
 }
 
-function revealInsertFromOrdhookInscriptionTransferred(args: {
+function updateFromOrdhookInscriptionTransferred(args: {
   block_height: number;
   block_hash: string;
   tx_id: string;
   timestamp: number;
   blockTransferIndex: number;
   transfer: BitcoinInscriptionTransferred;
-}): DbRevealInsert {
+}): InscriptionTransferData {
   const satpoint = parseSatPoint(args.transfer.satpoint_post_transfer);
   const prevSatpoint = parseSatPoint(args.transfer.satpoint_pre_transfer);
   return {
@@ -147,7 +152,7 @@ function revealInsertFromOrdhookInscriptionTransferred(args: {
       tx_id: args.tx_id,
       tx_index: args.transfer.tx_index,
       block_transfer_index: args.blockTransferIndex,
-      genesis_id: args.transfer.inscription_id,
+      ordinal_number: args.transfer.ordinal_number.toString(),
       address: args.transfer.destination.value ?? null,
       output: `${satpoint.tx_id}:${satpoint.vout}`,
       offset: satpoint.offset ?? null,
@@ -164,18 +169,18 @@ function revealInsertFromOrdhookInscriptionTransferred(args: {
   };
 }
 
-export function revealInsertsFromOrdhookEvent(event: BitcoinEvent): DbRevealInsert[] {
+export function revealInsertsFromOrdhookEvent(event: BitcoinEvent): InscriptionEventData[] {
   // Keep the relative ordering of a transfer within a block for faster future reads.
   let blockTransferIndex = 0;
   const block_height = event.block_identifier.index;
   const block_hash = normalizedHexString(event.block_identifier.hash);
-  const writes: DbRevealInsert[] = [];
+  const writes: InscriptionEventData[] = [];
   for (const tx of event.transactions) {
     const tx_id = normalizedHexString(tx.transaction_identifier.hash);
     for (const operation of tx.metadata.ordinal_operations) {
       if (operation.inscription_revealed)
         writes.push(
-          revealInsertFromOrdhookInscriptionRevealed({
+          updateFromOrdhookInscriptionRevealed({
             block_hash,
             block_height,
             tx_id,
@@ -185,7 +190,7 @@ export function revealInsertsFromOrdhookEvent(event: BitcoinEvent): DbRevealInse
         );
       if (operation.inscription_transferred)
         writes.push(
-          revealInsertFromOrdhookInscriptionTransferred({
+          updateFromOrdhookInscriptionTransferred({
             block_hash,
             block_height,
             tx_id,

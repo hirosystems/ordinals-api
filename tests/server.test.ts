@@ -175,7 +175,7 @@ describe('EventServer', () => {
       await expect(db.getChainTipBlockHeight()).resolves.toBe(775617);
 
       const transfer: BitcoinInscriptionTransferred = {
-        inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+        ordinal_number: 5,
         destination: {
           type: 'transferred',
           value: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf00000',
@@ -311,7 +311,7 @@ describe('EventServer', () => {
             hash: '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac',
           })
           .inscriptionTransferred({
-            inscription_id: '6046f17804eb8396285567a20c09598ae1273b6f744b23700ba95593c380ce02i0',
+            ordinal_number: 5,
             destination: { type: 'transferred', value: address2 },
             satpoint_pre_transfer:
               '6046f17804eb8396285567a20c09598ae1273b6f744b23700ba95593c380ce02:0:0',
