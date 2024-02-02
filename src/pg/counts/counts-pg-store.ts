@@ -3,9 +3,9 @@ import { SatoshiRarity } from '../../api/util/ordinal-satoshi';
 import {
   DbInscription,
   DbInscriptionIndexFilters,
-  DbInscriptionInsert,
+  InscriptionData,
   DbInscriptionType,
-  DbLocationInsert,
+  RevealLocationData,
   DbLocationPointer,
 } from '../types';
 import { DbInscriptionIndexResultCountType } from './types';
@@ -55,7 +55,7 @@ export class CountsPgStore extends BasePgStoreModule {
     }
   }
 
-  async applyInscriptions(writes: DbInscriptionInsert[]): Promise<void> {
+  async applyInscriptions(writes: InscriptionData[]): Promise<void> {
     if (writes.length === 0) return;
     const mimeType = new Map<string, number>();
     const rarity = new Map<string, number>();
@@ -105,8 +105,8 @@ export class CountsPgStore extends BasePgStoreModule {
   }
 
   async rollBackInscription(args: {
-    inscription: DbInscriptionInsert;
-    location: DbLocationInsert;
+    inscription: InscriptionData;
+    location: RevealLocationData;
   }): Promise<void> {
     await this.sql`
       WITH decrease_mime_type AS (

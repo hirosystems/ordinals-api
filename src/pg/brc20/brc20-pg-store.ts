@@ -3,12 +3,13 @@ import * as postgres from 'postgres';
 import { hexToBuffer } from '../../api/util/helpers';
 import {
   DbInscriptionIndexPaging,
-  DbInscriptionInsert,
-  DbLocationInsert,
+  InscriptionData,
   DbLocationPointerInsert,
   DbLocationTransferType,
   DbPaginatedResult,
-  DbRevealInsert,
+  InscriptionEventData,
+  LocationData,
+  InscriptionRevealData,
 } from '../types';
 import {
   BRC20_DEPLOYS_COLUMNS,
@@ -39,13 +40,13 @@ export class Brc20PgStore extends BasePgStoreModule {
   }
 
   async insertOperations(args: {
-    reveals: DbRevealInsert[];
+    reveals: InscriptionEventData[];
     pointers: DbLocationPointerInsert[];
   }): Promise<void> {
     for (const [i, reveal] of args.reveals.entries()) {
       const pointer = args.pointers[i];
       if (parseInt(pointer.block_height) < BRC20_GENESIS_BLOCK) continue;
-      if (reveal.inscription) {
+      if ('inscription' in reveal) {
         if (
           reveal.inscription.classic_number < 0 ||
           reveal.inscription.number < 0 ||
@@ -75,7 +76,7 @@ export class Brc20PgStore extends BasePgStoreModule {
   }
 
   async applyTransfer(args: {
-    reveal: DbRevealInsert;
+    reveal: InscriptionEventData;
     pointer: DbLocationPointerInsert;
   }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
@@ -207,7 +208,7 @@ export class Brc20PgStore extends BasePgStoreModule {
 
   private async insertDeploy(deploy: {
     brc20: Brc20Deploy;
-    reveal: DbRevealInsert;
+    reveal: InscriptionEventData;
     pointer: DbLocationPointerInsert;
   }): Promise<void> {
     if (deploy.reveal.location.transfer_type != DbLocationTransferType.transferred) return;
@@ -257,7 +258,7 @@ export class Brc20PgStore extends BasePgStoreModule {
 
   private async insertMint(mint: {
     brc20: Brc20Mint;
-    reveal: DbRevealInsert;
+    reveal: InscriptionEventData;
     pointer: DbLocationPointerInsert;
   }): Promise<void> {
     if (mint.reveal.location.transfer_type != DbLocationTransferType.transferred) return;
@@ -335,7 +336,7 @@ export class Brc20PgStore extends BasePgStoreModule {
 
   private async insertTransfer(transfer: {
     brc20: Brc20Transfer;
-    reveal: DbRevealInsert;
+    reveal: InscriptionEventData;
     pointer: DbLocationPointerInsert;
   }): Promise<void> {
     if (transfer.reveal.location.transfer_type != DbLocationTransferType.transferred) return;
@@ -406,7 +407,7 @@ export class Brc20PgStore extends BasePgStoreModule {
       );
   }
 
-  async rollBackInscription(args: { inscription: DbInscriptionInsert }): Promise<void> {
+  async rollBackInscription(args: { inscription: InscriptionData }): Promise<void> {
     const events = await this.sql<DbBrc20Event[]>`
       SELECT e.* FROM brc20_events AS e
       INNER JOIN inscriptions AS i ON i.id = e.inscription_id
@@ -430,7 +431,7 @@ export class Brc20PgStore extends BasePgStoreModule {
     }
   }
 
-  async rollBackLocation(args: { location: DbLocationInsert }): Promise<void> {
+  async rollBackLocation(args: { location: LocationData }): Promise<void> {
     const events = await this.sql<DbBrc20Event[]>`
       SELECT e.* FROM brc20_events AS e
       INNER JOIN locations AS l ON l.id = e.genesis_location_id

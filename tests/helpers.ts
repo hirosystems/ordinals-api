@@ -114,6 +114,7 @@ export function brc20Reveal(args: {
   classic_number?: number;
   address: string;
   tx_id: string;
+  ordinal_number: number;
 }): BitcoinInscriptionRevealed {
   const content = Buffer.from(JSON.stringify(args.json), 'utf-8');
   const reveal: BitcoinInscriptionRevealed = {
@@ -128,7 +129,7 @@ export function brc20Reveal(args: {
     inscription_id: `${args.tx_id}i0`,
     inscription_output_value: 10000,
     inscriber_address: args.address,
-    ordinal_number: 0,
+    ordinal_number: args.ordinal_number,
     ordinal_block_height: 0,
     ordinal_offset: 0,
     satpoint_post_inscription: `${args.tx_id}:0:0`,

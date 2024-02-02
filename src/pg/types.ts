@@ -1,6 +1,74 @@
-import { PgNumeric, PgBytea } from '@hirosystems/api-toolkit';
+import { PgNumeric, PgBytea, PgSqlQuery } from '@hirosystems/api-toolkit';
 import { Order, OrderBy } from '../api/schemas';
 import { SatoshiRarity } from '../api/util/ordinal-satoshi';
+
+/**
+ * Updates and inserts
+ */
+
+export type InscriptionData = {
+  genesis_id: string;
+  number: number;
+  classic_number: number;
+  mime_type: string;
+  content_type: string;
+  content_length: number;
+  content: PgBytea;
+  fee: PgNumeric;
+  curse_type: string | null;
+  sat_ordinal: PgNumeric;
+  sat_rarity: string;
+  sat_coinbase_height: number;
+  recursive: boolean;
+};
+
+export type InscriptionInsert = InscriptionData;
+
+type AbstractLocationData = {
+  block_height: number;
+  block_hash: string;
+  tx_id: string;
+  tx_index: number;
+  address: string | null;
+  output: string;
+  offset: PgNumeric | null;
+  prev_output: string | null;
+  prev_offset: PgNumeric | null;
+  value: PgNumeric | null;
+  transfer_type: DbLocationTransferType;
+  block_transfer_index: number | null;
+};
+
+export type RevealLocationData = AbstractLocationData & { genesis_id: string; timestamp: number };
+
+export type TransferLocationData = AbstractLocationData & {
+  ordinal_number: PgNumeric;
+  timestamp: number;
+};
+
+export type LocationData = RevealLocationData | TransferLocationData;
+
+export type LocationInsert = AbstractLocationData & {
+  timestamp: PgSqlQuery;
+  genesis_id: string;
+  inscription_id: PgSqlQuery | string;
+};
+
+export type InscriptionRevealData = {
+  inscription: InscriptionData;
+  recursive_refs: string[];
+  location: RevealLocationData;
+};
+
+export type InscriptionTransferData = {
+  location: TransferLocationData;
+};
+
+export type InscriptionEventData = InscriptionRevealData | InscriptionTransferData;
+
+/**
+ * Selects
+ */
 
 export type DbPaginatedResult<T> = {
   total: number;
@@ -39,23 +107,6 @@ export enum DbLocationTransferType {
   spentInFees = 'spent_in_fees',
   burnt = 'burnt',
 }
-
-export type DbLocationInsert = {
-  genesis_id: string;
-  block_height: number;
-  block_hash: string;
-  tx_id: string;
-  tx_index: number;
-  address: string | null;
-  output: string;
-  offset: PgNumeric | null;
-  prev_output: string | null;
-  prev_offset: PgNumeric | null;
-  value: PgNumeric | null;
-  timestamp: number;
-  transfer_type: DbLocationTransferType;
-  block_transfer_index: number | null;
-};
 
 export type DbLocation = {
   id: string;
@@ -133,28 +184,6 @@ export const LOCATIONS_COLUMNS = [
   'value',
   'timestamp',
 ];
-
-export type DbInscriptionInsert = {
-  genesis_id: string;
-  number: number;
-  classic_number: number;
-  mime_type: string;
-  content_type: string;
-  content_length: number;
-  content: PgBytea;
-  fee: PgNumeric;
-  curse_type: string | null;
-  sat_ordinal: PgNumeric;
-  sat_rarity: string;
-  sat_coinbase_height: number;
-  recursive: boolean;
-};
-
-export type DbRevealInsert = {
-  inscription?: DbInscriptionInsert;
-  recursive_refs?: string[];
-  location: DbLocationInsert;
-};
 
 export type DbInscription = {
   id: string;

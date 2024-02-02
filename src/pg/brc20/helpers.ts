@@ -2,7 +2,7 @@ import { Static, Type } from '@fastify/type-provider-typebox';
 import { TypeCompiler } from '@sinclair/typebox/compiler';
 import BigNumber from 'bignumber.js';
 import { hexToBuffer } from '../../api/util/helpers';
-import { DbInscriptionInsert } from '../types';
+import { InscriptionData } from '../types';
 
 const Brc20TickerSchema = Type.String({ minLength: 1 });
 const Brc20NumberSchema = Type.RegEx(/^((\d+)|(\d*\.?\d+))$/);
@@ -51,7 +51,7 @@ const UINT64_MAX = BigNumber('18446744073709551615'); // 20 digits
 const numExceedsMax = (num: string) => num.length >= 20 && UINT64_MAX.isLessThan(num);
 
 // For testing only
-export function brc20FromInscription(inscription: DbInscriptionInsert): Brc20 | undefined {
+export function brc20FromInscription(inscription: InscriptionData): Brc20 | undefined {
   if (inscription.number < 0) return;
   if (inscription.mime_type !== 'text/plain' && inscription.mime_type !== 'application/json')
     return;
