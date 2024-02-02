@@ -1,4 +1,4 @@
-import { OrdinalSatoshi, SatoshiRarity } from '../src/api/util/ordinal-satoshi';
+import { OrdinalSatoshi, SatoshiRarity } from '../../src/api/util/ordinal-satoshi';
 
 describe('OrdinalSatoshi', () => {
   test('mythic sat', () => {

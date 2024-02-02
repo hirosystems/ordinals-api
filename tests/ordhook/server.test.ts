@@ -1,14 +1,14 @@
-import { PREDICATE_UUID, startOrdhookServer } from '../src/ordhook/server';
-import { ENV } from '../src/env';
-import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
-import { TestChainhookPayloadBuilder, TestFastifyServer } from './helpers';
+import { PREDICATE_UUID, startOrdhookServer } from '../../src/ordhook/server';
+import { ENV } from '../../src/env';
+import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
+import { TestChainhookPayloadBuilder, TestFastifyServer } from '../helpers';
 import {
   BadPayloadRequestError,
   BitcoinInscriptionRevealed,
   BitcoinInscriptionTransferred,
   ChainhookEventObserver,
 } from '@hirosystems/chainhook-client';
-import { buildApiServer } from '../src/api/init';
+import { buildApiServer } from '../../src/api/init';
 import { runMigrations } from '@hirosystems/api-toolkit';
 
 describe('EventServer', () => {
