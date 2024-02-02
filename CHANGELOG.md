@@ -1,3 +1,10 @@
+## [2.2.0-beta.1](https://github.com/hirosystems/ordinals-api/compare/v2.1.2-beta.1...v2.2.0-beta.1) (2024-02-02)
+
+
+### Features
+
+* support transfers by ordinal number instead of inscription id ([#296](https://github.com/hirosystems/ordinals-api/issues/296)) ([b0c0ffd](https://github.com/hirosystems/ordinals-api/commit/b0c0ffd198a9a98a88b5123927a8fdc5b68ef22d))
+
 ## [2.1.2-beta.1](https://github.com/hirosystems/ordinals-api/compare/v2.1.1...v2.1.2-beta.1) (2024-01-16)
 
 
