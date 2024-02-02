@@ -80,5 +80,68 @@
         "PGPASSWORD": "postgres",
       },
     },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Jest: API",
+      "program": "${workspaceFolder}/node_modules/jest/bin/jest",
+      "args": [
+        "--testTimeout=3600000",
+        "--runInBand",
+        "--no-cache",
+        "${workspaceFolder}/tests/api/"
+      ],
+      "outputCapture": "std",
+      "console": "integratedTerminal",
+      "preLaunchTask": "npm: testenv:run",
+      "postDebugTask": "npm: testenv:stop",
+      "env": {
+        "PGHOST": "localhost",
+        "PGUSER": "postgres",
+        "PGPASSWORD": "postgres",
+      },
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Jest: BRC-20",
+      "program": "${workspaceFolder}/node_modules/jest/bin/jest",
+      "args": [
+        "--testTimeout=3600000",
+        "--runInBand",
+        "--no-cache",
+        "${workspaceFolder}/tests/brc-20/"
+      ],
+      "outputCapture": "std",
+      "console": "integratedTerminal",
+      "preLaunchTask": "npm: testenv:run",
+      "postDebugTask": "npm: testenv:stop",
+      "env": {
+        "PGHOST": "localhost",
+        "PGUSER": "postgres",
+        "PGPASSWORD": "postgres",
+      },
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Jest: Ordhook",
+      "program": "${workspaceFolder}/node_modules/jest/bin/jest",
+      "args": [
+        "--testTimeout=3600000",
+        "--runInBand",
+        "--no-cache",
+        "${workspaceFolder}/tests/ordhook/"
+      ],
+      "outputCapture": "std",
+      "console": "integratedTerminal",
+      "preLaunchTask": "npm: testenv:run",
+      "postDebugTask": "npm: testenv:stop",
+      "env": {
+        "PGHOST": "localhost",
+        "PGUSER": "postgres",
+        "PGPASSWORD": "postgres",
+      },
+    },
   ]
 }

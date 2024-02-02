@@ -1,9 +1,9 @@
 import { runMigrations } from '@hirosystems/api-toolkit';
-import { buildApiServer } from '../src/api/init';
-import { Brc20ActivityResponse, Brc20TokenResponse } from '../src/api/schemas';
-import { brc20FromInscription } from '../src/pg/brc20/helpers';
-import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
-import { DbInscriptionInsert } from '../src/pg/types';
+import { buildApiServer } from '../../src/api/init';
+import { Brc20ActivityResponse, Brc20TokenResponse } from '../../src/api/schemas';
+import { brc20FromInscription } from '../../src/pg/brc20/helpers';
+import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
+import { InscriptionData } from '../../src/pg/types';
 import {
   TestChainhookPayloadBuilder,
   TestFastifyServer,
@@ -11,8 +11,8 @@ import {
   incrementing,
   randomHash,
   rollBack,
-} from './helpers';
-import { BRC20_GENESIS_BLOCK } from '../src/pg/brc20/brc20-pg-store';
+} from '../helpers';
+import { BRC20_GENESIS_BLOCK } from '../../src/pg/brc20/brc20-pg-store';
 
 describe('BRC-20', () => {
   let db: PgStore;
@@ -38,6 +38,7 @@ describe('BRC-20', () => {
               max: '250000',
             },
             number: 0,
+            ordinal_number: 0,
             tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
             address: address,
           })
@@ -63,6 +64,7 @@ describe('BRC-20', () => {
               amt: '10000',
             },
             number: 1,
+            ordinal_number: 1,
             tx_id: '3b55f624eaa4f8de6c42e0c490176b67123a83094384f658611faf7bfb85dd0f',
             address: address,
           })
@@ -84,9 +86,9 @@ describe('BRC-20', () => {
   });
 
   describe('token standard validation', () => {
-    const testInsert = (json: any): DbInscriptionInsert => {
+    const testInsert = (json: any): InscriptionData => {
       const content = Buffer.from(JSON.stringify(json), 'utf-8');
-      const insert: DbInscriptionInsert = {
+      const insert: InscriptionData = {
         genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
         number: 0,
         classic_number: 0,
@@ -114,7 +116,7 @@ describe('BRC-20', () => {
         }),
         'utf-8'
       );
-      const insert: DbInscriptionInsert = {
+      const insert: InscriptionData = {
         genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
         number: 0,
         classic_number: 0,
@@ -143,7 +145,7 @@ describe('BRC-20', () => {
         '{"p": "brc-20", "op": "deploy", "tick": "PEPE", "max": "21000000"',
         'utf-8'
       );
-      const insert: DbInscriptionInsert = {
+      const insert: InscriptionData = {
         genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
         number: 0,
         classic_number: 0,
@@ -493,6 +495,7 @@ describe('BRC-20', () => {
                 max: '21000000',
               },
               number: 0,
+              ordinal_number: 0,
               tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
               address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
             })
@@ -544,6 +547,7 @@ describe('BRC-20', () => {
                 max: '21000000',
               },
               number: 0,
+              ordinal_number: 0,
               tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
               address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
             })
@@ -569,6 +573,7 @@ describe('BRC-20', () => {
                 max: '19000000',
               },
               number: 1,
+              ordinal_number: 1,
               tx_id: '3f8067a6e9b45308b5a090c2987feeb2d08cbaf814ef2ffabad7c381b62f5f7e',
               address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
             })
@@ -620,6 +625,7 @@ describe('BRC-20', () => {
                 max: '21000000',
               },
               number: 0,
+              ordinal_number: 0,
               tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
               address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
             })
@@ -645,6 +651,7 @@ describe('BRC-20', () => {
                 max: '19000000',
               },
               number: 1,
+              ordinal_number: 1,
               tx_id: '3f8067a6e9b45308b5a090c2987feeb2d08cbaf814ef2ffabad7c381b62f5f7e',
               address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
             })
@@ -719,6 +726,7 @@ describe('BRC-20', () => {
                 max: '21000000',
               },
               number: 0,
+              ordinal_number: 0,
               classic_number: -1,
               tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
               address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
@@ -759,6 +767,7 @@ describe('BRC-20', () => {
                 max: '21000000',
               },
               number: 0,
+              ordinal_number: 0,
               tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
               address: address,
             })
@@ -784,6 +793,7 @@ describe('BRC-20', () => {
                 amt: '250000',
               },
               number: 1,
+              ordinal_number: 1,
               tx_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
               address: address,
             })
@@ -827,6 +837,7 @@ describe('BRC-20', () => {
                 amt: '100000',
               },
               number: 2,
+              ordinal_number: 2,
               tx_id: '7a1adbc3e93ddf8d7c4e0ba75aa11c98c431521dd850be8b955feedb716d8bec',
               address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
             })
@@ -885,6 +896,7 @@ describe('BRC-20', () => {
                 max: '21000000',
               },
               number: 0,
+              ordinal_number: 0,
               tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
               address: address,
             })
@@ -910,6 +922,7 @@ describe('BRC-20', () => {
                 amt: '250000',
               },
               number: 1,
+              ordinal_number: 1,
               tx_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
               address: address,
             })
@@ -936,6 +949,7 @@ describe('BRC-20', () => {
                 amt: '250000',
               },
               number: 1,
+              ordinal_number: 1,
               tx_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
               address: address,
             })
@@ -981,6 +995,7 @@ describe('BRC-20', () => {
                 dec: '1',
               },
               number: 0,
+              ordinal_number: 0,
               tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
               address: address,
             })
@@ -1006,6 +1021,7 @@ describe('BRC-20', () => {
                 amt: '250000.000', // Invalid decimal count
               },
               number: 1,
+              ordinal_number: 1,
               tx_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
               address: address,
             })
@@ -1045,6 +1061,7 @@ describe('BRC-20', () => {
                 dec: '1',
               },
               number: 0,
+              ordinal_number: 0,
               tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
               address: address,
             })
@@ -1070,6 +1087,7 @@ describe('BRC-20', () => {
                 amt: '1000',
               },
               number: 1,
+              ordinal_number: 1,
               tx_id: '3b55f624eaa4f8de6c42e0c490176b67123a83094384f658611faf7bfb85dd0f',
               address: address,
             })
@@ -1086,6 +1104,7 @@ describe('BRC-20', () => {
                 amt: '1000',
               },
               number: 2,
+              ordinal_number: 2,
               tx_id: '7e09bda2cba34bca648cca6d79a074940d39b6137150d3a3edcf80c0e01419a5',
               address: address,
             })
@@ -1102,6 +1121,7 @@ describe('BRC-20', () => {
                 amt: '5000000000', // Exceeds supply
               },
               number: 3,
+              ordinal_number: 3,
               tx_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
               address: address,
             })
@@ -1145,6 +1165,7 @@ describe('BRC-20', () => {
                 amt: '1000',
               },
               number: 4,
+              ordinal_number: 4,
               tx_id: 'bf7a3e1a0647ca88f6539119b2defaec302683704ea270b3302e709597643548',
               address: address,
             })
@@ -1182,6 +1203,7 @@ describe('BRC-20', () => {
                 amt: '1000',
               },
               number: 0,
+              ordinal_number: 0,
               tx_id: '3b55f624eaa4f8de6c42e0c490176b67123a83094384f658611faf7bfb85dd0f',
               address: address,
             })
@@ -1222,6 +1244,7 @@ describe('BRC-20', () => {
                 lim: '100',
               },
               number: 0,
+              ordinal_number: 0,
               tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
               address: address,
             })
@@ -1247,6 +1270,7 @@ describe('BRC-20', () => {
                 amt: '1000', // Greater than limit
               },
               number: 1,
+              ordinal_number: 1,
               tx_id: '3b55f624eaa4f8de6c42e0c490176b67123a83094384f658611faf7bfb85dd0f',
               address: address,
             })
@@ -1288,6 +1312,7 @@ describe('BRC-20', () => {
                 amt: '2000',
               },
               number: 2,
+              ordinal_number: 2,
               tx_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
               address: address,
             })
@@ -1342,6 +1367,7 @@ describe('BRC-20', () => {
                 amt: '2000',
               },
               number: 2,
+              ordinal_number: 2,
               tx_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
               address: address,
             })
@@ -1388,6 +1414,7 @@ describe('BRC-20', () => {
                 amt: '5000000000', // More than was minted
               },
               number: 2,
+              ordinal_number: 2,
               tx_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
               address: address,
             })
@@ -1434,6 +1461,7 @@ describe('BRC-20', () => {
                 amt: '9000',
               },
               number: 2,
+              ordinal_number: 2,
               tx_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
               address: address,
             })
@@ -1450,6 +1478,7 @@ describe('BRC-20', () => {
                 amt: '2000', // Will exceed available balance
               },
               number: 3,
+              ordinal_number: 3,
               tx_id: '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac',
               address: address,
             })
@@ -1497,6 +1526,7 @@ describe('BRC-20', () => {
                 amt: '9000',
               },
               number: 2,
+              ordinal_number: 2,
               tx_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
               address: address,
             })
@@ -1514,7 +1544,7 @@ describe('BRC-20', () => {
             hash: '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac',
           })
           .inscriptionTransferred({
-            inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
+            ordinal_number: 2,
             destination: { type: 'transferred', value: address2 },
             satpoint_pre_transfer:
               'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a:0:0',
@@ -1595,6 +1625,7 @@ describe('BRC-20', () => {
                 amt: '9000',
               },
               number: 2,
+              ordinal_number: 2,
               tx_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
               address: address,
             })
@@ -1612,7 +1643,7 @@ describe('BRC-20', () => {
             hash: '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac',
           })
           .inscriptionTransferred({
-            inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
+            ordinal_number: 2,
             destination: { type: 'spent_in_fees', value: '' },
             satpoint_pre_transfer:
               'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a:0:0',
@@ -1663,6 +1694,7 @@ describe('BRC-20', () => {
                 amt: '9000',
               },
               number: 2,
+              ordinal_number: 2,
               tx_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
               address: address,
             })
@@ -1680,7 +1712,7 @@ describe('BRC-20', () => {
             hash: '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac',
           })
           .inscriptionTransferred({
-            inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
+            ordinal_number: 2,
             destination: { type: 'burnt' },
             satpoint_pre_transfer:
               'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a:0:0',
@@ -1732,6 +1764,7 @@ describe('BRC-20', () => {
                 amt: '9000',
               },
               number: 2,
+              ordinal_number: 2,
               tx_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
               address: address,
             })
@@ -1749,7 +1782,7 @@ describe('BRC-20', () => {
             hash: '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac',
           })
           .inscriptionTransferred({
-            inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
+            ordinal_number: 2,
             destination: { type: 'transferred', value: address2 },
             satpoint_pre_transfer:
               'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a:0:0',
@@ -1773,7 +1806,7 @@ describe('BRC-20', () => {
             hash: '55bec906eadc9f5c120cc39555ba46e85e562eacd6217e4dd0b8552783286d0e',
           })
           .inscriptionTransferred({
-            inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
+            ordinal_number: 2,
             destination: { type: 'transferred', value: address },
             satpoint_pre_transfer:
               '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac:0:0',
@@ -1842,6 +1875,7 @@ describe('BRC-20', () => {
                 amt: '20',
               },
               number: 2,
+              ordinal_number: 2,
               tx_id: '825a25b64b5d99ca30e04e53cc9a3020412e1054eb2a7523eb075ddd6d983205',
               address: address,
             })
@@ -1859,7 +1893,7 @@ describe('BRC-20', () => {
             hash: '486815e61723d03af344e1256d7e0c028a8e9e71eb38157f4bf069eb94292ee1',
           })
           .inscriptionTransferred({
-            inscription_id: '825a25b64b5d99ca30e04e53cc9a3020412e1054eb2a7523eb075ddd6d983205i0',
+            ordinal_number: 2,
             destination: { type: 'transferred', value: address2 },
             satpoint_pre_transfer:
               '825a25b64b5d99ca30e04e53cc9a3020412e1054eb2a7523eb075ddd6d983205:0:0',
@@ -1901,6 +1935,7 @@ describe('BRC-20', () => {
                 amt: '20',
               },
               number: 3,
+              ordinal_number: 3,
               tx_id: '09a812f72275892b4858880cf3821004a6e8885817159b340639afe9952ac053',
               address: address2,
             })
@@ -1930,7 +1965,7 @@ describe('BRC-20', () => {
             hash: '26c0c3acbb1c87e682ade86220ba06e649d7599ecfc49a71495f1bdd04efbbb4',
           })
           .inscriptionTransferred({
-            inscription_id: '09a812f72275892b4858880cf3821004a6e8885817159b340639afe9952ac053i0',
+            ordinal_number: 3,
             destination: { type: 'transferred', value: address2 },
             satpoint_pre_transfer:
               '486815e61723d03af344e1256d7e0c028a8e9e71eb38157f4bf069eb94292ee1:0:0',
@@ -1975,6 +2010,7 @@ describe('BRC-20', () => {
                   max: '21000000',
                 },
                 number: 0,
+                ordinal_number: 0,
                 tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
                 address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
               })
@@ -2014,6 +2050,7 @@ describe('BRC-20', () => {
         const blockHeights = incrementing(BRC20_GENESIS_BLOCK);
 
         let transferHash = randomHash();
+        let number = inscriptionNumbers.next().value;
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
@@ -2027,7 +2064,8 @@ describe('BRC-20', () => {
                   tick: 'PEPE',
                   max: '21000000',
                 },
-                number: inscriptionNumbers.next().value,
+                number: number,
+                ordinal_number: number,
                 tx_id: transferHash,
                 address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
               })
@@ -2036,6 +2074,7 @@ describe('BRC-20', () => {
         );
 
         transferHash = randomHash();
+        number = inscriptionNumbers.next().value;
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
@@ -2049,7 +2088,8 @@ describe('BRC-20', () => {
                   tick: 'PEER',
                   max: '21000000',
                 },
-                number: inscriptionNumbers.next().value,
+                number: number,
+                ordinal_number: number,
                 tx_id: transferHash,
                 address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
               })
@@ -2058,6 +2098,7 @@ describe('BRC-20', () => {
         );
 
         transferHash = randomHash();
+        number = inscriptionNumbers.next().value;
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
@@ -2071,7 +2112,8 @@ describe('BRC-20', () => {
                   tick: 'ABCD',
                   max: '21000000',
                 },
-                number: inscriptionNumbers.next().value,
+                number: number,
+                ordinal_number: number,
                 tx_id: transferHash,
                 address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
               })
@@ -2080,6 +2122,7 @@ describe('BRC-20', () => {
         );
 
         transferHash = randomHash();
+        number = inscriptionNumbers.next().value;
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
@@ -2093,7 +2136,8 @@ describe('BRC-20', () => {
                   tick: 'DCBA',
                   max: '21000000',
                 },
-                number: inscriptionNumbers.next().value,
+                number: number,
+                ordinal_number: number,
                 tx_id: transferHash,
                 address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
               })
@@ -2124,6 +2168,7 @@ describe('BRC-20', () => {
         const addressB = 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4';
 
         // A deploys PEPE
+        let number = inscriptionNumbers.next().value;
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
@@ -2137,7 +2182,8 @@ describe('BRC-20', () => {
                   tick: 'PEPE',
                   max: '21000000',
                 },
-                number: inscriptionNumbers.next().value,
+                number: number,
+                ordinal_number: number,
                 tx_id: randomHash(),
                 address: addressA,
               })
@@ -2149,6 +2195,7 @@ describe('BRC-20', () => {
         const pepeMints = [];
         for (let i = 0; i < 10; i++) {
           const txHash = randomHash();
+          number = inscriptionNumbers.next().value;
           const payload = new TestChainhookPayloadBuilder()
             .apply()
             .block({ height: blockHeights.next().value })
@@ -2161,7 +2208,8 @@ describe('BRC-20', () => {
                   tick: 'PEPE',
                   amt: '10000',
                 },
-                number: inscriptionNumbers.next().value,
+                number: number,
+                ordinal_number: number,
                 tx_id: txHash,
                 address: addressA,
               })
@@ -2172,6 +2220,7 @@ describe('BRC-20', () => {
         }
 
         // B deploys ABCD
+        number = inscriptionNumbers.next().value;
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
@@ -2185,7 +2234,8 @@ describe('BRC-20', () => {
                   tick: 'ABCD',
                   max: '21000000',
                 },
-                number: inscriptionNumbers.next().value,
+                number: number,
+                ordinal_number: number,
                 tx_id: randomHash(),
                 address: addressB,
               })
@@ -2194,6 +2244,7 @@ describe('BRC-20', () => {
         );
 
         // B mints 10000 ABCD
+        number = inscriptionNumbers.next().value;
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
@@ -2207,7 +2258,8 @@ describe('BRC-20', () => {
                   tick: 'ABCD',
                   amt: '10000',
                 },
-                number: inscriptionNumbers.next().value,
+                number,
+                ordinal_number: number,
                 tx_id: randomHash(),
                 address: addressB,
               })
@@ -2218,6 +2270,7 @@ describe('BRC-20', () => {
         // B send 1000 ABCD to A
         // (create inscription, transfer)
         const txHashTransfer = randomHash();
+        number = inscriptionNumbers.next().value;
         const payloadTransfer = new TestChainhookPayloadBuilder()
           .apply()
           .block({ height: blockHeights.next().value })
@@ -2230,7 +2283,8 @@ describe('BRC-20', () => {
                 tick: 'ABCD',
                 amt: '1000',
               },
-              number: inscriptionNumbers.next().value,
+              number,
+              ordinal_number: number,
               tx_id: txHashTransfer,
               address: addressB,
             })
@@ -2244,7 +2298,7 @@ describe('BRC-20', () => {
           .block({ height: blockHeights.next().value })
           .transaction({ hash: txHashTransferSend })
           .inscriptionTransferred({
-            inscription_id: `${txHashTransfer}i0`,
+            ordinal_number: number,
             destination: { type: 'transferred', value: addressA },
             satpoint_pre_transfer: `${txHashTransfer}:0:0`,
             satpoint_post_transfer: `${txHashTransferSend}:0:0`,
@@ -2365,6 +2419,7 @@ describe('BRC-20', () => {
         const addressB = 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4';
 
         // A deploys PEPE
+        let number = inscriptionNumbers.next().value;
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
@@ -2378,7 +2433,8 @@ describe('BRC-20', () => {
                   tick: 'PEPE',
                   max: '21000000',
                 },
-                number: inscriptionNumbers.next().value,
+                number,
+                ordinal_number: number,
                 tx_id: randomHash(),
                 address: addressA,
               })
@@ -2408,6 +2464,7 @@ describe('BRC-20', () => {
         );
 
         // A mints 10000 PEPE
+        number = inscriptionNumbers.next().value;
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
@@ -2421,7 +2478,8 @@ describe('BRC-20', () => {
                   tick: 'PEPE',
                   amt: '10000',
                 },
-                number: inscriptionNumbers.next().value,
+                number,
+                ordinal_number: number,
                 tx_id: randomHash(),
                 address: addressA,
               })
@@ -2454,6 +2512,7 @@ describe('BRC-20', () => {
         );
 
         // B mints 10000 PEPE
+        number = inscriptionNumbers.next().value;
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
@@ -2467,7 +2526,8 @@ describe('BRC-20', () => {
                   tick: 'PEPE',
                   amt: '10000',
                 },
-                number: inscriptionNumbers.next().value,
+                number,
+                ordinal_number: number,
                 tx_id: randomHash(),
                 address: addressB,
               })
@@ -2497,6 +2557,7 @@ describe('BRC-20', () => {
 
         // A creates transfer of 9000 PEPE
         const transferHash = randomHash();
+        number = inscriptionNumbers.next().value;
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
@@ -2510,7 +2571,8 @@ describe('BRC-20', () => {
                   tick: 'PEPE',
                   amt: '9000',
                 },
-                number: inscriptionNumbers.next().value,
+                number,
+                ordinal_number: number,
                 tx_id: transferHash,
                 address: addressA,
               })
@@ -2549,7 +2611,7 @@ describe('BRC-20', () => {
             .inscriptionTransferred({
               destination: { type: 'transferred', value: addressB },
               tx_index: 0,
-              inscription_id: `${transferHash}i0`,
+              ordinal_number: number,
               post_transfer_output_value: null,
               satpoint_pre_transfer: `${transferHash}:0:0`,
               satpoint_post_transfer:
@@ -2622,6 +2684,7 @@ describe('BRC-20', () => {
         const addressC = 'bc1q9d80h0q5d3f54w7w8c3l2sguf9uset4ydw9xj2';
 
         // Step 1: A deploys a token
+        let number = inscriptionNumbers.next().value;
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
@@ -2635,7 +2698,8 @@ describe('BRC-20', () => {
                   tick: 'PEPE',
                   max: '21000000',
                 },
-                number: inscriptionNumbers.next().value,
+                number,
+                ordinal_number: number,
                 tx_id: randomHash(),
                 address: addressA,
               })
@@ -2665,6 +2729,7 @@ describe('BRC-20', () => {
         );
 
         // Step 2: A mints 1000 of the token
+        number = inscriptionNumbers.next().value;
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
@@ -2678,7 +2743,8 @@ describe('BRC-20', () => {
                   tick: 'PEPE',
                   amt: '1000',
                 },
-                number: inscriptionNumbers.next().value,
+                number,
+                ordinal_number: number,
                 tx_id: randomHash(),
                 address: addressA,
               })
@@ -2735,6 +2801,7 @@ describe('BRC-20', () => {
         );
 
         // Step 3: B mints 2000 of the token
+        number = inscriptionNumbers.next().value;
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
@@ -2748,7 +2815,8 @@ describe('BRC-20', () => {
                   tick: 'PEPE',
                   amt: '2000',
                 },
-                number: inscriptionNumbers.next().value,
+                number,
+                ordinal_number: number,
                 tx_id: randomHash(),
                 address: addressB,
               })
@@ -2779,6 +2847,7 @@ describe('BRC-20', () => {
 
         // Step 4: A creates a transfer to B
         const transferHashAB = randomHash();
+        const numberAB = inscriptionNumbers.next().value;
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
@@ -2792,7 +2861,8 @@ describe('BRC-20', () => {
                   tick: 'PEPE',
                   amt: '1000',
                 },
-                number: inscriptionNumbers.next().value,
+                number: numberAB,
+                ordinal_number: numberAB,
                 tx_id: transferHashAB,
                 address: addressA,
               })
@@ -2846,6 +2916,7 @@ describe('BRC-20', () => {
 
         // Step 5: B creates a transfer to C
         const transferHashBC = randomHash();
+        const numberBC = inscriptionNumbers.next().value;
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
@@ -2859,7 +2930,8 @@ describe('BRC-20', () => {
                   tick: 'PEPE',
                   amt: '2000',
                 },
-                number: inscriptionNumbers.next().value,
+                number: numberBC,
+                ordinal_number: numberBC,
                 tx_id: transferHashBC,
                 address: addressB,
               })
@@ -2900,7 +2972,7 @@ describe('BRC-20', () => {
             .inscriptionTransferred({
               destination: { type: 'transferred', value: addressB },
               tx_index: 0,
-              inscription_id: `${transferHashAB}i0`,
+              ordinal_number: numberAB,
               post_transfer_output_value: null,
               satpoint_pre_transfer: `${transferHashAB}:0:0`,
               satpoint_post_transfer: `${transferHashABSend}:0:0`,
@@ -2988,7 +3060,7 @@ describe('BRC-20', () => {
             .inscriptionTransferred({
               destination: { type: 'transferred', value: addressC },
               tx_index: 0,
-              inscription_id: `${transferHashBC}i0`,
+              ordinal_number: numberBC,
               post_transfer_output_value: null,
               satpoint_pre_transfer: `${transferHashBC}:0:0`,
               satpoint_post_transfer: `${transferHashBCSend}:0:0`,
@@ -3073,6 +3145,7 @@ describe('BRC-20', () => {
         const addressA = 'bc1q6uwuet65rm6xvlz7ztw2gvdmmay5uaycu03mqz';
 
         // Step 1: Create a token PEPE
+        let number = inscriptionNumbers.next().value;
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
@@ -3086,7 +3159,8 @@ describe('BRC-20', () => {
                   tick: 'PEPE',
                   max: '21000000',
                 },
-                number: inscriptionNumbers.next().value,
+                number,
+                ordinal_number: number,
                 tx_id: randomHash(),
                 address: addressA,
               })
@@ -3116,6 +3190,7 @@ describe('BRC-20', () => {
         );
 
         // Step 2: Create a token PEER
+        number = inscriptionNumbers.next().value;
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
@@ -3129,7 +3204,8 @@ describe('BRC-20', () => {
                   tick: 'PEER',
                   max: '21000000',
                 },
-                number: inscriptionNumbers.next().value,
+                number,
+                ordinal_number: number,
                 tx_id: randomHash(),
                 address: addressA,
               })
@@ -3222,6 +3298,7 @@ describe('BRC-20', () => {
                   amt: '2000',
                 },
                 number: 2,
+                ordinal_number: 2,
                 tx_id: '633648e0e1ddcab8dea0496a561f2b08c486ae619b5634d7bb55d7f0cd32ef16',
                 address: 'bc1qp9jgp9qtlhgvwjnxclj6kav6nr2fq09c206pyl',
               })
@@ -3268,6 +3345,7 @@ describe('BRC-20', () => {
                   max: '250000',
                 },
                 number: 0,
+                ordinal_number: 0,
                 tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
                 address: 'bc1qp9jgp9qtlhgvwjnxclj6kav6nr2fq09c206pyl',
               })
@@ -3319,6 +3397,7 @@ describe('BRC-20', () => {
               amt: '9000',
             },
             number: 2,
+            ordinal_number: 2,
             tx_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
             address: address,
           })
@@ -3335,7 +3414,7 @@ describe('BRC-20', () => {
           hash: '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac',
         })
         .inscriptionTransferred({
-          inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
+          ordinal_number: 2,
           destination: { type: 'transferred', value: address2 },
           satpoint_pre_transfer:
             'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a:0:0',
@@ -3365,6 +3444,7 @@ describe('BRC-20', () => {
               max: '1000',
             },
             number: 3,
+            ordinal_number: 3,
             tx_id: '8354e85e87fa2df8b3a06ec0b9d395559b95174530cb19447fc4df5f6d4ca84d',
             address: address,
           })
@@ -3389,6 +3469,7 @@ describe('BRC-20', () => {
               amt: '500',
             },
             number: 4,
+            ordinal_number: 4,
             tx_id: '81f4ee2c247c5f5c0d3a6753fef706df410ea61c2aa6d370003b98beb041b887',
             address: address,
           })
@@ -3414,6 +3495,7 @@ describe('BRC-20', () => {
               amt: '100',
             },
             number: 5,
+            ordinal_number: 5,
             tx_id: 'c1c7f1d5c10a30605a8a5285ca3465a4f75758ed9b7f201e5ef62727e179966f',
             address: address,
           })
@@ -3430,7 +3512,7 @@ describe('BRC-20', () => {
           hash: 'a00d01a3e772ce2219ddf3fe2fe4053be071262d9594f11f018fdada7179ae2d',
         })
         .inscriptionTransferred({
-          inscription_id: 'c1c7f1d5c10a30605a8a5285ca3465a4f75758ed9b7f201e5ef62727e179966fi0',
+          ordinal_number: 5,
           destination: { type: 'transferred', value: address }, // To self
           satpoint_pre_transfer:
             'c1c7f1d5c10a30605a8a5285ca3465a4f75758ed9b7f201e5ef62727e179966f:0:0',

@@ -3,12 +3,13 @@ import * as postgres from 'postgres';
 import { hexToBuffer } from '../../api/util/helpers';
 import {
   DbInscriptionIndexPaging,
-  DbInscriptionInsert,
-  DbLocationInsert,
+  InscriptionData,
   DbLocationPointerInsert,
   DbLocationTransferType,
   DbPaginatedResult,
-  DbRevealInsert,
+  InscriptionEventData,
+  LocationData,
+  InscriptionRevealData,
 } from '../types';
 import {
   BRC20_DEPLOYS_COLUMNS,
@@ -39,13 +40,13 @@ export class Brc20PgStore extends BasePgStoreModule {
   }
 
   async insertOperations(args: {
-    reveals: DbRevealInsert[];
+    reveals: InscriptionEventData[];
     pointers: DbLocationPointerInsert[];
   }): Promise<void> {
     for (const [i, reveal] of args.reveals.entries()) {
       const pointer = args.pointers[i];
       if (parseInt(pointer.block_height) < BRC20_GENESIS_BLOCK) continue;
-      if (reveal.inscription) {
+      if ('inscription' in reveal) {
         if (
           reveal.inscription.classic_number < 0 ||
           reveal.inscription.number < 0 ||
@@ -75,7 +76,7 @@ export class Brc20PgStore extends BasePgStoreModule {
   }
 
   async applyTransfer(args: {
-    reveal: DbRevealInsert;
+    reveal: InscriptionEventData;
     pointer: DbLocationPointerInsert;
   }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
@@ -207,7 +208,7 @@ export class Brc20PgStore extends BasePgStoreModule {
 
   private async insertDeploy(deploy: {
     brc20: Brc20Deploy;
-    reveal: DbRevealInsert;
+    reveal: InscriptionEventData;
     pointer: DbLocationPointerInsert;
   }): Promise<void> {
     if (deploy.reveal.location.transfer_type != DbLocationTransferType.transferred) return;
@@ -257,7 +258,7 @@ export class Brc20PgStore extends BasePgStoreModule {
 
   private async insertMint(mint: {
     brc20: Brc20Mint;
-    reveal: DbRevealInsert;
+    reveal: InscriptionEventData;
     pointer: DbLocationPointerInsert;
   }): Promise<void> {
     if (mint.reveal.location.transfer_type != DbLocationTransferType.transferred) return;
@@ -335,7 +336,7 @@ export class Brc20PgStore extends BasePgStoreModule {
 
   private async insertTransfer(transfer: {
     brc20: Brc20Transfer;
-    reveal: DbRevealInsert;
+    reveal: InscriptionEventData;
     pointer: DbLocationPointerInsert;
   }): Promise<void> {
     if (transfer.reveal.location.transfer_type != DbLocationTransferType.transferred) return;
@@ -406,7 +407,7 @@ export class Brc20PgStore extends BasePgStoreModule {
       );
   }
 
-  async rollBackInscription(args: { inscription: DbInscriptionInsert }): Promise<void> {
+  async rollBackInscription(args: { inscription: InscriptionData }): Promise<void> {
     const events = await this.sql<DbBrc20Event[]>`
       SELECT e.* FROM brc20_events AS e
       INNER JOIN inscriptions AS i ON i.id = e.inscription_id
@@ -430,7 +431,7 @@ export class Brc20PgStore extends BasePgStoreModule {
     }
   }
 
-  async rollBackLocation(args: { location: DbLocationInsert }): Promise<void> {
+  async rollBackLocation(args: { location: LocationData }): Promise<void> {
     const events = await this.sql<DbBrc20Event[]>`
       SELECT e.* FROM brc20_events AS e
       INNER JOIN locations AS l ON l.id = e.genesis_location_id
@@ -761,9 +762,9 @@ export class Brc20PgStore extends BasePgStoreModule {
       address?: string;
     }
   ): Promise<DbPaginatedResult<DbBrc20Activity>> {
+    // Do we need a specific result count such as total activity or activity per address?
     objRemoveUndefinedValues(filters);
     const filterLength = Object.keys(filters).length;
-    // Do we need a specific result count such as total activity or activity per address?
     const needsGlobalEventCount =
       filterLength === 0 ||
       (filterLength === 1 && filters.operation && filters.operation.length > 0);
@@ -775,86 +776,91 @@ export class Brc20PgStore extends BasePgStoreModule {
         filters.address != undefined &&
         filters.address != '');
     const needsTickerCount = filterLength === 1 && filters.ticker && filters.ticker.length > 0;
+
     // Which operations do we need if we're filtering by address?
     const sanitizedOperations: DbBrc20EventOperation[] = [];
     for (const i of filters.operation ?? BRC20_OPERATIONS)
       if (BRC20_OPERATIONS.includes(i)) sanitizedOperations?.push(i as DbBrc20EventOperation);
+
     // Which tickers are we filtering for?
     const tickerConditions = this.sqlOr(
-      filters.ticker?.map(t => this.sql`d.ticker_lower = LOWER(${t})`)
+      filters.ticker?.map(t => this.sql`ticker_lower = LOWER(${t})`)
     );
 
-    const results = await this.sql<(DbBrc20Activity & { total: number })[]>`
-      WITH event_count AS (${
-        // Select count from the correct count cache table.
-        needsGlobalEventCount
-          ? this.sql`
-              SELECT COALESCE(SUM(count), 0) AS count
-              FROM brc20_counts_by_event_type
-              ${
-                filters.operation
-                  ? this.sql`WHERE event_type IN ${this.sql(filters.operation)}`
-                  : this.sql``
-              }
-            `
-          : needsAddressEventCount
-          ? this.sql`
-              SELECT COALESCE(${this.sql.unsafe(sanitizedOperations.join('+'))}, 0) AS count
-              FROM brc20_counts_by_address_event_type
-              WHERE address = ${filters.address}
-            `
-          : needsTickerCount
-          ? this.sql`
-              SELECT COALESCE(SUM(tx_count), 0) AS count
-              FROM brc20_deploys AS d
-              WHERE (${tickerConditions})
-            `
-          : this.sql`SELECT NULL AS count`
-      })
-      SELECT
-        e.operation,
-        d.ticker,
-        l.genesis_id AS inscription_id,
-        l.block_height,
-        l.block_hash,
-        l.tx_id,
-        l.address,
-        l.timestamp,
-        l.output,
-        l.offset,
-        d.max AS deploy_max,
-        d.limit AS deploy_limit,
-        d.decimals AS deploy_decimals,
-        (SELECT amount FROM brc20_mints WHERE id = e.mint_id) AS mint_amount,
-        (SELECT amount || ';' || from_address || ';' || COALESCE(to_address, '') FROM brc20_transfers WHERE id = e.transfer_id) AS transfer_data,
-        ${
-          needsGlobalEventCount || needsAddressEventCount || needsTickerCount
-            ? this.sql`(SELECT count FROM event_count)`
-            : this.sql`COUNT(*) OVER()`
-        } AS total
-      FROM brc20_events AS e
-      INNER JOIN brc20_deploys AS d ON e.brc20_deploy_id = d.id
-      INNER JOIN locations AS l ON e.genesis_location_id = l.id
-      WHERE TRUE
-        ${
-          filters.operation ? this.sql`AND operation IN ${this.sql(filters.operation)}` : this.sql``
-        }
-        ${tickerConditions ? this.sql`AND (${tickerConditions})` : this.sql``}
-        ${
-          filters.block_height ? this.sql`AND l.block_height = ${filters.block_height}` : this.sql``
-        }
-        ${
-          filters.address
-            ? this.sql`AND (e.address = ${filters.address} OR e.from_address = ${filters.address})`
-            : this.sql``
-        }
-      ORDER BY l.block_height DESC, l.tx_index DESC
-      LIMIT ${page.limit}
-      OFFSET ${page.offset}
-    `;
-    return {
-      total: results[0]?.total ?? 0,
-      results: results ?? [],
-    };
+    return this.sqlTransaction(async sql => {
+      // The postgres query planner has trouble selecting an optimal plan when the WHERE condition
+      // checks any column from the `brc20_deploys` table. If the user is filtering by ticker, we
+      // should get the token IDs first and use those to filter directly in the `brc20_events`
+      // table.
+      const tickerIds = tickerConditions
+        ? (await sql<{ id: string }[]>`SELECT id FROM brc20_deploys WHERE ${tickerConditions}`).map(
+            i => i.id
+          )
+        : undefined;
+      const results = await sql<(DbBrc20Activity & { total: number })[]>`
+        WITH event_count AS (${
+          // Select count from the correct count cache table.
+          needsGlobalEventCount
+            ? sql`
+                SELECT COALESCE(SUM(count), 0) AS count
+                FROM brc20_counts_by_event_type
+                ${filters.operation ? sql`WHERE event_type IN ${sql(filters.operation)}` : sql``}
+              `
+            : needsAddressEventCount
+            ? sql`
+                SELECT COALESCE(${sql.unsafe(sanitizedOperations.join('+'))}, 0) AS count
+                FROM brc20_counts_by_address_event_type
+                WHERE address = ${filters.address}
+              `
+            : needsTickerCount && tickerIds !== undefined
+            ? sql`
+                SELECT COALESCE(SUM(tx_count), 0) AS count
+                FROM brc20_deploys AS d
+                WHERE id IN ${sql(tickerIds)}
+              `
+            : sql`SELECT NULL AS count`
+        })
+        SELECT
+          e.operation,
+          d.ticker,
+          l.genesis_id AS inscription_id,
+          l.block_height,
+          l.block_hash,
+          l.tx_id,
+          l.address,
+          l.timestamp,
+          l.output,
+          l.offset,
+          d.max AS deploy_max,
+          d.limit AS deploy_limit,
+          d.decimals AS deploy_decimals,
+          (SELECT amount FROM brc20_mints WHERE id = e.mint_id) AS mint_amount,
+          (SELECT amount || ';' || from_address || ';' || COALESCE(to_address, '') FROM brc20_transfers WHERE id = e.transfer_id) AS transfer_data,
+          ${
+            needsGlobalEventCount || needsAddressEventCount || needsTickerCount
+              ? sql`(SELECT count FROM event_count)`
+              : sql`COUNT(*) OVER()`
+          } AS total
+        FROM brc20_events AS e
+        INNER JOIN brc20_deploys AS d ON e.brc20_deploy_id = d.id
+        INNER JOIN locations AS l ON e.genesis_location_id = l.id
+        WHERE TRUE
+          ${filters.operation ? sql`AND e.operation IN ${sql(filters.operation)}` : sql``}
+          ${tickerIds ? sql`AND e.brc20_deploy_id IN ${sql(tickerIds)}` : sql``}
+          ${filters.block_height ? sql`AND l.block_height = ${filters.block_height}` : sql``}
+          ${
+            filters.address
+              ? sql`AND (e.address = ${filters.address} OR e.from_address = ${filters.address})`
+              : sql``
+          }
+        ORDER BY l.block_height DESC, l.tx_index DESC
+        LIMIT ${page.limit}
+        OFFSET ${page.offset}
+      `;
+      return {
+        total: results[0]?.total ?? 0,
+        results: results ?? [],
+      };
+    });
   }
 }

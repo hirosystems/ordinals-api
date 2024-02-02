@@ -49,6 +49,10 @@ jobs:
         run: npm run lint:prettier
 
   test:
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [api, brc-20, ordhook]
     runs-on: ubuntu-latest
     env:
       API_HOST: 127.0.0.1
@@ -92,7 +96,7 @@ jobs:
           npm run testenv:logs -- --no-color &> docker-compose-logs.txt &
 
       - name: Run tests
-        run: npm run test -- --coverage
+        run: npm run test:${{ matrix.suite }} -- --coverage
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3

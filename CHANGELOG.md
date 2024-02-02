@@ -1,3 +1,24 @@
+## [2.2.0-beta.2](https://github.com/hirosystems/ordinals-api/compare/v2.2.0-beta.1...v2.2.0-beta.2) (2024-02-02)
+
+
+### Bug Fixes
+
+* include token in address index on brc20_total_balances ([#299](https://github.com/hirosystems/ordinals-api/issues/299)) ([d8271eb](https://github.com/hirosystems/ordinals-api/commit/d8271eb9fc23d6262fab68c59a0710420ebcb8bf))
+
+## [2.2.0-beta.1](https://github.com/hirosystems/ordinals-api/compare/v2.1.2-beta.1...v2.2.0-beta.1) (2024-02-02)
+
+
+### Features
+
+* support transfers by ordinal number instead of inscription id ([#296](https://github.com/hirosystems/ordinals-api/issues/296)) ([b0c0ffd](https://github.com/hirosystems/ordinals-api/commit/b0c0ffd198a9a98a88b5123927a8fdc5b68ef22d))
+
+## [2.1.2-beta.1](https://github.com/hirosystems/ordinals-api/compare/v2.1.1...v2.1.2-beta.1) (2024-01-16)
+
+
+### Bug Fixes
+
+* offload ticker lookup from BRC-20 activity query ([#293](https://github.com/hirosystems/ordinals-api/issues/293)) ([e70c222](https://github.com/hirosystems/ordinals-api/commit/e70c2229b03a563f0218c5fcfabb2875451bb77c))
+
 ## [2.1.1](https://github.com/hirosystems/ordinals-api/compare/v2.1.0...v2.1.1) (2024-01-09)
 
 

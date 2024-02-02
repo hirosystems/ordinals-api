@@ -1,7 +1,7 @@
 import { runMigrations } from '@hirosystems/api-toolkit';
-import { buildApiServer } from '../src/api/init';
-import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
-import { TestChainhookPayloadBuilder, TestFastifyServer } from './helpers';
+import { buildApiServer } from '../../src/api/init';
+import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
+import { TestChainhookPayloadBuilder, TestFastifyServer } from '../helpers';
 
 describe('/sats', () => {
   let db: PgStore;

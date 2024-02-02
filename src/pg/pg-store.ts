@@ -26,15 +26,19 @@ import {
   DbInscriptionIndexFilters,
   DbInscriptionIndexOrder,
   DbInscriptionIndexPaging,
-  DbInscriptionInsert,
+  InscriptionData,
   DbInscriptionLocationChange,
   DbLocation,
-  DbLocationInsert,
+  RevealLocationData,
   DbLocationPointer,
   DbLocationPointerInsert,
   DbPaginatedResult,
-  DbRevealInsert,
+  InscriptionEventData,
   LOCATIONS_COLUMNS,
+  InscriptionRevealData,
+  InscriptionInsert,
+  LocationInsert,
+  LocationData,
 } from './types';
 
 export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
@@ -123,8 +127,8 @@ export class PgStore extends BasePgStore {
         const time = stopwatch();
         const writes = revealInsertsFromOrdhookEvent(event);
         const newBlessedNumbers = writes
-          .filter(w => w.inscription !== undefined && w.inscription.number >= 0)
-          .map(w => w.inscription?.number ?? 0);
+          .filter(w => 'inscription' in w && w.inscription.number >= 0)
+          .map(w => (w as InscriptionRevealData).inscription.number ?? 0);
         assertNoBlockInscriptionGap({
           currentNumber: currentBlessedNumber,
           newNumbers: newBlessedNumbers,
@@ -484,17 +488,55 @@ export class PgStore extends BasePgStore {
     `; // roughly 35 days of blocks, assuming 10 minute block times on a full database
   }
 
-  private async insertInscriptions(reveals: DbRevealInsert[]): Promise<void> {
+  private async insertInscriptions(reveals: InscriptionEventData[]): Promise<void> {
     if (reveals.length === 0) return;
     await this.sqlWriteTransaction(async sql => {
-      const inscriptions: DbInscriptionInsert[] = [];
-      const transferGenesisIds = new Set<string>();
+      const inscriptionInserts: InscriptionInsert[] = [];
+      const locationInserts: LocationInsert[] = [];
+      const revealOutputs: InscriptionEventData[] = [];
+      const transferredOrdinalNumbersSet = new Set<string>();
       for (const r of reveals)
-        if (r.inscription) inscriptions.push(r.inscription);
-        else transferGenesisIds.add(r.location.genesis_id);
-      if (inscriptions.length)
+        if ('inscription' in r) {
+          revealOutputs.push(r);
+          inscriptionInserts.push(r.inscription);
+          locationInserts.push({
+            ...r.location,
+            inscription_id: sql`(SELECT id FROM inscriptions WHERE genesis_id = ${r.location.genesis_id})`,
+            timestamp: sql`TO_TIMESTAMP(${r.location.timestamp})`,
+          });
+        } else {
+          transferredOrdinalNumbersSet.add(r.location.ordinal_number);
+          // Transfers can move multiple inscriptions in the same sat, we must expand all of them so
+          // we can update their respective locations.
+          // TODO: This could probably be optimized to use fewer queries.
+          const inscriptionIds = await sql<{ id: string; genesis_id: string }[]>`
+            SELECT id, genesis_id FROM inscriptions WHERE sat_ordinal = ${r.location.ordinal_number}
+          `;
+          for (const row of inscriptionIds) {
+            revealOutputs.push(r);
+            locationInserts.push({
+              genesis_id: row.genesis_id,
+              inscription_id: row.id,
+              block_height: r.location.block_height,
+              block_hash: r.location.block_hash,
+              tx_id: r.location.tx_id,
+              tx_index: r.location.tx_index,
+              address: r.location.address,
+              output: r.location.output,
+              offset: r.location.offset,
+              prev_output: r.location.prev_output,
+              prev_offset: r.location.prev_offset,
+              value: r.location.value,
+              transfer_type: r.location.transfer_type,
+              block_transfer_index: r.location.block_transfer_index,
+              timestamp: sql`TO_TIMESTAMP(${r.location.timestamp})`,
+            });
+          }
+        }
+      const transferredOrdinalNumbers = [...transferredOrdinalNumbersSet];
+      if (inscriptionInserts.length)
         await sql`
-          INSERT INTO inscriptions ${sql(inscriptions)}
+          INSERT INTO inscriptions ${sql(inscriptionInserts)}
           ON CONFLICT ON CONSTRAINT inscriptions_number_unique DO UPDATE SET
             genesis_id = EXCLUDED.genesis_id,
             mime_type = EXCLUDED.mime_type,
@@ -507,13 +549,8 @@ export class PgStore extends BasePgStore {
             sat_coinbase_height = EXCLUDED.sat_coinbase_height,
             updated_at = NOW()
         `;
-      const locationData = reveals.map(i => ({
-        ...i.location,
-        inscription_id: sql`(SELECT id FROM inscriptions WHERE genesis_id = ${i.location.genesis_id} LIMIT 1)`,
-        timestamp: sql`TO_TIMESTAMP(${i.location.timestamp})`,
-      }));
       const pointers = await sql<DbLocationPointerInsert[]>`
-        INSERT INTO locations ${sql(locationData)}
+        INSERT INTO locations ${sql(locationInserts)}
         ON CONFLICT ON CONSTRAINT locations_inscription_id_block_height_tx_index_unique DO UPDATE SET
           genesis_id = EXCLUDED.genesis_id,
           block_hash = EXCLUDED.block_hash,
@@ -526,21 +563,23 @@ export class PgStore extends BasePgStore {
         RETURNING inscription_id, id AS location_id, block_height, tx_index, address
       `;
       await this.updateInscriptionRecursions(reveals);
-      if (transferGenesisIds.size)
+      if (transferredOrdinalNumbers.length)
         await sql`
           UPDATE inscriptions
           SET updated_at = NOW()
-          WHERE genesis_id IN ${sql([...transferGenesisIds])}
+          WHERE sat_ordinal IN ${sql(transferredOrdinalNumbers)}
         `;
       await this.updateInscriptionLocationPointers(pointers);
       for (const reveal of reveals) {
-        const action = reveal.inscription ? `reveal #${reveal.inscription.number}` : `transfer`;
-        logger.info(
-          `PgStore ${action} (${reveal.location.genesis_id}) at block ${reveal.location.block_height}`
-        );
+        const action =
+          'inscription' in reveal
+            ? `reveal #${reveal.inscription.number} (${reveal.location.genesis_id})`
+            : `transfer sat ${reveal.location.ordinal_number}`;
+        logger.info(`PgStore ${action} at block ${reveal.location.block_height}`);
       }
-      await this.counts.applyInscriptions(inscriptions);
-      if (ENV.BRC20_BLOCK_SCAN_ENABLED) await this.brc20.insertOperations({ reveals, pointers });
+      await this.counts.applyInscriptions(inscriptionInserts);
+      if (ENV.BRC20_BLOCK_SCAN_ENABLED)
+        await this.brc20.insertOperations({ reveals: revealOutputs, pointers });
     });
   }
 
@@ -584,12 +623,12 @@ export class PgStore extends BasePgStore {
     });
   }
 
-  private async rollBackInscriptions(rollbacks: DbRevealInsert[]): Promise<void> {
+  private async rollBackInscriptions(rollbacks: InscriptionEventData[]): Promise<void> {
     if (rollbacks.length === 0) return;
     await this.sqlWriteTransaction(async sql => {
       // Roll back events in reverse so BRC-20 keeps a sane order.
       for (const rollback of rollbacks.reverse()) {
-        if (rollback.inscription) {
+        if ('inscription' in rollback) {
           await this.brc20.rollBackInscription({ inscription: rollback.inscription });
           await this.counts.rollBackInscription({
             inscription: rollback.inscription,
@@ -609,7 +648,7 @@ export class PgStore extends BasePgStore {
             WHERE output = ${rollback.location.output} AND "offset" = ${rollback.location.offset}
           `;
           logger.info(
-            `PgStore rollback transfer for ${rollback.location.genesis_id} at block ${rollback.location.block_height}`
+            `PgStore rollback transfer for sat ${rollback.location.ordinal_number} at block ${rollback.location.block_height}`
           );
         }
       }
@@ -707,7 +746,7 @@ export class PgStore extends BasePgStore {
   }
 
   private async recalculateCurrentLocationPointerFromLocationRollBack(args: {
-    location: DbLocationInsert;
+    location: LocationData;
   }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
       // Is the location we're rolling back *the* current location?
@@ -740,7 +779,7 @@ export class PgStore extends BasePgStore {
     });
   }
 
-  private async updateInscriptionRecursions(reveals: DbRevealInsert[]): Promise<void> {
+  private async updateInscriptionRecursions(reveals: InscriptionEventData[]): Promise<void> {
     if (reveals.length === 0) return;
     const inserts: {
       inscription_id: PgSqlQuery;
@@ -748,7 +787,7 @@ export class PgStore extends BasePgStore {
       ref_inscription_genesis_id: string;
     }[] = [];
     for (const i of reveals)
-      if (i.inscription && i.recursive_refs?.length) {
+      if ('inscription' in i && i.recursive_refs?.length) {
         const refSet = new Set(i.recursive_refs);
         for (const ref of refSet)
           inserts.push({

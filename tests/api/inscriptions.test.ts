@@ -1,7 +1,7 @@
 import { runMigrations } from '@hirosystems/api-toolkit';
-import { buildApiServer } from '../src/api/init';
-import { MIGRATIONS_DIR, PgStore } from '../src/pg/pg-store';
-import { TestChainhookPayloadBuilder, TestFastifyServer, rollBack } from './helpers';
+import { buildApiServer } from '../../src/api/init';
+import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
+import { TestChainhookPayloadBuilder, TestFastifyServer, rollBack } from '../helpers';
 import {
   BitcoinInscriptionRevealed,
   BitcoinInscriptionTransferred,
@@ -470,7 +470,7 @@ describe('/inscriptions', () => {
             hash: '0xbdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444',
           })
           .inscriptionTransferred({
-            inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+            ordinal_number: 257418248345364,
             destination: {
               type: 'transferred',
               value: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
@@ -525,7 +525,7 @@ describe('/inscriptions', () => {
             hash: '0xe3af144354367de58c675e987febcb49f17d6c19e645728b833fe95408feab85',
           })
           .inscriptionTransferred({
-            inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+            ordinal_number: 257418248345364,
             destination: {
               type: 'transferred',
               value: 'bc1pkjq7cerr6h53qm86k9t3dq0gqg8lcfz5jx7z4aj2mpqrjggrnass0u7qqj',
@@ -616,7 +616,7 @@ describe('/inscriptions', () => {
           })
           // Transfer 1
           .inscriptionTransferred({
-            inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+            ordinal_number: 257418248345364,
             destination: {
               type: 'transferred',
               value: 'bc1qv7d2dgyvtctv7ya4t3ysy4c2s8qz4nm8t6dvm3',
@@ -630,7 +630,7 @@ describe('/inscriptions', () => {
           })
           // Transfer 2
           .inscriptionTransferred({
-            inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+            ordinal_number: 257418248345364,
             destination: {
               type: 'transferred',
               value: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
@@ -720,7 +720,7 @@ describe('/inscriptions', () => {
             hash: '0xbdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444',
           })
           .inscriptionTransferred({
-            inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+            ordinal_number: 257418248345364,
             destination: {
               type: 'transferred',
               value: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
@@ -775,7 +775,7 @@ describe('/inscriptions', () => {
             hash: '0xe3af144354367de58c675e987febcb49f17d6c19e645728b833fe95408feab85',
           })
           .inscriptionTransferred({
-            inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+            ordinal_number: 257418248345364,
             destination: {
               type: 'transferred',
               value: 'bc1pkjq7cerr6h53qm86k9t3dq0gqg8lcfz5jx7z4aj2mpqrjggrnass0u7qqj',
@@ -871,7 +871,7 @@ describe('/inscriptions', () => {
             hash: '0xbdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444',
           })
           .inscriptionTransferred({
-            inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+            ordinal_number: 257418248345364,
             destination: {
               type: 'transferred',
               value: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
@@ -930,7 +930,7 @@ describe('/inscriptions', () => {
             hash: '0xe3af144354367de58c675e987febcb49f17d6c19e645728b833fe95408feab85',
           })
           .inscriptionTransferred({
-            inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+            ordinal_number: 257418248345364,
             destination: {
               type: 'transferred',
               value: 'bc1pkjq7cerr6h53qm86k9t3dq0gqg8lcfz5jx7z4aj2mpqrjggrnass0u7qqj',
@@ -1031,7 +1031,7 @@ describe('/inscriptions', () => {
             inscription_id: '7ac73ecd01b9da4a7eab904655416dbfe8e03f193e091761b5a63ad0963570cdi0',
             inscription_output_value: 10000,
             inscriber_address: 'bc1ptrehxtus25xx8jp5pchljxg2aps7mdemc4264zzzsdcvs6q25hhsf3rrph',
-            ordinal_number: 257418248345364,
+            ordinal_number: 257418248340000,
             ordinal_block_height: 650000,
             ordinal_offset: 0,
             satpoint_post_inscription:
@@ -1067,7 +1067,7 @@ describe('/inscriptions', () => {
             hash: '0xbdda0d240132bab2af7f797d1507beb1acab6ad43e2c0ef7f96291aea5cc3444',
           })
           .inscriptionTransferred({
-            inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+            ordinal_number: 257418248345364,
             destination: {
               type: 'transferred',
               value: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
@@ -1083,7 +1083,7 @@ describe('/inscriptions', () => {
             hash: 'abe7deebd0c6bacc9b1ddd234f9442db0530180448e934f34b9cbf3d7e6d91cb',
           })
           .inscriptionTransferred({
-            inscription_id: '7ac73ecd01b9da4a7eab904655416dbfe8e03f193e091761b5a63ad0963570cdi0',
+            ordinal_number: 257418248340000,
             destination: {
               type: 'transferred',
               value: 'bc1p3xqwzmddceqrd6x9yxplqzkl5vucta2gqm5szpkmpuvcvgs7g8psjf8htd',
@@ -1172,7 +1172,7 @@ describe('/inscriptions', () => {
             hash: '5cabafe04aaf98b1f325b0c3ffcbff904dbdb6f3d2e9e451102fda36f1056b5e',
           })
           .inscriptionTransferred({
-            inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+            ordinal_number: 257418248345364,
             destination: {
               type: 'transferred',
               value: 'bc1pkx5me775s748lzchytzdsw4f0lq04wssxnyk27g8fn3gee8zhjjqsn9tfp',
@@ -1186,7 +1186,7 @@ describe('/inscriptions', () => {
           })
           // Transfer for same inscription in same block
           .inscriptionTransferred({
-            inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+            ordinal_number: 257418248345364,
             destination: {
               type: 'transferred',
               value: 'bc1pkx5me775s748lzchytzdsw4f0lq04wssxnyk27g8fn3gee8zhjjqsn9tfp',
@@ -2634,7 +2634,7 @@ describe('/inscriptions', () => {
 
         // Transfers affect result totals correctly
         const transfer2: BitcoinInscriptionTransferred = {
-          inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+          ordinal_number: 1000000000000,
           destination: {
             type: 'transferred',
             value: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
