@@ -125,13 +125,13 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Jest: Server",
+      "name": "Jest: Ordhook",
       "program": "${workspaceFolder}/node_modules/jest/bin/jest",
       "args": [
         "--testTimeout=3600000",
         "--runInBand",
         "--no-cache",
-        "${workspaceFolder}/tests/server/"
+        "${workspaceFolder}/tests/ordhook/"
       ],
       "outputCapture": "std",
       "console": "integratedTerminal",
