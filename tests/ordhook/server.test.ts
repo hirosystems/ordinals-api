@@ -690,6 +690,34 @@ describe('EventServer', () => {
             .build()
         )
       ).resolves.not.toThrow();
+      await expect(
+        db.updateInscriptions(
+          new TestChainhookPayloadBuilder()
+            .apply()
+            .block({
+              height: 778576,
+              hash: '0x00000000000000000002173ce6af911021497679237eb4527757f90bd8b8c645',
+              timestamp: 1676913207,
+            })
+            .transaction({
+              hash: 'ccff45c1f320d75228527ed92c27e5c20f973b73bc9641226009fc8156302051',
+            })
+            .inscriptionTransferred({
+              ordinal_number: 257418248345364,
+              tx_index: 0,
+              destination: {
+                value: '3DPjniGQeJwm8dm76F8oRD1EYvc93KfVKf',
+                type: 'transferred',
+              },
+              satpoint_pre_transfer:
+                '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+              satpoint_post_transfer:
+                'ccff45c1f320d75228527ed92c27e5c20f973b73bc9641226009fc8156302051:0:0',
+              post_transfer_output_value: 9000,
+            })
+            .build()
+        )
+      ).resolves.not.toThrow();
     });
   });
 });
