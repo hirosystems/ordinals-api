@@ -52,7 +52,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [api, brc-20, server]
+        suite: [api, brc-20, ordhook]
     runs-on: ubuntu-latest
     env:
       API_HOST: 127.0.0.1
