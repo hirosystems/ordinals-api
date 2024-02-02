@@ -1,3 +1,10 @@
+## [2.2.0-beta.2](https://github.com/hirosystems/ordinals-api/compare/v2.2.0-beta.1...v2.2.0-beta.2) (2024-02-02)
+
+
+### Bug Fixes
+
+* include token in address index on brc20_total_balances ([#299](https://github.com/hirosystems/ordinals-api/issues/299)) ([d8271eb](https://github.com/hirosystems/ordinals-api/commit/d8271eb9fc23d6262fab68c59a0710420ebcb8bf))
+
 ## [2.2.0-beta.1](https://github.com/hirosystems/ordinals-api/compare/v2.1.2-beta.1...v2.2.0-beta.1) (2024-02-02)
 
 
