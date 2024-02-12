@@ -1,3 +1,11 @@
+## [2.3.0-beta.1](https://github.com/hirosystems/ordinals-api/compare/v2.2.0...v2.3.0-beta.1) (2024-02-12)
+
+
+### Features
+
+* add `metadata` and `parent` columns to inscriptions table ([#305](https://github.com/hirosystems/ordinals-api/issues/305)) ([d71e93a](https://github.com/hirosystems/ordinals-api/commit/d71e93a54ec8018c15bbfc2f88d18bab6606949e))
+* add ordhook debug server ([#306](https://github.com/hirosystems/ordinals-api/issues/306)) ([88ad130](https://github.com/hirosystems/ordinals-api/commit/88ad1302924b8da27b8d98caf3d3351149a45f91))
+
 ## [2.2.0](https://github.com/hirosystems/ordinals-api/compare/v2.1.1...v2.2.0) (2024-02-02)
 
 
