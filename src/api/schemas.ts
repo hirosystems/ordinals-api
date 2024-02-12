@@ -8,8 +8,20 @@ export const OpenApiSchemaOptions: SwaggerOptions = {
   openapi: {
     info: {
       title: 'Ordinals API',
-      description:
-        'A service that indexes Bitcoin Ordinals data and exposes it via REST API endpoints.',
+      description: `
+The [Ordinals API](https://docs.hiro.so/ordinals-api) is a service that indexes Bitcoin Ordinals data and exposes it via REST API endpoints.
+
+Here are the key features of the Ordinals API:
+
+- **Ordinal Inscription Ingestion**: The Ordinals API helps with the complete ingestion of ordinal inscriptions. Using our endpoints, you can retrieve the metadata for a particular inscription, all inscriptions held by a particular address, trading activity for inscriptions, and more.
+
+- **BRC-20 Support**: The Ordinals API also offers support for BRC-20 tokens, a fungible token standard built on top of ordinal theory. Retrieve data for a particular BRC-20 token, a user's BRC-20 holdings, marketplace activity, and more.
+
+- **REST JSON Endpoints with ETag Caching**: The Ordinals API provides easy-to-use REST endpoints that return responses in JSON format. It also supports ETag caching, which allows you to cache responses based on inscriptions. This helps optimize performance and reduce unnecessary requests.
+
+
+The source code for this project is available in our [GitHub repository](https://github.com/hirosystems/ordinals-api). You can explore the codebase, contribute, and raise issues or pull requests.
+      `,
       version: SERVER_VERSION.tag,
     },
     externalDocs: {
