@@ -729,7 +729,7 @@ describe('EventServer', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: { tag: 'x' },
               parent: null,
             })
             .inscriptionRevealed({
