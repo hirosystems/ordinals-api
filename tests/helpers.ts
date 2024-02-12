@@ -137,6 +137,11 @@ export function brc20Reveal(args: {
     transfers_pre_inscription: 0,
     tx_index: 0,
     curse_type: null,
+    inscription_pointer: null,
+    delegate: null,
+    metaprotocol: null,
+    metadata: undefined,
+    parent: null,
   };
   return reveal;
 }
