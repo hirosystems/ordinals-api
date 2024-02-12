@@ -51,6 +51,11 @@ describe('EventServer', () => {
         transfers_pre_inscription: 0,
         tx_index: 0,
         curse_type: null,
+        inscription_pointer: null,
+        delegate: null,
+        metaprotocol: null,
+        metadata: null,
+        parent: null,
       };
 
       // Apply
@@ -169,6 +174,11 @@ describe('EventServer', () => {
             transfers_pre_inscription: 0,
             tx_index: 0,
             curse_type: null,
+            inscription_pointer: null,
+            delegate: null,
+            metaprotocol: null,
+            metadata: null,
+            parent: null,
           })
           .build()
       );
@@ -306,6 +316,11 @@ describe('EventServer', () => {
             transfers_pre_inscription: 0,
             tx_index: 995,
             curse_type: null,
+            inscription_pointer: null,
+            delegate: null,
+            metaprotocol: null,
+            metadata: null,
+            parent: null,
           })
           .transaction({
             hash: '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac',
@@ -363,6 +378,11 @@ describe('EventServer', () => {
             transfers_pre_inscription: 0,
             tx_index: 0,
             curse_type: null,
+            inscription_pointer: null,
+            delegate: null,
+            metaprotocol: null,
+            metadata: null,
+            parent: null,
           })
           .build()
       );
@@ -394,6 +414,11 @@ describe('EventServer', () => {
           transfers_pre_inscription: 0,
           tx_index: 0,
           curse_type: null,
+          inscription_pointer: null,
+          delegate: null,
+          metaprotocol: null,
+          metadata: null,
+          parent: null,
         })
         .build();
       await expect(db.updateInscriptions(errorPayload)).rejects.toThrow(BadPayloadRequestError);
@@ -436,6 +461,11 @@ describe('EventServer', () => {
             transfers_pre_inscription: 0,
             tx_index: 0,
             curse_type: null,
+            inscription_pointer: null,
+            delegate: null,
+            metaprotocol: null,
+            metadata: null,
+            parent: null,
           })
           .build()
       );
@@ -467,6 +497,11 @@ describe('EventServer', () => {
           transfers_pre_inscription: 0,
           tx_index: 0,
           curse_type: null,
+          inscription_pointer: null,
+          delegate: null,
+          metaprotocol: null,
+          metadata: null,
+          parent: null,
         })
         .transaction({
           hash: '6891d374a17ba85f6b5514f2f7edc301c1c860284dff5a5c6e88ab3a20fcd8a5',
@@ -489,6 +524,11 @@ describe('EventServer', () => {
           transfers_pre_inscription: 0,
           tx_index: 0,
           curse_type: null,
+          inscription_pointer: null,
+          delegate: null,
+          metaprotocol: null,
+          metadata: null,
+          parent: null,
         })
         .build();
       await expect(db.updateInscriptions(errorPayload)).rejects.toThrow(BadPayloadRequestError);
@@ -531,6 +571,11 @@ describe('EventServer', () => {
             transfers_pre_inscription: 0,
             tx_index: 0,
             curse_type: null,
+            inscription_pointer: null,
+            delegate: null,
+            metaprotocol: null,
+            metadata: null,
+            parent: null,
           })
           .build()
       );
@@ -562,6 +607,11 @@ describe('EventServer', () => {
           transfers_pre_inscription: 0,
           tx_index: 0,
           curse_type: null,
+          inscription_pointer: null,
+          delegate: null,
+          metaprotocol: null,
+          metadata: null,
+          parent: null,
         })
         .transaction({
           hash: '6891d374a17ba85f6b5514f2f7edc301c1c860284dff5a5c6e88ab3a20fcd8a5',
@@ -584,6 +634,11 @@ describe('EventServer', () => {
           transfers_pre_inscription: 0,
           tx_index: 0,
           curse_type: null,
+          inscription_pointer: null,
+          delegate: null,
+          metaprotocol: null,
+          metadata: null,
+          parent: null,
         })
         .build();
       await expect(db.updateInscriptions(unboundPayload)).resolves.not.toThrow(
@@ -620,6 +675,11 @@ describe('EventServer', () => {
           transfers_pre_inscription: 0,
           tx_index: 0,
           curse_type: null,
+          inscription_pointer: null,
+          delegate: null,
+          metaprotocol: null,
+          metadata: null,
+          parent: null,
         })
         .build();
       await db.updateInscriptions(payload);
@@ -666,6 +726,11 @@ describe('EventServer', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: { tag: 'x' },
+              parent: null,
             })
             .inscriptionRevealed({
               content_bytes: '0x48656C6C6F',
@@ -686,6 +751,11 @@ describe('EventServer', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         )

@@ -20,6 +20,8 @@ export type InscriptionData = {
   sat_rarity: string;
   sat_coinbase_height: number;
   recursive: boolean;
+  metadata: string | null;
+  parent: string | null;
 };
 
 export type InscriptionInsert = InscriptionData;

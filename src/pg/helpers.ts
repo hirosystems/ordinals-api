@@ -114,6 +114,8 @@ function updateFromOrdhookInscriptionRevealed(args: {
       sat_rarity: satoshi.rarity,
       sat_coinbase_height: satoshi.blockHeight,
       recursive: recursive_refs.length > 0,
+      metadata: args.reveal.metadata ? JSON.stringify(args.reveal.metadata) : null,
+      parent: args.reveal.parent,
     },
     location: {
       block_hash: args.block_hash,

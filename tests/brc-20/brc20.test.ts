@@ -102,6 +102,8 @@ describe('BRC-20', () => {
         sat_rarity: 'common',
         sat_coinbase_height: 110,
         recursive: false,
+        metadata: null,
+        parent: null,
       };
       return insert;
     };
@@ -130,6 +132,8 @@ describe('BRC-20', () => {
         sat_rarity: 'common',
         sat_coinbase_height: 110,
         recursive: false,
+        metadata: null,
+        parent: null,
       };
       expect(brc20FromInscription(insert)).toBeUndefined();
       insert.content_type = 'application/json';
@@ -159,6 +163,8 @@ describe('BRC-20', () => {
         sat_rarity: 'common',
         sat_coinbase_height: 110,
         recursive: false,
+        metadata: null,
+        parent: null,
       };
       expect(brc20FromInscription(insert)).toBeUndefined();
     });
