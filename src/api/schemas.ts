@@ -19,7 +19,6 @@ Here are the key features of the Ordinals API:
 
 - **REST JSON Endpoints with ETag Caching**: The Ordinals API provides easy-to-use REST endpoints that return responses in JSON format. It also supports ETag caching, which allows you to cache responses based on inscriptions. This helps optimize performance and reduce unnecessary requests.
 
-  - \`readonly\`: Only the API server runs in this mode. It is designed for auto-scaled clusters with multiple \`readonly\` instances and a single \`writeonly\` instance. The \`writeonly\` instance is responsible for populating the database.
   - \`writeonly\`: This mode is used in an auto-scaled environment to consume new inscriptions and push that data to a database. It works in conjunction with multiple \`readonly\` instances.
 
 The source code for this project is available in our [GitHub repository](https://github.com/hirosystems/ordinals-api). You can explore the codebase, contribute, and raise issues or pull requests.
