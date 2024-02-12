@@ -58,7 +58,7 @@ describe('Status', () => {
           inscription_pointer: null,
           delegate: null,
           metaprotocol: null,
-          metadata: undefined,
+          metadata: null,
           parent: null,
           curse_type: null,
         })
@@ -90,7 +90,7 @@ describe('Status', () => {
           inscription_pointer: null,
           delegate: null,
           metaprotocol: null,
-          metadata: undefined,
+          metadata: null,
           parent: null,
         })
         .build()

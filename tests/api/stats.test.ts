@@ -227,7 +227,7 @@ function testRevealApply(blockHeight: number, numbers: number[]) {
         inscription_pointer: null,
         delegate: null,
         metaprotocol: null,
-        metadata: undefined,
+        metadata: null,
         parent: null,
       });
   }

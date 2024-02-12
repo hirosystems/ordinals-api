@@ -57,7 +57,7 @@ describe('/inscriptions', () => {
             inscription_pointer: null,
             delegate: null,
             metaprotocol: null,
-            metadata: undefined,
+            metadata: null,
             parent: null,
           })
           .build()
@@ -94,7 +94,7 @@ describe('/inscriptions', () => {
             inscription_pointer: null,
             delegate: null,
             metaprotocol: null,
-            metadata: undefined,
+            metadata: null,
             parent: null,
           })
           .build()
@@ -176,7 +176,7 @@ describe('/inscriptions', () => {
             inscription_pointer: null,
             delegate: null,
             metaprotocol: null,
-            metadata: undefined,
+            metadata: null,
             parent: null,
           })
           .transaction({
@@ -203,7 +203,7 @@ describe('/inscriptions', () => {
             inscription_pointer: null,
             delegate: null,
             metaprotocol: null,
-            metadata: undefined,
+            metadata: null,
             parent: null,
           })
           .build()
@@ -246,7 +246,7 @@ describe('/inscriptions', () => {
             inscription_pointer: null,
             delegate: null,
             metaprotocol: null,
-            metadata: undefined,
+            metadata: null,
             parent: null,
           })
           .build()
@@ -331,7 +331,7 @@ describe('/inscriptions', () => {
             inscription_pointer: null,
             delegate: null,
             metaprotocol: null,
-            metadata: undefined,
+            metadata: null,
             parent: null,
           })
           .build()
@@ -413,7 +413,7 @@ describe('/inscriptions', () => {
             inscription_pointer: null,
             delegate: null,
             metaprotocol: null,
-            metadata: undefined,
+            metadata: null,
             parent: null,
           })
           .build()
@@ -495,7 +495,7 @@ describe('/inscriptions', () => {
             inscription_pointer: null,
             delegate: null,
             metaprotocol: null,
-            metadata: undefined,
+            metadata: null,
             parent: null,
           })
           .build()
@@ -645,7 +645,7 @@ describe('/inscriptions', () => {
             inscription_pointer: null,
             delegate: null,
             metaprotocol: null,
-            metadata: undefined,
+            metadata: null,
             parent: null,
           })
           .build()
@@ -755,7 +755,7 @@ describe('/inscriptions', () => {
             inscription_pointer: null,
             delegate: null,
             metaprotocol: null,
-            metadata: undefined,
+            metadata: null,
             parent: null,
           })
           .build()
@@ -907,7 +907,7 @@ describe('/inscriptions', () => {
             inscription_pointer: null,
             delegate: null,
             metaprotocol: null,
-            metadata: undefined,
+            metadata: null,
             parent: null,
           })
           .build()
@@ -1076,7 +1076,7 @@ describe('/inscriptions', () => {
             inscription_pointer: null,
             delegate: null,
             metaprotocol: null,
-            metadata: undefined,
+            metadata: null,
             parent: null,
           })
           .transaction({
@@ -1103,7 +1103,7 @@ describe('/inscriptions', () => {
             inscription_pointer: null,
             delegate: null,
             metaprotocol: null,
-            metadata: undefined,
+            metadata: null,
             parent: null,
           })
           .build()
@@ -1438,7 +1438,7 @@ describe('/inscriptions', () => {
             inscription_pointer: null,
             delegate: null,
             metaprotocol: null,
-            metadata: undefined,
+            metadata: null,
             parent: null,
           })
           .build()
@@ -1475,7 +1475,7 @@ describe('/inscriptions', () => {
             inscription_pointer: null,
             delegate: null,
             metaprotocol: null,
-            metadata: undefined,
+            metadata: null,
             parent: null,
           })
           .build()
@@ -1578,7 +1578,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -1615,7 +1615,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -1735,7 +1735,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -1772,7 +1772,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -1838,7 +1838,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -1875,7 +1875,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -1945,7 +1945,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -1982,7 +1982,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -2048,7 +2048,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -2085,7 +2085,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -2153,7 +2153,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -2203,7 +2203,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -2240,7 +2240,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -2292,7 +2292,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -2329,7 +2329,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -2389,7 +2389,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -2426,7 +2426,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -2486,7 +2486,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -2523,7 +2523,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -2583,7 +2583,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -2620,7 +2620,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -2679,7 +2679,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -2716,7 +2716,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -2756,7 +2756,7 @@ describe('/inscriptions', () => {
           inscription_pointer: null,
           delegate: null,
           metaprotocol: null,
-          metadata: undefined,
+          metadata: null,
           parent: null,
         };
         await db.updateInscriptions(
@@ -2805,7 +2805,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -2969,7 +2969,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -3008,7 +3008,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -3072,7 +3072,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -3111,7 +3111,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -3175,7 +3175,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -3211,7 +3211,7 @@ describe('/inscriptions', () => {
             inscription_pointer: null,
             delegate: null,
             metaprotocol: null,
-            metadata: undefined,
+            metadata: null,
             parent: null,
           })
           .build();
@@ -3285,7 +3285,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -3322,7 +3322,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -3359,7 +3359,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -3421,7 +3421,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -3458,7 +3458,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -3495,7 +3495,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -3557,7 +3557,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -3594,7 +3594,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -3631,7 +3631,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -3693,7 +3693,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -3730,7 +3730,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()
@@ -3767,7 +3767,7 @@ describe('/inscriptions', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()

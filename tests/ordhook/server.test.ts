@@ -54,7 +54,7 @@ describe('EventServer', () => {
         inscription_pointer: null,
         delegate: null,
         metaprotocol: null,
-        metadata: undefined,
+        metadata: null,
         parent: null,
       };
 
@@ -177,7 +177,7 @@ describe('EventServer', () => {
             inscription_pointer: null,
             delegate: null,
             metaprotocol: null,
-            metadata: undefined,
+            metadata: null,
             parent: null,
           })
           .build()
@@ -319,7 +319,7 @@ describe('EventServer', () => {
             inscription_pointer: null,
             delegate: null,
             metaprotocol: null,
-            metadata: undefined,
+            metadata: null,
             parent: null,
           })
           .transaction({
@@ -381,7 +381,7 @@ describe('EventServer', () => {
             inscription_pointer: null,
             delegate: null,
             metaprotocol: null,
-            metadata: undefined,
+            metadata: null,
             parent: null,
           })
           .build()
@@ -417,7 +417,7 @@ describe('EventServer', () => {
           inscription_pointer: null,
           delegate: null,
           metaprotocol: null,
-          metadata: undefined,
+          metadata: null,
           parent: null,
         })
         .build();
@@ -464,7 +464,7 @@ describe('EventServer', () => {
             inscription_pointer: null,
             delegate: null,
             metaprotocol: null,
-            metadata: undefined,
+            metadata: null,
             parent: null,
           })
           .build()
@@ -500,7 +500,7 @@ describe('EventServer', () => {
           inscription_pointer: null,
           delegate: null,
           metaprotocol: null,
-          metadata: undefined,
+          metadata: null,
           parent: null,
         })
         .transaction({
@@ -527,7 +527,7 @@ describe('EventServer', () => {
           inscription_pointer: null,
           delegate: null,
           metaprotocol: null,
-          metadata: undefined,
+          metadata: null,
           parent: null,
         })
         .build();
@@ -574,7 +574,7 @@ describe('EventServer', () => {
             inscription_pointer: null,
             delegate: null,
             metaprotocol: null,
-            metadata: undefined,
+            metadata: null,
             parent: null,
           })
           .build()
@@ -610,7 +610,7 @@ describe('EventServer', () => {
           inscription_pointer: null,
           delegate: null,
           metaprotocol: null,
-          metadata: undefined,
+          metadata: null,
           parent: null,
         })
         .transaction({
@@ -637,7 +637,7 @@ describe('EventServer', () => {
           inscription_pointer: null,
           delegate: null,
           metaprotocol: null,
-          metadata: undefined,
+          metadata: null,
           parent: null,
         })
         .build();
@@ -678,7 +678,7 @@ describe('EventServer', () => {
           inscription_pointer: null,
           delegate: null,
           metaprotocol: null,
-          metadata: undefined,
+          metadata: null,
           parent: null,
         })
         .build();
@@ -754,7 +754,7 @@ describe('EventServer', () => {
               inscription_pointer: null,
               delegate: null,
               metaprotocol: null,
-              metadata: undefined,
+              metadata: null,
               parent: null,
             })
             .build()

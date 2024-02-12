@@ -48,7 +48,7 @@ describe('ETag cache', () => {
         inscription_pointer: null,
         delegate: null,
         metaprotocol: null,
-        metadata: undefined,
+        metadata: null,
         parent: null,
       })
       .build();
@@ -188,7 +188,7 @@ describe('ETag cache', () => {
         inscription_pointer: null,
         delegate: null,
         metaprotocol: null,
-        metadata: undefined,
+        metadata: null,
         parent: null,
       })
       .build();
@@ -221,7 +221,7 @@ describe('ETag cache', () => {
         inscription_pointer: null,
         delegate: null,
         metaprotocol: null,
-        metadata: undefined,
+        metadata: null,
         parent: null,
       })
       .build();
@@ -301,7 +301,7 @@ describe('ETag cache', () => {
         inscription_pointer: null,
         delegate: null,
         metaprotocol: null,
-        metadata: undefined,
+        metadata: null,
         parent: null,
       })
       .build();
@@ -353,7 +353,7 @@ describe('ETag cache', () => {
         inscription_pointer: null,
         delegate: null,
         metaprotocol: null,
-        metadata: undefined,
+        metadata: null,
         parent: null,
       })
       .build();
@@ -397,7 +397,7 @@ describe('ETag cache', () => {
         inscription_pointer: null,
         delegate: null,
         metaprotocol: null,
-        metadata: undefined,
+        metadata: null,
         parent: null,
       })
       .build();
@@ -449,7 +449,7 @@ describe('ETag cache', () => {
         inscription_pointer: null,
         delegate: null,
         metaprotocol: null,
-        metadata: undefined,
+        metadata: null,
         parent: null,
       })
       .build();
