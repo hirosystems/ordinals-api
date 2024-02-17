@@ -1,3 +1,10 @@
+## [2.3.0-beta.2](https://github.com/hirosystems/ordinals-api/compare/v2.3.0-beta.1...v2.3.0-beta.2) (2024-02-17)
+
+
+### Bug Fixes
+
+* batch location pointer inserts ([#308](https://github.com/hirosystems/ordinals-api/issues/308)) ([33f8cb2](https://github.com/hirosystems/ordinals-api/commit/33f8cb2576115695d8e54fcc989086afef42ddc7))
+
 ## [2.3.0-beta.1](https://github.com/hirosystems/ordinals-api/compare/v2.2.0...v2.3.0-beta.1) (2024-02-12)
 
 
