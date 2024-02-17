@@ -1,3 +1,10 @@
+## [2.3.0-beta.4](https://github.com/hirosystems/ordinals-api/compare/v2.3.0-beta.3...v2.3.0-beta.4) (2024-02-17)
+
+
+### Bug Fixes
+
+* standardize insert batch size ([b9b2448](https://github.com/hirosystems/ordinals-api/commit/b9b2448a1fa1bef16f0a1eed80158ca9b8ca9133))
+
 ## [2.3.0-beta.3](https://github.com/hirosystems/ordinals-api/compare/v2.3.0-beta.2...v2.3.0-beta.3) (2024-02-17)
 
 
