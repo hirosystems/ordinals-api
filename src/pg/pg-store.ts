@@ -547,19 +547,23 @@ export class PgStore extends BasePgStore {
             sat_coinbase_height = EXCLUDED.sat_coinbase_height,
             updated_at = NOW()
         `;
-      const pointers = await sql<DbLocationPointerInsert[]>`
-        INSERT INTO locations ${sql(locationInserts)}
-        ON CONFLICT ON CONSTRAINT locations_inscription_id_block_height_tx_index_unique DO UPDATE SET
-          genesis_id = EXCLUDED.genesis_id,
-          block_hash = EXCLUDED.block_hash,
-          tx_id = EXCLUDED.tx_id,
-          address = EXCLUDED.address,
-          value = EXCLUDED.value,
-          output = EXCLUDED.output,
-          "offset" = EXCLUDED.offset,
-          timestamp = EXCLUDED.timestamp
-        RETURNING inscription_id, id AS location_id, block_height, tx_index, address
-      `;
+      const pointers: DbLocationPointerInsert[] = [];
+      for (const batch of batchIterate(locationInserts, 8000))
+        pointers.push(
+          ...(await sql<DbLocationPointerInsert[]>`
+            INSERT INTO locations ${sql(batch)}
+            ON CONFLICT ON CONSTRAINT locations_inscription_id_block_height_tx_index_unique DO UPDATE SET
+              genesis_id = EXCLUDED.genesis_id,
+              block_hash = EXCLUDED.block_hash,
+              tx_id = EXCLUDED.tx_id,
+              address = EXCLUDED.address,
+              value = EXCLUDED.value,
+              output = EXCLUDED.output,
+              "offset" = EXCLUDED.offset,
+              timestamp = EXCLUDED.timestamp
+            RETURNING inscription_id, id AS location_id, block_height, tx_index, address
+          `)
+        );
       await this.updateInscriptionRecursions(reveals);
       if (transferredOrdinalNumbers.length)
         await sql`
