@@ -548,7 +548,7 @@ export class PgStore extends BasePgStore {
             updated_at = NOW()
         `;
       const pointers: DbLocationPointerInsert[] = [];
-      for (const batch of batchIterate(locationInserts, 4000))
+      for (const batch of batchIterate(locationInserts, 8000))
         pointers.push(
           ...(await sql<DbLocationPointerInsert[]>`
             INSERT INTO locations ${sql(batch)}
