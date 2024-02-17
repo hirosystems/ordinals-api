@@ -571,7 +571,8 @@ export class PgStore extends BasePgStore {
           SET updated_at = NOW()
           WHERE sat_ordinal IN ${sql(transferredOrdinalNumbers)}
         `;
-      await this.updateInscriptionLocationPointers(pointers);
+      for (const batch of batchIterate(pointers, 8000))
+        await this.updateInscriptionLocationPointers(batch);
       for (const reveal of reveals) {
         const action =
           'inscription' in reveal
