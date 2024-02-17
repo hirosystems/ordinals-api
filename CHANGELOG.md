@@ -1,3 +1,10 @@
+## [2.3.0-beta.3](https://github.com/hirosystems/ordinals-api/compare/v2.3.0-beta.2...v2.3.0-beta.3) (2024-02-17)
+
+
+### Bug Fixes
+
+* batch inscription location updates ([47525c9](https://github.com/hirosystems/ordinals-api/commit/47525c93a0e71bd9a7df2ea1596d7c90f59ccaac))
+
 ## [2.3.0-beta.2](https://github.com/hirosystems/ordinals-api/compare/v2.3.0-beta.1...v2.3.0-beta.2) (2024-02-17)
 
 
