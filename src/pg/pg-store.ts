@@ -41,6 +41,7 @@ import {
 
 export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 export const ORDINALS_GENESIS_BLOCK = 767430;
+const INSERT_BATCH_SIZE = 4000;
 
 type InscriptionIdentifier = { genesis_id: string } | { number: number };
 
@@ -133,7 +134,7 @@ export class PgStore extends BasePgStore {
           currentBlockHeight: currentBlockHeight,
           newBlockHeight: event.block_identifier.index,
         });
-        for (const writeChunk of batchIterate(writes, 4000))
+        for (const writeChunk of batchIterate(writes, INSERT_BATCH_SIZE))
           await this.insertInscriptions(writeChunk);
         updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
         logger.info(
@@ -548,7 +549,7 @@ export class PgStore extends BasePgStore {
             updated_at = NOW()
         `;
       const pointers: DbLocationPointerInsert[] = [];
-      for (const batch of batchIterate(locationInserts, 8000))
+      for (const batch of batchIterate(locationInserts, INSERT_BATCH_SIZE))
         pointers.push(
           ...(await sql<DbLocationPointerInsert[]>`
             INSERT INTO locations ${sql(batch)}
@@ -571,7 +572,7 @@ export class PgStore extends BasePgStore {
           SET updated_at = NOW()
           WHERE sat_ordinal IN ${sql(transferredOrdinalNumbers)}
         `;
-      for (const batch of batchIterate(pointers, 8000))
+      for (const batch of batchIterate(pointers, INSERT_BATCH_SIZE))
         await this.updateInscriptionLocationPointers(batch);
       for (const reveal of reveals) {
         const action =
