@@ -1,3 +1,10 @@
+## [2.3.0-beta.5](https://github.com/hirosystems/ordinals-api/compare/v2.3.0-beta.4...v2.3.0-beta.5) (2024-02-19)
+
+
+### Bug Fixes
+
+* only update timestamp when streaming blocks ([#309](https://github.com/hirosystems/ordinals-api/issues/309)) ([2c9ff17](https://github.com/hirosystems/ordinals-api/commit/2c9ff17ebe8805f3de59046b25387b871debee49))
+
 ## [2.3.0-beta.4](https://github.com/hirosystems/ordinals-api/compare/v2.3.0-beta.3...v2.3.0-beta.4) (2024-02-17)
 
 
