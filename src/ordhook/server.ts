@@ -55,7 +55,11 @@ export async function startOrdhookServer(args: { db: PgStore }): Promise<Chainho
   };
   const server = new ChainhookEventObserver(serverOpts, ordhookOpts);
   await server.start(predicates, async (uuid: string, payload: Payload) => {
-    logger.info(`OrdhookServer received payload from predicate ${uuid}`);
+    logger.info(
+      `OrdhookServer received ${
+        payload.chainhook.is_streaming_blocks ? 'streamed' : 'replay'
+      } payload from predicate ${uuid}`
+    );
     await args.db.updateInscriptions(payload);
   });
   return server;
