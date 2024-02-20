@@ -1,3 +1,10 @@
+## [2.3.0-beta.6](https://github.com/hirosystems/ordinals-api/compare/v2.3.0-beta.5...v2.3.0-beta.6) (2024-02-20)
+
+
+### Bug Fixes
+
+* remove unused pg indexes ([#311](https://github.com/hirosystems/ordinals-api/issues/311)) ([94d98d4](https://github.com/hirosystems/ordinals-api/commit/94d98d4e945aef28be7ec19fdb07d121c0ba2ea2))
+
 ## [2.3.0-beta.5](https://github.com/hirosystems/ordinals-api/compare/v2.3.0-beta.4...v2.3.0-beta.5) (2024-02-19)
 
 
