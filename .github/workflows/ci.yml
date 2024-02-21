@@ -99,7 +99,7 @@ jobs:
         run: npm run test:${{ matrix.suite }} -- --coverage
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
 
       - name: Print integration environment logs
         run: cat docker-compose-logs.txt
