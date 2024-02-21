@@ -100,6 +100,8 @@ jobs:
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Print integration environment logs
         run: cat docker-compose-logs.txt
@@ -122,7 +124,7 @@ jobs:
           persist-credentials: false
 
       - name: Semantic Release
-        uses: cycjimmy/semantic-release-action@v3
+        uses: cycjimmy/semantic-release-action@v4
         id: semantic
         # Only run on non-PR events or only PRs that aren't from forks
         if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
