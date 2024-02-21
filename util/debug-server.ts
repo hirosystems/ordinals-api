@@ -23,7 +23,7 @@ import * as path from 'path';
 const serverOpts: ServerOptions = {
   hostname: ENV.API_HOST,
   port: ENV.EVENT_PORT,
-  auth_token: ENV.CHAINHOOK_NODE_AUTH_TOKEN,
+  auth_token: ENV.ORDHOOK_NODE_AUTH_TOKEN,
   external_base_url: `http://${ENV.EXTERNAL_HOSTNAME}`,
   wait_for_chainhook_node: false,
   validate_chainhook_payloads: false,
