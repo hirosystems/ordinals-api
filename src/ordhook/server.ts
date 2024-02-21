@@ -10,7 +10,7 @@ import {
 } from '@hirosystems/chainhook-client';
 import { logger } from '@hirosystems/api-toolkit';
 
-export const ORDHOOK_BASE_PATH = `http://${ENV.CHAINHOOK_NODE_RPC_HOST}:${ENV.CHAINHOOK_NODE_RPC_PORT}`;
+export const ORDHOOK_BASE_PATH = `http://${ENV.ORDHOOK_NODE_RPC_HOST}:${ENV.ORDHOOK_NODE_RPC_PORT}`;
 export const PREDICATE_UUID = randomUUID();
 
 /**
@@ -20,7 +20,7 @@ export const PREDICATE_UUID = randomUUID();
  */
 export async function startOrdhookServer(args: { db: PgStore }): Promise<ChainhookEventObserver> {
   const predicates: ServerPredicate[] = [];
-  if (ENV.CHAINHOOK_AUTO_PREDICATE_REGISTRATION) {
+  if (ENV.ORDHOOK_AUTO_PREDICATE_REGISTRATION) {
     const blockHeight = await args.db.getChainTipBlockHeight();
     logger.info(`Ordinals predicate starting from block ${blockHeight}...`);
     predicates.push({
@@ -43,9 +43,9 @@ export async function startOrdhookServer(args: { db: PgStore }): Promise<Chainho
   const serverOpts: ServerOptions = {
     hostname: ENV.API_HOST,
     port: ENV.EVENT_PORT,
-    auth_token: ENV.CHAINHOOK_NODE_AUTH_TOKEN,
+    auth_token: ENV.ORDHOOK_NODE_AUTH_TOKEN,
     external_base_url: `http://${ENV.EXTERNAL_HOSTNAME}`,
-    wait_for_chainhook_node: ENV.CHAINHOOK_AUTO_PREDICATE_REGISTRATION,
+    wait_for_chainhook_node: ENV.ORDHOOK_AUTO_PREDICATE_REGISTRATION,
     validate_chainhook_payloads: true,
     body_limit: ENV.EVENT_SERVER_BODY_LIMIT,
     node_type: 'ordhook',

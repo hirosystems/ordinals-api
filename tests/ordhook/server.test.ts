@@ -18,7 +18,7 @@ describe('EventServer', () => {
 
   beforeEach(async () => {
     await runMigrations(MIGRATIONS_DIR, 'up');
-    ENV.CHAINHOOK_AUTO_PREDICATE_REGISTRATION = false;
+    ENV.ORDHOOK_AUTO_PREDICATE_REGISTRATION = false;
     db = await PgStore.connect({ skipMigrations: true });
     server = await startOrdhookServer({ db });
     fastify = await buildApiServer({ db });
@@ -74,7 +74,7 @@ describe('EventServer', () => {
       const response = await server['fastify'].inject({
         method: 'POST',
         url: `/payload`,
-        headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
+        headers: { authorization: `Bearer ${ENV.ORDHOOK_NODE_AUTH_TOKEN}` },
         payload: payload1,
       });
       expect(response.statusCode).toBe(200);
@@ -134,7 +134,7 @@ describe('EventServer', () => {
       const response2 = await server['fastify'].inject({
         method: 'POST',
         url: `/payload`,
-        headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
+        headers: { authorization: `Bearer ${ENV.ORDHOOK_NODE_AUTH_TOKEN}` },
         payload: payload2,
       });
       expect(response2.statusCode).toBe(200);
@@ -214,7 +214,7 @@ describe('EventServer', () => {
       const response = await server['fastify'].inject({
         method: 'POST',
         url: `/payload`,
-        headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
+        headers: { authorization: `Bearer ${ENV.ORDHOOK_NODE_AUTH_TOKEN}` },
         payload: payload1,
       });
       expect(response.statusCode).toBe(200);
@@ -274,7 +274,7 @@ describe('EventServer', () => {
       const response2 = await server['fastify'].inject({
         method: 'POST',
         url: `/payload`,
-        headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
+        headers: { authorization: `Bearer ${ENV.ORDHOOK_NODE_AUTH_TOKEN}` },
         payload: payload2,
       });
       expect(response2.statusCode).toBe(200);
@@ -425,7 +425,7 @@ describe('EventServer', () => {
       const response = await server['fastify'].inject({
         method: 'POST',
         url: `/payload`,
-        headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
+        headers: { authorization: `Bearer ${ENV.ORDHOOK_NODE_AUTH_TOKEN}` },
         payload: errorPayload,
       });
       expect(response.statusCode).toBe(400);
@@ -535,7 +535,7 @@ describe('EventServer', () => {
       const response = await server['fastify'].inject({
         method: 'POST',
         url: `/payload`,
-        headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
+        headers: { authorization: `Bearer ${ENV.ORDHOOK_NODE_AUTH_TOKEN}` },
         payload: errorPayload,
       });
       expect(response.statusCode).toBe(400);
@@ -687,7 +687,7 @@ describe('EventServer', () => {
       const response = await server['fastify'].inject({
         method: 'POST',
         url: `/payload`,
-        headers: { authorization: `Bearer ${ENV.CHAINHOOK_NODE_AUTH_TOKEN}` },
+        headers: { authorization: `Bearer ${ENV.ORDHOOK_NODE_AUTH_TOKEN}` },
         payload: payload,
       });
       expect(response.statusCode).toBe(200);

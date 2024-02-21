@@ -28,19 +28,19 @@ const schema = Type.Object({
   EXTERNAL_HOSTNAME: Type.String({ default: '127.0.0.1' }),
 
   /** Hostname of the ordhook node we'll use to register predicates */
-  CHAINHOOK_NODE_RPC_HOST: Type.String({ default: '127.0.0.1' }),
+  ORDHOOK_NODE_RPC_HOST: Type.String({ default: '127.0.0.1' }),
   /** Control port of the ordhook node */
-  CHAINHOOK_NODE_RPC_PORT: Type.Number({ default: 20456, minimum: 0, maximum: 65535 }),
+  ORDHOOK_NODE_RPC_PORT: Type.Number({ default: 20456, minimum: 0, maximum: 65535 }),
   /**
    * Authorization token that the ordhook node must send with every event to make sure it's
    * coming from the valid instance
    */
-  CHAINHOOK_NODE_AUTH_TOKEN: Type.String(),
+  ORDHOOK_NODE_AUTH_TOKEN: Type.String(),
   /**
    * Register ordhook predicates automatically when the API is first launched. Set this to `false`
    * if you're configuring your predicates manually for any reason.
    */
-  CHAINHOOK_AUTO_PREDICATE_REGISTRATION: Type.Boolean({ default: true }),
+  ORDHOOK_AUTO_PREDICATE_REGISTRATION: Type.Boolean({ default: true }),
 
   PGHOST: Type.String(),
   PGPORT: Type.Number({ default: 5432, minimum: 0, maximum: 65535 }),
