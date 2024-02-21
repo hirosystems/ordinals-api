@@ -41,6 +41,18 @@ const schema = Type.Object({
    * if you're configuring your predicates manually for any reason.
    */
   ORDHOOK_AUTO_PREDICATE_REGISTRATION: Type.Boolean({ default: true }),
+  /**
+   * Ordhook ingestion mode. Controls the API's Ordhook payload ingestion behavior:
+   * * `default`: The API will stay running and will listen for payloads indefinitely
+   * * `replay`: The API will stay running and listening only for payloads marked as "not streaming"
+   *   by Ordhook (historical replays). Once Ordhook starts streaming recent blocks from its chain
+   *   tip, the API will shut down. Recommended for deployments meant to sync the ordinals chain
+   *   from genesis.
+   */
+  ORDHOOK_INGESTION_MODE: Type.Enum(
+    { default: 'default', replay: 'replay' },
+    { default: 'default' }
+  ),
 
   PGHOST: Type.String(),
   PGPORT: Type.Number({ default: 5432, minimum: 0, maximum: 65535 }),

@@ -8,7 +8,7 @@ import {
   ServerOptions,
   ServerPredicate,
 } from '@hirosystems/chainhook-client';
-import { logger } from '@hirosystems/api-toolkit';
+import { logger, shutdown } from '@hirosystems/api-toolkit';
 
 export const ORDHOOK_BASE_PATH = `http://${ENV.ORDHOOK_NODE_RPC_HOST}:${ENV.ORDHOOK_NODE_RPC_PORT}`;
 export const PREDICATE_UUID = randomUUID();
@@ -55,10 +55,13 @@ export async function startOrdhookServer(args: { db: PgStore }): Promise<Chainho
   };
   const server = new ChainhookEventObserver(serverOpts, ordhookOpts);
   await server.start(predicates, async (uuid: string, payload: Payload) => {
+    const streamed = payload.chainhook.is_streaming_blocks;
+    if (ENV.ORDHOOK_INGESTION_MODE === 'replay' && streamed) {
+      logger.info(`OrdhookServer finished replaying blocks, shutting down`);
+      return shutdown();
+    }
     logger.info(
-      `OrdhookServer received ${
-        payload.chainhook.is_streaming_blocks ? 'streamed' : 'replay'
-      } payload from predicate ${uuid}`
+      `OrdhookServer received ${streamed ? 'streamed' : 'replay'} payload from predicate ${uuid}`
     );
     await args.db.updateInscriptions(payload);
   });
