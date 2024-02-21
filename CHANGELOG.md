@@ -1,3 +1,10 @@
+## [3.0.0-beta.2](https://github.com/hirosystems/ordinals-api/compare/v3.0.0-beta.1...v3.0.0-beta.2) (2024-02-21)
+
+
+### Features
+
+* shutdown gracefully after finishing replaying blocks ([#315](https://github.com/hirosystems/ordinals-api/issues/315)) ([72fd3fd](https://github.com/hirosystems/ordinals-api/commit/72fd3fda24919f14218cbbf02a552dfcf4d8ea52))
+
 ## [3.0.0-beta.1](https://github.com/hirosystems/ordinals-api/compare/v2.3.0-beta.6...v3.0.0-beta.1) (2024-02-21)
 
 
