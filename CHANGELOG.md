@@ -1,3 +1,14 @@
+## [3.0.0-beta.1](https://github.com/hirosystems/ordinals-api/compare/v2.3.0-beta.6...v3.0.0-beta.1) (2024-02-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* rename chainhook env vars to ordhook (#314)
+
+### Bug Fixes
+
+* rename chainhook env vars to ordhook ([#314](https://github.com/hirosystems/ordinals-api/issues/314)) ([ae4ec01](https://github.com/hirosystems/ordinals-api/commit/ae4ec01326779af00b89907751a6946effe60536))
+
 ## [2.3.0-beta.6](https://github.com/hirosystems/ordinals-api/compare/v2.3.0-beta.5...v2.3.0-beta.6) (2024-02-20)
 
 
