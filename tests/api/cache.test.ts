@@ -45,6 +45,11 @@ describe('ETag cache', () => {
         transfers_pre_inscription: 0,
         tx_index: 0,
         curse_type: null,
+        inscription_pointer: null,
+        delegate: null,
+        metaprotocol: null,
+        metadata: null,
+        parent: null,
       })
       .build();
     await db.updateInscriptions(block);
@@ -180,6 +185,11 @@ describe('ETag cache', () => {
         transfers_pre_inscription: 0,
         tx_index: 0,
         curse_type: null,
+        inscription_pointer: null,
+        delegate: null,
+        metaprotocol: null,
+        metadata: null,
+        parent: null,
       })
       .build();
     await db.updateInscriptions(block1);
@@ -208,6 +218,11 @@ describe('ETag cache', () => {
         transfers_pre_inscription: 0,
         tx_index: 0,
         curse_type: null,
+        inscription_pointer: null,
+        delegate: null,
+        metaprotocol: null,
+        metadata: null,
+        parent: null,
       })
       .build();
     await db.updateInscriptions(block2);
@@ -283,6 +298,11 @@ describe('ETag cache', () => {
         transfers_pre_inscription: 0,
         tx_index: 0,
         curse_type: null,
+        inscription_pointer: null,
+        delegate: null,
+        metaprotocol: null,
+        metadata: null,
+        parent: null,
       })
       .build();
     await db.updateInscriptions(block1);
@@ -330,6 +350,11 @@ describe('ETag cache', () => {
         transfers_pre_inscription: 0,
         tx_index: 0,
         curse_type: null,
+        inscription_pointer: null,
+        delegate: null,
+        metaprotocol: null,
+        metadata: null,
+        parent: null,
       })
       .build();
     await db.updateInscriptions(block2);
@@ -369,6 +394,11 @@ describe('ETag cache', () => {
         transfers_pre_inscription: 0,
         tx_index: 0,
         curse_type: null,
+        inscription_pointer: null,
+        delegate: null,
+        metaprotocol: null,
+        metadata: null,
+        parent: null,
       })
       .build();
     await db.updateInscriptions(block1);
@@ -416,6 +446,11 @@ describe('ETag cache', () => {
         transfers_pre_inscription: 0,
         tx_index: 0,
         curse_type: null,
+        inscription_pointer: null,
+        delegate: null,
+        metaprotocol: null,
+        metadata: null,
+        parent: null,
       })
       .build();
     await db.updateInscriptions(block2);

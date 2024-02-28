@@ -54,6 +54,11 @@ describe('/inscriptions', () => {
             inscription_input_index: 0,
             transfers_pre_inscription: 0,
             curse_type: null,
+            inscription_pointer: null,
+            delegate: null,
+            metaprotocol: null,
+            metadata: null,
+            parent: null,
           })
           .build()
       );
@@ -86,6 +91,11 @@ describe('/inscriptions', () => {
             transfers_pre_inscription: 0,
             tx_index: 0,
             curse_type: null,
+            inscription_pointer: null,
+            delegate: null,
+            metaprotocol: null,
+            metadata: null,
+            parent: null,
           })
           .build()
       );
@@ -163,6 +173,11 @@ describe('/inscriptions', () => {
             inscription_input_index: 0,
             transfers_pre_inscription: 0,
             curse_type: null,
+            inscription_pointer: null,
+            delegate: null,
+            metaprotocol: null,
+            metadata: null,
+            parent: null,
           })
           .transaction({
             hash: '0xf351d86c6e6cae3c64e297e7463095732f216875bcc1f3c03f950a492bb25421',
@@ -185,6 +200,11 @@ describe('/inscriptions', () => {
             transfers_pre_inscription: 0,
             tx_index: 0,
             curse_type: null,
+            inscription_pointer: null,
+            delegate: null,
+            metaprotocol: null,
+            metadata: null,
+            parent: null,
           })
           .build()
       );
@@ -223,6 +243,11 @@ describe('/inscriptions', () => {
             transfers_pre_inscription: 0,
             tx_index: 0,
             curse_type: null,
+            inscription_pointer: null,
+            delegate: null,
+            metaprotocol: null,
+            metadata: null,
+            parent: null,
           })
           .build()
       );
@@ -303,6 +328,11 @@ describe('/inscriptions', () => {
             transfers_pre_inscription: 0,
             tx_index: 0,
             curse_type: null,
+            inscription_pointer: null,
+            delegate: null,
+            metaprotocol: null,
+            metadata: null,
+            parent: null,
           })
           .build()
       );
@@ -380,6 +410,11 @@ describe('/inscriptions', () => {
             inscription_input_index: 0,
             transfers_pre_inscription: 0,
             tx_index: 0,
+            inscription_pointer: null,
+            delegate: null,
+            metaprotocol: null,
+            metadata: null,
+            parent: null,
           })
           .build()
       );
@@ -457,6 +492,11 @@ describe('/inscriptions', () => {
             transfers_pre_inscription: 0,
             tx_index: 0,
             curse_type: null,
+            inscription_pointer: null,
+            delegate: null,
+            metaprotocol: null,
+            metadata: null,
+            parent: null,
           })
           .build()
       );
@@ -602,6 +642,11 @@ describe('/inscriptions', () => {
             transfers_pre_inscription: 0,
             tx_index: 0,
             curse_type: null,
+            inscription_pointer: null,
+            delegate: null,
+            metaprotocol: null,
+            metadata: null,
+            parent: null,
           })
           .build()
       );
@@ -707,6 +752,11 @@ describe('/inscriptions', () => {
             inscription_input_index: 0,
             transfers_pre_inscription: 0,
             tx_index: 0,
+            inscription_pointer: null,
+            delegate: null,
+            metaprotocol: null,
+            metadata: null,
+            parent: null,
           })
           .build()
       );
@@ -854,6 +904,11 @@ describe('/inscriptions', () => {
             transfers_pre_inscription: 0,
             tx_index: 0,
             curse_type: null,
+            inscription_pointer: null,
+            delegate: null,
+            metaprotocol: null,
+            metadata: null,
+            parent: null,
           })
           .build()
       );
@@ -1018,6 +1073,11 @@ describe('/inscriptions', () => {
             transfers_pre_inscription: 0,
             tx_index: 0,
             curse_type: null,
+            inscription_pointer: null,
+            delegate: null,
+            metaprotocol: null,
+            metadata: null,
+            parent: null,
           })
           .transaction({
             hash: '7ac73ecd01b9da4a7eab904655416dbfe8e03f193e091761b5a63ad0963570cd',
@@ -1040,6 +1100,11 @@ describe('/inscriptions', () => {
             transfers_pre_inscription: 0,
             tx_index: 1,
             curse_type: null,
+            inscription_pointer: null,
+            delegate: null,
+            metaprotocol: null,
+            metadata: null,
+            parent: null,
           })
           .build()
       );
@@ -1370,6 +1435,11 @@ describe('/inscriptions', () => {
             transfers_pre_inscription: 0,
             tx_index: 0,
             curse_type: null,
+            inscription_pointer: null,
+            delegate: null,
+            metaprotocol: null,
+            metadata: null,
+            parent: null,
           })
           .build()
       );
@@ -1402,6 +1472,11 @@ describe('/inscriptions', () => {
             transfers_pre_inscription: 0,
             tx_index: 0,
             curse_type: null,
+            inscription_pointer: null,
+            delegate: null,
+            metaprotocol: null,
+            metadata: null,
+            parent: null,
           })
           .build()
       );
@@ -1500,6 +1575,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -1532,6 +1612,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -1647,6 +1732,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -1679,6 +1769,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -1740,6 +1835,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -1772,6 +1872,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -1837,6 +1942,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -1869,6 +1979,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -1930,6 +2045,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -1962,6 +2082,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -2025,6 +2150,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -2070,6 +2200,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -2102,6 +2237,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -2149,6 +2289,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -2181,6 +2326,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -2236,6 +2386,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -2268,6 +2423,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -2323,6 +2483,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -2355,6 +2520,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -2410,6 +2580,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -2442,6 +2617,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -2496,6 +2676,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -2528,6 +2713,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -2563,6 +2753,11 @@ describe('/inscriptions', () => {
           transfers_pre_inscription: 0,
           tx_index: 0,
           curse_type: null,
+          inscription_pointer: null,
+          delegate: null,
+          metaprotocol: null,
+          metadata: null,
+          parent: null,
         };
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
@@ -2607,6 +2802,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -2766,6 +2966,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -2800,6 +3005,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -2859,6 +3069,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -2893,6 +3108,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: 'test',
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -2952,6 +3172,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -2983,6 +3208,11 @@ describe('/inscriptions', () => {
             transfers_pre_inscription: 0,
             tx_index: 0,
             curse_type: null,
+            inscription_pointer: null,
+            delegate: null,
+            metaprotocol: null,
+            metadata: null,
+            parent: null,
           })
           .build();
         await db.updateInscriptions(genesis2);
@@ -3052,6 +3282,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -3084,6 +3319,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -3116,6 +3356,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -3173,6 +3418,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -3205,6 +3455,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -3237,6 +3492,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -3294,6 +3554,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -3326,6 +3591,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -3358,6 +3628,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -3415,6 +3690,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -3447,6 +3727,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );
@@ -3479,6 +3764,11 @@ describe('/inscriptions', () => {
               transfers_pre_inscription: 0,
               tx_index: 0,
               curse_type: null,
+              inscription_pointer: null,
+              delegate: null,
+              metaprotocol: null,
+              metadata: null,
+              parent: null,
             })
             .build()
         );

@@ -26,10 +26,8 @@ import {
   DbInscriptionIndexFilters,
   DbInscriptionIndexOrder,
   DbInscriptionIndexPaging,
-  InscriptionData,
   DbInscriptionLocationChange,
   DbLocation,
-  RevealLocationData,
   DbLocationPointer,
   DbLocationPointerInsert,
   DbPaginatedResult,
@@ -43,6 +41,7 @@ import {
 
 export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 export const ORDINALS_GENESIS_BLOCK = 767430;
+const INSERT_BATCH_SIZE = 4000;
 
 type InscriptionIdentifier = { genesis_id: string } | { number: number };
 
@@ -135,8 +134,8 @@ export class PgStore extends BasePgStore {
           currentBlockHeight: currentBlockHeight,
           newBlockHeight: event.block_identifier.index,
         });
-        for (const writeChunk of batchIterate(writes, 4000))
-          await this.insertInscriptions(writeChunk);
+        for (const writeChunk of batchIterate(writes, INSERT_BATCH_SIZE))
+          await this.insertInscriptions(writeChunk, payload.chainhook.is_streaming_blocks);
         updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
         logger.info(
           `PgStore ingested block ${event.block_identifier.index} in ${time.getElapsedSeconds()}s`
@@ -488,7 +487,10 @@ export class PgStore extends BasePgStore {
     `; // roughly 35 days of blocks, assuming 10 minute block times on a full database
   }
 
-  private async insertInscriptions(reveals: InscriptionEventData[]): Promise<void> {
+  private async insertInscriptions(
+    reveals: InscriptionEventData[],
+    streamed: boolean
+  ): Promise<void> {
     if (reveals.length === 0) return;
     await this.sqlWriteTransaction(async sql => {
       const inscriptionInserts: InscriptionInsert[] = [];
@@ -549,27 +551,31 @@ export class PgStore extends BasePgStore {
             sat_coinbase_height = EXCLUDED.sat_coinbase_height,
             updated_at = NOW()
         `;
-      const pointers = await sql<DbLocationPointerInsert[]>`
-        INSERT INTO locations ${sql(locationInserts)}
-        ON CONFLICT ON CONSTRAINT locations_inscription_id_block_height_tx_index_unique DO UPDATE SET
-          genesis_id = EXCLUDED.genesis_id,
-          block_hash = EXCLUDED.block_hash,
-          tx_id = EXCLUDED.tx_id,
-          address = EXCLUDED.address,
-          value = EXCLUDED.value,
-          output = EXCLUDED.output,
-          "offset" = EXCLUDED.offset,
-          timestamp = EXCLUDED.timestamp
-        RETURNING inscription_id, id AS location_id, block_height, tx_index, address
-      `;
+      const pointers: DbLocationPointerInsert[] = [];
+      for (const batch of batchIterate(locationInserts, INSERT_BATCH_SIZE)) {
+        const pointerBatch = await sql<DbLocationPointerInsert[]>`
+          INSERT INTO locations ${sql(batch)}
+          ON CONFLICT ON CONSTRAINT locations_inscription_id_block_height_tx_index_unique DO UPDATE SET
+            genesis_id = EXCLUDED.genesis_id,
+            block_hash = EXCLUDED.block_hash,
+            tx_id = EXCLUDED.tx_id,
+            address = EXCLUDED.address,
+            value = EXCLUDED.value,
+            output = EXCLUDED.output,
+            "offset" = EXCLUDED.offset,
+            timestamp = EXCLUDED.timestamp
+          RETURNING inscription_id, id AS location_id, block_height, tx_index, address
+        `;
+        await this.updateInscriptionLocationPointers(pointerBatch);
+        pointers.push(...pointerBatch);
+      }
       await this.updateInscriptionRecursions(reveals);
-      if (transferredOrdinalNumbers.length)
+      if (streamed && transferredOrdinalNumbers.length)
         await sql`
           UPDATE inscriptions
           SET updated_at = NOW()
           WHERE sat_ordinal IN ${sql(transferredOrdinalNumbers)}
         `;
-      await this.updateInscriptionLocationPointers(pointers);
       for (const reveal of reveals) {
         const action =
           'inscription' in reveal
