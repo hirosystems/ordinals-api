@@ -1,3 +1,10 @@
+## [3.0.1](https://github.com/hirosystems/ordinals-api/compare/v3.0.0...v3.0.1) (2024-03-04)
+
+
+### Bug Fixes
+
+* transfers for inscriptions created immediately before ([#320](https://github.com/hirosystems/ordinals-api/issues/320)) ([66ba744](https://github.com/hirosystems/ordinals-api/commit/66ba744f96a101c6d0e23122ae7aa41fb1933ba4))
+
 ## [3.0.0](https://github.com/hirosystems/ordinals-api/compare/v2.2.0...v3.0.0) (2024-02-28)
 
 
