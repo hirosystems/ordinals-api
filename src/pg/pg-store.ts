@@ -553,14 +553,6 @@ export class PgStore extends BasePgStore {
             });
           }
         }
-      if (streamed && transferredOrdinalNumbersSet.size)
-        await sql`
-          UPDATE inscriptions
-          SET updated_at = NOW()
-          WHERE sat_ordinal IN ${sql([...transferredOrdinalNumbersSet])}
-        `;
-
-      // 3. Write location pointers (genesis, current)
       const pointers: DbLocationPointerInsert[] = [];
       for (const batch of batchIterate(locationInserts, INSERT_BATCH_SIZE)) {
         const pointerBatch = await sql<DbLocationPointerInsert[]>`
@@ -579,9 +571,12 @@ export class PgStore extends BasePgStore {
         await this.updateInscriptionLocationPointers(pointerBatch);
         pointers.push(...pointerBatch);
       }
-
-      // 4. Write recursion
-      await this.updateInscriptionRecursions(reveals);
+      if (streamed && transferredOrdinalNumbersSet.size)
+        await sql`
+          UPDATE inscriptions
+          SET updated_at = NOW()
+          WHERE sat_ordinal IN ${sql([...transferredOrdinalNumbersSet])}
+        `;
 
       for (const reveal of reveals) {
         const action =
@@ -591,7 +586,8 @@ export class PgStore extends BasePgStore {
         logger.info(`PgStore ${action} at block ${reveal.location.block_height}`);
       }
 
-      // 5. Counts and BRC-20
+      // 3. Recursions, Counts and BRC-20
+      await this.updateInscriptionRecursions(reveals);
       await this.counts.applyInscriptions(inscriptionInserts);
       if (ENV.BRC20_BLOCK_SCAN_ENABLED)
         await this.brc20.insertOperations({ reveals: revealOutputs, pointers });
