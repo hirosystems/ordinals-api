@@ -345,6 +345,96 @@ describe('EventServer', () => {
       const json = response.json();
       expect(json.genesis_address).toBe(address);
     });
+
+    test('inscriptions revealed and immediately transferred in the same block', async () => {
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 832574,
+            hash: '000000000000000000020c8145de25b1e1e0a6312e377827a3015e15fdd574cd',
+          })
+          .transaction({
+            hash: '53957f47697096cef4ad24dae6357b3d7ffe1e3eb9216ce0bb01d6b6a2c8cf4a',
+          })
+          .inscriptionRevealed({
+            content_bytes:
+              '0x7b2270223a226272632d3230222c226f70223a227472616e73666572222c227469636b223a224d544d54222c22616d74223a2231303030227d',
+            content_length: 57,
+            content_type: 'text/plain;charset=utf-8',
+            curse_type: null,
+            delegate: '',
+            inscriber_address: 'bc1pgfkgsz2gv8cy42csdfgnuepx5g2sm0y3nsccvehjpjnev8990pms7jp9n5',
+            inscription_fee: 11322,
+            inscription_id: '53957f47697096cef4ad24dae6357b3d7ffe1e3eb9216ce0bb01d6b6a2c8cf4ai0',
+            inscription_input_index: 0,
+            inscription_number: {
+              classic: 0,
+              jubilee: 0,
+            },
+            inscription_output_value: 8834,
+            inscription_pointer: 0,
+            metadata: null,
+            metaprotocol: '',
+            ordinal_block_height: 149412,
+            ordinal_number: 747064132806533,
+            ordinal_offset: 4132806533,
+            parent: '',
+            satpoint_post_inscription:
+              '53957f47697096cef4ad24dae6357b3d7ffe1e3eb9216ce0bb01d6b6a2c8cf4a:0:0',
+            transfers_pre_inscription: 0,
+            tx_index: 2613,
+          })
+          .transaction({
+            hash: '5252157e270d1d405fa5d58249832ca3aa706b84e4dad2a31e7f52373aec2b7b',
+          })
+          .inscriptionTransferred({
+            destination: {
+              type: 'transferred',
+              value: 'bc1p80sw4ug55q7p4ha5gsk40d2tszqy7cendt9yksmf4nswzzrq58msp6t7qe',
+            },
+            ordinal_number: 747064132806533,
+            post_transfer_output_value: 546,
+            satpoint_post_transfer:
+              '5252157e270d1d405fa5d58249832ca3aa706b84e4dad2a31e7f52373aec2b7b:0:0',
+            satpoint_pre_transfer:
+              '53957f47697096cef4ad24dae6357b3d7ffe1e3eb9216ce0bb01d6b6a2c8cf4a:0:0',
+            tx_index: 2614,
+          })
+          .build()
+      );
+      const response = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/inscriptions/53957f47697096cef4ad24dae6357b3d7ffe1e3eb9216ce0bb01d6b6a2c8cf4ai0/transfers`,
+      });
+      expect(response.statusCode).toBe(200);
+      const json = response.json();
+      expect(json.total).toBe(2);
+      expect(json.results).toStrictEqual([
+        {
+          address: 'bc1p80sw4ug55q7p4ha5gsk40d2tszqy7cendt9yksmf4nswzzrq58msp6t7qe',
+          block_hash: '000000000000000000020c8145de25b1e1e0a6312e377827a3015e15fdd574cd',
+          block_height: 832574,
+          location: '5252157e270d1d405fa5d58249832ca3aa706b84e4dad2a31e7f52373aec2b7b:0:0',
+          offset: '0',
+          output: '5252157e270d1d405fa5d58249832ca3aa706b84e4dad2a31e7f52373aec2b7b:0',
+          timestamp: 1677803510000,
+          tx_id: '5252157e270d1d405fa5d58249832ca3aa706b84e4dad2a31e7f52373aec2b7b',
+          value: '546',
+        },
+        {
+          address: 'bc1pgfkgsz2gv8cy42csdfgnuepx5g2sm0y3nsccvehjpjnev8990pms7jp9n5',
+          block_hash: '000000000000000000020c8145de25b1e1e0a6312e377827a3015e15fdd574cd',
+          block_height: 832574,
+          location: '53957f47697096cef4ad24dae6357b3d7ffe1e3eb9216ce0bb01d6b6a2c8cf4a:0:0',
+          offset: '0',
+          output: '53957f47697096cef4ad24dae6357b3d7ffe1e3eb9216ce0bb01d6b6a2c8cf4a:0',
+          timestamp: 1677803510000,
+          tx_id: '53957f47697096cef4ad24dae6357b3d7ffe1e3eb9216ce0bb01d6b6a2c8cf4a',
+          value: '8834',
+        },
+      ]);
+    });
   });
 
   describe('gap detection', () => {

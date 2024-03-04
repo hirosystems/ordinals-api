@@ -493,14 +493,32 @@ export class PgStore extends BasePgStore {
   ): Promise<void> {
     if (reveals.length === 0) return;
     await this.sqlWriteTransaction(async sql => {
+      // 1. Write inscription reveals
       const inscriptionInserts: InscriptionInsert[] = [];
+      for (const r of reveals) if ('inscription' in r) inscriptionInserts.push(r.inscription);
+      if (inscriptionInserts.length)
+        await sql`
+          INSERT INTO inscriptions ${sql(inscriptionInserts)}
+          ON CONFLICT ON CONSTRAINT inscriptions_number_unique DO UPDATE SET
+            genesis_id = EXCLUDED.genesis_id,
+            mime_type = EXCLUDED.mime_type,
+            content_type = EXCLUDED.content_type,
+            content_length = EXCLUDED.content_length,
+            content = EXCLUDED.content,
+            fee = EXCLUDED.fee,
+            sat_ordinal = EXCLUDED.sat_ordinal,
+            sat_rarity = EXCLUDED.sat_rarity,
+            sat_coinbase_height = EXCLUDED.sat_coinbase_height,
+            updated_at = NOW()
+        `;
+
+      // 2. Write locations and transfers
       const locationInserts: LocationInsert[] = [];
       const revealOutputs: InscriptionEventData[] = [];
       const transferredOrdinalNumbersSet = new Set<string>();
       for (const r of reveals)
         if ('inscription' in r) {
           revealOutputs.push(r);
-          inscriptionInserts.push(r.inscription);
           locationInserts.push({
             ...r.location,
             inscription_id: sql`(SELECT id FROM inscriptions WHERE genesis_id = ${r.location.genesis_id})`,
@@ -535,22 +553,6 @@ export class PgStore extends BasePgStore {
             });
           }
         }
-      const transferredOrdinalNumbers = [...transferredOrdinalNumbersSet];
-      if (inscriptionInserts.length)
-        await sql`
-          INSERT INTO inscriptions ${sql(inscriptionInserts)}
-          ON CONFLICT ON CONSTRAINT inscriptions_number_unique DO UPDATE SET
-            genesis_id = EXCLUDED.genesis_id,
-            mime_type = EXCLUDED.mime_type,
-            content_type = EXCLUDED.content_type,
-            content_length = EXCLUDED.content_length,
-            content = EXCLUDED.content,
-            fee = EXCLUDED.fee,
-            sat_ordinal = EXCLUDED.sat_ordinal,
-            sat_rarity = EXCLUDED.sat_rarity,
-            sat_coinbase_height = EXCLUDED.sat_coinbase_height,
-            updated_at = NOW()
-        `;
       const pointers: DbLocationPointerInsert[] = [];
       for (const batch of batchIterate(locationInserts, INSERT_BATCH_SIZE)) {
         const pointerBatch = await sql<DbLocationPointerInsert[]>`
@@ -569,13 +571,13 @@ export class PgStore extends BasePgStore {
         await this.updateInscriptionLocationPointers(pointerBatch);
         pointers.push(...pointerBatch);
       }
-      await this.updateInscriptionRecursions(reveals);
-      if (streamed && transferredOrdinalNumbers.length)
+      if (streamed && transferredOrdinalNumbersSet.size)
         await sql`
           UPDATE inscriptions
           SET updated_at = NOW()
-          WHERE sat_ordinal IN ${sql(transferredOrdinalNumbers)}
+          WHERE sat_ordinal IN ${sql([...transferredOrdinalNumbersSet])}
         `;
+
       for (const reveal of reveals) {
         const action =
           'inscription' in reveal
@@ -583,6 +585,9 @@ export class PgStore extends BasePgStore {
             : `transfer sat ${reveal.location.ordinal_number}`;
         logger.info(`PgStore ${action} at block ${reveal.location.block_height}`);
       }
+
+      // 3. Recursions, Counts and BRC-20
+      await this.updateInscriptionRecursions(reveals);
       await this.counts.applyInscriptions(inscriptionInserts);
       if (ENV.BRC20_BLOCK_SCAN_ENABLED)
         await this.brc20.insertOperations({ reveals: revealOutputs, pointers });
