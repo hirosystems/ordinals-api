@@ -340,20 +340,13 @@ export class Brc20PgStore extends BasePgStoreModule {
     pointer: DbLocationPointerInsert;
   }): Promise<void> {
     if (transfer.reveal.location.transfer_type != DbLocationTransferType.transferred) return;
-    // Check the following conditions:
-    // * Do we have enough available balance to do this transfer?
     const transferRes = await this.sql`
-      WITH balance_data AS (
-        SELECT b.brc20_deploy_id, COALESCE(SUM(b.avail_balance), 0) AS avail_balance
-        FROM brc20_balances AS b
-        INNER JOIN brc20_deploys AS d ON b.brc20_deploy_id = d.id
-        WHERE d.ticker_lower = LOWER(${transfer.brc20.tick})
-          AND b.address = ${transfer.pointer.address}
-        GROUP BY b.brc20_deploy_id
-      ),
-      validated_transfer AS (
-        SELECT * FROM balance_data
-        WHERE avail_balance >= ${transfer.brc20.amt}::numeric
+      WITH validated_transfer AS (
+        SELECT brc20_deploy_id, avail_balance
+        FROM brc20_total_balances
+        WHERE brc20_deploy_id = (SELECT id FROM brc20_deploys WHERE ticker_lower = LOWER(${transfer.brc20.tick}))
+          AND address = ${transfer.pointer.address}
+          AND avail_balance >= ${transfer.brc20.amt}::numeric
       ),
       transfer_insert AS (
         INSERT INTO brc20_transfers (inscription_id, brc20_deploy_id, block_height, tx_id, from_address, to_address, amount) (
