@@ -3,7 +3,7 @@ import { buildApiServer } from '../../src/api/init';
 import { Brc20ActivityResponse, Brc20TokenResponse } from '../../src/api/schemas';
 import { brc20FromInscription } from '../../src/pg/brc20/helpers';
 import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
-import { DbLocationTransferType, InscriptionData, InscriptionRevealData } from '../../src/pg/types';
+import { DbLocationTransferType, InscriptionRevealData } from '../../src/pg/types';
 import {
   TestChainhookPayloadBuilder,
   TestFastifyServer,
