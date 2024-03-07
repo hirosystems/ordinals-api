@@ -1,6 +1,5 @@
 import { BasePgStoreModule, logger } from '@hirosystems/api-toolkit';
 import * as postgres from 'postgres';
-import { hexToBuffer } from '../../api/util/helpers';
 import {
   DbInscriptionIndexPaging,
   InscriptionData,
@@ -26,7 +25,7 @@ import {
   DbBrc20TokenWithSupply,
   DbBrc20TransferEvent,
 } from './types';
-import { Brc20Deploy, Brc20Mint, Brc20Transfer, brc20FromInscriptionContent } from './helpers';
+import { Brc20Deploy, Brc20Mint, Brc20Transfer, brc20FromInscription } from './helpers';
 import { Brc20TokenOrderBy } from '../../api/schemas';
 import { objRemoveUndefinedValues } from '../helpers';
 
@@ -46,16 +45,7 @@ export class Brc20PgStore extends BasePgStoreModule {
       const pointer = args.pointers[i];
       if (parseInt(pointer.block_height) < BRC20_GENESIS_BLOCK) continue;
       if ('inscription' in reveal) {
-        if (
-          reveal.inscription.classic_number < 0 ||
-          reveal.inscription.number < 0 ||
-          reveal.location.transfer_type != DbLocationTransferType.transferred ||
-          !['text/plain', 'application/json'].includes(reveal.inscription.mime_type)
-        )
-          continue;
-        const brc20 = brc20FromInscriptionContent(
-          hexToBuffer(reveal.inscription.content as string).toString('utf-8')
-        );
+        const brc20 = brc20FromInscription(reveal);
         if (brc20) {
           switch (brc20.op) {
             case 'deploy':

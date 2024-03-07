@@ -2,7 +2,7 @@ import { Static, Type } from '@fastify/type-provider-typebox';
 import { TypeCompiler } from '@sinclair/typebox/compiler';
 import BigNumber from 'bignumber.js';
 import { hexToBuffer } from '../../api/util/helpers';
-import { InscriptionData } from '../types';
+import { DbLocationTransferType, InscriptionRevealData } from '../types';
 
 const Brc20TickerSchema = Type.String({ minLength: 1 });
 const Brc20NumberSchema = Type.RegEx(/^((\d+)|(\d*\.?\d+))$/);
@@ -50,18 +50,16 @@ const UINT64_MAX = BigNumber('18446744073709551615'); // 20 digits
 // Only compare against `UINT64_MAX` if the number is at least the same number of digits.
 const numExceedsMax = (num: string) => num.length >= 20 && UINT64_MAX.isLessThan(num);
 
-// For testing only
-export function brc20FromInscription(inscription: InscriptionData): Brc20 | undefined {
-  if (inscription.number < 0) return;
-  if (inscription.mime_type !== 'text/plain' && inscription.mime_type !== 'application/json')
+export function brc20FromInscription(reveal: InscriptionRevealData): Brc20 | undefined {
+  if (
+    reveal.inscription.classic_number < 0 ||
+    reveal.inscription.number < 0 ||
+    reveal.location.transfer_type != DbLocationTransferType.transferred ||
+    !['text/plain', 'application/json'].includes(reveal.inscription.mime_type)
+  )
     return;
-  const buf = hexToBuffer(inscription.content as string).toString('utf-8');
-  return brc20FromInscriptionContent(buf);
-}
-
-export function brc20FromInscriptionContent(content: string): Brc20 | undefined {
   try {
-    const json = JSON.parse(content);
+    const json = JSON.parse(hexToBuffer(reveal.inscription.content as string).toString('utf-8'));
     if (Brc20C.Check(json)) {
       // Check ticker byte length
       if (Buffer.from(json.tick).length !== 4) return;
