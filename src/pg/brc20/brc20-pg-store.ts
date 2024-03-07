@@ -9,7 +9,6 @@ import {
   DbPaginatedResult,
   InscriptionEventData,
   LocationData,
-  InscriptionRevealData,
 } from '../types';
 import {
   BRC20_DEPLOYS_COLUMNS,
