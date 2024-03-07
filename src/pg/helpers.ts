@@ -16,26 +16,26 @@ import {
 import { OrdinalSatoshi } from '../api/util/ordinal-satoshi';
 
 /**
- * Check if writing a block would create an inscription number gap
+ * Check if writing the next block would create an inscription number gap
  * @param currentNumber - Current max blessed number
- * @param newNumbers - New blessed numbers to be inserted
+ * @param writes - Incoming inscription event data
+ * @param currentBlockHeight - Current height
+ * @param nextBlockHeight - Height to be inserted
  */
 export function assertNoBlockInscriptionGap(args: {
   currentNumber: number;
-  newNumbers: number[];
+  writes: InscriptionEventData[];
   currentBlockHeight: number;
-  newBlockHeight: number;
+  nextBlockHeight: number;
 }) {
   if (!ENV.INSCRIPTION_GAP_DETECTION_ENABLED) return;
-  args.newNumbers.sort((a, b) => a - b);
-  for (let n = 0; n < args.newNumbers.length; n++) {
-    const curr = args.currentNumber + n;
-    const next = args.newNumbers[n];
-    if (next !== curr + 1)
-      throw new BadPayloadRequestError(
-        `Block inscription gap detected: Attempting to insert #${next} (${args.newBlockHeight}) but current max is #${curr}. Chain tip is at ${args.currentBlockHeight}.`
-      );
-  }
+  const nextReveal = args.writes.find(w => 'inscription' in w && w.inscription.number >= 0);
+  if (!nextReveal) return;
+  const next = (nextReveal as InscriptionRevealData).inscription.number;
+  if (next !== args.currentNumber + 1)
+    throw new BadPayloadRequestError(
+      `Block inscription gap detected: Attempting to insert #${next} (${args.nextBlockHeight}) but current max is #${args.currentNumber}. Chain tip is at ${args.currentBlockHeight}.`
+    );
 }
 
 /**

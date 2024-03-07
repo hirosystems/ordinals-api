@@ -109,7 +109,7 @@ export class PgStore extends BasePgStore {
         // Check where we're at in terms of ingestion, e.g. block height and max blessed inscription
         // number. This will let us determine if we should skip ingesting this block or throw an
         // error if a gap is detected.
-        const currentBlessedNumber = (await this.getMaxInscriptionNumber()) ?? -1;
+        const currentNumber = (await this.getMaxInscriptionNumber()) ?? -1;
         const currentBlockHeight = await this.getChainTipBlockHeight();
         const event = applyEvent as BitcoinEvent;
         if (
@@ -125,14 +125,11 @@ export class PgStore extends BasePgStore {
         logger.info(`PgStore ingesting block ${event.block_identifier.index}`);
         const time = stopwatch();
         const writes = revealInsertsFromOrdhookEvent(event);
-        const newBlessedNumbers = writes
-          .filter(w => 'inscription' in w && w.inscription.number >= 0)
-          .map(w => (w as InscriptionRevealData).inscription.number ?? 0);
         assertNoBlockInscriptionGap({
-          currentNumber: currentBlessedNumber,
-          newNumbers: newBlessedNumbers,
-          currentBlockHeight: currentBlockHeight,
-          newBlockHeight: event.block_identifier.index,
+          currentNumber,
+          writes,
+          currentBlockHeight,
+          nextBlockHeight: event.block_identifier.index,
         });
         for (const writeChunk of batchIterate(writes, INSERT_BATCH_SIZE))
           await this.insertInscriptions(writeChunk, payload.chainhook.is_streaming_blocks);
