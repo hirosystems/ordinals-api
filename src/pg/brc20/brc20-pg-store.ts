@@ -9,7 +9,6 @@ import {
   DbPaginatedResult,
   InscriptionEventData,
   LocationData,
-  InscriptionRevealData,
 } from '../types';
 import {
   BRC20_DEPLOYS_COLUMNS,
@@ -50,7 +49,8 @@ export class Brc20PgStore extends BasePgStoreModule {
         if (
           reveal.inscription.classic_number < 0 ||
           reveal.inscription.number < 0 ||
-          reveal.location.transfer_type != DbLocationTransferType.transferred
+          reveal.location.transfer_type != DbLocationTransferType.transferred ||
+          !['text/plain', 'application/json'].includes(reveal.inscription.mime_type)
         )
           continue;
         const brc20 = brc20FromInscriptionContent(
