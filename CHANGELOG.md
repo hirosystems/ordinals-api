@@ -1,3 +1,10 @@
+## [3.0.2-beta.1](https://github.com/hirosystems/ordinals-api/compare/v3.0.1...v3.0.2-beta.1) (2024-03-07)
+
+
+### Bug Fixes
+
+* use brc20_total_balances table when inserting new transfer ([#321](https://github.com/hirosystems/ordinals-api/issues/321)) ([925fb0e](https://github.com/hirosystems/ordinals-api/commit/925fb0e05a982eeec802bee6f53a957bc5ea3acf))
+
 ## [3.0.1](https://github.com/hirosystems/ordinals-api/compare/v3.0.0...v3.0.1) (2024-03-04)
 
 
