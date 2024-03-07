@@ -1,3 +1,10 @@
+## [3.0.2-beta.2](https://github.com/hirosystems/ordinals-api/compare/v3.0.2-beta.1...v3.0.2-beta.2) (2024-03-07)
+
+
+### Bug Fixes
+
+* filter correct content types for brc20 ([#323](https://github.com/hirosystems/ordinals-api/issues/323)) ([4d52b48](https://github.com/hirosystems/ordinals-api/commit/4d52b4820e5f1a36264977dc4a6c4ca324864108))
+
 ## [3.0.2-beta.1](https://github.com/hirosystems/ordinals-api/compare/v3.0.1...v3.0.2-beta.1) (2024-03-07)
 
 
