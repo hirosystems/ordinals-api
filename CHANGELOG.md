@@ -1,3 +1,10 @@
+## [3.0.2-beta.3](https://github.com/hirosystems/ordinals-api/compare/v3.0.2-beta.2...v3.0.2-beta.3) (2024-03-07)
+
+
+### Bug Fixes
+
+* check only the first blessed inscription in next block on gap detection ([#325](https://github.com/hirosystems/ordinals-api/issues/325)) ([9cad6c1](https://github.com/hirosystems/ordinals-api/commit/9cad6c16d34fdd11c1d9f473b2f3802a8da464d8))
+
 ## [3.0.2-beta.2](https://github.com/hirosystems/ordinals-api/compare/v3.0.2-beta.1...v3.0.2-beta.2) (2024-03-07)
 
 
