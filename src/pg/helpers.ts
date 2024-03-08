@@ -1,4 +1,4 @@
-import { PgBytea, toEnumValue } from '@hirosystems/api-toolkit';
+import { PgBytea, logger, toEnumValue } from '@hirosystems/api-toolkit';
 import { hexToBuffer, normalizedHexString, parseSatPoint } from '../api/util/helpers';
 import {
   BadPayloadRequestError,
@@ -98,12 +98,25 @@ function updateFromOrdhookInscriptionRevealed(args: {
   const satoshi = new OrdinalSatoshi(args.reveal.ordinal_number);
   const satpoint = parseSatPoint(args.reveal.satpoint_post_inscription);
   const recursive_refs = getInscriptionRecursion(args.reveal.content_bytes);
-  const contentType = removeNullBytes(args.reveal.content_type);
+  const content_type = removeNullBytes(args.reveal.content_type);
+  let transfer_type = DbLocationTransferType.transferred;
+  if (args.reveal.inscriber_address == null || args.reveal.inscriber_address == '') {
+    if (args.reveal.inscription_output_value == 0) {
+      if (args.reveal.inscription_pointer !== 0 && args.reveal.inscription_pointer !== null) {
+        logger.warn(
+          `Detected inscription reveal with no address and no output value but a valid pointer ${args.reveal.inscription_id}`
+        );
+      }
+      transfer_type = DbLocationTransferType.spentInFees;
+    } else {
+      transfer_type = DbLocationTransferType.burnt;
+    }
+  }
   return {
     inscription: {
       genesis_id: args.reveal.inscription_id,
-      mime_type: contentType.split(';')[0],
-      content_type: contentType,
+      mime_type: content_type.split(';')[0],
+      content_type,
       content_length: args.reveal.content_length,
       number: args.reveal.inscription_number.jubilee,
       classic_number: args.reveal.inscription_number.classic,
@@ -131,7 +144,7 @@ function updateFromOrdhookInscriptionRevealed(args: {
       prev_offset: null,
       value: args.reveal.inscription_output_value.toString(),
       timestamp: args.timestamp,
-      transfer_type: DbLocationTransferType.transferred,
+      transfer_type,
     },
     recursive_refs,
   };
