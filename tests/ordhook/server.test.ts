@@ -435,6 +435,114 @@ describe('EventServer', () => {
         },
       ]);
     });
+
+    test('inscriptions revealed as fee', async () => {
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 832574,
+            hash: '000000000000000000020c8145de25b1e1e0a6312e377827a3015e15fdd574cd',
+          })
+          .transaction({
+            hash: '53957f47697096cef4ad24dae6357b3d7ffe1e3eb9216ce0bb01d6b6a2c8cf4a',
+          })
+          .inscriptionRevealed({
+            content_bytes:
+              '0x7b2270223a226272632d3230222c226f70223a226d696e74222c227469636b223a22656f7262222c22616d74223a223130227d',
+            content_length: 51,
+            content_type: 'text/plain',
+            curse_type: null,
+            delegate: '',
+            inscriber_address: '',
+            inscription_fee: 3210,
+            inscription_id: '53957f47697096cef4ad24dae6357b3d7ffe1e3eb9216ce0bb01d6b6a2c8cf4ai0',
+            inscription_input_index: 0,
+            inscription_number: {
+              classic: 0,
+              jubilee: 0,
+            },
+            inscription_output_value: 0,
+            inscription_pointer: 1,
+            metadata: null,
+            metaprotocol: '',
+            ordinal_block_height: 203651,
+            ordinal_number: 1018259086681705,
+            ordinal_offset: 4086681705,
+            parent: '',
+            satpoint_post_inscription:
+              '53957f47697096cef4ad24dae6357b3d7ffe1e3eb9216ce0bb01d6b6a2c8cf4a:0:665136296',
+            transfers_pre_inscription: 0,
+            tx_index: 2486,
+          })
+          .build()
+      );
+      const response = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/inscriptions/53957f47697096cef4ad24dae6357b3d7ffe1e3eb9216ce0bb01d6b6a2c8cf4ai0`,
+      });
+      expect(response.statusCode).toBe(200);
+      const status = await db.sql<{ transfer_type: string }[]>`
+        SELECT transfer_type
+        FROM locations
+        WHERE genesis_id = '53957f47697096cef4ad24dae6357b3d7ffe1e3eb9216ce0bb01d6b6a2c8cf4ai0'
+      `;
+      expect(status[0].transfer_type).toBe('spent_in_fees');
+    });
+
+    test('inscriptions revealed as burnt', async () => {
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 832574,
+            hash: '000000000000000000020c8145de25b1e1e0a6312e377827a3015e15fdd574cd',
+          })
+          .transaction({
+            hash: '53957f47697096cef4ad24dae6357b3d7ffe1e3eb9216ce0bb01d6b6a2c8cf4a',
+          })
+          .inscriptionRevealed({
+            content_bytes:
+              '0x7b2270223a226272632d3230222c226f70223a226d696e74222c227469636b223a22656f7262222c22616d74223a223130227d',
+            content_length: 51,
+            content_type: 'text/plain',
+            curse_type: null,
+            delegate: '',
+            inscriber_address: '',
+            inscription_fee: 3210,
+            inscription_id: '53957f47697096cef4ad24dae6357b3d7ffe1e3eb9216ce0bb01d6b6a2c8cf4ai0',
+            inscription_input_index: 0,
+            inscription_number: {
+              classic: 0,
+              jubilee: 0,
+            },
+            inscription_output_value: 1000,
+            inscription_pointer: 0,
+            metadata: null,
+            metaprotocol: '',
+            ordinal_block_height: 203651,
+            ordinal_number: 1018259086681705,
+            ordinal_offset: 4086681705,
+            parent: '',
+            satpoint_post_inscription:
+              '53957f47697096cef4ad24dae6357b3d7ffe1e3eb9216ce0bb01d6b6a2c8cf4a:0:665136296',
+            transfers_pre_inscription: 0,
+            tx_index: 2486,
+          })
+          .build()
+      );
+      const response = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/inscriptions/53957f47697096cef4ad24dae6357b3d7ffe1e3eb9216ce0bb01d6b6a2c8cf4ai0`,
+      });
+      expect(response.statusCode).toBe(200);
+      const status = await db.sql<{ transfer_type: string }[]>`
+        SELECT transfer_type
+        FROM locations
+        WHERE genesis_id = '53957f47697096cef4ad24dae6357b3d7ffe1e3eb9216ce0bb01d6b6a2c8cf4ai0'
+      `;
+      expect(status[0].transfer_type).toBe('burnt');
+    });
   });
 
   describe('gap detection', () => {
