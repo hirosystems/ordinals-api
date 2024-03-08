@@ -1,3 +1,10 @@
+## [3.0.2-beta.4](https://github.com/hirosystems/ordinals-api/compare/v3.0.2-beta.3...v3.0.2-beta.4) (2024-03-08)
+
+
+### Bug Fixes
+
+* calculate transfer type correctly upon reveal ([#326](https://github.com/hirosystems/ordinals-api/issues/326)) ([6c4c54b](https://github.com/hirosystems/ordinals-api/commit/6c4c54b45a74744c4e61a2437632f390080a9624))
+
 ## [3.0.2-beta.3](https://github.com/hirosystems/ordinals-api/compare/v3.0.2-beta.2...v3.0.2-beta.3) (2024-03-07)
 
 
