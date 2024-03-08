@@ -225,6 +225,104 @@ describe('BRC-20', () => {
       expect(brc20FromInscription(insert)).toBeUndefined();
     });
 
+    test('ignores inscriptions spent as fees', () => {
+      const content = Buffer.from(
+        JSON.stringify({
+          p: 'brc-20',
+          op: 'deploy',
+          tick: 'PEPE',
+          max: '21000000',
+        }),
+        'utf-8'
+      );
+      const insert: InscriptionRevealData = {
+        inscription: {
+          genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+          number: 0,
+          classic_number: 0,
+          mime_type: 'application/json',
+          content_type: 'application/json',
+          content_length: content.length,
+          content: `0x${content.toString('hex')}`,
+          fee: '200',
+          curse_type: null,
+          sat_ordinal: '2000000',
+          sat_rarity: 'common',
+          sat_coinbase_height: 110,
+          recursive: false,
+          metadata: null,
+          parent: null,
+        },
+        recursive_refs: [],
+        location: {
+          genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+          block_height: 830000,
+          block_hash: '00000000000000000002c5c0aba96f981642a6dca109e6b3564925c21a98aa3e',
+          tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+          tx_index: 0,
+          address: '',
+          output: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0',
+          offset: '0',
+          prev_output: null,
+          prev_offset: null,
+          value: '0',
+          transfer_type: DbLocationTransferType.spentInFees,
+          block_transfer_index: null,
+          timestamp: 1091091019,
+        },
+      };
+      expect(brc20FromInscription(insert)).toBeUndefined();
+    });
+
+    test('ignores burnt inscriptions', () => {
+      const content = Buffer.from(
+        JSON.stringify({
+          p: 'brc-20',
+          op: 'deploy',
+          tick: 'PEPE',
+          max: '21000000',
+        }),
+        'utf-8'
+      );
+      const insert: InscriptionRevealData = {
+        inscription: {
+          genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+          number: 0,
+          classic_number: 0,
+          mime_type: 'application/json',
+          content_type: 'application/json',
+          content_length: content.length,
+          content: `0x${content.toString('hex')}`,
+          fee: '200',
+          curse_type: null,
+          sat_ordinal: '2000000',
+          sat_rarity: 'common',
+          sat_coinbase_height: 110,
+          recursive: false,
+          metadata: null,
+          parent: null,
+        },
+        recursive_refs: [],
+        location: {
+          genesis_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+          block_height: 830000,
+          block_hash: '00000000000000000002c5c0aba96f981642a6dca109e6b3564925c21a98aa3e',
+          tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+          tx_index: 0,
+          address: '',
+          output: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0',
+          offset: '0',
+          prev_output: null,
+          prev_offset: null,
+          value: '1000',
+          transfer_type: DbLocationTransferType.burnt,
+          block_transfer_index: null,
+          timestamp: 1091091019,
+        },
+      };
+      expect(brc20FromInscription(insert)).toBeUndefined();
+    });
+
     test('ignores incorrect p field', () => {
       const insert = testInsert({
         p: 'brc20', // incorrect
