@@ -1,3 +1,10 @@
+## [3.0.2-beta.5](https://github.com/hirosystems/ordinals-api/compare/v3.0.2-beta.4...v3.0.2-beta.5) (2024-03-09)
+
+
+### Bug Fixes
+
+* ignore spent as fee on gap check ([#328](https://github.com/hirosystems/ordinals-api/issues/328)) ([a1277cf](https://github.com/hirosystems/ordinals-api/commit/a1277cf39eb61e548f55bd8e524054db6a11c843))
+
 ## [3.0.2-beta.4](https://github.com/hirosystems/ordinals-api/compare/v3.0.2-beta.3...v3.0.2-beta.4) (2024-03-08)
 
 
