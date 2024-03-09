@@ -29,7 +29,14 @@ export function assertNoBlockInscriptionGap(args: {
   nextBlockHeight: number;
 }) {
   if (!ENV.INSCRIPTION_GAP_DETECTION_ENABLED) return;
-  const nextReveal = args.writes.find(w => 'inscription' in w && w.inscription.number >= 0);
+  const nextReveal = args.writes.find(
+    w =>
+      'inscription' in w &&
+      w.inscription.number >= 0 &&
+      // Spent as fee come first in the block
+      w.location.address != null &&
+      w.location.address != ''
+  );
   if (!nextReveal) return;
   const next = (nextReveal as InscriptionRevealData).inscription.number;
   if (next !== args.currentNumber + 1)
