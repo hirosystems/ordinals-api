@@ -1,12 +1,10 @@
 import { PgBytea, logger, toEnumValue } from '@hirosystems/api-toolkit';
 import { hexToBuffer, normalizedHexString, parseSatPoint } from '../api/util/helpers';
 import {
-  BadPayloadRequestError,
   BitcoinEvent,
   BitcoinInscriptionRevealed,
   BitcoinInscriptionTransferred,
 } from '@hirosystems/chainhook-client';
-import { ENV } from '../env';
 import {
   DbLocationTransferType,
   InscriptionEventData,
@@ -14,36 +12,6 @@ import {
   InscriptionRevealData,
 } from './types';
 import { OrdinalSatoshi } from '../api/util/ordinal-satoshi';
-
-/**
- * Check if writing the next block would create an inscription number gap
- * @param currentNumber - Current max blessed number
- * @param writes - Incoming inscription event data
- * @param currentBlockHeight - Current height
- * @param nextBlockHeight - Height to be inserted
- */
-export function assertNoBlockInscriptionGap(args: {
-  currentNumber: number;
-  writes: InscriptionEventData[];
-  currentBlockHeight: number;
-  nextBlockHeight: number;
-}) {
-  if (!ENV.INSCRIPTION_GAP_DETECTION_ENABLED) return;
-  const nextReveal = args.writes.find(
-    w =>
-      'inscription' in w &&
-      w.inscription.number >= 0 &&
-      // Spent as fee come first in the block
-      w.location.address != null &&
-      w.location.address != ''
-  );
-  if (!nextReveal) return;
-  const next = (nextReveal as InscriptionRevealData).inscription.number;
-  if (next !== args.currentNumber + 1)
-    throw new BadPayloadRequestError(
-      `Block inscription gap detected: Attempting to insert #${next} (${args.nextBlockHeight}) but current max is #${args.currentNumber}. Chain tip is at ${args.currentBlockHeight}.`
-    );
-}
 
 /**
  * Returns a list of referenced inscription ids from inscription content.
