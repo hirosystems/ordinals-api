@@ -1,3 +1,10 @@
+## [3.0.2-beta.6](https://github.com/hirosystems/ordinals-api/compare/v3.0.2-beta.5...v3.0.2-beta.6) (2024-03-09)
+
+
+### Bug Fixes
+
+* remove gap detection ([#330](https://github.com/hirosystems/ordinals-api/issues/330)) ([040ee04](https://github.com/hirosystems/ordinals-api/commit/040ee04b0906106fdece3f00d34fb4817d7f318e))
+
 ## [3.0.2-beta.5](https://github.com/hirosystems/ordinals-api/compare/v3.0.2-beta.4...v3.0.2-beta.5) (2024-03-09)
 
 
