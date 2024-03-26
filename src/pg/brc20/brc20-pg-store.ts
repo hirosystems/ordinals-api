@@ -26,7 +26,7 @@ import {
   DbBrc20TokenWithSupply,
   DbBrc20TransferEvent,
 } from './types';
-import { Brc20Deploy, Brc20Mint, Brc20Transfer, brc20FromInscription } from './helpers';
+import { Brc20Deploy, Brc20Mint, Brc20Transfer, UINT64_MAX, brc20FromInscription } from './helpers';
 import { Brc20TokenOrderBy } from '../../api/schemas';
 import { objRemoveUndefinedValues } from '../helpers';
 
@@ -209,7 +209,7 @@ export class Brc20PgStore extends BasePgStoreModule {
       tx_id: deploy.reveal.location.tx_id,
       address: deploy.pointer.address as string,
       ticker: deploy.brc20.tick,
-      max: deploy.brc20.max,
+      max: deploy.brc20.max === '0' ? UINT64_MAX.toString() : deploy.brc20.max,
       limit: deploy.brc20.lim ?? null,
       decimals: deploy.brc20.dec ?? '18',
       tx_count: 1,

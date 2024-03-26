@@ -536,6 +536,17 @@ describe('BRC-20', () => {
       });
       // `dec` can have a value of 0
       expect(brc20FromInscription(insert1c)).not.toBeUndefined();
+      const insert1d = testInsert(
+        {
+          p: 'brc-20',
+          op: 'deploy',
+          tick: '$PEPE',
+          max: '0', // self mints can be max 0
+          self_mint: 'true',
+        },
+        840000
+      );
+      expect(brc20FromInscription(insert1d)).not.toBeUndefined();
       const insert2a = testInsert({
         p: 'brc-20',
         op: 'mint',
@@ -1372,6 +1383,138 @@ describe('BRC-20', () => {
       expect(responseJson3.results).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ ticker: '$PEPE', minted_supply: '0.000000000000000000' }),
+        ])
+      );
+    });
+
+    test('valid self mints for tokens with max 0 are saved', async () => {
+      const address = 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td';
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: BRC20_SELF_MINT_ACTIVATION_BLOCK,
+            hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+          })
+          .transaction({
+            hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'deploy',
+                tick: '$PEPE',
+                max: '0',
+                self_mint: 'true',
+              },
+              number: 0,
+              ordinal_number: 0,
+              tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+              address: address,
+            })
+          )
+          .build()
+      );
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: BRC20_SELF_MINT_ACTIVATION_BLOCK + 1,
+            hash: '0000000000000000000098d8f2663891d439f6bb7de230d4e9f6bcc2e85452bf',
+          })
+          .transaction({
+            hash: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'mint',
+                tick: '$PEPE',
+                amt: '250000',
+              },
+              number: 1,
+              ordinal_number: 1,
+              tx_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
+              address: address,
+              parent: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+            })
+          )
+          .build()
+      );
+
+      const response1 = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/balances/${address}`,
+      });
+      expect(response1.statusCode).toBe(200);
+      const responseJson1 = response1.json();
+      expect(responseJson1.total).toBe(1);
+      expect(responseJson1.results).toStrictEqual([
+        {
+          ticker: '$PEPE',
+          available_balance: '250000.000000000000000000',
+          overall_balance: '250000.000000000000000000',
+          transferrable_balance: '0.000000000000000000',
+        },
+      ]);
+
+      // New mint
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: BRC20_SELF_MINT_ACTIVATION_BLOCK + 2,
+            hash: '0000000000000000000077163227125e51d838787d6af031bc9b55a3a1cc1b2c',
+          })
+          .transaction({
+            hash: '7a1adbc3e93ddf8d7c4e0ba75aa11c98c431521dd850be8b955feedb716d8bec',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'mint',
+                tick: '$pepe',
+                amt: '100000',
+              },
+              number: 2,
+              ordinal_number: 2,
+              tx_id: '7a1adbc3e93ddf8d7c4e0ba75aa11c98c431521dd850be8b955feedb716d8bec',
+              address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+              parent: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+            })
+          )
+          .build()
+      );
+
+      const response2 = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/balances/${address}`,
+      });
+      expect(response2.statusCode).toBe(200);
+      const responseJson2 = response2.json();
+      expect(responseJson2.total).toBe(1);
+      expect(responseJson2.results).toStrictEqual([
+        {
+          ticker: '$PEPE',
+          available_balance: '350000.000000000000000000',
+          overall_balance: '350000.000000000000000000',
+          transferrable_balance: '0.000000000000000000',
+        },
+      ]);
+
+      const response3 = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/tokens?ticker=$PEPE`,
+      });
+      expect(response3.statusCode).toBe(200);
+      const responseJson3 = response3.json();
+      expect(responseJson3.total).toBe(1);
+      expect(responseJson3.results).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ ticker: '$PEPE', minted_supply: '350000.000000000000000000' }),
         ])
       );
     });

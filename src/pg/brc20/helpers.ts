@@ -47,7 +47,7 @@ const Brc20Schema = Type.Union([Brc20DeploySchema, Brc20MintSchema, Brc20Transfe
 const Brc20C = TypeCompiler.Compile(Brc20Schema);
 export type Brc20 = Static<typeof Brc20Schema>;
 
-const UINT64_MAX = BigNumber('18446744073709551615'); // 20 digits
+export const UINT64_MAX = BigNumber('18446744073709551615'); // 20 digits
 // Only compare against `UINT64_MAX` if the number is at least the same number of digits.
 const numExceedsMax = (num: string) => num.length >= 20 && UINT64_MAX.isLessThan(num);
 
@@ -81,7 +81,8 @@ export function brc20FromInscription(reveal: InscriptionRevealData): Brc20 | und
       if (tick.length < 4 || tick.length > 5) return;
       // Check numeric values.
       if (json.op === 'deploy') {
-        if (parseFloat(json.max) == 0 || numExceedsMax(json.max)) return;
+        if ((parseFloat(json.max) == 0 && json.self_mint !== 'true') || numExceedsMax(json.max))
+          return;
         if (json.lim && (parseFloat(json.lim) == 0 || numExceedsMax(json.lim))) return;
         if (json.dec && parseFloat(json.dec) > 18) return;
       } else {
