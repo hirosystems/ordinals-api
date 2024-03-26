@@ -1297,6 +1297,85 @@ describe('BRC-20', () => {
       );
     });
 
+    test('self mints with invalid parent inscription are ignored', async () => {
+      const address = 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td';
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: BRC20_SELF_MINT_ACTIVATION_BLOCK,
+            hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+          })
+          .transaction({
+            hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'deploy',
+                tick: '$PEPE',
+                max: '21000000',
+                self_mint: 'true',
+              },
+              number: 0,
+              ordinal_number: 0,
+              tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+              address: address,
+            })
+          )
+          .build()
+      );
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: BRC20_SELF_MINT_ACTIVATION_BLOCK + 1,
+            hash: '0000000000000000000098d8f2663891d439f6bb7de230d4e9f6bcc2e85452bf',
+          })
+          .transaction({
+            hash: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
+          })
+          .inscriptionRevealed(
+            brc20Reveal({
+              json: {
+                p: 'brc-20',
+                op: 'mint',
+                tick: '$PEPE',
+                amt: '250000',
+              },
+              number: 1,
+              ordinal_number: 1,
+              tx_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
+              address: address,
+              // no parent
+            })
+          )
+          .build()
+      );
+
+      const response1 = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/balances/${address}`,
+      });
+      expect(response1.statusCode).toBe(200);
+      const responseJson1 = response1.json();
+      expect(responseJson1.total).toBe(0);
+
+      const response3 = await fastify.inject({
+        method: 'GET',
+        url: `/ordinals/brc-20/tokens?ticker=$PEPE`,
+      });
+      expect(response3.statusCode).toBe(200);
+      const responseJson3 = response3.json();
+      expect(responseJson3.total).toBe(1);
+      expect(responseJson3.results).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ ticker: '$PEPE', minted_supply: '0.000000000000000000' }),
+        ])
+      );
+    });
+
     test('rollback mints deduct balance correctly', async () => {
       const address = 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td';
       await db.updateInscriptions(
