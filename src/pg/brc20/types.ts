@@ -20,6 +20,7 @@ export type DbBrc20DeployInsert = {
   decimals: string;
   limit: string | null;
   tx_count: number;
+  self_mint: boolean;
 };
 
 export type DbBrc20MintInsert = {
@@ -78,6 +79,7 @@ export type DbBrc20Token = {
   timestamp: number;
   minted_supply: string;
   tx_count: string;
+  self_mint: boolean;
 };
 
 export type DbBrc20TokenWithSupply = DbBrc20Token & {
@@ -188,6 +190,7 @@ export const BRC20_DEPLOYS_COLUMNS = [
   'limit',
   'minted_supply',
   'tx_count',
+  'self_mint',
 ];
 
 export const BRC20_TRANSFERS_COLUMNS = [

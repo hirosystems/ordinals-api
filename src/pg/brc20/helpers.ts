@@ -15,6 +15,7 @@ const Brc20DeploySchema = Type.Object(
     max: Brc20NumberSchema,
     lim: Type.Optional(Brc20NumberSchema),
     dec: Type.Optional(Type.RegEx(/^\d+$/)),
+    self_mint: Type.Optional(Type.Literal('true')),
   },
   { additionalProperties: true }
 );
@@ -46,9 +47,15 @@ const Brc20Schema = Type.Union([Brc20DeploySchema, Brc20MintSchema, Brc20Transfe
 const Brc20C = TypeCompiler.Compile(Brc20Schema);
 export type Brc20 = Static<typeof Brc20Schema>;
 
-const UINT64_MAX = BigNumber('18446744073709551615'); // 20 digits
+export const UINT64_MAX = BigNumber('18446744073709551615'); // 20 digits
 // Only compare against `UINT64_MAX` if the number is at least the same number of digits.
 const numExceedsMax = (num: string) => num.length >= 20 && UINT64_MAX.isLessThan(num);
+
+/**
+ * Activation block height for
+ * https://l1f.discourse.group/t/brc-20-proposal-for-issuance-and-burn-enhancements-brc20-ip-1/621/1
+ */
+export const BRC20_SELF_MINT_ACTIVATION_BLOCK = 837090;
 
 export function brc20FromInscription(reveal: InscriptionRevealData): Brc20 | undefined {
   if (
@@ -62,10 +69,20 @@ export function brc20FromInscription(reveal: InscriptionRevealData): Brc20 | und
     const json = JSON.parse(hexToBuffer(reveal.inscription.content as string).toString('utf-8'));
     if (Brc20C.Check(json)) {
       // Check ticker byte length
-      if (Buffer.from(json.tick).length !== 4) return;
+      const tick = Buffer.from(json.tick);
+      if (json.op === 'deploy') {
+        if (
+          tick.length === 5 &&
+          (reveal.location.block_height < BRC20_SELF_MINT_ACTIVATION_BLOCK ||
+            json.self_mint !== 'true')
+        )
+          return;
+      }
+      if (tick.length < 4 || tick.length > 5) return;
       // Check numeric values.
       if (json.op === 'deploy') {
-        if (parseFloat(json.max) == 0 || numExceedsMax(json.max)) return;
+        if ((parseFloat(json.max) == 0 && json.self_mint !== 'true') || numExceedsMax(json.max))
+          return;
         if (json.lim && (parseFloat(json.lim) == 0 || numExceedsMax(json.lim))) return;
         if (json.dec && parseFloat(json.dec) > 18) return;
       } else {
