@@ -1,3 +1,10 @@
+## [3.1.0-beta.1](https://github.com/hirosystems/ordinals-api/compare/v3.0.2-beta.6...v3.1.0-beta.1) (2024-03-27)
+
+
+### Features
+
+* support self minted 5-byte wide BRC-20 tokens ([#338](https://github.com/hirosystems/ordinals-api/issues/338)) ([60f46d3](https://github.com/hirosystems/ordinals-api/commit/60f46d3533e837843e8aa6094b4673a3bc84c124))
+
 ## [3.0.2-beta.6](https://github.com/hirosystems/ordinals-api/compare/v3.0.2-beta.5...v3.0.2-beta.6) (2024-03-09)
 
 
