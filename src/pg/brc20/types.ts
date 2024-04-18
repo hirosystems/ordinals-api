@@ -1,68 +1,40 @@
-import { DbLocationTransferType } from '../types';
+import { PgNumeric } from '@hirosystems/api-toolkit';
 
-export type DbBrc20Location = {
-  id: string;
-  inscription_id: string | null;
-  block_height: string;
-  tx_id: string;
-  tx_index: number;
-  address: string | null;
-  transfer_type: DbLocationTransferType;
-};
-
-export type DbBrc20DeployInsert = {
-  inscription_id: string;
+export type DbBrc20TokenInsert = {
+  ticker: string;
+  genesis_id: string;
   block_height: string;
   tx_id: string;
   address: string;
-  ticker: string;
-  max: string;
-  decimals: string;
-  limit: string | null;
-  tx_count: number;
+  max: PgNumeric;
+  limit: PgNumeric;
+  decimals: PgNumeric;
   self_mint: boolean;
 };
 
-export type DbBrc20MintInsert = {
-  inscription_id: string;
-  brc20_deploy_id: string;
-  block_height: string;
-  tx_id: string;
+export enum DbBrc20Operation {
+  deploy = 'deploy',
+  mint = 'mint',
+  transfer = 'transfer',
+  transferSend = 'transfer_send',
+  transferReceive = 'transfer_receive',
+}
+
+export type DbBrc20OperationInsert = {
+  genesis_id: string;
+  brc20_token_ticker: string;
+  block_height: PgNumeric;
+  tx_index: PgNumeric;
   address: string;
-  amount: string;
+  avail_balance: PgNumeric;
+  trans_balance: PgNumeric;
+  operation: DbBrc20Operation;
 };
 
-export type DbBrc20Deploy = {
-  id: string;
-  inscription_id: string;
-  block_height: string;
-  tx_id: string;
+export type DbBrc20CountsByAddressInsert = {
   address: string;
-  ticker: string;
-  max: string;
-  decimals: string;
-  limit?: string;
-};
-
-export type DbBrc20TransferInsert = {
-  inscription_id: string;
-  brc20_deploy_id: string;
-  block_height: string;
-  tx_id: string;
-  from_address: string;
-  to_address: string | null;
-  amount: string;
-};
-
-export type DbBrc20Transfer = {
-  id: string;
-  inscription_id: string;
-  brc20_deploy_id: string;
-  block_height: string;
-  tx_id: string;
-  from_address: string;
-  to_address?: string;
-  amount: string;
+  operation: DbBrc20Operation;
+  count: number;
 };
 
 export type DbBrc20Token = {
@@ -191,15 +163,4 @@ export const BRC20_DEPLOYS_COLUMNS = [
   'minted_supply',
   'tx_count',
   'self_mint',
-];
-
-export const BRC20_TRANSFERS_COLUMNS = [
-  'id',
-  'inscription_id',
-  'brc20_deploy_id',
-  'block_height',
-  'tx_id',
-  'from_address',
-  'to_address',
-  'amount',
 ];

@@ -1,14 +1,10 @@
-import { BasePgStoreModule, logger } from '@hirosystems/api-toolkit';
+import { BasePgStoreModule, PgSqlClient } from '@hirosystems/api-toolkit';
 import * as postgres from 'postgres';
 import {
   DbInscriptionIndexPaging,
   InscriptionData,
-  DbLocationPointerInsert,
-  DbLocationTransferType,
   DbPaginatedResult,
-  InscriptionEventData,
   LocationData,
-  InscriptionRevealData,
 } from '../types';
 import {
   BRC20_DEPLOYS_COLUMNS,
@@ -17,7 +13,7 @@ import {
   DbBrc20Balance,
   DbBrc20BalanceTypeId,
   DbBrc20DeployEvent,
-  DbBrc20DeployInsert,
+  DbBrc20TokenInsert,
   DbBrc20Event,
   DbBrc20EventOperation,
   DbBrc20Holder,
@@ -25,377 +21,182 @@ import {
   DbBrc20Token,
   DbBrc20TokenWithSupply,
   DbBrc20TransferEvent,
+  DbBrc20OperationInsert,
+  DbBrc20Operation,
 } from './types';
-import { Brc20Deploy, Brc20Mint, Brc20Transfer, UINT64_MAX, brc20FromInscription } from './helpers';
 import { Brc20TokenOrderBy } from '../../api/schemas';
 import { objRemoveUndefinedValues } from '../helpers';
+import { BitcoinEvent } from '@hirosystems/chainhook-client';
+import BigNumber from 'bignumber.js';
 
-/** The block at which BRC-20 activity began */
-export const BRC20_GENESIS_BLOCK = 779832;
+function increaseOperationCount(map: Map<DbBrc20Operation, number>, operation: DbBrc20Operation) {
+  const current = map.get(operation);
+  if (current == undefined) {
+    map.set(operation, 1);
+  } else {
+    map.set(operation, current + 1);
+  }
+}
+
+function increaseAddressOperationCount(
+  map: Map<string, Map<DbBrc20Operation, number>>,
+  address: string,
+  operation: DbBrc20Operation
+) {
+  const current = map.get(address);
+  if (current == undefined) {
+    const opMap = new Map<DbBrc20Operation, number>();
+    increaseOperationCount(opMap, operation);
+    map.set(address, opMap);
+  } else {
+    increaseOperationCount(current, operation);
+  }
+}
+
+function increaseTotalBalance(
+  map: Map<string, Map<string, number>>,
+  ticker: string,
+  address: string,
+  availBalance: string,
+  transBalance: string
+) {
+  //
+}
 
 export class Brc20PgStore extends BasePgStoreModule {
   sqlOr(partials: postgres.PendingQuery<postgres.Row[]>[] | undefined) {
     return partials?.reduce((acc, curr) => this.sql`${acc} OR ${curr}`);
   }
 
-  async insertOperations(args: {
-    reveals: InscriptionEventData[];
-    pointers: DbLocationPointerInsert[];
-  }): Promise<void> {
-    for (const [i, reveal] of args.reveals.entries()) {
-      const pointer = args.pointers[i];
-      if (parseInt(pointer.block_height) < BRC20_GENESIS_BLOCK) continue;
-      if ('inscription' in reveal) {
-        const brc20 = brc20FromInscription(reveal);
-        if (brc20) {
-          switch (brc20.op) {
-            case 'deploy':
-              await this.insertDeploy({ brc20, reveal, pointer });
-              break;
-            case 'mint':
-              await this.insertMint({ brc20, reveal, pointer });
-              break;
-            case 'transfer':
-              await this.insertTransfer({ brc20, reveal, pointer });
-              break;
+  async updateBrc20Operations(event: BitcoinEvent): Promise<void> {
+    await this.sqlWriteTransaction(async sql => {
+      const tokens: DbBrc20TokenInsert[] = [];
+      const operations: DbBrc20OperationInsert[] = [];
+      const operationCounts = new Map<DbBrc20Operation, number>();
+      const addressOperationCounts = new Map<string, Map<DbBrc20Operation, number>>();
+      const totalBalanceChanges = new Map<string, Map<string, number>>();
+      for (const tx of event.transactions) {
+        if (tx.metadata.brc20_operation) {
+          const operation = tx.metadata.brc20_operation;
+          if ('deploy' in operation) {
+            tokens.push({
+              genesis_id: operation.deploy.inscription_id,
+              block_height: event.block_identifier.index.toString(),
+              tx_id: tx.transaction_identifier.hash,
+              address: operation.deploy.address,
+              ticker: operation.deploy.tick,
+              max: operation.deploy.max,
+              limit: operation.deploy.lim,
+              decimals: operation.deploy.dec,
+              self_mint: operation.deploy.self_mint,
+            });
+            operations.push({
+              genesis_id: operation.deploy.inscription_id,
+              brc20_token_ticker: operation.deploy.tick,
+              block_height: event.block_identifier.index.toString(),
+              tx_index: '0',
+              address: operation.deploy.address,
+              avail_balance: '0',
+              trans_balance: '0',
+              operation: DbBrc20Operation.deploy,
+            });
+            increaseOperationCount(operationCounts, DbBrc20Operation.deploy);
+            increaseAddressOperationCount(
+              addressOperationCounts,
+              operation.deploy.address,
+              DbBrc20Operation.deploy
+            );
+          } else if ('mint' in operation) {
+            operations.push({
+              genesis_id: operation.mint.inscription_id,
+              brc20_token_ticker: operation.mint.tick,
+              block_height: event.block_identifier.index.toString(),
+              tx_index: '0',
+              address: operation.mint.address,
+              avail_balance: operation.mint.amt,
+              trans_balance: '0',
+              operation: DbBrc20Operation.mint,
+            });
+            increaseOperationCount(operationCounts, DbBrc20Operation.mint);
+            increaseAddressOperationCount(
+              addressOperationCounts,
+              operation.mint.address,
+              DbBrc20Operation.mint
+            );
+          } else if ('transfer' in operation) {
+            operations.push({
+              genesis_id: operation.transfer.inscription_id,
+              brc20_token_ticker: operation.transfer.tick,
+              block_height: event.block_identifier.index.toString(),
+              tx_index: '0',
+              address: operation.transfer.address,
+              avail_balance: BigNumber(operation.transfer.amt).negated().toString(),
+              trans_balance: operation.transfer.amt,
+              operation: DbBrc20Operation.transfer,
+            });
+            increaseOperationCount(operationCounts, DbBrc20Operation.transfer);
+            increaseAddressOperationCount(
+              addressOperationCounts,
+              operation.transfer.address,
+              DbBrc20Operation.deploy
+            );
+          } else if ('transfer_send' in operation) {
+            operations.push({
+              genesis_id: operation.transfer_send.inscription_id,
+              brc20_token_ticker: operation.transfer_send.tick,
+              block_height: event.block_identifier.index.toString(),
+              tx_index: '0',
+              address: operation.transfer_send.sender_address,
+              avail_balance: '0',
+              trans_balance: BigNumber(operation.transfer_send.amt).negated().toString(),
+              operation: DbBrc20Operation.transferSend,
+            });
+            operations.push({
+              genesis_id: operation.transfer_send.inscription_id,
+              brc20_token_ticker: operation.transfer_send.tick,
+              block_height: event.block_identifier.index.toString(),
+              tx_index: '0',
+              address: operation.transfer_send.receiver_address,
+              avail_balance: operation.transfer_send.amt,
+              trans_balance: '0',
+              operation: DbBrc20Operation.transferReceive,
+            });
+            increaseOperationCount(operationCounts, DbBrc20Operation.transferSend);
+            increaseAddressOperationCount(
+              addressOperationCounts,
+              operation.transfer_send.sender_address,
+              DbBrc20Operation.transferSend
+            );
+            increaseAddressOperationCount(
+              addressOperationCounts,
+              operation.transfer_send.receiver_address,
+              DbBrc20Operation.transferReceive
+            );
           }
         }
-      } else {
-        await this.applyTransfer({ reveal, pointer });
       }
-    }
-  }
-
-  async applyTransfer(args: {
-    reveal: InscriptionEventData;
-    pointer: DbLocationPointerInsert;
-  }): Promise<void> {
-    await this.sqlWriteTransaction(async sql => {
-      // Get the sender address for this transfer. We need to get this in a separate query to know
-      // if we should alter the write query to accomodate a "return to sender" scenario.
-      const fromAddressRes = await sql<{ from_address: string }[]>`
-        SELECT from_address FROM brc20_transfers WHERE inscription_id = ${args.pointer.inscription_id}
-      `;
-      if (fromAddressRes.count === 0) return;
-      const fromAddress = fromAddressRes[0].from_address;
-      // Is this transfer sent as fee or from the same sender? If so, we'll return the balance.
-      // Is it burnt? Mark as empty owner.
-      const returnToSender =
-        args.reveal.location.transfer_type == DbLocationTransferType.spentInFees ||
-        fromAddress == args.pointer.address;
-      const toAddress = returnToSender
-        ? fromAddress
-        : args.reveal.location.transfer_type == DbLocationTransferType.burnt
-        ? ''
-        : args.pointer.address;
-      // Check if we have a valid transfer inscription emitted by this address that hasn't been sent
-      // to another address before. Use `LIMIT 3` as a quick way of checking if we have just inserted
-      // the first transfer for this inscription (genesis + transfer).
-      const sendRes = await sql`
-        WITH transfer_data AS (
-          SELECT t.id, t.amount, t.brc20_deploy_id, t.from_address, ROW_NUMBER() OVER()
-          FROM locations AS l
-          INNER JOIN brc20_transfers AS t ON t.inscription_id = l.inscription_id
-          WHERE l.inscription_id = ${args.pointer.inscription_id}
-            AND (
-              l.block_height < ${args.pointer.block_height}
-              OR (l.block_height = ${args.pointer.block_height}
-                AND l.tx_index <= ${args.pointer.tx_index})
-            )
-          LIMIT 3
-        ),
-        validated_transfer AS (
-          SELECT * FROM transfer_data
-          WHERE NOT EXISTS(SELECT id FROM transfer_data WHERE row_number = 3)
-          LIMIT 1
-        ),
-        updated_transfer AS (
-          UPDATE brc20_transfers
-          SET to_address = ${toAddress}
-          WHERE id = (SELECT id FROM validated_transfer)
-        ),
-        balance_insert_from AS (
-          INSERT INTO brc20_balances (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type) (
-            SELECT ${args.pointer.inscription_id}, ${args.pointer.location_id}, brc20_deploy_id,
-              from_address, 0, -1 * amount, ${DbBrc20BalanceTypeId.transferFrom}
-            FROM validated_transfer
-          )
-          ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
-        ),
-        balance_insert_to AS (
-          INSERT INTO brc20_balances (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type) (
-            SELECT ${args.pointer.inscription_id}, ${args.pointer.location_id}, brc20_deploy_id,
-              ${toAddress}, amount, 0, ${DbBrc20BalanceTypeId.transferTo}
-            FROM validated_transfer
-          )
-          ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
-        ),
-        ${
-          returnToSender
-            ? sql`
-                total_balance_revert AS (
-                  UPDATE brc20_total_balances SET
-                    avail_balance = avail_balance + (SELECT amount FROM validated_transfer),
-                    trans_balance = trans_balance - (SELECT amount FROM validated_transfer)
-                  WHERE brc20_deploy_id = (SELECT brc20_deploy_id FROM validated_transfer)
-                    AND address = (SELECT from_address FROM validated_transfer)
-                ),
-                address_event_type_count_increase AS (
-                  INSERT INTO brc20_counts_by_address_event_type (address, transfer_send)
-                  (SELECT from_address, 1 FROM validated_transfer)
-                  ON CONFLICT (address) DO UPDATE SET transfer_send = brc20_counts_by_address_event_type.transfer_send + EXCLUDED.transfer_send
-                )
-              `
-            : sql`
-                total_balance_insert_from AS (
-                  UPDATE brc20_total_balances SET
-                    trans_balance = trans_balance - (SELECT amount FROM validated_transfer),
-                    total_balance = total_balance - (SELECT amount FROM validated_transfer)
-                  WHERE brc20_deploy_id = (SELECT brc20_deploy_id FROM validated_transfer)
-                    AND address = (SELECT from_address FROM validated_transfer)
-                ),
-                total_balance_insert_to AS (
-                  INSERT INTO brc20_total_balances (brc20_deploy_id, address, avail_balance, trans_balance, total_balance) (
-                    SELECT brc20_deploy_id, ${toAddress}, amount, 0, amount
-                    FROM validated_transfer
-                  )
-                  ON CONFLICT ON CONSTRAINT brc20_total_balances_unique DO UPDATE SET
-                    avail_balance = brc20_total_balances.avail_balance + EXCLUDED.avail_balance,
-                    total_balance = brc20_total_balances.total_balance + EXCLUDED.total_balance
-                ),
-                address_event_type_count_increase_from AS (
-                  INSERT INTO brc20_counts_by_address_event_type (address, transfer_send)
-                  (SELECT from_address, 1 FROM validated_transfer)
-                  ON CONFLICT (address) DO UPDATE SET transfer_send = brc20_counts_by_address_event_type.transfer_send + EXCLUDED.transfer_send
-                ),
-                address_event_type_count_increase_to AS (
-                  INSERT INTO brc20_counts_by_address_event_type (address, transfer_send)
-                  (SELECT ${toAddress}, 1 FROM validated_transfer)
-                  ON CONFLICT (address) DO UPDATE SET transfer_send = brc20_counts_by_address_event_type.transfer_send + EXCLUDED.transfer_send
-                )
-              `
-        }, deploy_update AS (
-          UPDATE brc20_deploys
-          SET tx_count = tx_count + 1
-          WHERE id = (SELECT brc20_deploy_id FROM validated_transfer)
-        ),
-        event_type_count_increase AS (
-          INSERT INTO brc20_counts_by_event_type (event_type, count)
-          (SELECT 'transfer_send', COALESCE(COUNT(*), 0) FROM validated_transfer)
-          ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + EXCLUDED.count
-        )
-        INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id, address, from_address) (
-          SELECT 'transfer_send', ${args.pointer.inscription_id}, ${args.pointer.location_id},
-            brc20_deploy_id, id, ${toAddress}, from_address
-          FROM validated_transfer
-        )
-      `;
-      if (sendRes.count)
-        logger.info(
-          `Brc20PgStore send transfer to ${toAddress} at block ${args.pointer.block_height}`
-        );
+      await this.insertTokens(sql, tokens);
+      await this.insertOperations(sql, operations);
     });
   }
 
-  private async insertDeploy(deploy: {
-    brc20: Brc20Deploy;
-    reveal: InscriptionRevealData;
-    pointer: DbLocationPointerInsert;
-  }): Promise<void> {
-    if (deploy.reveal.location.transfer_type != DbLocationTransferType.transferred) return;
-    const insert: DbBrc20DeployInsert = {
-      inscription_id: deploy.pointer.inscription_id,
-      block_height: deploy.pointer.block_height,
-      tx_id: deploy.reveal.location.tx_id,
-      address: deploy.pointer.address as string,
-      ticker: deploy.brc20.tick,
-      max: deploy.brc20.max === '0' ? UINT64_MAX.toString() : deploy.brc20.max,
-      limit: deploy.brc20.lim ?? null,
-      decimals: deploy.brc20.dec ?? '18',
-      tx_count: 1,
-      self_mint: deploy.brc20.self_mint === 'true',
-    };
-    const deployRes = await this.sql`
-      WITH deploy_insert AS (
-        INSERT INTO brc20_deploys ${this.sql(insert)}
-        ON CONFLICT (LOWER(ticker)) DO NOTHING
-        RETURNING id
-      ),
-      event_type_count_increase AS (
-        INSERT INTO brc20_counts_by_event_type (event_type, count)
-        (SELECT 'deploy', COALESCE(COUNT(*), 0) FROM deploy_insert)
-        ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + EXCLUDED.count
-      ),
-      address_event_type_count_increase AS (
-        INSERT INTO brc20_counts_by_address_event_type (address, deploy)
-        (SELECT ${deploy.pointer.address}, COALESCE(COUNT(*), 0) FROM deploy_insert)
-        ON CONFLICT (address) DO UPDATE SET deploy = brc20_counts_by_address_event_type.deploy + EXCLUDED.deploy
-      ),
-      token_count_increase AS (
-        INSERT INTO brc20_counts_by_tokens (token_type, count)
-        (SELECT 'token', COALESCE(COUNT(*), 0) FROM deploy_insert)
-        ON CONFLICT (token_type) DO UPDATE SET count = brc20_counts_by_tokens.count + EXCLUDED.count
-      )
-      INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, deploy_id, address) (
-        SELECT 'deploy', ${deploy.pointer.inscription_id}, ${deploy.pointer.location_id}, id, id,
-          ${deploy.pointer.address}
-        FROM deploy_insert
-      )
+  private async insertTokens(sql: PgSqlClient, tokens: DbBrc20TokenInsert[]): Promise<void> {
+    if (!tokens.length) return;
+    await sql`
+      INSERT INTO brc20_tokens ${this.sql(tokens)}
+      ON CONFLICT (ticker) DO NOTHING
     `;
-    if (deployRes.count)
-      logger.info(
-        `Brc20PgStore deploy ${deploy.brc20.tick} by ${deploy.pointer.address} at block ${deploy.pointer.block_height}`
-      );
   }
 
-  private async insertMint(mint: {
-    brc20: Brc20Mint;
-    reveal: InscriptionRevealData;
-    pointer: DbLocationPointerInsert;
-  }): Promise<void> {
-    if (mint.reveal.location.transfer_type != DbLocationTransferType.transferred) return;
-    // Check the following conditions:
-    // * Is the mint amount within the allowed token limits?
-    // * Is this a self_mint with the correct parent inscription?
-    // * Is the number of decimals correct?
-    // * Does the mint amount exceed remaining supply?
-    const mintRes = await this.sql`
-      WITH mint_data AS (
-        SELECT d.id, d.decimals, d."limit", d.max, d.minted_supply, d.self_mint, i.genesis_id
-        FROM brc20_deploys d
-        INNER JOIN inscriptions i ON i.id = d.inscription_id
-        WHERE d.ticker_lower = LOWER(${mint.brc20.tick}) AND d.minted_supply < d.max
-      ),
-      validated_mint AS (
-        SELECT
-          id AS brc20_deploy_id,
-          LEAST(${mint.brc20.amt}::numeric, max - minted_supply) AS real_mint_amount
-        FROM mint_data
-        WHERE ("limit" IS NULL OR ${mint.brc20.amt}::numeric <= "limit")
-          AND (SCALE(${mint.brc20.amt}::numeric) <= decimals)
-          AND (
-            self_mint = FALSE OR
-            (self_mint = TRUE AND genesis_id = ${mint.reveal.inscription.parent})
-          )
-      ),
-      mint_insert AS (
-        INSERT INTO brc20_mints (inscription_id, brc20_deploy_id, block_height, tx_id, address, amount) (
-          SELECT ${mint.pointer.inscription_id}, brc20_deploy_id, ${mint.pointer.block_height},
-            ${mint.reveal.location.tx_id}, ${mint.pointer.address}, ${mint.brc20.amt}::numeric
-          FROM validated_mint
-        )
-        ON CONFLICT (inscription_id) DO NOTHING
-        RETURNING id, brc20_deploy_id
-      ),
-      deploy_update AS (
-        UPDATE brc20_deploys
-        SET
-          minted_supply = minted_supply + (SELECT real_mint_amount FROM validated_mint),
-          tx_count = tx_count + 1
-        WHERE id = (SELECT brc20_deploy_id FROM validated_mint)
-      ),
-      balance_insert AS (
-        INSERT INTO brc20_balances (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type) (
-          SELECT ${mint.pointer.inscription_id}, ${mint.pointer.location_id}, brc20_deploy_id,
-            ${mint.pointer.address}, real_mint_amount, 0, ${DbBrc20BalanceTypeId.mint}
-          FROM validated_mint
-        )
-        ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
-      ),
-      total_balance_insert AS (
-        INSERT INTO brc20_total_balances (brc20_deploy_id, address, avail_balance, trans_balance, total_balance) (
-          SELECT brc20_deploy_id, ${mint.pointer.address}, real_mint_amount, 0, real_mint_amount
-          FROM validated_mint
-        )
-        ON CONFLICT ON CONSTRAINT brc20_total_balances_unique DO UPDATE SET
-          avail_balance = brc20_total_balances.avail_balance + EXCLUDED.avail_balance,
-          total_balance = brc20_total_balances.total_balance + EXCLUDED.total_balance
-      ),
-      event_type_count_increase AS (
-        INSERT INTO brc20_counts_by_event_type (event_type, count)
-        (SELECT 'mint', COALESCE(COUNT(*), 0) FROM validated_mint)
-        ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + EXCLUDED.count
-      ),
-      address_event_type_count_increase AS (
-        INSERT INTO brc20_counts_by_address_event_type (address, mint)
-        (SELECT ${mint.pointer.address}, COALESCE(COUNT(*), 0) FROM validated_mint)
-        ON CONFLICT (address) DO UPDATE SET mint = brc20_counts_by_address_event_type.mint + EXCLUDED.mint
-      )
-      INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, mint_id, address) (
-        SELECT 'mint', ${mint.pointer.inscription_id}, ${mint.pointer.location_id}, brc20_deploy_id, id, ${mint.pointer.address}
-        FROM mint_insert
-      )
+  private async insertOperations(
+    sql: PgSqlClient,
+    operations: DbBrc20OperationInsert[]
+  ): Promise<void> {
+    if (!operations.length) return;
+    await sql`
+      INSERT INTO brc20_operations ${this.sql(operations)}
+      ON CONFLICT ON CONSTRAINT brc20_operation_unique DO NOTHING
     `;
-    if (mintRes.count)
-      logger.info(
-        `Brc20PgStore mint ${mint.brc20.tick} (${mint.brc20.amt}) by ${mint.pointer.address} at block ${mint.pointer.block_height}`
-      );
-  }
-
-  private async insertTransfer(transfer: {
-    brc20: Brc20Transfer;
-    reveal: InscriptionEventData;
-    pointer: DbLocationPointerInsert;
-  }): Promise<void> {
-    if (transfer.reveal.location.transfer_type != DbLocationTransferType.transferred) return;
-    const transferRes = await this.sql`
-      WITH validated_transfer AS (
-        SELECT brc20_deploy_id, avail_balance
-        FROM brc20_total_balances
-        WHERE brc20_deploy_id = (SELECT id FROM brc20_deploys WHERE ticker_lower = LOWER(${transfer.brc20.tick}))
-          AND address = ${transfer.pointer.address}
-          AND avail_balance >= ${transfer.brc20.amt}::numeric
-      ),
-      transfer_insert AS (
-        INSERT INTO brc20_transfers (inscription_id, brc20_deploy_id, block_height, tx_id, from_address, to_address, amount) (
-          SELECT ${transfer.pointer.inscription_id}, brc20_deploy_id,
-            ${transfer.pointer.block_height}, ${transfer.reveal.location.tx_id},
-            ${transfer.pointer.address}, NULL, ${transfer.brc20.amt}::numeric
-          FROM validated_transfer
-        )
-        ON CONFLICT (inscription_id) DO NOTHING
-        RETURNING id, brc20_deploy_id
-      ),
-      balance_insert AS (
-        INSERT INTO brc20_balances (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type) (
-          SELECT ${transfer.pointer.inscription_id}, ${transfer.pointer.location_id}, brc20_deploy_id,
-            ${transfer.pointer.address}, -1 * ${transfer.brc20.amt}::numeric,
-            ${transfer.brc20.amt}::numeric, ${DbBrc20BalanceTypeId.transferIntent}
-          FROM validated_transfer
-        )
-        ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
-      ),
-      total_balance_update AS (
-        UPDATE brc20_total_balances SET
-          avail_balance = avail_balance - ${transfer.brc20.amt}::numeric,
-          trans_balance = trans_balance + ${transfer.brc20.amt}::numeric
-        WHERE brc20_deploy_id = (SELECT brc20_deploy_id FROM validated_transfer)
-          AND address = ${transfer.pointer.address}
-      ),
-      deploy_update AS (
-        UPDATE brc20_deploys
-        SET tx_count = tx_count + 1
-        WHERE id = (SELECT brc20_deploy_id FROM validated_transfer)
-      ),
-      event_type_count_increase AS (
-        INSERT INTO brc20_counts_by_event_type (event_type, count)
-        (SELECT 'transfer', COALESCE(COUNT(*), 0) FROM validated_transfer)
-        ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + EXCLUDED.count
-      ),
-      address_event_type_count_increase AS (
-        INSERT INTO brc20_counts_by_address_event_type (address, transfer)
-        (SELECT ${transfer.pointer.address}, COALESCE(COUNT(*), 0) FROM validated_transfer)
-        ON CONFLICT (address) DO UPDATE SET transfer = brc20_counts_by_address_event_type.transfer + EXCLUDED.transfer
-      )
-      INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id, address) (
-        SELECT 'transfer', ${transfer.pointer.inscription_id}, ${transfer.pointer.location_id}, brc20_deploy_id, id, ${transfer.pointer.address}
-        FROM transfer_insert
-      )
-    `;
-    if (transferRes.count)
-      logger.info(
-        `Brc20PgStore transfer ${transfer.brc20.tick} (${transfer.brc20.amt}) by ${transfer.pointer.address} at block ${transfer.pointer.block_height}`
-      );
   }
 
   async rollBackInscription(args: { inscription: InscriptionData }): Promise<void> {

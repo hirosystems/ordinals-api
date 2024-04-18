@@ -9,8 +9,8 @@ export function up(pgm: MigrationBuilder): void {
       type: 'bigserial',
       primaryKey: true,
     },
-    brc20_deploy_id: {
-      type: 'bigint',
+    brc20_token_ticker: {
+      type: 'string',
       notNull: true,
     },
     address: {
@@ -33,16 +33,16 @@ export function up(pgm: MigrationBuilder): void {
   pgm.createConstraint(
     'brc20_total_balances',
     'brc20_total_balances_brc20_deploy_id_fk',
-    'FOREIGN KEY(brc20_deploy_id) REFERENCES brc20_deploys(id) ON DELETE CASCADE'
+    'FOREIGN KEY(brc20_token_ticker) REFERENCES brc20_tokens(ticker) ON DELETE CASCADE'
   );
   pgm.createConstraint(
     'brc20_total_balances',
     'brc20_total_balances_unique',
-    'UNIQUE(brc20_deploy_id, address)'
+    'UNIQUE(brc20_token_ticker, address)'
   );
   pgm.createIndex('brc20_total_balances', ['address']);
   pgm.createIndex('brc20_total_balances', [
-    'brc20_deploy_id',
+    'brc20_token_ticker',
     { name: 'total_balance', sort: 'DESC' },
   ]);
 }
