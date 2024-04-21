@@ -125,7 +125,7 @@ export class PgStore extends BasePgStore {
         for (const writeChunk of batchIterate(writes, INSERT_BATCH_SIZE))
           await this.insertInscriptions(writeChunk, payload.chainhook.is_streaming_blocks);
         updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
-        if (ENV.BRC20_BLOCK_SCAN_ENABLED) await this.brc20.updateBrc20Operations(event);
+        await this.brc20.updateBrc20Operations(event);
         logger.info(
           `PgStore ingested block ${event.block_identifier.index} in ${time.getElapsedSeconds()}s`
         );

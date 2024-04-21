@@ -11,7 +11,7 @@ export function up(pgm: MigrationBuilder): void {
     'transfer_send',
     'transfer_receive',
   ]);
-  pgm.createTable('brc20_events', {
+  pgm.createTable('brc20_operations', {
     genesis_id: {
       type: 'string',
       notNull: true,
@@ -45,8 +45,8 @@ export function up(pgm: MigrationBuilder): void {
     },
   });
   pgm.createConstraint(
-    'brc20_operation',
-    'brc20_operation_unique',
+    'brc20_operations',
+    'brc20_operations_unique',
     'UNIQUE(genesis_id, operation)'
   );
 }
