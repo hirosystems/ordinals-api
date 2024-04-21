@@ -11,16 +11,11 @@ import {
   BRC20_OPERATIONS,
   DbBrc20Activity,
   DbBrc20Balance,
-  DbBrc20BalanceTypeId,
-  DbBrc20DeployEvent,
   DbBrc20TokenInsert,
-  DbBrc20Event,
   DbBrc20EventOperation,
   DbBrc20Holder,
-  DbBrc20MintEvent,
   DbBrc20Token,
   DbBrc20TokenWithSupply,
-  DbBrc20TransferEvent,
   DbBrc20OperationInsert,
   DbBrc20Operation,
 } from './types';
@@ -35,6 +30,15 @@ function increaseOperationCount(map: Map<DbBrc20Operation, number>, operation: D
     map.set(operation, 1);
   } else {
     map.set(operation, current + 1);
+  }
+}
+
+function increaseTokenMintedSupply(map: Map<string, BigNumber>, ticker: string, amount: BigNumber) {
+  const current = map.get(ticker);
+  if (current == undefined) {
+    map.set(ticker, amount);
+  } else {
+    map.set(ticker, current.plus(amount));
   }
 }
 
@@ -96,6 +100,7 @@ export class Brc20PgStore extends BasePgStoreModule {
       // Keep all DB changes in memory, write them at the end.
       const tokens: DbBrc20TokenInsert[] = [];
       const operations: DbBrc20OperationInsert[] = [];
+      const tokenMintSupplies = new Map<string, BigNumber>();
       const operationCounts = new Map<DbBrc20Operation, number>();
       const addressOperationCounts = new Map<string, Map<DbBrc20Operation, number>>();
       const totalBalanceChanges = new Map<string, Map<string, AddressBalanceData>>();
@@ -145,6 +150,8 @@ export class Brc20PgStore extends BasePgStoreModule {
               trans_balance: '0',
               operation: DbBrc20Operation.mint,
             });
+            const amt = BigNumber(operation.mint.amt);
+            increaseTokenMintedSupply(tokenMintSupplies, operation.mint.tick, amt);
             increaseOperationCount(operationCounts, DbBrc20Operation.mint);
             increaseAddressOperationCount(
               addressOperationCounts,
@@ -155,9 +162,9 @@ export class Brc20PgStore extends BasePgStoreModule {
               totalBalanceChanges,
               operation.mint.tick,
               operation.mint.address,
-              BigNumber(operation.mint.amt),
+              amt,
               BigNumber(0),
-              BigNumber(operation.mint.amt)
+              amt
             );
             logger.info(
               `Brc20PgStore mint ${operation.mint.tick} ${operation.mint.amt} by ${operation.mint.address} at height ${block_height}`
@@ -173,6 +180,7 @@ export class Brc20PgStore extends BasePgStoreModule {
               trans_balance: operation.transfer.amt,
               operation: DbBrc20Operation.transfer,
             });
+            const amt = BigNumber(operation.transfer.amt);
             increaseOperationCount(operationCounts, DbBrc20Operation.transfer);
             increaseAddressOperationCount(
               addressOperationCounts,
@@ -183,8 +191,8 @@ export class Brc20PgStore extends BasePgStoreModule {
               totalBalanceChanges,
               operation.transfer.tick,
               operation.transfer.address,
-              BigNumber(operation.transfer.amt).negated(),
-              BigNumber(operation.transfer.amt),
+              amt.negated(),
+              amt,
               BigNumber(0)
             );
             logger.info(
@@ -211,6 +219,7 @@ export class Brc20PgStore extends BasePgStoreModule {
               trans_balance: '0',
               operation: DbBrc20Operation.transferReceive,
             });
+            const amt = BigNumber(operation.transfer_send.amt);
             increaseOperationCount(operationCounts, DbBrc20Operation.transferSend);
             increaseAddressOperationCount(
               addressOperationCounts,
@@ -227,16 +236,16 @@ export class Brc20PgStore extends BasePgStoreModule {
               operation.transfer_send.tick,
               operation.transfer_send.sender_address,
               BigNumber('0'),
-              BigNumber(operation.transfer_send.amt).negated(),
-              BigNumber(operation.transfer_send.amt).negated()
+              amt.negated(),
+              amt.negated()
             );
             updateAddressBalance(
               totalBalanceChanges,
               operation.transfer_send.tick,
               operation.transfer_send.receiver_address,
-              BigNumber(operation.transfer_send.amt),
+              amt,
               BigNumber(0),
-              BigNumber(operation.transfer_send.amt)
+              amt
             );
             logger.info(
               `Brc20PgStore transfer_send ${operation.transfer_send.tick} ${operation.transfer_send.amt} from ${operation.transfer_send.sender_address} to ${operation.transfer_send.receiver_address} at height ${block_height}`
@@ -254,6 +263,12 @@ export class Brc20PgStore extends BasePgStoreModule {
           INSERT INTO brc20_operations ${sql(operations)}
           ON CONFLICT ON CONSTRAINT brc20_operations_unique DO NOTHING
         `;
+      for (const [ticker, amount] of tokenMintSupplies) {
+        await sql`
+          UPDATE brc20_tokens SET minted_supply = minted_supply + ${amount.toString()}
+          WHERE ticker = ${ticker}
+        `;
+      }
       if (operationCounts.size) {
         const entries = [];
         for (const [operation, count] of operationCounts) {
@@ -293,7 +308,7 @@ export class Brc20PgStore extends BasePgStoreModule {
         }
         await sql`
           INSERT INTO brc20_total_balances ${sql(entries)}
-          ON CONFLICT ON CONSTRAINT brc20_total_balances_unique DO UPDATE SET
+          ON CONFLICT (brc20_token_ticker, address) DO UPDATE SET
             avail_balance = brc20_total_balances.avail_balance + EXCLUDED.avail_balance,
             trans_balance = brc20_total_balances.trans_balance + EXCLUDED.trans_balance,
             total_balance = brc20_total_balances.total_balance + EXCLUDED.total_balance
@@ -348,29 +363,30 @@ export class Brc20PgStore extends BasePgStoreModule {
     args: { ticker?: string[]; order_by?: Brc20TokenOrderBy } & DbInscriptionIndexPaging
   ): Promise<DbPaginatedResult<DbBrc20Token>> {
     const tickerPrefixCondition = this.sqlOr(
-      args.ticker?.map(t => this.sql`d.ticker_lower LIKE LOWER(${t}) || '%'`)
+      args.ticker?.map(t => this.sql`d.ticker LIKE LOWER(${t}) || '%'`)
     );
     const orderBy =
       args.order_by === Brc20TokenOrderBy.tx_count
-        ? this.sql`tx_count DESC` // tx_count
+        ? this.sql`d.tx_count DESC` // tx_count
         : this.sql`l.block_height DESC, l.tx_index DESC`; // default: `index`
     const results = await this.sql<(DbBrc20Token & { total: number })[]>`
       ${
         args.ticker === undefined
           ? this.sql`WITH global_count AS (
-              SELECT COALESCE(count, 0) AS count FROM brc20_counts_by_tokens
+              SELECT COALESCE(count, 0) AS count
+              FROM brc20_counts_by_operation
+              WHERE operation = 'deploy'
             )`
           : this.sql``
       }
       SELECT
-        ${this.sql(BRC20_DEPLOYS_COLUMNS.map(c => `d.${c}`))},
-        i.number, i.genesis_id, l.timestamp,
+        d.*, i.number, l.timestamp,
         ${
           args.ticker ? this.sql`COUNT(*) OVER()` : this.sql`(SELECT count FROM global_count)`
         } AS total
-      FROM brc20_deploys AS d
-      INNER JOIN inscriptions AS i ON i.id = d.inscription_id
-      INNER JOIN genesis_locations AS g ON g.inscription_id = d.inscription_id
+      FROM brc20_tokens AS d
+      INNER JOIN inscriptions AS i ON i.genesis_id = d.genesis_id
+      INNER JOIN genesis_locations AS g ON g.inscription_id = i.id
       INNER JOIN locations AS l ON l.id = g.location_id
       ${tickerPrefixCondition ? this.sql`WHERE ${tickerPrefixCondition}` : this.sql``}
       ORDER BY ${orderBy}
@@ -390,15 +406,9 @@ export class Brc20PgStore extends BasePgStoreModule {
       block_height?: number;
     } & DbInscriptionIndexPaging
   ): Promise<DbPaginatedResult<DbBrc20Balance>> {
-    const ticker = this.sqlOr(
-      args.ticker?.map(t => this.sql`d.ticker_lower LIKE LOWER(${t}) || '%'`)
-    );
+    const ticker = this.sqlOr(args.ticker?.map(t => this.sql`d.ticker LIKE LOWER(${t}) || '%'`));
     // Change selection table depending if we're filtering by block height or not.
     const results = await this.sql<(DbBrc20Balance & { total: number })[]>`
-      WITH token_ids AS (
-        SELECT id FROM brc20_deploys AS d
-        WHERE ${ticker ? ticker : this.sql`FALSE`}
-      )
       ${
         args.block_height
           ? this.sql`
@@ -421,11 +431,11 @@ export class Brc20PgStore extends BasePgStoreModule {
           : this.sql`
               SELECT d.ticker, d.decimals, b.avail_balance, b.trans_balance, b.total_balance, COUNT(*) OVER() as total
               FROM brc20_total_balances AS b
-              INNER JOIN brc20_deploys AS d ON d.id = b.brc20_deploy_id
+              INNER JOIN brc20_tokens AS d ON d.ticker = b.brc20_token_ticker
               WHERE
                 b.total_balance > 0
                 AND b.address = ${args.address}
-                ${ticker ? this.sql`AND brc20_deploy_id IN (SELECT id FROM token_ids)` : this.sql``}
+                ${ticker ? this.sql`AND ${ticker}` : this.sql``}
             `
       }
       LIMIT ${args.limit}

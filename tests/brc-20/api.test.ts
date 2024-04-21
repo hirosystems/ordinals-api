@@ -39,7 +39,7 @@ describe('BRC-20 API', () => {
           .brc20({
             deploy: {
               inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-              tick: 'PEPE',
+              tick: 'pepe',
               max: '21000000',
               lim: '21000000',
               dec: '18',
@@ -51,7 +51,7 @@ describe('BRC-20 API', () => {
       );
       const response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/tokens/PEPE`,
+        url: `/ordinals/brc-20/tokens/pepe`,
       });
       expect(response.statusCode).toBe(200);
       expect(response.json()).toStrictEqual({
@@ -61,7 +61,7 @@ describe('BRC-20 API', () => {
           block_height: BRC20_GENESIS_BLOCK,
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-          ticker: 'PEPE',
+          ticker: 'pepe',
           max_supply: '21000000.000000000000000000',
           mint_limit: null,
           decimals: 18,
@@ -92,7 +92,7 @@ describe('BRC-20 API', () => {
           .brc20({
             deploy: {
               inscription_id: `${transferHash}i0`,
-              tick: 'PEPE',
+              tick: 'pepe',
               max: '21000000',
               lim: '21000000',
               dec: '18',
@@ -113,7 +113,7 @@ describe('BRC-20 API', () => {
           .brc20({
             deploy: {
               inscription_id: `${transferHash}i0`,
-              tick: 'PEER',
+              tick: 'peer',
               max: '21000000',
               lim: '21000000',
               dec: '18',
@@ -134,7 +134,7 @@ describe('BRC-20 API', () => {
           .brc20({
             deploy: {
               inscription_id: `${transferHash}i0`,
-              tick: 'ABCD',
+              tick: 'abcd',
               max: '21000000',
               lim: '21000000',
               dec: '18',
@@ -155,7 +155,7 @@ describe('BRC-20 API', () => {
           .brc20({
             deploy: {
               inscription_id: `${transferHash}i0`,
-              tick: 'DCBA',
+              tick: 'dcba',
               max: '21000000',
               lim: '21000000',
               dec: '18',
@@ -174,9 +174,9 @@ describe('BRC-20 API', () => {
       expect(responseJson.total).toBe(3);
       expect(responseJson.results).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ ticker: 'PEPE' }),
-          expect.objectContaining({ ticker: 'PEER' }),
-          expect.objectContaining({ ticker: 'ABCD' }),
+          expect.objectContaining({ ticker: 'pepe' }),
+          expect.objectContaining({ ticker: 'peer' }),
+          expect.objectContaining({ ticker: 'abcd' }),
         ])
       );
     });
@@ -188,7 +188,7 @@ describe('BRC-20 API', () => {
       const addressA = 'bc1q6uwuet65rm6xvlz7ztw2gvdmmay5uaycu03mqz';
       const addressB = 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4';
 
-      // A deploys PEPE
+      // A deploys pepe
       let number = inscriptionNumbers.next().value;
       await db.updateInscriptions(
         new TestChainhookPayloadBuilder()
@@ -198,7 +198,7 @@ describe('BRC-20 API', () => {
           .brc20({
             deploy: {
               inscription_id: `${randomHash()}i0`,
-              tick: 'PEPE',
+              tick: 'pepe',
               max: '21000000',
               lim: '21000000',
               dec: '18',
@@ -209,7 +209,7 @@ describe('BRC-20 API', () => {
           .build()
       );
 
-      // A mints 10000 PEPE 10 times (will later be rolled back)
+      // A mints 10000 pepe 10 times (will later be rolled back)
       const pepeMints = [];
       for (let i = 0; i < 10; i++) {
         const txHash = randomHash();
@@ -221,7 +221,7 @@ describe('BRC-20 API', () => {
           .brc20({
             mint: {
               inscription_id: `${txHash}i0`,
-              tick: 'PEPE',
+              tick: 'pepe',
               address: addressA,
               amt: '10000',
             },
@@ -231,7 +231,7 @@ describe('BRC-20 API', () => {
         await db.updateInscriptions(payload);
       }
 
-      // B deploys ABCD
+      // B deploys abcd
       number = inscriptionNumbers.next().value;
       await db.updateInscriptions(
         new TestChainhookPayloadBuilder()
@@ -241,7 +241,7 @@ describe('BRC-20 API', () => {
           .brc20({
             deploy: {
               inscription_id: `${randomHash()}i0`,
-              tick: 'ABCD',
+              tick: 'abcd',
               max: '21000000',
               lim: '21000000',
               dec: '18',
@@ -252,7 +252,7 @@ describe('BRC-20 API', () => {
           .build()
       );
 
-      // B mints 10000 ABCD
+      // B mints 10000 abcd
       number = inscriptionNumbers.next().value;
       await db.updateInscriptions(
         new TestChainhookPayloadBuilder()
@@ -262,7 +262,7 @@ describe('BRC-20 API', () => {
           .brc20({
             mint: {
               inscription_id: `${randomHash()}i0`,
-              tick: 'ABCD',
+              tick: 'abcd',
               address: addressA,
               amt: '10000',
             },
@@ -270,7 +270,7 @@ describe('BRC-20 API', () => {
           .build()
       );
 
-      // B send 1000 ABCD to A
+      // B send 1000 abcd to A
       // (create inscription, transfer)
       const txHashTransfer = randomHash();
       number = inscriptionNumbers.next().value;
@@ -281,7 +281,7 @@ describe('BRC-20 API', () => {
         .brc20({
           transfer: {
             inscription_id: `${txHashTransfer}i0`,
-            tick: 'ABCD',
+            tick: 'abcd',
             address: addressB,
             amt: '1000',
           },
@@ -296,7 +296,7 @@ describe('BRC-20 API', () => {
         .transaction({ hash: txHashTransferSend })
         .brc20({
           transfer_send: {
-            tick: 'ABCD',
+            tick: 'abcd',
             inscription_id: `${txHashTransfer}i0`,
             amt: '1000',
             sender_address: addressB,
@@ -317,13 +317,13 @@ describe('BRC-20 API', () => {
 
       // WITHOUT tx_count sort:
       expect(json.results).toEqual([
-        // The first result is the token with the latest activity (ABCD)
+        // The first result is the token with the latest activity (abcd)
         expect.objectContaining({
-          ticker: 'ABCD',
+          ticker: 'abcd',
           tx_count: 4,
         } as Brc20TokenResponse),
         expect.objectContaining({
-          ticker: 'PEPE',
+          ticker: 'pepe',
           tx_count: 11,
         } as Brc20TokenResponse),
       ]);
@@ -337,25 +337,25 @@ describe('BRC-20 API', () => {
       expect(json.total).toBe(2);
       expect(json.results).toHaveLength(2);
 
-      // WITH tx_count sort: The first result is the most active token (PEPE)
+      // WITH tx_count sort: The first result is the most active token (pepe)
       expect(json.results).toEqual([
         expect.objectContaining({
-          ticker: 'PEPE',
+          ticker: 'pepe',
           tx_count: 11,
         } as Brc20TokenResponse),
         expect.objectContaining({
-          ticker: 'ABCD',
+          ticker: 'abcd',
           tx_count: 4,
         } as Brc20TokenResponse),
       ]);
 
-      // Rollback PEPE mints
+      // Rollback pepe mints
       for (const payload of pepeMints) {
         const payloadRollback = { ...payload, apply: [], rollback: payload.apply };
         await db.updateInscriptions(payloadRollback);
       }
 
-      // WITH tx_count sort: The first result is the most active token (now ABCD)
+      // WITH tx_count sort: The first result is the most active token (now abcd)
       response = await fastify.inject({
         method: 'GET',
         url: `/ordinals/brc-20/tokens?order_by=tx_count`,
@@ -366,16 +366,16 @@ describe('BRC-20 API', () => {
       expect(json.results).toHaveLength(2);
       expect(json.results).toEqual([
         expect.objectContaining({
-          ticker: 'ABCD',
+          ticker: 'abcd',
           tx_count: 4,
         } as Brc20TokenResponse),
         expect.objectContaining({
-          ticker: 'PEPE',
+          ticker: 'pepe',
           tx_count: 1, // only the deploy remains
         } as Brc20TokenResponse),
       ]);
 
-      // Rollback ABCD transfer
+      // Rollback abcd transfer
       await db.updateInscriptions({
         ...payloadTransferSend,
         apply: [],
@@ -397,11 +397,11 @@ describe('BRC-20 API', () => {
       expect(json.results).toHaveLength(2);
       expect(json.results).toEqual([
         expect.objectContaining({
-          ticker: 'ABCD',
+          ticker: 'abcd',
           tx_count: 2, // only the deploy and mint remain
         } as Brc20TokenResponse),
         expect.objectContaining({
-          ticker: 'PEPE',
+          ticker: 'pepe',
           tx_count: 1,
         } as Brc20TokenResponse),
       ]);
@@ -416,7 +416,7 @@ describe('BRC-20 API', () => {
       const addressA = 'bc1q6uwuet65rm6xvlz7ztw2gvdmmay5uaycu03mqz';
       const addressB = 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4';
 
-      // A deploys PEPE
+      // A deploys pepe
       let number = inscriptionNumbers.next().value;
       await db.updateInscriptions(
         new TestChainhookPayloadBuilder()
@@ -426,7 +426,7 @@ describe('BRC-20 API', () => {
           .brc20({
             deploy: {
               inscription_id: `${randomHash()}i0`,
-              tick: 'PEPE',
+              tick: 'pepe',
               max: '21000000',
               lim: '21000000',
               dec: '18',
@@ -437,10 +437,10 @@ describe('BRC-20 API', () => {
           .build()
       );
 
-      // Verify that the PEPE deploy is in the activity feed
+      // Verify that the pepe deploy is in the activity feed
       let response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/activity?ticker=PEPE`,
+        url: `/ordinals/brc-20/activity?ticker=pepe`,
       });
       expect(response.statusCode).toBe(200);
       let json = response.json();
@@ -449,7 +449,7 @@ describe('BRC-20 API', () => {
         expect.arrayContaining([
           expect.objectContaining({
             operation: 'deploy',
-            ticker: 'PEPE',
+            ticker: 'pepe',
             address: addressA,
             deploy: expect.objectContaining({
               max_supply: '21000000.000000000000000000',
@@ -458,7 +458,7 @@ describe('BRC-20 API', () => {
         ])
       );
 
-      // A mints 10000 PEPE
+      // A mints 10000 pepe
       number = inscriptionNumbers.next().value;
       await db.updateInscriptions(
         new TestChainhookPayloadBuilder()
@@ -468,7 +468,7 @@ describe('BRC-20 API', () => {
           .brc20({
             mint: {
               inscription_id: `${randomHash()}i0`,
-              tick: 'PEPE',
+              tick: 'pepe',
               address: addressA,
               amt: '10000',
             },
@@ -478,7 +478,7 @@ describe('BRC-20 API', () => {
 
       response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/activity?ticker=PEPE`,
+        url: `/ordinals/brc-20/activity?ticker=pepe`,
       });
       expect(response.statusCode).toBe(200);
       json = response.json();
@@ -487,11 +487,11 @@ describe('BRC-20 API', () => {
         expect.arrayContaining([
           expect.objectContaining({
             operation: 'deploy',
-            ticker: 'PEPE',
+            ticker: 'pepe',
           } as Brc20ActivityResponse),
           expect.objectContaining({
             operation: 'mint',
-            ticker: 'PEPE',
+            ticker: 'pepe',
             address: addressA,
             mint: {
               amount: '10000.000000000000000000',
@@ -500,7 +500,7 @@ describe('BRC-20 API', () => {
         ])
       );
 
-      // B mints 10000 PEPE
+      // B mints 10000 pepe
       number = inscriptionNumbers.next().value;
       await db.updateInscriptions(
         new TestChainhookPayloadBuilder()
@@ -510,7 +510,7 @@ describe('BRC-20 API', () => {
           .brc20({
             mint: {
               inscription_id: `${randomHash()}i0`,
-              tick: 'PEPE',
+              tick: 'pepe',
               address: addressB,
               amt: '10000',
             },
@@ -520,7 +520,7 @@ describe('BRC-20 API', () => {
 
       response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/activity?ticker=PEPE`,
+        url: `/ordinals/brc-20/activity?ticker=pepe`,
       });
       expect(response.statusCode).toBe(200);
       json = response.json();
@@ -529,7 +529,7 @@ describe('BRC-20 API', () => {
         expect.arrayContaining([
           expect.objectContaining({
             operation: 'mint',
-            ticker: 'PEPE',
+            ticker: 'pepe',
             address: addressB,
             mint: {
               amount: '10000.000000000000000000',
@@ -538,7 +538,7 @@ describe('BRC-20 API', () => {
         ])
       );
 
-      // A creates transfer of 9000 PEPE
+      // A creates transfer of 9000 pepe
       const transferHash = randomHash();
       number = inscriptionNumbers.next().value;
       await db.updateInscriptions(
@@ -549,7 +549,7 @@ describe('BRC-20 API', () => {
           .brc20({
             transfer: {
               inscription_id: `${transferHash}i0`,
-              tick: 'PEPE',
+              tick: 'pepe',
               address: addressA,
               amt: '9000',
             },
@@ -559,7 +559,7 @@ describe('BRC-20 API', () => {
 
       response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/activity?ticker=PEPE`,
+        url: `/ordinals/brc-20/activity?ticker=pepe`,
       });
       expect(response.statusCode).toBe(200);
       json = response.json();
@@ -568,7 +568,7 @@ describe('BRC-20 API', () => {
         expect.arrayContaining([
           expect.objectContaining({
             operation: 'transfer',
-            ticker: 'PEPE',
+            ticker: 'pepe',
             address: addressA,
             tx_id: transferHash,
             transfer: {
@@ -596,7 +596,7 @@ describe('BRC-20 API', () => {
           })
           .brc20({
             transfer_send: {
-              tick: 'PEPE',
+              tick: 'pepe',
               inscription_id: `${transferHash}i0`,
               amt: '9000',
               sender_address: addressA,
@@ -608,7 +608,7 @@ describe('BRC-20 API', () => {
 
       response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/activity?ticker=PEPE`,
+        url: `/ordinals/brc-20/activity?ticker=pepe`,
       });
       expect(response.statusCode).toBe(200);
       json = response.json();
@@ -617,7 +617,7 @@ describe('BRC-20 API', () => {
         expect.arrayContaining([
           expect.objectContaining({
             operation: 'transfer_send',
-            ticker: 'PEPE',
+            ticker: 'pepe',
             tx_id: expect.not.stringMatching(transferHash),
             address: addressB,
             transfer_send: {
@@ -631,7 +631,7 @@ describe('BRC-20 API', () => {
 
       response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/activity?ticker=PEPE&operation=transfer_send`,
+        url: `/ordinals/brc-20/activity?ticker=pepe&operation=transfer_send`,
       });
       expect(response.statusCode).toBe(200);
       json = response.json();
@@ -640,7 +640,7 @@ describe('BRC-20 API', () => {
         expect.arrayContaining([
           expect.objectContaining({
             operation: 'transfer_send',
-            ticker: 'PEPE',
+            ticker: 'pepe',
             tx_id: expect.not.stringMatching(transferHash),
             address: addressB,
             transfer_send: {
@@ -679,7 +679,7 @@ describe('BRC-20 API', () => {
           .brc20({
             deploy: {
               inscription_id: `${randomHash()}i0`,
-              tick: 'PEPE',
+              tick: 'pepe',
               max: '21000000',
               lim: '21000000',
               dec: '18',
@@ -690,10 +690,10 @@ describe('BRC-20 API', () => {
           .build()
       );
 
-      // Verify that the PEPE deploy is in the activity feed
+      // Verify that the pepe deploy is in the activity feed
       let response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/activity?ticker=PEPE`,
+        url: `/ordinals/brc-20/activity?ticker=pepe`,
       });
       expect(response.statusCode).toBe(200);
       let json = response.json();
@@ -702,7 +702,7 @@ describe('BRC-20 API', () => {
         expect.arrayContaining([
           expect.objectContaining({
             operation: 'deploy',
-            ticker: 'PEPE',
+            ticker: 'pepe',
             address: addressA,
             deploy: expect.objectContaining({
               max_supply: '21000000.000000000000000000',
@@ -721,7 +721,7 @@ describe('BRC-20 API', () => {
           .brc20({
             mint: {
               inscription_id: `${randomHash()}i0`,
-              tick: 'PEPE',
+              tick: 'pepe',
               address: addressA,
               amt: '1000',
             },
@@ -729,10 +729,10 @@ describe('BRC-20 API', () => {
           .build()
       );
 
-      // Verify that the PEPE mint is in the activity feed
+      // Verify that the pepe mint is in the activity feed
       response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/activity?ticker=PEPE`,
+        url: `/ordinals/brc-20/activity?ticker=pepe`,
       });
       expect(response.statusCode).toBe(200);
       json = response.json();
@@ -741,7 +741,7 @@ describe('BRC-20 API', () => {
         expect.arrayContaining([
           expect.objectContaining({
             operation: 'mint',
-            ticker: 'PEPE',
+            ticker: 'pepe',
             address: addressA,
             mint: {
               amount: '1000.000000000000000000',
@@ -751,7 +751,7 @@ describe('BRC-20 API', () => {
       );
       response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/activity?ticker=PEPE&address=${addressA}`,
+        url: `/ordinals/brc-20/activity?ticker=pepe&address=${addressA}`,
       });
       expect(response.statusCode).toBe(200);
       json = response.json();
@@ -760,7 +760,7 @@ describe('BRC-20 API', () => {
         expect.arrayContaining([
           expect.objectContaining({
             operation: 'deploy',
-            ticker: 'PEPE',
+            ticker: 'pepe',
             address: addressA,
             deploy: expect.objectContaining({
               max_supply: '21000000.000000000000000000',
@@ -768,7 +768,7 @@ describe('BRC-20 API', () => {
           } as Brc20ActivityResponse),
           expect.objectContaining({
             operation: 'mint',
-            ticker: 'PEPE',
+            ticker: 'pepe',
             address: addressA,
             mint: {
               amount: '1000.000000000000000000',
@@ -787,7 +787,7 @@ describe('BRC-20 API', () => {
           .brc20({
             mint: {
               inscription_id: `${randomHash()}i0`,
-              tick: 'PEPE',
+              tick: 'pepe',
               address: addressB,
               amt: '2000',
             },
@@ -795,10 +795,10 @@ describe('BRC-20 API', () => {
           .build()
       );
 
-      // Verify that the PEPE mint is in the activity feed
+      // Verify that the pepe mint is in the activity feed
       response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/activity?ticker=PEPE`,
+        url: `/ordinals/brc-20/activity?ticker=pepe`,
       });
       expect(response.statusCode).toBe(200);
       json = response.json();
@@ -807,7 +807,7 @@ describe('BRC-20 API', () => {
         expect.arrayContaining([
           expect.objectContaining({
             operation: 'mint',
-            ticker: 'PEPE',
+            ticker: 'pepe',
             address: addressB,
             mint: {
               amount: '2000.000000000000000000',
@@ -827,7 +827,7 @@ describe('BRC-20 API', () => {
           .brc20({
             transfer: {
               inscription_id: `${transferHashAB}i0`,
-              tick: 'PEPE',
+              tick: 'pepe',
               address: addressA,
               amt: '1000',
             },
@@ -835,10 +835,10 @@ describe('BRC-20 API', () => {
           .build()
       );
 
-      // Verify that the PEPE transfer is in the activity feed
+      // Verify that the pepe transfer is in the activity feed
       response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/activity?ticker=PEPE`,
+        url: `/ordinals/brc-20/activity?ticker=pepe`,
       });
       expect(response.statusCode).toBe(200);
       json = response.json();
@@ -847,7 +847,7 @@ describe('BRC-20 API', () => {
         expect.arrayContaining([
           expect.objectContaining({
             operation: 'transfer',
-            ticker: 'PEPE',
+            ticker: 'pepe',
             address: addressA,
             tx_id: transferHashAB,
             transfer: {
@@ -859,7 +859,7 @@ describe('BRC-20 API', () => {
       );
       response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/activity?ticker=PEPE&address=${addressA}`,
+        url: `/ordinals/brc-20/activity?ticker=pepe&address=${addressA}`,
       });
       expect(response.statusCode).toBe(200);
       json = response.json();
@@ -868,7 +868,7 @@ describe('BRC-20 API', () => {
         expect.arrayContaining([
           expect.objectContaining({
             operation: 'transfer',
-            ticker: 'PEPE',
+            ticker: 'pepe',
             address: addressA,
             tx_id: transferHashAB,
             transfer: {
@@ -890,7 +890,7 @@ describe('BRC-20 API', () => {
           .brc20({
             transfer: {
               inscription_id: `${transferHashBC}i0`,
-              tick: 'PEPE',
+              tick: 'pepe',
               address: addressB,
               amt: '2000',
             },
@@ -898,10 +898,10 @@ describe('BRC-20 API', () => {
           .build()
       );
 
-      // Verify that the PEPE transfer is in the activity feed
+      // Verify that the pepe transfer is in the activity feed
       response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/activity?ticker=PEPE`,
+        url: `/ordinals/brc-20/activity?ticker=pepe`,
       });
       expect(response.statusCode).toBe(200);
       json = response.json();
@@ -910,7 +910,7 @@ describe('BRC-20 API', () => {
         expect.arrayContaining([
           expect.objectContaining({
             operation: 'transfer',
-            ticker: 'PEPE',
+            ticker: 'pepe',
             address: addressB,
             tx_id: transferHashBC,
             transfer: {
@@ -941,7 +941,7 @@ describe('BRC-20 API', () => {
       // A gets the transfer send in its feed
       response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/activity?ticker=PEPE&address=${addressA}`,
+        url: `/ordinals/brc-20/activity?ticker=pepe&address=${addressA}`,
       });
       expect(response.statusCode).toBe(200);
       json = response.json();
@@ -950,7 +950,7 @@ describe('BRC-20 API', () => {
         expect.arrayContaining([
           expect.objectContaining({
             operation: 'transfer_send',
-            ticker: 'PEPE',
+            ticker: 'pepe',
             tx_id: expect.not.stringMatching(transferHashAB),
             address: addressB,
             transfer_send: {
@@ -964,7 +964,7 @@ describe('BRC-20 API', () => {
       // B gets the transfer send in its feed
       response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/activity?ticker=PEPE&address=${addressB}`,
+        url: `/ordinals/brc-20/activity?ticker=pepe&address=${addressB}`,
       });
       expect(response.statusCode).toBe(200);
       json = response.json();
@@ -973,7 +973,7 @@ describe('BRC-20 API', () => {
         expect.arrayContaining([
           expect.objectContaining({
             operation: 'transfer_send',
-            ticker: 'PEPE',
+            ticker: 'pepe',
             tx_id: expect.not.stringMatching(transferHashAB),
             address: addressB,
             transfer_send: {
@@ -985,10 +985,10 @@ describe('BRC-20 API', () => {
         ])
       );
 
-      // Verify that the PEPE transfer_send is in the activity feed
+      // Verify that the pepe transfer_send is in the activity feed
       response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/activity?ticker=PEPE`,
+        url: `/ordinals/brc-20/activity?ticker=pepe`,
       });
       expect(response.statusCode).toBe(200);
       json = response.json();
@@ -997,7 +997,7 @@ describe('BRC-20 API', () => {
         expect.arrayContaining([
           expect.objectContaining({
             operation: 'transfer_send',
-            ticker: 'PEPE',
+            ticker: 'pepe',
             tx_id: expect.not.stringMatching(transferHashAB),
             address: addressB,
             transfer_send: {
@@ -1027,10 +1027,10 @@ describe('BRC-20 API', () => {
           .build()
       );
 
-      // Verify that the PEPE transfer_send is in the activity feed
+      // Verify that the pepe transfer_send is in the activity feed
       response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/activity?ticker=PEPE`,
+        url: `/ordinals/brc-20/activity?ticker=pepe`,
       });
       expect(response.statusCode).toBe(200);
       json = response.json();
@@ -1039,7 +1039,7 @@ describe('BRC-20 API', () => {
         expect.arrayContaining([
           expect.objectContaining({
             operation: 'transfer_send',
-            ticker: 'PEPE',
+            ticker: 'pepe',
             tx_id: expect.not.stringMatching(transferHashBC),
             address: addressC,
             transfer_send: {
@@ -1053,7 +1053,7 @@ describe('BRC-20 API', () => {
       // B gets the transfer send in its feed
       response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/activity?ticker=PEPE&address=${addressB}`,
+        url: `/ordinals/brc-20/activity?ticker=pepe&address=${addressB}`,
       });
       expect(response.statusCode).toBe(200);
       json = response.json();
@@ -1062,7 +1062,7 @@ describe('BRC-20 API', () => {
         expect.arrayContaining([
           expect.objectContaining({
             operation: 'transfer_send',
-            ticker: 'PEPE',
+            ticker: 'pepe',
             tx_id: expect.not.stringMatching(transferHashBC),
             address: addressC,
             transfer_send: {
@@ -1076,7 +1076,7 @@ describe('BRC-20 API', () => {
       // C gets the transfer send in its feed
       response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/activity?ticker=PEPE&address=${addressC}`,
+        url: `/ordinals/brc-20/activity?ticker=pepe&address=${addressC}`,
       });
       expect(response.statusCode).toBe(200);
       json = response.json();
@@ -1085,7 +1085,7 @@ describe('BRC-20 API', () => {
         expect.arrayContaining([
           expect.objectContaining({
             operation: 'transfer_send',
-            ticker: 'PEPE',
+            ticker: 'pepe',
             tx_id: expect.not.stringMatching(transferHashBC),
             address: addressC,
             transfer_send: {
@@ -1103,7 +1103,7 @@ describe('BRC-20 API', () => {
       const blockHeights = incrementing(BRC20_GENESIS_BLOCK);
       const addressA = 'bc1q6uwuet65rm6xvlz7ztw2gvdmmay5uaycu03mqz';
 
-      // Step 1: Create a token PEPE
+      // Step 1: Create a token pepe
       let number = inscriptionNumbers.next().value;
       await db.updateInscriptions(
         new TestChainhookPayloadBuilder()
@@ -1113,7 +1113,7 @@ describe('BRC-20 API', () => {
           .brc20({
             deploy: {
               inscription_id: `${randomHash()}i0`,
-              tick: 'PEPE',
+              tick: 'pepe',
               max: '21000000',
               lim: '21000000',
               dec: '18',
@@ -1124,7 +1124,7 @@ describe('BRC-20 API', () => {
           .build()
       );
 
-      // Verify that the PEPE deploy is in the activity feed
+      // Verify that the pepe deploy is in the activity feed
       let response = await fastify.inject({
         method: 'GET',
         url: `/ordinals/brc-20/activity`,
@@ -1136,7 +1136,7 @@ describe('BRC-20 API', () => {
         expect.arrayContaining([
           expect.objectContaining({
             operation: 'deploy',
-            ticker: 'PEPE',
+            ticker: 'pepe',
             address: addressA,
             deploy: expect.objectContaining({
               max_supply: '21000000.000000000000000000',
@@ -1145,7 +1145,7 @@ describe('BRC-20 API', () => {
         ])
       );
 
-      // Step 2: Create a token PEER
+      // Step 2: Create a token peer
       number = inscriptionNumbers.next().value;
       await db.updateInscriptions(
         new TestChainhookPayloadBuilder()
@@ -1155,7 +1155,7 @@ describe('BRC-20 API', () => {
           .brc20({
             deploy: {
               inscription_id: `${randomHash()}i0`,
-              tick: 'PEER',
+              tick: 'peer',
               max: '21000000',
               lim: '21000000',
               dec: '18',
@@ -1166,7 +1166,7 @@ describe('BRC-20 API', () => {
           .build()
       );
 
-      // Verify that the PEER deploy is in the activity feed
+      // Verify that the peer deploy is in the activity feed
       response = await fastify.inject({
         method: 'GET',
         url: `/ordinals/brc-20/activity`,
@@ -1178,7 +1178,7 @@ describe('BRC-20 API', () => {
         expect.arrayContaining([
           expect.objectContaining({
             operation: 'deploy',
-            ticker: 'PEER',
+            ticker: 'peer',
             address: addressA,
             deploy: expect.objectContaining({
               max_supply: '21000000.000000000000000000',
@@ -1190,14 +1190,14 @@ describe('BRC-20 API', () => {
       // Verify that no events are available before the first block height
       response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/activity?ticker=PEER&block_height=${BRC20_GENESIS_BLOCK}`,
+        url: `/ordinals/brc-20/activity?ticker=peer&block_height=${BRC20_GENESIS_BLOCK}`,
       });
       expect(response.statusCode).toBe(200);
       json = response.json();
       expect(json.total).toBe(0);
       expect(json.results).toEqual([]);
 
-      // Verify that the PEER deploy is not in the activity feed when using block_height parameter
+      // Verify that the peer deploy is not in the activity feed when using block_height parameter
       response = await fastify.inject({
         method: 'GET',
         url: `/ordinals/brc-20/activity?block_height=${BRC20_GENESIS_BLOCK}`,
@@ -1209,7 +1209,7 @@ describe('BRC-20 API', () => {
         expect.arrayContaining([
           expect.objectContaining({
             operation: 'deploy',
-            ticker: 'PEPE',
+            ticker: 'pepe',
             address: addressA,
             deploy: expect.objectContaining({
               max_supply: '21000000.000000000000000000',
@@ -1217,11 +1217,11 @@ describe('BRC-20 API', () => {
           } as Brc20ActivityResponse),
         ])
       );
-      // Should NOT include PEER at this block height
+      // Should NOT include peer at this block height
       expect(json.results).not.toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            ticker: 'PEER',
+            ticker: 'peer',
           } as Brc20ActivityResponse),
         ])
       );
@@ -1245,7 +1245,7 @@ describe('BRC-20 API', () => {
           .brc20({
             mint: {
               inscription_id: '633648e0e1ddcab8dea0496a561f2b08c486ae619b5634d7bb55d7f0cd32ef16i0',
-              tick: 'PEPE',
+              tick: 'pepe',
               address: 'bc1qp9jgp9qtlhgvwjnxclj6kav6nr2fq09c206pyl',
               amt: '2000',
             },
@@ -1255,7 +1255,7 @@ describe('BRC-20 API', () => {
 
       const response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/tokens/PEPE/holders`,
+        url: `/ordinals/brc-20/tokens/pepe/holders`,
       });
       expect(response.statusCode).toBe(200);
       const json = response.json();
@@ -1286,7 +1286,7 @@ describe('BRC-20 API', () => {
           .brc20({
             deploy: {
               inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-              tick: 'PEPE',
+              tick: 'pepe',
               max: '250000',
               lim: '250000',
               dec: '18',
@@ -1298,7 +1298,7 @@ describe('BRC-20 API', () => {
       );
       const response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/tokens/PEPE/holders`,
+        url: `/ordinals/brc-20/tokens/pepe/holders`,
       });
       expect(response.statusCode).toBe(200);
       const json = response.json();
@@ -1309,7 +1309,7 @@ describe('BRC-20 API', () => {
     test('shows 404 on token not found', async () => {
       const response = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/tokens/PEPE/holders`,
+        url: `/ordinals/brc-20/tokens/pepe/holders`,
       });
       expect(response.statusCode).toBe(404);
     });

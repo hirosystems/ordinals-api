@@ -42,7 +42,7 @@ describe('BRC-20', () => {
           .brc20({
             deploy: {
               inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-              tick: 'PEPE',
+              tick: 'pepe',
               max: '21000000',
               lim: '1000',
               dec: '18',
@@ -54,7 +54,7 @@ describe('BRC-20', () => {
       );
       const response1 = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/tokens?ticker=PEPE`,
+        url: `/ordinals/brc-20/tokens?ticker=pepe`,
       });
       expect(response1.statusCode).toBe(200);
       const responseJson1 = response1.json();
@@ -68,7 +68,7 @@ describe('BRC-20', () => {
           number: 0,
           mint_limit: null,
           max_supply: '21000000.000000000000000000',
-          ticker: 'PEPE',
+          ticker: 'pepe',
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           deploy_timestamp: 1677811111000,
           minted_supply: '0.000000000000000000',
@@ -93,7 +93,7 @@ describe('BRC-20', () => {
           .brc20({
             deploy: {
               inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-              tick: '$PEPE',
+              tick: '$pepe',
               max: '21000000',
               lim: '1000',
               dec: '18',
@@ -105,7 +105,7 @@ describe('BRC-20', () => {
       );
       const response1 = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/tokens?ticker=$PEPE`,
+        url: `/ordinals/brc-20/tokens?ticker=$pepe`,
       });
       expect(response1.statusCode).toBe(200);
       const responseJson1 = response1.json();
@@ -121,7 +121,7 @@ describe('BRC-20', () => {
         self_mint: true,
         minted_supply: '0.000000000000000000',
         number: 0,
-        ticker: '$PEPE',
+        ticker: '$pepe',
         tx_count: 1,
         tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
       });
@@ -144,7 +144,7 @@ describe('BRC-20', () => {
           .brc20({
             deploy: {
               inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-              tick: 'PEPE',
+              tick: 'pepe',
               max: '21000000',
               lim: '250000',
               dec: '18',
@@ -166,7 +166,7 @@ describe('BRC-20', () => {
           })
           .brc20({
             mint: {
-              tick: 'PEPE',
+              tick: 'pepe',
               amt: '250000',
               inscription_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99fi0',
               address,
@@ -184,7 +184,7 @@ describe('BRC-20', () => {
       expect(responseJson1.total).toBe(1);
       expect(responseJson1.results).toStrictEqual([
         {
-          ticker: 'PEPE',
+          ticker: 'pepe',
           available_balance: '250000.000000000000000000',
           overall_balance: '250000.000000000000000000',
           transferrable_balance: '0.000000000000000000',
@@ -204,7 +204,7 @@ describe('BRC-20', () => {
           })
           .brc20({
             mint: {
-              tick: 'PEPE',
+              tick: 'pepe',
               amt: '100000',
               inscription_id: '7a1adbc3e93ddf8d7c4e0ba75aa11c98c431521dd850be8b955feedb716d8beci0',
               address,
@@ -222,7 +222,7 @@ describe('BRC-20', () => {
       expect(responseJson2.total).toBe(1);
       expect(responseJson2.results).toStrictEqual([
         {
-          ticker: 'PEPE',
+          ticker: 'pepe',
           available_balance: '350000.000000000000000000',
           overall_balance: '350000.000000000000000000',
           transferrable_balance: '0.000000000000000000',
@@ -231,14 +231,14 @@ describe('BRC-20', () => {
 
       const response3 = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/tokens?ticker=PEPE`,
+        url: `/ordinals/brc-20/tokens?ticker=pepe`,
       });
       expect(response3.statusCode).toBe(200);
       const responseJson3 = response3.json();
       expect(responseJson3.total).toBe(1);
       expect(responseJson3.results).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ ticker: 'PEPE', minted_supply: '350000.000000000000000000' }),
+          expect.objectContaining({ ticker: 'pepe', minted_supply: '350000.000000000000000000' }),
         ])
       );
     });
@@ -258,7 +258,7 @@ describe('BRC-20', () => {
           .brc20({
             deploy: {
               inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-              tick: '$PEPE',
+              tick: '$pepe',
               max: '21000000',
               lim: '21000000',
               dec: '18',
@@ -281,7 +281,7 @@ describe('BRC-20', () => {
           .brc20({
             mint: {
               inscription_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99fi0',
-              tick: '$PEPE',
+              tick: '$pepe',
               address,
               amt: '250000',
             },
@@ -298,7 +298,7 @@ describe('BRC-20', () => {
       expect(responseJson1.total).toBe(1);
       expect(responseJson1.results).toStrictEqual([
         {
-          ticker: '$PEPE',
+          ticker: '$pepe',
           available_balance: '250000.000000000000000000',
           overall_balance: '250000.000000000000000000',
           transferrable_balance: '0.000000000000000000',
@@ -319,7 +319,7 @@ describe('BRC-20', () => {
           .brc20({
             mint: {
               inscription_id: '7a1adbc3e93ddf8d7c4e0ba75aa11c98c431521dd850be8b955feedb716d8beci0',
-              tick: '$PEPE',
+              tick: '$pepe',
               address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
               amt: '100000',
             },
@@ -336,7 +336,7 @@ describe('BRC-20', () => {
       expect(responseJson2.total).toBe(1);
       expect(responseJson2.results).toStrictEqual([
         {
-          ticker: '$PEPE',
+          ticker: '$pepe',
           available_balance: '350000.000000000000000000',
           overall_balance: '350000.000000000000000000',
           transferrable_balance: '0.000000000000000000',
@@ -345,14 +345,14 @@ describe('BRC-20', () => {
 
       const response3 = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/tokens?ticker=$PEPE`,
+        url: `/ordinals/brc-20/tokens?ticker=$pepe`,
       });
       expect(response3.statusCode).toBe(200);
       const responseJson3 = response3.json();
       expect(responseJson3.total).toBe(1);
       expect(responseJson3.results).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ ticker: '$PEPE', minted_supply: '350000.000000000000000000' }),
+          expect.objectContaining({ ticker: '$pepe', minted_supply: '350000.000000000000000000' }),
         ])
       );
     });
@@ -372,7 +372,7 @@ describe('BRC-20', () => {
           .brc20({
             deploy: {
               inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-              tick: '$PEPE',
+              tick: '$pepe',
               max: '0',
               lim: '250000',
               dec: '18',
@@ -395,7 +395,7 @@ describe('BRC-20', () => {
           .brc20({
             mint: {
               inscription_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99fi0',
-              tick: '$PEPE',
+              tick: '$pepe',
               address,
               amt: '250000',
             },
@@ -412,7 +412,7 @@ describe('BRC-20', () => {
       expect(responseJson1.total).toBe(1);
       expect(responseJson1.results).toStrictEqual([
         {
-          ticker: '$PEPE',
+          ticker: '$pepe',
           available_balance: '250000.000000000000000000',
           overall_balance: '250000.000000000000000000',
           transferrable_balance: '0.000000000000000000',
@@ -433,7 +433,7 @@ describe('BRC-20', () => {
           .brc20({
             mint: {
               inscription_id: '7a1adbc3e93ddf8d7c4e0ba75aa11c98c431521dd850be8b955feedb716d8beci0',
-              tick: '$PEPE',
+              tick: '$pepe',
               address,
               amt: '100000',
             },
@@ -450,7 +450,7 @@ describe('BRC-20', () => {
       expect(responseJson2.total).toBe(1);
       expect(responseJson2.results).toStrictEqual([
         {
-          ticker: '$PEPE',
+          ticker: '$pepe',
           available_balance: '350000.000000000000000000',
           overall_balance: '350000.000000000000000000',
           transferrable_balance: '0.000000000000000000',
@@ -459,14 +459,14 @@ describe('BRC-20', () => {
 
       const response3 = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/tokens?ticker=$PEPE`,
+        url: `/ordinals/brc-20/tokens?ticker=$pepe`,
       });
       expect(response3.statusCode).toBe(200);
       const responseJson3 = response3.json();
       expect(responseJson3.total).toBe(1);
       expect(responseJson3.results).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ ticker: '$PEPE', minted_supply: '350000.000000000000000000' }),
+          expect.objectContaining({ ticker: '$pepe', minted_supply: '350000.000000000000000000' }),
         ])
       );
     });
@@ -486,7 +486,7 @@ describe('BRC-20', () => {
           .brc20({
             deploy: {
               inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-              tick: 'PEPE',
+              tick: 'pepe',
               max: '21000000',
               lim: '21000000',
               dec: '18',
@@ -509,7 +509,7 @@ describe('BRC-20', () => {
           .brc20({
             mint: {
               inscription_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99fi0',
-              tick: 'PEPE',
+              tick: 'pepe',
               address,
               amt: '250000',
             },
@@ -530,7 +530,7 @@ describe('BRC-20', () => {
           .brc20({
             mint: {
               inscription_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99fi0',
-              tick: 'PEPE',
+              tick: 'pepe',
               address,
               amt: '250000',
             },
@@ -549,7 +549,7 @@ describe('BRC-20', () => {
 
       const response3 = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/tokens/PEPE`,
+        url: `/ordinals/brc-20/tokens/pepe`,
       });
       expect(response3.json().token.minted_supply).toBe('0.000000000000000000');
     });
@@ -572,7 +572,7 @@ describe('BRC-20', () => {
           .brc20({
             transfer: {
               inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
-              tick: 'PEPE',
+              tick: 'pepe',
               address,
               amt: '2000',
             },
@@ -591,7 +591,7 @@ describe('BRC-20', () => {
         {
           available_balance: '8000.000000000000000000',
           overall_balance: '10000.000000000000000000',
-          ticker: 'PEPE',
+          ticker: 'pepe',
           transferrable_balance: '2000.000000000000000000',
         },
       ]);
@@ -621,7 +621,7 @@ describe('BRC-20', () => {
           .brc20({
             transfer: {
               inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
-              tick: 'PEPE',
+              tick: 'pepe',
               address,
               amt: '9000',
             },
@@ -632,7 +632,7 @@ describe('BRC-20', () => {
           .brc20({
             transfer: {
               inscription_id: '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21baci0',
-              tick: 'PEPE',
+              tick: 'pepe',
               address,
               amt: '1000',
             },
@@ -651,7 +651,7 @@ describe('BRC-20', () => {
         {
           available_balance: '1000.000000000000000000',
           overall_balance: '10000.000000000000000000',
-          ticker: 'PEPE',
+          ticker: 'pepe',
           transferrable_balance: '9000.000000000000000000',
         },
       ]);
@@ -674,7 +674,7 @@ describe('BRC-20', () => {
           .brc20({
             transfer: {
               inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
-              tick: 'PEPE',
+              tick: 'pepe',
               address,
               amt: '9000',
             },
@@ -693,7 +693,7 @@ describe('BRC-20', () => {
           })
           .brc20({
             transfer_send: {
-              tick: 'PEPE',
+              tick: 'pepe',
               inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
               amt: '9000',
               sender_address: address,
@@ -714,7 +714,7 @@ describe('BRC-20', () => {
         {
           available_balance: '1000.000000000000000000',
           overall_balance: '1000.000000000000000000',
-          ticker: 'PEPE',
+          ticker: 'pepe',
           transferrable_balance: '0.000000000000000000',
         },
       ]);
@@ -730,7 +730,7 @@ describe('BRC-20', () => {
         {
           available_balance: '9000.000000000000000000',
           overall_balance: '9000.000000000000000000',
-          ticker: 'PEPE',
+          ticker: 'pepe',
           transferrable_balance: '0.000000000000000000',
         },
       ]);
@@ -766,7 +766,7 @@ describe('BRC-20', () => {
           .brc20({
             deploy: {
               inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-              tick: '$PEPE',
+              tick: '$pepe',
               max: '0',
               lim: '21000000',
               dec: '18',
@@ -789,7 +789,7 @@ describe('BRC-20', () => {
           .brc20({
             mint: {
               inscription_id: '3b55f624eaa4f8de6c42e0c490176b67123a83094384f658611faf7bfb85dd0fi0',
-              tick: '$PEPE',
+              tick: '$pepe',
               address,
               amt: '10000',
             },
@@ -809,7 +809,7 @@ describe('BRC-20', () => {
           .brc20({
             transfer: {
               inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
-              tick: '$PEPE',
+              tick: '$pepe',
               address,
               amt: '9000',
             },
@@ -829,7 +829,7 @@ describe('BRC-20', () => {
           .brc20({
             transfer_send: {
               inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
-              tick: '$PEPE',
+              tick: '$pepe',
               amt: '9000',
               sender_address: address,
               receiver_address: address2,
@@ -849,7 +849,7 @@ describe('BRC-20', () => {
         {
           available_balance: '1000.000000000000000000',
           overall_balance: '1000.000000000000000000',
-          ticker: '$PEPE',
+          ticker: '$pepe',
           transferrable_balance: '0.000000000000000000',
         },
       ]);
@@ -865,7 +865,7 @@ describe('BRC-20', () => {
         {
           available_balance: '9000.000000000000000000',
           overall_balance: '9000.000000000000000000',
-          ticker: '$PEPE',
+          ticker: '$pepe',
           transferrable_balance: '0.000000000000000000',
         },
       ]);
@@ -888,7 +888,7 @@ describe('BRC-20', () => {
           .brc20({
             transfer: {
               inscription_id: '825a25b64b5d99ca30e04e53cc9a3020412e1054eb2a7523eb075ddd6d983205i0',
-              tick: 'PEPE',
+              tick: 'pepe',
               address,
               amt: '20',
             },
@@ -908,7 +908,7 @@ describe('BRC-20', () => {
           .brc20({
             transfer_send: {
               inscription_id: '825a25b64b5d99ca30e04e53cc9a3020412e1054eb2a7523eb075ddd6d983205i0',
-              tick: 'PEPE',
+              tick: 'pepe',
               amt: '20',
               sender_address: address,
               receiver_address: address2,
@@ -924,7 +924,7 @@ describe('BRC-20', () => {
         {
           available_balance: '20.000000000000000000',
           overall_balance: '20.000000000000000000',
-          ticker: 'PEPE',
+          ticker: 'pepe',
           transferrable_balance: '0.000000000000000000',
         },
       ]);
@@ -941,7 +941,7 @@ describe('BRC-20', () => {
           .brc20({
             transfer: {
               inscription_id: '09a812f72275892b4858880cf3821004a6e8885817159b340639afe9952ac053i0',
-              tick: 'PEPE',
+              tick: 'pepe',
               address: address2,
               amt: '20',
             },
@@ -956,7 +956,7 @@ describe('BRC-20', () => {
         {
           available_balance: '0.000000000000000000',
           overall_balance: '20.000000000000000000',
-          ticker: 'PEPE',
+          ticker: 'pepe',
           transferrable_balance: '20.000000000000000000',
         },
       ]);
@@ -973,7 +973,7 @@ describe('BRC-20', () => {
           .brc20({
             transfer_send: {
               inscription_id: '09a812f72275892b4858880cf3821004a6e8885817159b340639afe9952ac053i0',
-              tick: 'PEPE',
+              tick: 'pepe',
               amt: '20',
               sender_address: address2,
               receiver_address: address2,
@@ -989,7 +989,7 @@ describe('BRC-20', () => {
         {
           available_balance: '20.000000000000000000',
           overall_balance: '20.000000000000000000',
-          ticker: 'PEPE',
+          ticker: 'pepe',
           transferrable_balance: '0.000000000000000000',
         },
       ]);
@@ -1002,7 +1002,7 @@ describe('BRC-20', () => {
       const address2 = '3QNjwPDRafjBm9XxJpshgk3ksMJh3TFxTU';
       await deployAndMintPEPE(db, address);
 
-      // Transfer and send PEPE
+      // Transfer and send pepe
       const transferPEPE = new TestChainhookPayloadBuilder()
         .apply()
         .block({
@@ -1015,7 +1015,7 @@ describe('BRC-20', () => {
         .brc20({
           transfer: {
             inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
-            tick: 'PEPE',
+            tick: 'pepe',
             address,
             amt: '9000',
           },
@@ -1034,7 +1034,7 @@ describe('BRC-20', () => {
         .brc20({
           transfer_send: {
             inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
-            tick: 'PEPE',
+            tick: 'pepe',
             amt: '9000',
             sender_address: address,
             receiver_address: address2,
@@ -1136,7 +1136,7 @@ describe('BRC-20', () => {
       expect(json.results[1].minted_supply).toBe('10000.000000000000000000');
       request = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/tokens/PEPE`,
+        url: `/ordinals/brc-20/tokens/pepe`,
       });
       json = request.json();
       expect(json.supply.holders).toBe(2);
@@ -1154,7 +1154,7 @@ describe('BRC-20', () => {
       expect(json.total).toBe(2);
       expect(json.results).toHaveLength(2);
       expect(json.results[0]).toStrictEqual({
-        ticker: 'PEPE',
+        ticker: 'pepe',
         available_balance: '1000.000000000000000000',
         transferrable_balance: '0.000000000000000000',
         overall_balance: '1000.000000000000000000',
@@ -1173,7 +1173,7 @@ describe('BRC-20', () => {
       expect(json.total).toBe(1);
       expect(json.results).toHaveLength(1);
       expect(json.results[0]).toStrictEqual({
-        ticker: 'PEPE',
+        ticker: 'pepe',
         available_balance: '9000.000000000000000000',
         transferrable_balance: '0.000000000000000000',
         overall_balance: '9000.000000000000000000',
@@ -1268,7 +1268,7 @@ describe('BRC-20', () => {
       expect(json.total).toBe(1);
       expect(json.results).toHaveLength(1);
       expect(json.results[0]).toStrictEqual({
-        ticker: 'PEPE',
+        ticker: 'pepe',
         available_balance: '1000.000000000000000000',
         transferrable_balance: '0.000000000000000000',
         overall_balance: '1000.000000000000000000',
@@ -1311,7 +1311,7 @@ describe('BRC-20', () => {
       expect(json.total).toBe(1);
       expect(json.results).toHaveLength(1);
       expect(json.results[0]).toStrictEqual({
-        ticker: 'PEPE',
+        ticker: 'pepe',
         available_balance: '1000.000000000000000000',
         transferrable_balance: '0.000000000000000000',
         overall_balance: '1000.000000000000000000',
@@ -1325,7 +1325,7 @@ describe('BRC-20', () => {
       expect(json.results).toHaveLength(4);
       expect(json.results[0].operation).toBe('transfer_send');
 
-      // Rollback 3: PEPE is un-sent
+      // Rollback 3: pepe is un-sent
       await db.updateInscriptions(rollBack(sendPEPE));
       request = await fastify.inject({
         method: 'GET',
@@ -1335,14 +1335,14 @@ describe('BRC-20', () => {
       expect(json.total).toBe(1);
       expect(json.results).toHaveLength(1);
       expect(json.results[0]).toStrictEqual({
-        ticker: 'PEPE',
+        ticker: 'pepe',
         available_balance: '1000.000000000000000000',
         transferrable_balance: '9000.000000000000000000',
         overall_balance: '10000.000000000000000000',
       });
       request = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/tokens/PEPE`,
+        url: `/ordinals/brc-20/tokens/pepe`,
       });
       json = request.json();
       expect(json.supply.holders).toBe(1);
@@ -1362,7 +1362,7 @@ describe('BRC-20', () => {
       expect(json.results).toHaveLength(3);
       expect(json.results[0].operation).toBe('transfer');
 
-      // Rollback 4: PEPE is un-transferred
+      // Rollback 4: pepe is un-transferred
       await db.updateInscriptions(rollBack(transferPEPE));
       request = await fastify.inject({
         method: 'GET',
@@ -1372,14 +1372,14 @@ describe('BRC-20', () => {
       expect(json.total).toBe(1);
       expect(json.results).toHaveLength(1);
       expect(json.results[0]).toStrictEqual({
-        ticker: 'PEPE',
+        ticker: 'pepe',
         available_balance: '10000.000000000000000000',
         transferrable_balance: '0.000000000000000000',
         overall_balance: '10000.000000000000000000',
       });
       request = await fastify.inject({
         method: 'GET',
-        url: `/ordinals/brc-20/tokens/PEPE`,
+        url: `/ordinals/brc-20/tokens/pepe`,
       });
       json = request.json();
       expect(json.supply.holders).toBe(1);

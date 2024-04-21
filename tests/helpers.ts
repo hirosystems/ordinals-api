@@ -101,6 +101,62 @@ export class TestChainhookPayloadBuilder {
 
   brc20(args: BitcoinBrc20Operation): this {
     this.lastBlockTx.metadata.brc20_operation = args;
+    if ('transfer_send' in args) {
+      this.lastBlockTx.metadata.ordinal_operations.push({
+        inscription_transferred: {
+          ordinal_number: this.lastBlock.block_identifier.index,
+          destination: {
+            type: 'transferred',
+            value: args.transfer_send.receiver_address,
+          },
+          satpoint_pre_transfer: `${args.transfer_send.inscription_id.split('i')[0]}:0:0`,
+          satpoint_post_transfer: `${this.lastBlockTx.transaction_identifier.hash}:0:0`,
+          post_transfer_output_value: null,
+          tx_index: 0,
+        },
+      });
+    } else {
+      let inscription_id = '';
+      let inscriber_address = '';
+      if ('deploy' in args) {
+        inscription_id = args.deploy.inscription_id;
+        inscriber_address = args.deploy.address;
+      } else if ('mint' in args) {
+        inscription_id = args.mint.inscription_id;
+        inscriber_address = args.mint.address;
+      } else {
+        inscription_id = args.transfer.inscription_id;
+        inscriber_address = args.transfer.address;
+      }
+      this.lastBlockTx.metadata.ordinal_operations.push({
+        inscription_revealed: {
+          content_bytes: `0x101010`,
+          content_type: 'text/plain;charset=utf-8',
+          content_length: 3,
+          inscription_number: {
+            jubilee: this.lastBlock.block_identifier.index,
+            classic: this.lastBlock.block_identifier.index,
+          },
+          inscription_fee: 2000,
+          inscription_id,
+          inscription_output_value: 10000,
+          inscriber_address,
+          ordinal_number: this.lastBlock.block_identifier.index,
+          ordinal_block_height: 0,
+          ordinal_offset: 0,
+          satpoint_post_inscription: `${inscription_id.split('i')[0]}:0:0`,
+          inscription_input_index: 0,
+          transfers_pre_inscription: 0,
+          tx_index: 0,
+          curse_type: null,
+          inscription_pointer: null,
+          delegate: null,
+          metaprotocol: null,
+          metadata: undefined,
+          parent: null,
+        },
+      });
+    }
     return this;
   }
 
