@@ -57,13 +57,13 @@ describe('BRC-20 API', () => {
       expect(response.json()).toStrictEqual({
         token: {
           id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-          number: 0,
+          number: 779832,
           block_height: BRC20_GENESIS_BLOCK,
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
           ticker: 'pepe',
           max_supply: '21000000.000000000000000000',
-          mint_limit: null,
+          mint_limit: '21000000.000000000000000000',
           decimals: 18,
           deploy_timestamp: 1677803510000,
           minted_supply: '0.000000000000000000',

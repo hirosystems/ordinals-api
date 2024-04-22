@@ -206,7 +206,7 @@ export async function deployAndMintPEPE(db: PgStore, address: string) {
       })
       .brc20({
         deploy: {
-          tick: 'PEPE',
+          tick: 'pepe',
           max: '250000',
           dec: '18',
           lim: '250000',
@@ -229,7 +229,7 @@ export async function deployAndMintPEPE(db: PgStore, address: string) {
       })
       .brc20({
         mint: {
-          tick: 'PEPE',
+          tick: 'pepe',
           amt: '10000',
           inscription_id: '3b55f624eaa4f8de6c42e0c490176b67123a83094384f658611faf7bfb85dd0fi0',
           address,

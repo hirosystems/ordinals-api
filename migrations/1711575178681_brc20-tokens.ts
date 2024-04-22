@@ -51,7 +51,7 @@ export function up(pgm: MigrationBuilder): void {
     },
     tx_count: {
       type: 'bigint',
-      default: 1,
+      default: 0,
     },
   });
   pgm.createIndex('brc20_tokens', ['genesis_id']);

@@ -125,7 +125,7 @@ export class PgStore extends BasePgStore {
         for (const writeChunk of batchIterate(writes, INSERT_BATCH_SIZE))
           await this.insertInscriptions(writeChunk, payload.chainhook.is_streaming_blocks);
         updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
-        await this.brc20.updateBrc20Operations(event);
+        await this.brc20.applyBrc20Operations(event);
         logger.info(
           `PgStore ingested block ${event.block_identifier.index} in ${time.getElapsedSeconds()}s`
         );
@@ -627,7 +627,6 @@ export class PgStore extends BasePgStore {
       // Roll back events in reverse so BRC-20 keeps a sane order.
       for (const rollback of rollbacks.reverse()) {
         if ('inscription' in rollback) {
-          await this.brc20.rollBackInscription({ inscription: rollback.inscription });
           await this.counts.rollBackInscription({
             inscription: rollback.inscription,
             location: rollback.location,
@@ -637,7 +636,6 @@ export class PgStore extends BasePgStore {
             `PgStore rollback reveal #${rollback.inscription.number} (${rollback.inscription.genesis_id}) at block ${rollback.location.block_height}`
           );
         } else {
-          await this.brc20.rollBackLocation({ location: rollback.location });
           await this.recalculateCurrentLocationPointerFromLocationRollBack({
             location: rollback.location,
           });

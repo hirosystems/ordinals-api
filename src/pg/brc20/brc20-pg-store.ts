@@ -7,7 +7,6 @@ import {
   LocationData,
 } from '../types';
 import {
-  BRC20_DEPLOYS_COLUMNS,
   BRC20_OPERATIONS,
   DbBrc20Activity,
   DbBrc20Balance,
@@ -23,84 +22,28 @@ import { Brc20TokenOrderBy } from '../../api/schemas';
 import { objRemoveUndefinedValues } from '../helpers';
 import { BitcoinEvent } from '@hirosystems/chainhook-client';
 import BigNumber from 'bignumber.js';
-
-function increaseOperationCount(map: Map<DbBrc20Operation, number>, operation: DbBrc20Operation) {
-  const current = map.get(operation);
-  if (current == undefined) {
-    map.set(operation, 1);
-  } else {
-    map.set(operation, current + 1);
-  }
-}
-
-function increaseTokenMintedSupply(map: Map<string, BigNumber>, ticker: string, amount: BigNumber) {
-  const current = map.get(ticker);
-  if (current == undefined) {
-    map.set(ticker, amount);
-  } else {
-    map.set(ticker, current.plus(amount));
-  }
-}
-
-function increaseAddressOperationCount(
-  map: Map<string, Map<DbBrc20Operation, number>>,
-  address: string,
-  operation: DbBrc20Operation
-) {
-  const current = map.get(address);
-  if (current == undefined) {
-    const opMap = new Map<DbBrc20Operation, number>();
-    increaseOperationCount(opMap, operation);
-    map.set(address, opMap);
-  } else {
-    increaseOperationCount(current, operation);
-  }
-}
-
-interface AddressBalanceData {
-  avail: BigNumber;
-  trans: BigNumber;
-  total: BigNumber;
-}
-function updateAddressBalance(
-  map: Map<string, Map<string, AddressBalanceData>>,
-  ticker: string,
-  address: string,
-  availBalance: BigNumber,
-  transBalance: BigNumber,
-  totalBalance: BigNumber
-) {
-  const current = map.get(address);
-  if (current === undefined) {
-    const opMap = new Map<string, AddressBalanceData>();
-    opMap.set(ticker, { avail: availBalance, trans: transBalance, total: totalBalance });
-    map.set(address, opMap);
-  } else {
-    const currentTick = current.get(ticker);
-    if (currentTick === undefined) {
-      current.set(ticker, { avail: availBalance, trans: transBalance, total: totalBalance });
-    } else {
-      current.set(ticker, {
-        avail: availBalance.plus(currentTick.avail),
-        trans: transBalance.plus(currentTick.trans),
-        total: totalBalance.plus(currentTick.total),
-      });
-    }
-  }
-}
+import {
+  AddressBalanceData,
+  increaseAddressOperationCount,
+  increaseOperationCount,
+  increaseTokenMintedSupply,
+  increaseTokenTxCount,
+  updateAddressBalance,
+} from './helpers';
 
 export class Brc20PgStore extends BasePgStoreModule {
   sqlOr(partials: postgres.PendingQuery<postgres.Row[]>[] | undefined) {
     return partials?.reduce((acc, curr) => this.sql`${acc} OR ${curr}`);
   }
 
-  async updateBrc20Operations(event: BitcoinEvent): Promise<void> {
+  async applyBrc20Operations(event: BitcoinEvent): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
       const block_height = event.block_identifier.index.toString();
       // Keep all DB changes in memory, write them at the end.
       const tokens: DbBrc20TokenInsert[] = [];
       const operations: DbBrc20OperationInsert[] = [];
       const tokenMintSupplies = new Map<string, BigNumber>();
+      const tokenTxCounts = new Map<string, number>();
       const operationCounts = new Map<DbBrc20Operation, number>();
       const addressOperationCounts = new Map<string, Map<DbBrc20Operation, number>>();
       const totalBalanceChanges = new Map<string, Map<string, AddressBalanceData>>();
@@ -136,6 +79,7 @@ export class Brc20PgStore extends BasePgStoreModule {
               operation.deploy.address,
               DbBrc20Operation.deploy
             );
+            increaseTokenTxCount(tokenTxCounts, operation.deploy.tick, 1);
             logger.info(
               `Brc20PgStore deploy ${operation.deploy.tick} by ${operation.deploy.address} at height ${block_height}`
             );
@@ -152,6 +96,7 @@ export class Brc20PgStore extends BasePgStoreModule {
             });
             const amt = BigNumber(operation.mint.amt);
             increaseTokenMintedSupply(tokenMintSupplies, operation.mint.tick, amt);
+            increaseTokenTxCount(tokenTxCounts, operation.mint.tick, 1);
             increaseOperationCount(operationCounts, DbBrc20Operation.mint);
             increaseAddressOperationCount(
               addressOperationCounts,
@@ -182,6 +127,7 @@ export class Brc20PgStore extends BasePgStoreModule {
             });
             const amt = BigNumber(operation.transfer.amt);
             increaseOperationCount(operationCounts, DbBrc20Operation.transfer);
+            increaseTokenTxCount(tokenTxCounts, operation.transfer.tick, 1);
             increaseAddressOperationCount(
               addressOperationCounts,
               operation.transfer.address,
@@ -221,6 +167,7 @@ export class Brc20PgStore extends BasePgStoreModule {
             });
             const amt = BigNumber(operation.transfer_send.amt);
             increaseOperationCount(operationCounts, DbBrc20Operation.transferSend);
+            increaseTokenTxCount(tokenTxCounts, operation.transfer_send.tick, 1);
             increaseAddressOperationCount(
               addressOperationCounts,
               operation.transfer_send.sender_address,
@@ -263,12 +210,15 @@ export class Brc20PgStore extends BasePgStoreModule {
           INSERT INTO brc20_operations ${sql(operations)}
           ON CONFLICT ON CONSTRAINT brc20_operations_unique DO NOTHING
         `;
-      for (const [ticker, amount] of tokenMintSupplies) {
+      for (const [ticker, amount] of tokenMintSupplies)
         await sql`
           UPDATE brc20_tokens SET minted_supply = minted_supply + ${amount.toString()}
           WHERE ticker = ${ticker}
         `;
-      }
+      for (const [ticker, num] of tokenTxCounts)
+        await sql`
+          UPDATE brc20_tokens SET tx_count = tx_count + ${num} WHERE ticker = ${ticker}
+        `;
       if (operationCounts.size) {
         const entries = [];
         for (const [operation, count] of operationCounts) {
@@ -315,48 +265,6 @@ export class Brc20PgStore extends BasePgStoreModule {
         `;
       }
     });
-  }
-
-  async rollBackInscription(args: { inscription: InscriptionData }): Promise<void> {
-    // const events = await this.sql<DbBrc20Event[]>`
-    //   SELECT e.* FROM brc20_events AS e
-    //   INNER JOIN inscriptions AS i ON i.id = e.inscription_id
-    //   WHERE i.genesis_id = ${args.inscription.genesis_id}
-    // `;
-    // if (events.count === 0) return;
-    // // Traverse all activities generated by this inscription and roll back actions that are NOT
-    // // otherwise handled by the ON DELETE CASCADE postgres constraint.
-    // for (const event of events) {
-    //   switch (event.operation) {
-    //     case 'deploy':
-    //       await this.rollBackDeploy(event);
-    //       break;
-    //     case 'mint':
-    //       await this.rollBackMint(event);
-    //       break;
-    //     case 'transfer':
-    //       await this.rollBackTransfer(event);
-    //       break;
-    //   }
-    // }
-  }
-
-  async rollBackLocation(args: { location: LocationData }): Promise<void> {
-    // const events = await this.sql<DbBrc20Event[]>`
-    //   SELECT e.* FROM brc20_events AS e
-    //   INNER JOIN locations AS l ON l.id = e.genesis_location_id
-    //   WHERE output = ${args.location.output} AND "offset" = ${args.location.offset}
-    // `;
-    // if (events.count === 0) return;
-    // // Traverse all activities generated by this location and roll back actions that are NOT
-    // // otherwise handled by the ON DELETE CASCADE postgres constraint.
-    // for (const event of events) {
-    //   switch (event.operation) {
-    //     case 'transfer_send':
-    //       await this.rollBackTransferSend(event);
-    //       break;
-    //   }
-    // }
   }
 
   async getTokens(
@@ -418,13 +326,12 @@ export class Brc20PgStore extends BasePgStoreModule {
                 SUM(b.trans_balance) AS trans_balance,
                 SUM(b.avail_balance + b.trans_balance) AS total_balance,
                 COUNT(*) OVER() as total
-              FROM brc20_balances AS b
-              INNER JOIN brc20_deploys AS d ON d.id = b.brc20_deploy_id
-              INNER JOIN locations AS l ON l.id = b.location_id
+              FROM brc20_operations AS b
+              INNER JOIN brc20_tokens AS d ON d.ticker = b.brc20_token_ticker
               WHERE
                 b.address = ${args.address}
-                AND l.block_height <= ${args.block_height}
-                ${ticker ? this.sql`AND brc20_deploy_id IN (SELECT id FROM token_ids)` : this.sql``}
+                AND b.block_height <= ${args.block_height}
+                ${ticker ? this.sql`AND ${ticker}` : this.sql``}
               GROUP BY d.ticker, d.decimals
               HAVING SUM(b.avail_balance + b.trans_balance) > 0
             `
@@ -451,18 +358,17 @@ export class Brc20PgStore extends BasePgStoreModule {
     const result = await this.sql<DbBrc20TokenWithSupply[]>`
       WITH token AS (
         SELECT
-          ${this.sql(BRC20_DEPLOYS_COLUMNS.map(c => `d.${c}`))},
-          i.number, i.genesis_id, l.timestamp
-        FROM brc20_deploys AS d
-        INNER JOIN inscriptions AS i ON i.id = d.inscription_id
-        INNER JOIN genesis_locations AS g ON g.inscription_id = d.inscription_id
+          d.*, i.number, i.genesis_id, l.timestamp
+        FROM brc20_tokens AS d
+        INNER JOIN inscriptions AS i ON i.genesis_id = d.genesis_id
+        INNER JOIN genesis_locations AS g ON g.inscription_id = i.id
         INNER JOIN locations AS l ON l.id = g.location_id
-        WHERE ticker_lower = LOWER(${args.ticker})
+        WHERE d.ticker = LOWER(${args.ticker})
       ),
       holders AS (
         SELECT COUNT(*) AS count
         FROM brc20_total_balances
-        WHERE brc20_deploy_id = (SELECT id FROM token) AND total_balance > 0
+        WHERE brc20_token_ticker = (SELECT ticker FROM token) AND total_balance > 0
       )
       SELECT *, COALESCE((SELECT count FROM holders), 0) AS holders
       FROM token
