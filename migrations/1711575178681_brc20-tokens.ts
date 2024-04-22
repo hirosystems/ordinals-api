@@ -55,4 +55,5 @@ export function up(pgm: MigrationBuilder): void {
     },
   });
   pgm.createIndex('brc20_tokens', ['genesis_id']);
+  pgm.createIndex('brc20_tokens', ['block_height']);
 }

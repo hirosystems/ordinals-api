@@ -22,7 +22,7 @@ export enum DbBrc20Operation {
 
 export type DbBrc20OperationInsert = {
   genesis_id: string;
-  brc20_token_ticker: string;
+  ticker: string;
   block_height: PgNumeric;
   tx_index: PgNumeric;
   address: string;
@@ -117,8 +117,10 @@ export type DbBrc20TransferEvent = BaseEvent & {
 
 export type DbBrc20Event = DbBrc20DeployEvent | DbBrc20MintEvent | DbBrc20TransferEvent;
 
-type BaseActivity = {
+export type DbBrc20Activity = {
   ticker: string;
+  avail_balance: string;
+  trans_balance: string;
   deploy_decimals: number;
   deploy_max: string;
   deploy_limit: string | null;
@@ -131,24 +133,9 @@ type BaseActivity = {
   block_hash: string;
   tx_id: string;
   address: string;
+  to_address: string | null;
   timestamp: number;
 };
-
-export type DbBrc20DeployActivity = BaseActivity & {
-  operation: DbBrc20EventOperation.deploy;
-};
-
-export type DbBrc20MintActivity = BaseActivity & {
-  operation: DbBrc20EventOperation.mint;
-  mint_amount: string;
-};
-
-export type DbBrc20TransferActivity = BaseActivity & {
-  operation: DbBrc20EventOperation.transfer | DbBrc20EventOperation.transferSend;
-  transfer_data: string;
-};
-
-export type DbBrc20Activity = DbBrc20DeployActivity | DbBrc20MintActivity | DbBrc20TransferActivity;
 
 export const BRC20_DEPLOYS_COLUMNS = [
   'id',

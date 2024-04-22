@@ -40,7 +40,7 @@ import {
 
 export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 export const ORDINALS_GENESIS_BLOCK = 767430;
-const INSERT_BATCH_SIZE = 4000;
+export const INSERT_BATCH_SIZE = 4000;
 
 type InscriptionIdentifier = { genesis_id: string } | { number: number };
 
@@ -92,6 +92,7 @@ export class PgStore extends BasePgStore {
         logger.info(`PgStore rolling back block ${event.block_identifier.index}`);
         const time = stopwatch();
         const rollbacks = revealInsertsFromOrdhookEvent(event);
+        await this.brc20.updateBrc20Operations(event, false);
         for (const writeChunk of batchIterate(rollbacks, 1000))
           await this.rollBackInscriptions(writeChunk);
         updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
@@ -125,7 +126,7 @@ export class PgStore extends BasePgStore {
         for (const writeChunk of batchIterate(writes, INSERT_BATCH_SIZE))
           await this.insertInscriptions(writeChunk, payload.chainhook.is_streaming_blocks);
         updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
-        await this.brc20.applyBrc20Operations(event);
+        await this.brc20.updateBrc20Operations(event);
         logger.info(
           `PgStore ingested block ${event.block_identifier.index} in ${time.getElapsedSeconds()}s`
         );

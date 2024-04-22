@@ -1,53 +1,13 @@
 import BigNumber from 'bignumber.js';
-import { DbBrc20Operation } from './types';
+import { DbBrc20Operation, DbBrc20OperationInsert, DbBrc20TokenInsert } from './types';
+import * as postgres from 'postgres';
+import { PgSqlClient } from '@hirosystems/api-toolkit';
 
-export function increaseOperationCount(
-  map: Map<DbBrc20Operation, number>,
-  operation: DbBrc20Operation
+export function sqlOr(
+  sql: PgSqlClient,
+  partials: postgres.PendingQuery<postgres.Row[]>[] | undefined
 ) {
-  const current = map.get(operation);
-  if (current == undefined) {
-    map.set(operation, 1);
-  } else {
-    map.set(operation, current + 1);
-  }
-}
-
-export function increaseTokenMintedSupply(
-  map: Map<string, BigNumber>,
-  ticker: string,
-  amount: BigNumber
-) {
-  const current = map.get(ticker);
-  if (current == undefined) {
-    map.set(ticker, amount);
-  } else {
-    map.set(ticker, current.plus(amount));
-  }
-}
-
-export function increaseTokenTxCount(map: Map<string, number>, ticker: string, delta: number) {
-  const current = map.get(ticker);
-  if (current == undefined) {
-    map.set(ticker, 1);
-  } else {
-    map.set(ticker, current + delta);
-  }
-}
-
-export function increaseAddressOperationCount(
-  map: Map<string, Map<DbBrc20Operation, number>>,
-  address: string,
-  operation: DbBrc20Operation
-) {
-  const current = map.get(address);
-  if (current == undefined) {
-    const opMap = new Map<DbBrc20Operation, number>();
-    increaseOperationCount(opMap, operation);
-    map.set(address, opMap);
-  } else {
-    increaseOperationCount(current, operation);
-  }
+  return partials?.reduce((acc, curr) => sql`${acc} OR ${curr}`);
 }
 
 export interface AddressBalanceData {
@@ -55,29 +15,83 @@ export interface AddressBalanceData {
   trans: BigNumber;
   total: BigNumber;
 }
-export function updateAddressBalance(
-  map: Map<string, Map<string, AddressBalanceData>>,
-  ticker: string,
-  address: string,
-  availBalance: BigNumber,
-  transBalance: BigNumber,
-  totalBalance: BigNumber
-) {
-  const current = map.get(address);
-  if (current === undefined) {
-    const opMap = new Map<string, AddressBalanceData>();
-    opMap.set(ticker, { avail: availBalance, trans: transBalance, total: totalBalance });
-    map.set(address, opMap);
-  } else {
-    const currentTick = current.get(ticker);
-    if (currentTick === undefined) {
-      current.set(ticker, { avail: availBalance, trans: transBalance, total: totalBalance });
+
+export class Brc20BlockCache {
+  tokens: DbBrc20TokenInsert[] = [];
+  operations: DbBrc20OperationInsert[] = [];
+  tokenMintSupplies = new Map<string, BigNumber>();
+  tokenTxCounts = new Map<string, number>();
+  operationCounts = new Map<DbBrc20Operation, number>();
+  addressOperationCounts = new Map<string, Map<DbBrc20Operation, number>>();
+  totalBalanceChanges = new Map<string, Map<string, AddressBalanceData>>();
+
+  increaseOperationCount(operation: DbBrc20Operation) {
+    this.increaseOperationCountInternal(this.operationCounts, operation);
+  }
+  private increaseOperationCountInternal(
+    map: Map<DbBrc20Operation, number>,
+    operation: DbBrc20Operation
+  ) {
+    const current = map.get(operation);
+    if (current == undefined) {
+      map.set(operation, 1);
     } else {
-      current.set(ticker, {
-        avail: availBalance.plus(currentTick.avail),
-        trans: transBalance.plus(currentTick.trans),
-        total: totalBalance.plus(currentTick.total),
-      });
+      map.set(operation, current + 1);
+    }
+  }
+
+  increaseTokenMintedSupply(ticker: string, amount: BigNumber) {
+    const current = this.tokenMintSupplies.get(ticker);
+    if (current == undefined) {
+      this.tokenMintSupplies.set(ticker, amount);
+    } else {
+      this.tokenMintSupplies.set(ticker, current.plus(amount));
+    }
+  }
+
+  increaseTokenTxCount(ticker: string) {
+    const current = this.tokenTxCounts.get(ticker);
+    if (current == undefined) {
+      this.tokenTxCounts.set(ticker, 1);
+    } else {
+      this.tokenTxCounts.set(ticker, current + 1);
+    }
+  }
+
+  increaseAddressOperationCount(address: string, operation: DbBrc20Operation) {
+    const current = this.addressOperationCounts.get(address);
+    if (current == undefined) {
+      const opMap = new Map<DbBrc20Operation, number>();
+      this.increaseOperationCountInternal(opMap, operation);
+      this.addressOperationCounts.set(address, opMap);
+    } else {
+      this.increaseOperationCountInternal(current, operation);
+    }
+  }
+
+  updateAddressBalance(
+    ticker: string,
+    address: string,
+    availBalance: BigNumber,
+    transBalance: BigNumber,
+    totalBalance: BigNumber
+  ) {
+    const current = this.totalBalanceChanges.get(address);
+    if (current === undefined) {
+      const opMap = new Map<string, AddressBalanceData>();
+      opMap.set(ticker, { avail: availBalance, trans: transBalance, total: totalBalance });
+      this.totalBalanceChanges.set(address, opMap);
+    } else {
+      const currentTick = current.get(ticker);
+      if (currentTick === undefined) {
+        current.set(ticker, { avail: availBalance, trans: transBalance, total: totalBalance });
+      } else {
+        current.set(ticker, {
+          avail: availBalance.plus(currentTick.avail),
+          trans: transBalance.plus(currentTick.trans),
+          total: totalBalance.plus(currentTick.total),
+        });
+      }
     }
   }
 }

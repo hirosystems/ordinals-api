@@ -16,8 +16,12 @@ export function up(pgm: MigrationBuilder): void {
       type: 'string',
       notNull: true,
     },
-    brc20_token_ticker: {
+    ticker: {
       type: 'string',
+      notNull: true,
+    },
+    operation: {
+      type: 'brc20_operation',
       notNull: true,
     },
     block_height: {
@@ -39,14 +43,14 @@ export function up(pgm: MigrationBuilder): void {
       type: 'numeric',
       notNull: true,
     },
-    operation: {
-      type: 'brc20_operation',
-      notNull: true,
-    },
+  });
+  pgm.createConstraint('brc20_operations', 'brc20_operations_pkey', {
+    primaryKey: ['genesis_id', 'operation'],
   });
   pgm.createConstraint(
     'brc20_operations',
-    'brc20_operations_unique',
-    'UNIQUE(genesis_id, operation)'
+    'brc20_operations_ticker_fk',
+    'FOREIGN KEY(ticker) REFERENCES brc20_tokens(ticker) ON DELETE CASCADE'
   );
+  pgm.createIndex('brc20_operations', ['block_height', 'tx_index']);
 }

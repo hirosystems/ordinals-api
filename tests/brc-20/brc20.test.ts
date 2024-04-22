@@ -39,17 +39,21 @@ describe('BRC-20', () => {
           .transaction({
             hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           })
-          .brc20({
-            deploy: {
-              inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-              tick: 'pepe',
-              max: '21000000',
-              lim: '1000',
-              dec: '18',
-              address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-              self_mint: false,
+          .brc20(
+            {
+              deploy: {
+                inscription_id:
+                  '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+                tick: 'pepe',
+                max: '21000000',
+                lim: '1000',
+                dec: '18',
+                address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+                self_mint: false,
+              },
             },
-          })
+            { inscription_number: 0 }
+          )
           .build()
       );
       const response1 = await fastify.inject({
@@ -66,7 +70,7 @@ describe('BRC-20', () => {
           decimals: 18,
           id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
           number: 0,
-          mint_limit: null,
+          mint_limit: '1000.000000000000000000',
           max_supply: '21000000.000000000000000000',
           ticker: 'pepe',
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
@@ -90,17 +94,21 @@ describe('BRC-20', () => {
           .transaction({
             hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           })
-          .brc20({
-            deploy: {
-              inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-              tick: '$pepe',
-              max: '21000000',
-              lim: '1000',
-              dec: '18',
-              address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-              self_mint: true,
+          .brc20(
+            {
+              deploy: {
+                inscription_id:
+                  '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+                tick: '$pepe',
+                max: '21000000',
+                lim: '1000',
+                dec: '18',
+                address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+                self_mint: true,
+              },
             },
-          })
+            { inscription_number: 0 }
+          )
           .build()
       );
       const response1 = await fastify.inject({
@@ -117,7 +125,7 @@ describe('BRC-20', () => {
         deploy_timestamp: 1677811111000,
         id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
         max_supply: '21000000.000000000000000000',
-        mint_limit: null,
+        mint_limit: '1000.000000000000000000',
         self_mint: true,
         minted_supply: '0.000000000000000000',
         number: 0,
@@ -141,17 +149,21 @@ describe('BRC-20', () => {
           .transaction({
             hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           })
-          .brc20({
-            deploy: {
-              inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-              tick: 'pepe',
-              max: '21000000',
-              lim: '250000',
-              dec: '18',
-              address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-              self_mint: false,
+          .brc20(
+            {
+              deploy: {
+                inscription_id:
+                  '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+                tick: 'pepe',
+                max: '21000000',
+                lim: '250000',
+                dec: '18',
+                address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+                self_mint: false,
+              },
             },
-          })
+            { inscription_number: 0 }
+          )
           .build()
       );
       await db.updateInscriptions(
@@ -164,14 +176,18 @@ describe('BRC-20', () => {
           .transaction({
             hash: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
           })
-          .brc20({
-            mint: {
-              tick: 'pepe',
-              amt: '250000',
-              inscription_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99fi0',
-              address,
+          .brc20(
+            {
+              mint: {
+                tick: 'pepe',
+                amt: '250000',
+                inscription_id:
+                  '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99fi0',
+                address,
+              },
             },
-          })
+            { inscription_number: 1 }
+          )
           .build()
       );
 
@@ -202,14 +218,18 @@ describe('BRC-20', () => {
           .transaction({
             hash: '7a1adbc3e93ddf8d7c4e0ba75aa11c98c431521dd850be8b955feedb716d8bec',
           })
-          .brc20({
-            mint: {
-              tick: 'pepe',
-              amt: '100000',
-              inscription_id: '7a1adbc3e93ddf8d7c4e0ba75aa11c98c431521dd850be8b955feedb716d8beci0',
-              address,
+          .brc20(
+            {
+              mint: {
+                tick: 'pepe',
+                amt: '100000',
+                inscription_id:
+                  '7a1adbc3e93ddf8d7c4e0ba75aa11c98c431521dd850be8b955feedb716d8beci0',
+                address,
+              },
             },
-          })
+            { inscription_number: 2 }
+          )
           .build()
       );
 
@@ -255,17 +275,21 @@ describe('BRC-20', () => {
           .transaction({
             hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           })
-          .brc20({
-            deploy: {
-              inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-              tick: '$pepe',
-              max: '21000000',
-              lim: '21000000',
-              dec: '18',
-              address,
-              self_mint: true,
+          .brc20(
+            {
+              deploy: {
+                inscription_id:
+                  '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+                tick: '$pepe',
+                max: '21000000',
+                lim: '21000000',
+                dec: '18',
+                address,
+                self_mint: true,
+              },
             },
-          })
+            { inscription_number: 0 }
+          )
           .build()
       );
       await db.updateInscriptions(
@@ -278,14 +302,18 @@ describe('BRC-20', () => {
           .transaction({
             hash: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
           })
-          .brc20({
-            mint: {
-              inscription_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99fi0',
-              tick: '$pepe',
-              address,
-              amt: '250000',
+          .brc20(
+            {
+              mint: {
+                inscription_id:
+                  '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99fi0',
+                tick: '$pepe',
+                address,
+                amt: '250000',
+              },
             },
-          })
+            { inscription_number: 1 }
+          )
           .build()
       );
 
@@ -316,14 +344,18 @@ describe('BRC-20', () => {
           .transaction({
             hash: '7a1adbc3e93ddf8d7c4e0ba75aa11c98c431521dd850be8b955feedb716d8bec',
           })
-          .brc20({
-            mint: {
-              inscription_id: '7a1adbc3e93ddf8d7c4e0ba75aa11c98c431521dd850be8b955feedb716d8beci0',
-              tick: '$pepe',
-              address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-              amt: '100000',
+          .brc20(
+            {
+              mint: {
+                inscription_id:
+                  '7a1adbc3e93ddf8d7c4e0ba75aa11c98c431521dd850be8b955feedb716d8beci0',
+                tick: '$pepe',
+                address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+                amt: '100000',
+              },
             },
-          })
+            { inscription_number: 2 }
+          )
           .build()
       );
 
@@ -369,17 +401,21 @@ describe('BRC-20', () => {
           .transaction({
             hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           })
-          .brc20({
-            deploy: {
-              inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-              tick: '$pepe',
-              max: '0',
-              lim: '250000',
-              dec: '18',
-              address,
-              self_mint: true,
+          .brc20(
+            {
+              deploy: {
+                inscription_id:
+                  '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+                tick: '$pepe',
+                max: '0',
+                lim: '250000',
+                dec: '18',
+                address,
+                self_mint: true,
+              },
             },
-          })
+            { inscription_number: 0 }
+          )
           .build()
       );
       await db.updateInscriptions(
@@ -392,14 +428,18 @@ describe('BRC-20', () => {
           .transaction({
             hash: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
           })
-          .brc20({
-            mint: {
-              inscription_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99fi0',
-              tick: '$pepe',
-              address,
-              amt: '250000',
+          .brc20(
+            {
+              mint: {
+                inscription_id:
+                  '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99fi0',
+                tick: '$pepe',
+                address,
+                amt: '250000',
+              },
             },
-          })
+            { inscription_number: 1 }
+          )
           .build()
       );
 
@@ -430,14 +470,18 @@ describe('BRC-20', () => {
           .transaction({
             hash: '7a1adbc3e93ddf8d7c4e0ba75aa11c98c431521dd850be8b955feedb716d8bec',
           })
-          .brc20({
-            mint: {
-              inscription_id: '7a1adbc3e93ddf8d7c4e0ba75aa11c98c431521dd850be8b955feedb716d8beci0',
-              tick: '$pepe',
-              address,
-              amt: '100000',
+          .brc20(
+            {
+              mint: {
+                inscription_id:
+                  '7a1adbc3e93ddf8d7c4e0ba75aa11c98c431521dd850be8b955feedb716d8beci0',
+                tick: '$pepe',
+                address,
+                amt: '100000',
+              },
             },
-          })
+            { inscription_number: 2 }
+          )
           .build()
       );
 
@@ -483,17 +527,21 @@ describe('BRC-20', () => {
           .transaction({
             hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           })
-          .brc20({
-            deploy: {
-              inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-              tick: 'pepe',
-              max: '21000000',
-              lim: '21000000',
-              dec: '18',
-              address,
-              self_mint: false,
+          .brc20(
+            {
+              deploy: {
+                inscription_id:
+                  '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+                tick: 'pepe',
+                max: '21000000',
+                lim: '21000000',
+                dec: '18',
+                address,
+                self_mint: false,
+              },
             },
-          })
+            { inscription_number: 0 }
+          )
           .build()
       );
       await db.updateInscriptions(
@@ -506,14 +554,18 @@ describe('BRC-20', () => {
           .transaction({
             hash: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
           })
-          .brc20({
-            mint: {
-              inscription_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99fi0',
-              tick: 'pepe',
-              address,
-              amt: '250000',
+          .brc20(
+            {
+              mint: {
+                inscription_id:
+                  '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99fi0',
+                tick: 'pepe',
+                address,
+                amt: '250000',
+              },
             },
-          })
+            { inscription_number: 1 }
+          )
           .build()
       );
       // Rollback
@@ -527,14 +579,18 @@ describe('BRC-20', () => {
           .transaction({
             hash: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99f',
           })
-          .brc20({
-            mint: {
-              inscription_id: '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99fi0',
-              tick: 'pepe',
-              address,
-              amt: '250000',
+          .brc20(
+            {
+              mint: {
+                inscription_id:
+                  '8aec77f855549d98cb9fb5f35e02a03f9a2354fd05a5f89fc610b32c3b01f99fi0',
+                tick: 'pepe',
+                address,
+                amt: '250000',
+              },
             },
-          })
+            { inscription_number: 1 }
+          )
           .build()
       );
 
@@ -569,14 +625,18 @@ describe('BRC-20', () => {
           .transaction({
             hash: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
           })
-          .brc20({
-            transfer: {
-              inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
-              tick: 'pepe',
-              address,
-              amt: '2000',
+          .brc20(
+            {
+              transfer: {
+                inscription_id:
+                  'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
+                tick: 'pepe',
+                address,
+                amt: '2000',
+              },
             },
-          })
+            { inscription_number: 2 }
+          )
           .build()
       );
 
@@ -618,25 +678,33 @@ describe('BRC-20', () => {
           .transaction({
             hash: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
           })
-          .brc20({
-            transfer: {
-              inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
-              tick: 'pepe',
-              address,
-              amt: '9000',
+          .brc20(
+            {
+              transfer: {
+                inscription_id:
+                  'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
+                tick: 'pepe',
+                address,
+                amt: '9000',
+              },
             },
-          })
+            { inscription_number: 2 }
+          )
           .transaction({
             hash: '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac',
           })
-          .brc20({
-            transfer: {
-              inscription_id: '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21baci0',
-              tick: 'pepe',
-              address,
-              amt: '1000',
+          .brc20(
+            {
+              transfer: {
+                inscription_id:
+                  '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21baci0',
+                tick: 'pepe',
+                address,
+                amt: '1000',
+              },
             },
-          })
+            { inscription_number: 3 }
+          )
           .build()
       );
 
@@ -671,14 +739,18 @@ describe('BRC-20', () => {
           .transaction({
             hash: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
           })
-          .brc20({
-            transfer: {
-              inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
-              tick: 'pepe',
-              address,
-              amt: '9000',
+          .brc20(
+            {
+              transfer: {
+                inscription_id:
+                  'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
+                tick: 'pepe',
+                address,
+                amt: '9000',
+              },
             },
-          })
+            { inscription_number: 2 }
+          )
           .build()
       );
       await db.updateInscriptions(
@@ -691,15 +763,19 @@ describe('BRC-20', () => {
           .transaction({
             hash: '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac',
           })
-          .brc20({
-            transfer_send: {
-              tick: 'pepe',
-              inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
-              amt: '9000',
-              sender_address: address,
-              receiver_address: address2,
+          .brc20(
+            {
+              transfer_send: {
+                tick: 'pepe',
+                inscription_id:
+                  'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
+                amt: '9000',
+                sender_address: address,
+                receiver_address: address2,
+              },
             },
-          })
+            { inscription_number: 2 }
+          )
           .build()
       );
 
@@ -763,17 +839,21 @@ describe('BRC-20', () => {
           .transaction({
             hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           })
-          .brc20({
-            deploy: {
-              inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-              tick: '$pepe',
-              max: '0',
-              lim: '21000000',
-              dec: '18',
-              address,
-              self_mint: true,
+          .brc20(
+            {
+              deploy: {
+                inscription_id:
+                  '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+                tick: '$pepe',
+                max: '0',
+                lim: '21000000',
+                dec: '18',
+                address,
+                self_mint: true,
+              },
             },
-          })
+            { inscription_number: 0 }
+          )
           .build()
       );
       await db.updateInscriptions(
@@ -786,14 +866,18 @@ describe('BRC-20', () => {
           .transaction({
             hash: '3b55f624eaa4f8de6c42e0c490176b67123a83094384f658611faf7bfb85dd0f',
           })
-          .brc20({
-            mint: {
-              inscription_id: '3b55f624eaa4f8de6c42e0c490176b67123a83094384f658611faf7bfb85dd0fi0',
-              tick: '$pepe',
-              address,
-              amt: '10000',
+          .brc20(
+            {
+              mint: {
+                inscription_id:
+                  '3b55f624eaa4f8de6c42e0c490176b67123a83094384f658611faf7bfb85dd0fi0',
+                tick: '$pepe',
+                address,
+                amt: '10000',
+              },
             },
-          })
+            { inscription_number: 1 }
+          )
           .build()
       );
       await db.updateInscriptions(
@@ -806,14 +890,18 @@ describe('BRC-20', () => {
           .transaction({
             hash: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
           })
-          .brc20({
-            transfer: {
-              inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
-              tick: '$pepe',
-              address,
-              amt: '9000',
+          .brc20(
+            {
+              transfer: {
+                inscription_id:
+                  'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
+                tick: '$pepe',
+                address,
+                amt: '9000',
+              },
             },
-          })
+            { inscription_number: 2 }
+          )
           .build()
       );
       await db.updateInscriptions(
@@ -826,15 +914,19 @@ describe('BRC-20', () => {
           .transaction({
             hash: '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac',
           })
-          .brc20({
-            transfer_send: {
-              inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
-              tick: '$pepe',
-              amt: '9000',
-              sender_address: address,
-              receiver_address: address2,
+          .brc20(
+            {
+              transfer_send: {
+                inscription_id:
+                  'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
+                tick: '$pepe',
+                amt: '9000',
+                sender_address: address,
+                receiver_address: address2,
+              },
             },
-          })
+            { inscription_number: 2 }
+          )
           .build()
       );
 
@@ -885,14 +977,18 @@ describe('BRC-20', () => {
           .transaction({
             hash: '825a25b64b5d99ca30e04e53cc9a3020412e1054eb2a7523eb075ddd6d983205',
           })
-          .brc20({
-            transfer: {
-              inscription_id: '825a25b64b5d99ca30e04e53cc9a3020412e1054eb2a7523eb075ddd6d983205i0',
-              tick: 'pepe',
-              address,
-              amt: '20',
+          .brc20(
+            {
+              transfer: {
+                inscription_id:
+                  '825a25b64b5d99ca30e04e53cc9a3020412e1054eb2a7523eb075ddd6d983205i0',
+                tick: 'pepe',
+                address,
+                amt: '20',
+              },
             },
-          })
+            { inscription_number: 2 }
+          )
           .build()
       );
       await db.updateInscriptions(
@@ -905,15 +1001,19 @@ describe('BRC-20', () => {
           .transaction({
             hash: '486815e61723d03af344e1256d7e0c028a8e9e71eb38157f4bf069eb94292ee1',
           })
-          .brc20({
-            transfer_send: {
-              inscription_id: '825a25b64b5d99ca30e04e53cc9a3020412e1054eb2a7523eb075ddd6d983205i0',
-              tick: 'pepe',
-              amt: '20',
-              sender_address: address,
-              receiver_address: address2,
+          .brc20(
+            {
+              transfer_send: {
+                inscription_id:
+                  '825a25b64b5d99ca30e04e53cc9a3020412e1054eb2a7523eb075ddd6d983205i0',
+                tick: 'pepe',
+                amt: '20',
+                sender_address: address,
+                receiver_address: address2,
+              },
             },
-          })
+            { inscription_number: 2 }
+          )
           .build()
       );
       let response = await fastify.inject({
@@ -938,14 +1038,18 @@ describe('BRC-20', () => {
           .transaction({
             hash: '09a812f72275892b4858880cf3821004a6e8885817159b340639afe9952ac053',
           })
-          .brc20({
-            transfer: {
-              inscription_id: '09a812f72275892b4858880cf3821004a6e8885817159b340639afe9952ac053i0',
-              tick: 'pepe',
-              address: address2,
-              amt: '20',
+          .brc20(
+            {
+              transfer: {
+                inscription_id:
+                  '09a812f72275892b4858880cf3821004a6e8885817159b340639afe9952ac053i0',
+                tick: 'pepe',
+                address: address2,
+                amt: '20',
+              },
             },
-          })
+            { inscription_number: 3 }
+          )
           .build()
       );
       response = await fastify.inject({
@@ -970,15 +1074,19 @@ describe('BRC-20', () => {
           .transaction({
             hash: '26c0c3acbb1c87e682ade86220ba06e649d7599ecfc49a71495f1bdd04efbbb4',
           })
-          .brc20({
-            transfer_send: {
-              inscription_id: '09a812f72275892b4858880cf3821004a6e8885817159b340639afe9952ac053i0',
-              tick: 'pepe',
-              amt: '20',
-              sender_address: address2,
-              receiver_address: address2,
+          .brc20(
+            {
+              transfer_send: {
+                inscription_id:
+                  '09a812f72275892b4858880cf3821004a6e8885817159b340639afe9952ac053i0',
+                tick: 'pepe',
+                amt: '20',
+                sender_address: address2,
+                receiver_address: address2,
+              },
             },
-          })
+            { inscription_number: 3 }
+          )
           .build()
       );
       response = await fastify.inject({
@@ -1012,14 +1120,17 @@ describe('BRC-20', () => {
         .transaction({
           hash: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47a',
         })
-        .brc20({
-          transfer: {
-            inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
-            tick: 'pepe',
-            address,
-            amt: '9000',
+        .brc20(
+          {
+            transfer: {
+              inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
+              tick: 'pepe',
+              address,
+              amt: '9000',
+            },
           },
-        })
+          { inscription_number: 2 }
+        )
         .build();
       await db.updateInscriptions(transferPEPE);
       const sendPEPE = new TestChainhookPayloadBuilder()
@@ -1031,15 +1142,18 @@ describe('BRC-20', () => {
         .transaction({
           hash: '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac',
         })
-        .brc20({
-          transfer_send: {
-            inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
-            tick: 'pepe',
-            amt: '9000',
-            sender_address: address,
-            receiver_address: address2,
+        .brc20(
+          {
+            transfer_send: {
+              inscription_id: 'eee52b22397ea4a4aefe6a39931315e93a157091f5a994216c0aa9c8c6fef47ai0',
+              tick: 'pepe',
+              amt: '9000',
+              sender_address: address,
+              receiver_address: address2,
+            },
           },
-        })
+          { inscription_number: 2 }
+        )
         .build();
       await db.updateInscriptions(sendPEPE);
       // Deploy and mint 🔥 token
@@ -1052,17 +1166,20 @@ describe('BRC-20', () => {
         .transaction({
           hash: '8354e85e87fa2df8b3a06ec0b9d395559b95174530cb19447fc4df5f6d4ca84d',
         })
-        .brc20({
-          deploy: {
-            inscription_id: '8354e85e87fa2df8b3a06ec0b9d395559b95174530cb19447fc4df5f6d4ca84di0',
-            tick: '🔥',
-            max: '1000',
-            lim: '1000',
-            dec: '18',
-            address,
-            self_mint: false,
+        .brc20(
+          {
+            deploy: {
+              inscription_id: '8354e85e87fa2df8b3a06ec0b9d395559b95174530cb19447fc4df5f6d4ca84di0',
+              tick: '🔥',
+              max: '1000',
+              lim: '1000',
+              dec: '18',
+              address,
+              self_mint: false,
+            },
           },
-        })
+          { inscription_number: 3 }
+        )
         .build();
       await db.updateInscriptions(deployFIRE);
       const mintFIRE = new TestChainhookPayloadBuilder()
@@ -1074,14 +1191,17 @@ describe('BRC-20', () => {
         .transaction({
           hash: '81f4ee2c247c5f5c0d3a6753fef706df410ea61c2aa6d370003b98beb041b887',
         })
-        .brc20({
-          mint: {
-            inscription_id: '81f4ee2c247c5f5c0d3a6753fef706df410ea61c2aa6d370003b98beb041b887i0',
-            tick: '🔥',
-            address,
-            amt: '500',
+        .brc20(
+          {
+            mint: {
+              inscription_id: '81f4ee2c247c5f5c0d3a6753fef706df410ea61c2aa6d370003b98beb041b887i0',
+              tick: '🔥',
+              address,
+              amt: '500',
+            },
           },
-        })
+          { inscription_number: 4 }
+        )
         .build();
       await db.updateInscriptions(mintFIRE);
       // Transfer and send 🔥 to self
@@ -1094,14 +1214,17 @@ describe('BRC-20', () => {
         .transaction({
           hash: 'c1c7f1d5c10a30605a8a5285ca3465a4f75758ed9b7f201e5ef62727e179966f',
         })
-        .brc20({
-          transfer: {
-            inscription_id: 'c1c7f1d5c10a30605a8a5285ca3465a4f75758ed9b7f201e5ef62727e179966fi0',
-            tick: '🔥',
-            address,
-            amt: '100',
+        .brc20(
+          {
+            transfer: {
+              inscription_id: 'c1c7f1d5c10a30605a8a5285ca3465a4f75758ed9b7f201e5ef62727e179966fi0',
+              tick: '🔥',
+              address,
+              amt: '100',
+            },
           },
-        })
+          { inscription_number: 5 }
+        )
         .build();
       await db.updateInscriptions(transferFIRE);
       const sendFIRE = new TestChainhookPayloadBuilder()
@@ -1113,15 +1236,18 @@ describe('BRC-20', () => {
         .transaction({
           hash: 'a00d01a3e772ce2219ddf3fe2fe4053be071262d9594f11f018fdada7179ae2d',
         })
-        .brc20({
-          transfer_send: {
-            tick: '🔥',
-            inscription_id: 'c1c7f1d5c10a30605a8a5285ca3465a4f75758ed9b7f201e5ef62727e179966fi0',
-            amt: '100',
-            sender_address: address,
-            receiver_address: address,
+        .brc20(
+          {
+            transfer_send: {
+              tick: '🔥',
+              inscription_id: 'c1c7f1d5c10a30605a8a5285ca3465a4f75758ed9b7f201e5ef62727e179966fi0',
+              amt: '100',
+              sender_address: address,
+              receiver_address: address,
+            },
           },
-        })
+          { inscription_number: 5 }
+        )
         .build();
       await db.updateInscriptions(sendFIRE);
 

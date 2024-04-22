@@ -99,12 +99,15 @@ export class TestChainhookPayloadBuilder {
     return this;
   }
 
-  brc20(args: BitcoinBrc20Operation): this {
+  brc20(
+    args: BitcoinBrc20Operation,
+    opts: { inscription_number: number; ordinal_number?: number }
+  ): this {
     this.lastBlockTx.metadata.brc20_operation = args;
     if ('transfer_send' in args) {
       this.lastBlockTx.metadata.ordinal_operations.push({
         inscription_transferred: {
-          ordinal_number: this.lastBlock.block_identifier.index,
+          ordinal_number: opts.ordinal_number ?? opts.inscription_number,
           destination: {
             type: 'transferred',
             value: args.transfer_send.receiver_address,
@@ -134,14 +137,14 @@ export class TestChainhookPayloadBuilder {
           content_type: 'text/plain;charset=utf-8',
           content_length: 3,
           inscription_number: {
-            jubilee: this.lastBlock.block_identifier.index,
-            classic: this.lastBlock.block_identifier.index,
+            jubilee: opts.inscription_number,
+            classic: opts.inscription_number,
           },
           inscription_fee: 2000,
           inscription_id,
           inscription_output_value: 10000,
           inscriber_address,
-          ordinal_number: this.lastBlock.block_identifier.index,
+          ordinal_number: opts.ordinal_number ?? opts.inscription_number,
           ordinal_block_height: 0,
           ordinal_offset: 0,
           satpoint_post_inscription: `${inscription_id.split('i')[0]}:0:0`,
@@ -204,17 +207,20 @@ export async function deployAndMintPEPE(db: PgStore, address: string) {
       .transaction({
         hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
       })
-      .brc20({
-        deploy: {
-          tick: 'pepe',
-          max: '250000',
-          dec: '18',
-          lim: '250000',
-          inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-          address,
-          self_mint: false,
+      .brc20(
+        {
+          deploy: {
+            tick: 'pepe',
+            max: '250000',
+            dec: '18',
+            lim: '250000',
+            inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+            address,
+            self_mint: false,
+          },
         },
-      })
+        { inscription_number: 0 }
+      )
       .build()
   );
   await db.updateInscriptions(
@@ -227,14 +233,17 @@ export async function deployAndMintPEPE(db: PgStore, address: string) {
       .transaction({
         hash: '3b55f624eaa4f8de6c42e0c490176b67123a83094384f658611faf7bfb85dd0f',
       })
-      .brc20({
-        mint: {
-          tick: 'pepe',
-          amt: '10000',
-          inscription_id: '3b55f624eaa4f8de6c42e0c490176b67123a83094384f658611faf7bfb85dd0fi0',
-          address,
+      .brc20(
+        {
+          mint: {
+            tick: 'pepe',
+            amt: '10000',
+            inscription_id: '3b55f624eaa4f8de6c42e0c490176b67123a83094384f658611faf7bfb85dd0fi0',
+            address,
+          },
         },
-      })
+        { inscription_number: 1 }
+      )
       .build()
   );
 }

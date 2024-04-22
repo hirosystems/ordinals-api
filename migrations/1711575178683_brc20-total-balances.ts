@@ -5,7 +5,7 @@ export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export function up(pgm: MigrationBuilder): void {
   pgm.createTable('brc20_total_balances', {
-    brc20_token_ticker: {
+    ticker: {
       type: 'string',
       notNull: true,
     },
@@ -28,15 +28,12 @@ export function up(pgm: MigrationBuilder): void {
   });
   pgm.createConstraint(
     'brc20_total_balances',
-    'brc20_total_balances_brc20_deploy_id_fk',
-    'FOREIGN KEY(brc20_token_ticker) REFERENCES brc20_tokens(ticker) ON DELETE CASCADE'
+    'brc20_total_balances_ticker_fk',
+    'FOREIGN KEY(ticker) REFERENCES brc20_tokens(ticker) ON DELETE CASCADE'
   );
   pgm.createConstraint('brc20_total_balances', 'brc20_total_balances_pkey', {
-    primaryKey: ['brc20_token_ticker', 'address'],
+    primaryKey: ['ticker', 'address'],
   });
   pgm.createIndex('brc20_total_balances', ['address']);
-  pgm.createIndex('brc20_total_balances', [
-    'brc20_token_ticker',
-    { name: 'total_balance', sort: 'DESC' },
-  ]);
+  pgm.createIndex('brc20_total_balances', ['ticker', { name: 'total_balance', sort: 'DESC' }]);
 }

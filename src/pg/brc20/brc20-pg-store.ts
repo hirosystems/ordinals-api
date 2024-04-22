@@ -1,58 +1,33 @@
-import { BasePgStoreModule, logger } from '@hirosystems/api-toolkit';
-import * as postgres from 'postgres';
-import {
-  DbInscriptionIndexPaging,
-  InscriptionData,
-  DbPaginatedResult,
-  LocationData,
-} from '../types';
+import { BasePgStoreModule, PgSqlClient, batchIterate, logger } from '@hirosystems/api-toolkit';
+import { DbInscriptionIndexPaging, DbPaginatedResult } from '../types';
 import {
   BRC20_OPERATIONS,
   DbBrc20Activity,
   DbBrc20Balance,
-  DbBrc20TokenInsert,
   DbBrc20EventOperation,
   DbBrc20Holder,
   DbBrc20Token,
   DbBrc20TokenWithSupply,
-  DbBrc20OperationInsert,
   DbBrc20Operation,
 } from './types';
 import { Brc20TokenOrderBy } from '../../api/schemas';
 import { objRemoveUndefinedValues } from '../helpers';
 import { BitcoinEvent } from '@hirosystems/chainhook-client';
 import BigNumber from 'bignumber.js';
-import {
-  AddressBalanceData,
-  increaseAddressOperationCount,
-  increaseOperationCount,
-  increaseTokenMintedSupply,
-  increaseTokenTxCount,
-  updateAddressBalance,
-} from './helpers';
+import { Brc20BlockCache, sqlOr } from './helpers';
+import { INSERT_BATCH_SIZE } from '../pg-store';
 
 export class Brc20PgStore extends BasePgStoreModule {
-  sqlOr(partials: postgres.PendingQuery<postgres.Row[]>[] | undefined) {
-    return partials?.reduce((acc, curr) => this.sql`${acc} OR ${curr}`);
-  }
-
-  async applyBrc20Operations(event: BitcoinEvent): Promise<void> {
+  async updateBrc20Operations(event: BitcoinEvent, apply: boolean = true): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
       const block_height = event.block_identifier.index.toString();
-      // Keep all DB changes in memory, write them at the end.
-      const tokens: DbBrc20TokenInsert[] = [];
-      const operations: DbBrc20OperationInsert[] = [];
-      const tokenMintSupplies = new Map<string, BigNumber>();
-      const tokenTxCounts = new Map<string, number>();
-      const operationCounts = new Map<DbBrc20Operation, number>();
-      const addressOperationCounts = new Map<string, Map<DbBrc20Operation, number>>();
-      const totalBalanceChanges = new Map<string, Map<string, AddressBalanceData>>();
+      const cache = new Brc20BlockCache();
       for (const tx of event.transactions) {
         const tx_index = tx.metadata.index.toString();
         if (tx.metadata.brc20_operation) {
           const operation = tx.metadata.brc20_operation;
           if ('deploy' in operation) {
-            tokens.push({
+            cache.tokens.push({
               block_height,
               genesis_id: operation.deploy.inscription_id,
               tx_id: tx.transaction_identifier.hash,
@@ -63,48 +38,39 @@ export class Brc20PgStore extends BasePgStoreModule {
               decimals: operation.deploy.dec,
               self_mint: operation.deploy.self_mint,
             });
-            operations.push({
+            cache.operations.push({
               block_height,
               tx_index,
               genesis_id: operation.deploy.inscription_id,
-              brc20_token_ticker: operation.deploy.tick,
+              ticker: operation.deploy.tick,
               address: operation.deploy.address,
               avail_balance: '0',
               trans_balance: '0',
               operation: DbBrc20Operation.deploy,
             });
-            increaseOperationCount(operationCounts, DbBrc20Operation.deploy);
-            increaseAddressOperationCount(
-              addressOperationCounts,
-              operation.deploy.address,
-              DbBrc20Operation.deploy
-            );
-            increaseTokenTxCount(tokenTxCounts, operation.deploy.tick, 1);
+            cache.increaseOperationCount(DbBrc20Operation.deploy);
+            cache.increaseAddressOperationCount(operation.deploy.address, DbBrc20Operation.deploy);
+            cache.increaseTokenTxCount(operation.deploy.tick);
             logger.info(
               `Brc20PgStore deploy ${operation.deploy.tick} by ${operation.deploy.address} at height ${block_height}`
             );
           } else if ('mint' in operation) {
-            operations.push({
+            cache.operations.push({
               block_height,
               tx_index,
               genesis_id: operation.mint.inscription_id,
-              brc20_token_ticker: operation.mint.tick,
+              ticker: operation.mint.tick,
               address: operation.mint.address,
               avail_balance: operation.mint.amt,
               trans_balance: '0',
               operation: DbBrc20Operation.mint,
             });
             const amt = BigNumber(operation.mint.amt);
-            increaseTokenMintedSupply(tokenMintSupplies, operation.mint.tick, amt);
-            increaseTokenTxCount(tokenTxCounts, operation.mint.tick, 1);
-            increaseOperationCount(operationCounts, DbBrc20Operation.mint);
-            increaseAddressOperationCount(
-              addressOperationCounts,
-              operation.mint.address,
-              DbBrc20Operation.mint
-            );
-            updateAddressBalance(
-              totalBalanceChanges,
+            cache.increaseTokenMintedSupply(operation.mint.tick, amt);
+            cache.increaseTokenTxCount(operation.mint.tick);
+            cache.increaseOperationCount(DbBrc20Operation.mint);
+            cache.increaseAddressOperationCount(operation.mint.address, DbBrc20Operation.mint);
+            cache.updateAddressBalance(
               operation.mint.tick,
               operation.mint.address,
               amt,
@@ -115,26 +81,24 @@ export class Brc20PgStore extends BasePgStoreModule {
               `Brc20PgStore mint ${operation.mint.tick} ${operation.mint.amt} by ${operation.mint.address} at height ${block_height}`
             );
           } else if ('transfer' in operation) {
-            operations.push({
+            cache.operations.push({
               block_height,
               tx_index,
               genesis_id: operation.transfer.inscription_id,
-              brc20_token_ticker: operation.transfer.tick,
+              ticker: operation.transfer.tick,
               address: operation.transfer.address,
               avail_balance: BigNumber(operation.transfer.amt).negated().toString(),
               trans_balance: operation.transfer.amt,
               operation: DbBrc20Operation.transfer,
             });
             const amt = BigNumber(operation.transfer.amt);
-            increaseOperationCount(operationCounts, DbBrc20Operation.transfer);
-            increaseTokenTxCount(tokenTxCounts, operation.transfer.tick, 1);
-            increaseAddressOperationCount(
-              addressOperationCounts,
+            cache.increaseOperationCount(DbBrc20Operation.transfer);
+            cache.increaseTokenTxCount(operation.transfer.tick);
+            cache.increaseAddressOperationCount(
               operation.transfer.address,
               DbBrc20Operation.deploy
             );
-            updateAddressBalance(
-              totalBalanceChanges,
+            cache.updateAddressBalance(
               operation.transfer.tick,
               operation.transfer.address,
               amt.negated(),
@@ -145,49 +109,45 @@ export class Brc20PgStore extends BasePgStoreModule {
               `Brc20PgStore transfer ${operation.transfer.tick} ${operation.transfer.amt} by ${operation.transfer.address} at height ${block_height}`
             );
           } else if ('transfer_send' in operation) {
-            operations.push({
+            cache.operations.push({
               block_height,
               tx_index,
               genesis_id: operation.transfer_send.inscription_id,
-              brc20_token_ticker: operation.transfer_send.tick,
+              ticker: operation.transfer_send.tick,
               address: operation.transfer_send.sender_address,
               avail_balance: '0',
               trans_balance: BigNumber(operation.transfer_send.amt).negated().toString(),
               operation: DbBrc20Operation.transferSend,
             });
-            operations.push({
+            cache.operations.push({
               block_height,
               tx_index,
               genesis_id: operation.transfer_send.inscription_id,
-              brc20_token_ticker: operation.transfer_send.tick,
+              ticker: operation.transfer_send.tick,
               address: operation.transfer_send.receiver_address,
               avail_balance: operation.transfer_send.amt,
               trans_balance: '0',
               operation: DbBrc20Operation.transferReceive,
             });
             const amt = BigNumber(operation.transfer_send.amt);
-            increaseOperationCount(operationCounts, DbBrc20Operation.transferSend);
-            increaseTokenTxCount(tokenTxCounts, operation.transfer_send.tick, 1);
-            increaseAddressOperationCount(
-              addressOperationCounts,
+            cache.increaseOperationCount(DbBrc20Operation.transferSend);
+            cache.increaseTokenTxCount(operation.transfer_send.tick);
+            cache.increaseAddressOperationCount(
               operation.transfer_send.sender_address,
               DbBrc20Operation.transferSend
             );
-            increaseAddressOperationCount(
-              addressOperationCounts,
+            cache.increaseAddressOperationCount(
               operation.transfer_send.receiver_address,
               DbBrc20Operation.transferReceive
             );
-            updateAddressBalance(
-              totalBalanceChanges,
+            cache.updateAddressBalance(
               operation.transfer_send.tick,
               operation.transfer_send.sender_address,
               BigNumber('0'),
               amt.negated(),
               amt.negated()
             );
-            updateAddressBalance(
-              totalBalanceChanges,
+            cache.updateAddressBalance(
               operation.transfer_send.tick,
               operation.transfer_send.receiver_address,
               amt,
@@ -200,77 +160,144 @@ export class Brc20PgStore extends BasePgStoreModule {
           }
         }
       }
-      if (tokens.length)
+      if (apply) await this.applyOperations(sql, cache);
+      else await this.rollBackOperations(sql, cache);
+    });
+  }
+
+  private async applyOperations(sql: PgSqlClient, cache: Brc20BlockCache) {
+    if (cache.tokens.length)
+      for await (const batch of batchIterate(cache.tokens, INSERT_BATCH_SIZE))
         await sql`
-          INSERT INTO brc20_tokens ${sql(tokens)}
+          INSERT INTO brc20_tokens ${sql(batch)}
           ON CONFLICT (ticker) DO NOTHING
         `;
-      if (operations.length)
+    if (cache.operations.length)
+      for await (const batch of batchIterate(cache.operations, INSERT_BATCH_SIZE))
         await sql`
-          INSERT INTO brc20_operations ${sql(operations)}
-          ON CONFLICT ON CONSTRAINT brc20_operations_unique DO NOTHING
+          INSERT INTO brc20_operations ${sql(batch)}
+          ON CONFLICT (genesis_id, operation) DO NOTHING
         `;
-      for (const [ticker, amount] of tokenMintSupplies)
+    for (const [ticker, amount] of cache.tokenMintSupplies)
+      await sql`
+        UPDATE brc20_tokens SET minted_supply = minted_supply + ${amount.toString()}
+        WHERE ticker = ${ticker}
+      `;
+    for (const [ticker, num] of cache.tokenTxCounts)
+      await sql`
+        UPDATE brc20_tokens SET tx_count = tx_count + ${num} WHERE ticker = ${ticker}
+      `;
+    if (cache.operationCounts.size) {
+      const entries = [];
+      for (const [operation, count] of cache.operationCounts) entries.push({ operation, count });
+      for await (const batch of batchIterate(entries, INSERT_BATCH_SIZE))
         await sql`
-          UPDATE brc20_tokens SET minted_supply = minted_supply + ${amount.toString()}
-          WHERE ticker = ${ticker}
-        `;
-      for (const [ticker, num] of tokenTxCounts)
-        await sql`
-          UPDATE brc20_tokens SET tx_count = tx_count + ${num} WHERE ticker = ${ticker}
-        `;
-      if (operationCounts.size) {
-        const entries = [];
-        for (const [operation, count] of operationCounts) {
-          entries.push({ operation, count });
-        }
-        await sql`
-          INSERT INTO brc20_counts_by_operation ${sql(entries)}
+          INSERT INTO brc20_counts_by_operation ${sql(batch)}
           ON CONFLICT (operation) DO UPDATE SET
             count = brc20_counts_by_operation.count + EXCLUDED.count
         `;
-      }
-      if (addressOperationCounts.size) {
-        const entries = [];
-        for (const [address, map] of addressOperationCounts) {
-          for (const [operation, count] of map) {
-            entries.push({ address, operation, count });
-          }
-        }
+    }
+    if (cache.addressOperationCounts.size) {
+      const entries = [];
+      for (const [address, map] of cache.addressOperationCounts)
+        for (const [operation, count] of map) entries.push({ address, operation, count });
+      for await (const batch of batchIterate(entries, INSERT_BATCH_SIZE))
         await sql`
-          INSERT INTO brc20_counts_by_address_operation ${sql(entries)}
+          INSERT INTO brc20_counts_by_address_operation ${sql(batch)}
           ON CONFLICT (address, operation) DO UPDATE SET
             count = brc20_counts_by_address_operation.count + EXCLUDED.count
         `;
-      }
-      if (totalBalanceChanges.size) {
-        const entries = [];
-        for (const [address, map] of totalBalanceChanges) {
-          for (const [ticker, values] of map) {
-            entries.push({
-              brc20_token_ticker: ticker,
-              address,
-              avail_balance: values.avail.toString(),
-              trans_balance: values.trans.toString(),
-              total_balance: values.total.toString(),
-            });
-          }
-        }
+    }
+    if (cache.totalBalanceChanges.size) {
+      const entries = [];
+      for (const [address, map] of cache.totalBalanceChanges)
+        for (const [ticker, values] of map)
+          entries.push({
+            ticker,
+            address,
+            avail_balance: values.avail.toString(),
+            trans_balance: values.trans.toString(),
+            total_balance: values.total.toString(),
+          });
+      for await (const batch of batchIterate(entries, INSERT_BATCH_SIZE))
         await sql`
-          INSERT INTO brc20_total_balances ${sql(entries)}
-          ON CONFLICT (brc20_token_ticker, address) DO UPDATE SET
+          INSERT INTO brc20_total_balances ${sql(batch)}
+          ON CONFLICT (ticker, address) DO UPDATE SET
             avail_balance = brc20_total_balances.avail_balance + EXCLUDED.avail_balance,
             trans_balance = brc20_total_balances.trans_balance + EXCLUDED.trans_balance,
             total_balance = brc20_total_balances.total_balance + EXCLUDED.total_balance
         `;
-      }
-    });
+    }
+  }
+
+  private async rollBackOperations(sql: PgSqlClient, cache: Brc20BlockCache) {
+    if (cache.totalBalanceChanges.size) {
+      for (const [address, map] of cache.totalBalanceChanges)
+        for (const [ticker, values] of map)
+          await sql`
+            UPDATE brc20_total_balances SET
+              avail_balance = avail_balance - ${values.avail},
+              trans_balance = trans_balance - ${values.trans},
+              total_balance = total_balance - ${values.total}
+            WHERE address = ${address} AND ticker = ${ticker}
+          `;
+    }
+    if (cache.addressOperationCounts.size) {
+      for (const [address, map] of cache.addressOperationCounts)
+        for (const [operation, count] of map)
+          await sql`
+            UPDATE brc20_counts_by_address_operation
+            SET count = count - ${count}
+            WHERE address = ${address} AND operation = ${operation}
+          `;
+    }
+    if (cache.addressOperationCounts.size) {
+      for (const [address, map] of cache.addressOperationCounts)
+        for (const [operation, count] of map)
+          await sql`
+            UPDATE brc20_counts_by_address_operation
+            SET count = count - ${count}
+            WHERE address = ${address} AND operation = ${operation}
+          `;
+    }
+    if (cache.operationCounts.size) {
+      for (const [operation, count] of cache.operationCounts)
+        await sql`
+          UPDATE brc20_counts_by_operation
+          SET count = count - ${count}
+          WHERE operation = ${operation}
+        `;
+    }
+    for (const [ticker, amount] of cache.tokenMintSupplies)
+      await sql`
+        UPDATE brc20_tokens SET minted_supply = minted_supply - ${amount.toString()}
+        WHERE ticker = ${ticker}
+      `;
+    for (const [ticker, num] of cache.tokenTxCounts)
+      await sql`
+        UPDATE brc20_tokens SET tx_count = tx_count - ${num} WHERE ticker = ${ticker}
+      `;
+    if (cache.operations.length) {
+      const blockHeights = cache.operations.map(o => o.block_height);
+      for await (const batch of batchIterate(blockHeights, INSERT_BATCH_SIZE))
+        await sql`
+          DELETE FROM brc20_operations WHERE block_height IN ${sql(batch)}
+        `;
+    }
+    if (cache.tokens.length) {
+      const tickers = cache.tokens.map(t => t.ticker);
+      for await (const batch of batchIterate(tickers, INSERT_BATCH_SIZE))
+        await sql`
+          DELETE FROM brc20_tokens WHERE ticker IN ${sql(batch)}
+        `;
+    }
   }
 
   async getTokens(
     args: { ticker?: string[]; order_by?: Brc20TokenOrderBy } & DbInscriptionIndexPaging
   ): Promise<DbPaginatedResult<DbBrc20Token>> {
-    const tickerPrefixCondition = this.sqlOr(
+    const tickerPrefixCondition = sqlOr(
+      this.sql,
       args.ticker?.map(t => this.sql`d.ticker LIKE LOWER(${t}) || '%'`)
     );
     const orderBy =
@@ -314,7 +341,10 @@ export class Brc20PgStore extends BasePgStoreModule {
       block_height?: number;
     } & DbInscriptionIndexPaging
   ): Promise<DbPaginatedResult<DbBrc20Balance>> {
-    const ticker = this.sqlOr(args.ticker?.map(t => this.sql`d.ticker LIKE LOWER(${t}) || '%'`));
+    const ticker = sqlOr(
+      this.sql,
+      args.ticker?.map(t => this.sql`d.ticker LIKE LOWER(${t}) || '%'`)
+    );
     // Change selection table depending if we're filtering by block height or not.
     const results = await this.sql<(DbBrc20Balance & { total: number })[]>`
       ${
@@ -327,7 +357,7 @@ export class Brc20PgStore extends BasePgStoreModule {
                 SUM(b.avail_balance + b.trans_balance) AS total_balance,
                 COUNT(*) OVER() as total
               FROM brc20_operations AS b
-              INNER JOIN brc20_tokens AS d ON d.ticker = b.brc20_token_ticker
+              INNER JOIN brc20_tokens AS d ON d.ticker = b.ticker
               WHERE
                 b.address = ${args.address}
                 AND b.block_height <= ${args.block_height}
@@ -338,7 +368,7 @@ export class Brc20PgStore extends BasePgStoreModule {
           : this.sql`
               SELECT d.ticker, d.decimals, b.avail_balance, b.trans_balance, b.total_balance, COUNT(*) OVER() as total
               FROM brc20_total_balances AS b
-              INNER JOIN brc20_tokens AS d ON d.ticker = b.brc20_token_ticker
+              INNER JOIN brc20_tokens AS d ON d.ticker = b.ticker
               WHERE
                 b.total_balance > 0
                 AND b.address = ${args.address}
@@ -368,7 +398,7 @@ export class Brc20PgStore extends BasePgStoreModule {
       holders AS (
         SELECT COUNT(*) AS count
         FROM brc20_total_balances
-        WHERE brc20_token_ticker = (SELECT ticker FROM token) AND total_balance > 0
+        WHERE ticker = (SELECT ticker FROM token) AND total_balance > 0
       )
       SELECT *, COALESCE((SELECT count FROM holders), 0) AS holders
       FROM token
@@ -426,51 +456,34 @@ export class Brc20PgStore extends BasePgStoreModule {
         filters.address != '');
     const needsTickerCount = filterLength === 1 && filters.ticker && filters.ticker.length > 0;
 
-    // Which operations do we need if we're filtering by address?
-    const sanitizedOperations: DbBrc20EventOperation[] = [];
-    for (const i of filters.operation ?? BRC20_OPERATIONS)
-      if (BRC20_OPERATIONS.includes(i)) sanitizedOperations?.push(i as DbBrc20EventOperation);
-
-    // Which tickers are we filtering for?
-    const tickerConditions = this.sqlOr(
-      filters.ticker?.map(t => this.sql`ticker_lower = LOWER(${t})`)
-    );
-
     return this.sqlTransaction(async sql => {
-      // The postgres query planner has trouble selecting an optimal plan when the WHERE condition
-      // checks any column from the `brc20_deploys` table. If the user is filtering by ticker, we
-      // should get the token IDs first and use those to filter directly in the `brc20_events`
-      // table.
-      const tickerIds = tickerConditions
-        ? (await sql<{ id: string }[]>`SELECT id FROM brc20_deploys WHERE ${tickerConditions}`).map(
-            i => i.id
-          )
-        : undefined;
       const results = await sql<(DbBrc20Activity & { total: number })[]>`
         WITH event_count AS (${
-          // Select count from the correct count cache table.
           needsGlobalEventCount
             ? sql`
                 SELECT COALESCE(SUM(count), 0) AS count
-                FROM brc20_counts_by_event_type
-                ${filters.operation ? sql`WHERE event_type IN ${sql(filters.operation)}` : sql``}
+                FROM brc20_counts_by_operation
+                ${filters.operation ? sql`WHERE operation IN ${sql(filters.operation)}` : sql``}
               `
             : needsAddressEventCount
             ? sql`
-                SELECT COALESCE(${sql.unsafe(sanitizedOperations.join('+'))}, 0) AS count
-                FROM brc20_counts_by_address_event_type
+                SELECT SUM(count) AS count
+                FROM brc20_counts_by_address_operation
                 WHERE address = ${filters.address}
+                ${filters.operation ? sql`AND operation IN ${sql(filters.operation)}` : sql``}
               `
-            : needsTickerCount && tickerIds !== undefined
+            : needsTickerCount && filters.ticker !== undefined
             ? sql`
                 SELECT COALESCE(SUM(tx_count), 0) AS count
-                FROM brc20_deploys AS d
-                WHERE id IN ${sql(tickerIds)}
+                FROM brc20_tokens AS d
+                WHERE ticker IN ${sql(filters.ticker)}
               `
             : sql`SELECT NULL AS count`
         })
         SELECT
           e.operation,
+          e.avail_balance,
+          e.trans_balance,
           d.ticker,
           l.genesis_id AS inscription_id,
           l.block_height,
@@ -483,26 +496,37 @@ export class Brc20PgStore extends BasePgStoreModule {
           d.max AS deploy_max,
           d.limit AS deploy_limit,
           d.decimals AS deploy_decimals,
-          (SELECT amount FROM brc20_mints WHERE id = e.mint_id) AS mint_amount,
-          (SELECT amount || ';' || from_address || ';' || COALESCE(to_address, '') FROM brc20_transfers WHERE id = e.transfer_id) AS transfer_data,
+          CASE
+            WHEN e.operation = 'transfer_send' THEN (
+              SELECT address FROM brc20_operations AS o2
+              WHERE o2.genesis_id = e.genesis_id AND o2.operation = 'transfer_receive'
+            )
+            ELSE NULL
+          END AS to_address,
           ${
             needsGlobalEventCount || needsAddressEventCount || needsTickerCount
               ? sql`(SELECT count FROM event_count)`
               : sql`COUNT(*) OVER()`
           } AS total
-        FROM brc20_events AS e
-        INNER JOIN brc20_deploys AS d ON e.brc20_deploy_id = d.id
-        INNER JOIN locations AS l ON e.genesis_location_id = l.id
+        FROM brc20_operations AS e
+        INNER JOIN brc20_tokens AS d ON d.ticker = e.ticker
+        INNER JOIN locations AS l ON e.genesis_id = l.genesis_id AND e.block_height = l.block_height AND e.tx_index = l.tx_index
         WHERE TRUE
-          ${filters.operation ? sql`AND e.operation IN ${sql(filters.operation)}` : sql``}
-          ${tickerIds ? sql`AND e.brc20_deploy_id IN ${sql(tickerIds)}` : sql``}
+          ${
+            filters.operation
+              ? sql`AND e.operation IN ${sql(
+                  filters.operation.filter(i => i !== 'transfer_receive')
+                )}`
+              : sql`AND e.operation <> 'transfer_receive'`
+          }
+          ${filters.ticker ? sql`AND e.ticker IN ${sql(filters.ticker)}` : sql``}
           ${filters.block_height ? sql`AND l.block_height = ${filters.block_height}` : sql``}
           ${
             filters.address
-              ? sql`AND (e.address = ${filters.address} OR e.from_address = ${filters.address})`
+              ? sql`AND (e.address = ${filters.address} OR to_address = ${filters.address})`
               : sql``
           }
-        ORDER BY l.block_height DESC, l.tx_index DESC
+        ORDER BY e.block_height DESC, e.tx_index DESC
         LIMIT ${page.limit}
         OFFSET ${page.offset}
       `;

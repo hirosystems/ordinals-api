@@ -36,17 +36,21 @@ describe('BRC-20 API', () => {
           .transaction({
             hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           })
-          .brc20({
-            deploy: {
-              inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-              tick: 'pepe',
-              max: '21000000',
-              lim: '21000000',
-              dec: '18',
-              address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-              self_mint: false,
+          .brc20(
+            {
+              deploy: {
+                inscription_id:
+                  '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+                tick: 'pepe',
+                max: '21000000',
+                lim: '21000000',
+                dec: '18',
+                address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+                self_mint: false,
+              },
             },
-          })
+            { inscription_number: 0 }
+          )
           .build()
       );
       const response = await fastify.inject({
@@ -57,7 +61,7 @@ describe('BRC-20 API', () => {
       expect(response.json()).toStrictEqual({
         token: {
           id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-          number: 779832,
+          number: 0,
           block_height: BRC20_GENESIS_BLOCK,
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
@@ -89,17 +93,20 @@ describe('BRC-20 API', () => {
           .apply()
           .block({ height: blockHeights.next().value })
           .transaction({ hash: transferHash })
-          .brc20({
-            deploy: {
-              inscription_id: `${transferHash}i0`,
-              tick: 'pepe',
-              max: '21000000',
-              lim: '21000000',
-              dec: '18',
-              address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-              self_mint: false,
+          .brc20(
+            {
+              deploy: {
+                inscription_id: `${transferHash}i0`,
+                tick: 'pepe',
+                max: '21000000',
+                lim: '21000000',
+                dec: '18',
+                address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+                self_mint: false,
+              },
             },
-          })
+            { inscription_number: 0 }
+          )
           .build()
       );
 
@@ -110,17 +117,20 @@ describe('BRC-20 API', () => {
           .apply()
           .block({ height: blockHeights.next().value })
           .transaction({ hash: transferHash })
-          .brc20({
-            deploy: {
-              inscription_id: `${transferHash}i0`,
-              tick: 'peer',
-              max: '21000000',
-              lim: '21000000',
-              dec: '18',
-              address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-              self_mint: false,
+          .brc20(
+            {
+              deploy: {
+                inscription_id: `${transferHash}i0`,
+                tick: 'peer',
+                max: '21000000',
+                lim: '21000000',
+                dec: '18',
+                address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+                self_mint: false,
+              },
             },
-          })
+            { inscription_number: 1 }
+          )
           .build()
       );
 
@@ -131,17 +141,20 @@ describe('BRC-20 API', () => {
           .apply()
           .block({ height: blockHeights.next().value })
           .transaction({ hash: transferHash })
-          .brc20({
-            deploy: {
-              inscription_id: `${transferHash}i0`,
-              tick: 'abcd',
-              max: '21000000',
-              lim: '21000000',
-              dec: '18',
-              address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-              self_mint: false,
+          .brc20(
+            {
+              deploy: {
+                inscription_id: `${transferHash}i0`,
+                tick: 'abcd',
+                max: '21000000',
+                lim: '21000000',
+                dec: '18',
+                address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+                self_mint: false,
+              },
             },
-          })
+            { inscription_number: 2 }
+          )
           .build()
       );
 
@@ -152,17 +165,20 @@ describe('BRC-20 API', () => {
           .apply()
           .block({ height: blockHeights.next().value })
           .transaction({ hash: transferHash })
-          .brc20({
-            deploy: {
-              inscription_id: `${transferHash}i0`,
-              tick: 'dcba',
-              max: '21000000',
-              lim: '21000000',
-              dec: '18',
-              address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-              self_mint: false,
+          .brc20(
+            {
+              deploy: {
+                inscription_id: `${transferHash}i0`,
+                tick: 'dcba',
+                max: '21000000',
+                lim: '21000000',
+                dec: '18',
+                address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+                self_mint: false,
+              },
             },
-          })
+            { inscription_number: 3 }
+          )
           .build()
       );
       const response = await fastify.inject({
@@ -195,17 +211,20 @@ describe('BRC-20 API', () => {
           .apply()
           .block({ height: blockHeights.next().value })
           .transaction({ hash: randomHash() })
-          .brc20({
-            deploy: {
-              inscription_id: `${randomHash()}i0`,
-              tick: 'pepe',
-              max: '21000000',
-              lim: '21000000',
-              dec: '18',
-              address: addressA,
-              self_mint: false,
+          .brc20(
+            {
+              deploy: {
+                inscription_id: `${randomHash()}i0`,
+                tick: 'pepe',
+                max: '21000000',
+                lim: '21000000',
+                dec: '18',
+                address: addressA,
+                self_mint: false,
+              },
             },
-          })
+            { inscription_number: 0 }
+          )
           .build()
       );
 
@@ -218,14 +237,17 @@ describe('BRC-20 API', () => {
           .apply()
           .block({ height: blockHeights.next().value })
           .transaction({ hash: txHash })
-          .brc20({
-            mint: {
-              inscription_id: `${txHash}i0`,
-              tick: 'pepe',
-              address: addressA,
-              amt: '10000',
+          .brc20(
+            {
+              mint: {
+                inscription_id: `${txHash}i0`,
+                tick: 'pepe',
+                address: addressA,
+                amt: '10000',
+              },
             },
-          })
+            { inscription_number: i + 1 }
+          )
           .build();
         pepeMints.push(payload);
         await db.updateInscriptions(payload);
@@ -238,17 +260,20 @@ describe('BRC-20 API', () => {
           .apply()
           .block({ height: blockHeights.next().value })
           .transaction({ hash: randomHash() })
-          .brc20({
-            deploy: {
-              inscription_id: `${randomHash()}i0`,
-              tick: 'abcd',
-              max: '21000000',
-              lim: '21000000',
-              dec: '18',
-              address: addressB,
-              self_mint: false,
+          .brc20(
+            {
+              deploy: {
+                inscription_id: `${randomHash()}i0`,
+                tick: 'abcd',
+                max: '21000000',
+                lim: '21000000',
+                dec: '18',
+                address: addressB,
+                self_mint: false,
+              },
             },
-          })
+            { inscription_number: 11 }
+          )
           .build()
       );
 
@@ -259,14 +284,17 @@ describe('BRC-20 API', () => {
           .apply()
           .block({ height: blockHeights.next().value })
           .transaction({ hash: randomHash() })
-          .brc20({
-            mint: {
-              inscription_id: `${randomHash()}i0`,
-              tick: 'abcd',
-              address: addressA,
-              amt: '10000',
+          .brc20(
+            {
+              mint: {
+                inscription_id: `${randomHash()}i0`,
+                tick: 'abcd',
+                address: addressA,
+                amt: '10000',
+              },
             },
-          })
+            { inscription_number: 12 }
+          )
           .build()
       );
 
@@ -278,14 +306,17 @@ describe('BRC-20 API', () => {
         .apply()
         .block({ height: blockHeights.next().value })
         .transaction({ hash: txHashTransfer })
-        .brc20({
-          transfer: {
-            inscription_id: `${txHashTransfer}i0`,
-            tick: 'abcd',
-            address: addressB,
-            amt: '1000',
+        .brc20(
+          {
+            transfer: {
+              inscription_id: `${txHashTransfer}i0`,
+              tick: 'abcd',
+              address: addressB,
+              amt: '1000',
+            },
           },
-        })
+          { inscription_number: 13 }
+        )
         .build();
       await db.updateInscriptions(payloadTransfer);
       // (send inscription, transfer_send)
@@ -294,15 +325,18 @@ describe('BRC-20 API', () => {
         .apply()
         .block({ height: blockHeights.next().value })
         .transaction({ hash: txHashTransferSend })
-        .brc20({
-          transfer_send: {
-            tick: 'abcd',
-            inscription_id: `${txHashTransfer}i0`,
-            amt: '1000',
-            sender_address: addressB,
-            receiver_address: addressA,
+        .brc20(
+          {
+            transfer_send: {
+              tick: 'abcd',
+              inscription_id: `${txHashTransfer}i0`,
+              amt: '1000',
+              sender_address: addressB,
+              receiver_address: addressA,
+            },
           },
-        })
+          { inscription_number: 13 }
+        )
         .build();
       await db.updateInscriptions(payloadTransferSend);
 
@@ -423,17 +457,20 @@ describe('BRC-20 API', () => {
           .apply()
           .block({ height: blockHeights.next().value })
           .transaction({ hash: randomHash() })
-          .brc20({
-            deploy: {
-              inscription_id: `${randomHash()}i0`,
-              tick: 'pepe',
-              max: '21000000',
-              lim: '21000000',
-              dec: '18',
-              address: addressA,
-              self_mint: false,
+          .brc20(
+            {
+              deploy: {
+                inscription_id: `${randomHash()}i0`,
+                tick: 'pepe',
+                max: '21000000',
+                lim: '21000000',
+                dec: '18',
+                address: addressA,
+                self_mint: false,
+              },
             },
-          })
+            { inscription_number: 0 }
+          )
           .build()
       );
 
@@ -465,14 +502,17 @@ describe('BRC-20 API', () => {
           .apply()
           .block({ height: blockHeights.next().value })
           .transaction({ hash: randomHash() })
-          .brc20({
-            mint: {
-              inscription_id: `${randomHash()}i0`,
-              tick: 'pepe',
-              address: addressA,
-              amt: '10000',
+          .brc20(
+            {
+              mint: {
+                inscription_id: `${randomHash()}i0`,
+                tick: 'pepe',
+                address: addressA,
+                amt: '10000',
+              },
             },
-          })
+            { inscription_number: 1 }
+          )
           .build()
       );
 
@@ -507,14 +547,17 @@ describe('BRC-20 API', () => {
           .apply()
           .block({ height: blockHeights.next().value })
           .transaction({ hash: randomHash() })
-          .brc20({
-            mint: {
-              inscription_id: `${randomHash()}i0`,
-              tick: 'pepe',
-              address: addressB,
-              amt: '10000',
+          .brc20(
+            {
+              mint: {
+                inscription_id: `${randomHash()}i0`,
+                tick: 'pepe',
+                address: addressB,
+                amt: '10000',
+              },
             },
-          })
+            { inscription_number: 2 }
+          )
           .build()
       );
 
@@ -546,14 +589,17 @@ describe('BRC-20 API', () => {
           .apply()
           .block({ height: blockHeights.next().value })
           .transaction({ hash: transferHash })
-          .brc20({
-            transfer: {
-              inscription_id: `${transferHash}i0`,
-              tick: 'pepe',
-              address: addressA,
-              amt: '9000',
+          .brc20(
+            {
+              transfer: {
+                inscription_id: `${transferHash}i0`,
+                tick: 'pepe',
+                address: addressA,
+                amt: '9000',
+              },
             },
-          })
+            { inscription_number: 3 }
+          )
           .build()
       );
 
@@ -594,15 +640,18 @@ describe('BRC-20 API', () => {
             satpoint_post_transfer:
               '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac:0:0',
           })
-          .brc20({
-            transfer_send: {
-              tick: 'pepe',
-              inscription_id: `${transferHash}i0`,
-              amt: '9000',
-              sender_address: addressA,
-              receiver_address: addressB,
+          .brc20(
+            {
+              transfer_send: {
+                tick: 'pepe',
+                inscription_id: `${transferHash}i0`,
+                amt: '9000',
+                sender_address: addressA,
+                receiver_address: addressB,
+              },
             },
-          })
+            { inscription_number: 3 }
+          )
           .build()
       );
 
@@ -676,17 +725,20 @@ describe('BRC-20 API', () => {
           .apply()
           .block({ height: blockHeights.next().value })
           .transaction({ hash: randomHash() })
-          .brc20({
-            deploy: {
-              inscription_id: `${randomHash()}i0`,
-              tick: 'pepe',
-              max: '21000000',
-              lim: '21000000',
-              dec: '18',
-              address: addressA,
-              self_mint: false,
+          .brc20(
+            {
+              deploy: {
+                inscription_id: `${randomHash()}i0`,
+                tick: 'pepe',
+                max: '21000000',
+                lim: '21000000',
+                dec: '18',
+                address: addressA,
+                self_mint: false,
+              },
             },
-          })
+            { inscription_number: 0 }
+          )
           .build()
       );
 
@@ -718,14 +770,17 @@ describe('BRC-20 API', () => {
           .apply()
           .block({ height: blockHeights.next().value })
           .transaction({ hash: randomHash() })
-          .brc20({
-            mint: {
-              inscription_id: `${randomHash()}i0`,
-              tick: 'pepe',
-              address: addressA,
-              amt: '1000',
+          .brc20(
+            {
+              mint: {
+                inscription_id: `${randomHash()}i0`,
+                tick: 'pepe',
+                address: addressA,
+                amt: '1000',
+              },
             },
-          })
+            { inscription_number: 1 }
+          )
           .build()
       );
 
@@ -784,14 +839,17 @@ describe('BRC-20 API', () => {
           .apply()
           .block({ height: blockHeights.next().value })
           .transaction({ hash: randomHash() })
-          .brc20({
-            mint: {
-              inscription_id: `${randomHash()}i0`,
-              tick: 'pepe',
-              address: addressB,
-              amt: '2000',
+          .brc20(
+            {
+              mint: {
+                inscription_id: `${randomHash()}i0`,
+                tick: 'pepe',
+                address: addressB,
+                amt: '2000',
+              },
             },
-          })
+            { inscription_number: 2 }
+          )
           .build()
       );
 
@@ -824,14 +882,17 @@ describe('BRC-20 API', () => {
           .apply()
           .block({ height: blockHeights.next().value })
           .transaction({ hash: transferHashAB })
-          .brc20({
-            transfer: {
-              inscription_id: `${transferHashAB}i0`,
-              tick: 'pepe',
-              address: addressA,
-              amt: '1000',
+          .brc20(
+            {
+              transfer: {
+                inscription_id: `${transferHashAB}i0`,
+                tick: 'pepe',
+                address: addressA,
+                amt: '1000',
+              },
             },
-          })
+            { inscription_number: 3 }
+          )
           .build()
       );
 
@@ -887,14 +948,17 @@ describe('BRC-20 API', () => {
           .apply()
           .block({ height: blockHeights.next().value })
           .transaction({ hash: transferHashBC })
-          .brc20({
-            transfer: {
-              inscription_id: `${transferHashBC}i0`,
-              tick: 'pepe',
-              address: addressB,
-              amt: '2000',
+          .brc20(
+            {
+              transfer: {
+                inscription_id: `${transferHashBC}i0`,
+                tick: 'pepe',
+                address: addressB,
+                amt: '2000',
+              },
             },
-          })
+            { inscription_number: 4 }
+          )
           .build()
       );
 
@@ -928,14 +992,18 @@ describe('BRC-20 API', () => {
           .apply()
           .block({ height: blockHeights.next().value })
           .transaction({ hash: transferHashABSend })
-          .inscriptionTransferred({
-            destination: { type: 'transferred', value: addressB },
-            tx_index: 0,
-            ordinal_number: numberAB,
-            post_transfer_output_value: null,
-            satpoint_pre_transfer: `${transferHashAB}:0:0`,
-            satpoint_post_transfer: `${transferHashABSend}:0:0`,
-          })
+          .brc20(
+            {
+              transfer_send: {
+                tick: 'pepe',
+                inscription_id: `${transferHashAB}i0`,
+                amt: '1000',
+                sender_address: addressA,
+                receiver_address: addressB,
+              },
+            },
+            { inscription_number: 3 }
+          )
           .build()
       );
       // A gets the transfer send in its feed
@@ -1024,6 +1092,18 @@ describe('BRC-20 API', () => {
             satpoint_pre_transfer: `${transferHashBC}:0:0`,
             satpoint_post_transfer: `${transferHashBCSend}:0:0`,
           })
+          .brc20(
+            {
+              transfer_send: {
+                tick: 'pepe',
+                inscription_id: `${transferHashBC}i0`,
+                amt: '1000',
+                sender_address: addressB,
+                receiver_address: addressC,
+              },
+            },
+            { inscription_number: 4 }
+          )
           .build()
       );
 
@@ -1110,17 +1190,20 @@ describe('BRC-20 API', () => {
           .apply()
           .block({ height: blockHeights.next().value })
           .transaction({ hash: randomHash() })
-          .brc20({
-            deploy: {
-              inscription_id: `${randomHash()}i0`,
-              tick: 'pepe',
-              max: '21000000',
-              lim: '21000000',
-              dec: '18',
-              address: addressA,
-              self_mint: false,
+          .brc20(
+            {
+              deploy: {
+                inscription_id: `${randomHash()}i0`,
+                tick: 'pepe',
+                max: '21000000',
+                lim: '21000000',
+                dec: '18',
+                address: addressA,
+                self_mint: false,
+              },
             },
-          })
+            { inscription_number: 0 }
+          )
           .build()
       );
 
@@ -1152,17 +1235,20 @@ describe('BRC-20 API', () => {
           .apply()
           .block({ height: blockHeights.next().value })
           .transaction({ hash: randomHash() })
-          .brc20({
-            deploy: {
-              inscription_id: `${randomHash()}i0`,
-              tick: 'peer',
-              max: '21000000',
-              lim: '21000000',
-              dec: '18',
-              address: addressA,
-              self_mint: false,
+          .brc20(
+            {
+              deploy: {
+                inscription_id: `${randomHash()}i0`,
+                tick: 'peer',
+                max: '21000000',
+                lim: '21000000',
+                dec: '18',
+                address: addressA,
+                self_mint: false,
+              },
             },
-          })
+            { inscription_number: 1 }
+          )
           .build()
       );
 
@@ -1242,14 +1328,18 @@ describe('BRC-20 API', () => {
           .transaction({
             hash: '633648e0e1ddcab8dea0496a561f2b08c486ae619b5634d7bb55d7f0cd32ef16',
           })
-          .brc20({
-            mint: {
-              inscription_id: '633648e0e1ddcab8dea0496a561f2b08c486ae619b5634d7bb55d7f0cd32ef16i0',
-              tick: 'pepe',
-              address: 'bc1qp9jgp9qtlhgvwjnxclj6kav6nr2fq09c206pyl',
-              amt: '2000',
+          .brc20(
+            {
+              mint: {
+                inscription_id:
+                  '633648e0e1ddcab8dea0496a561f2b08c486ae619b5634d7bb55d7f0cd32ef16i0',
+                tick: 'pepe',
+                address: 'bc1qp9jgp9qtlhgvwjnxclj6kav6nr2fq09c206pyl',
+                amt: '2000',
+              },
             },
-          })
+            { inscription_number: 2 }
+          )
           .build()
       );
 
@@ -1283,17 +1373,21 @@ describe('BRC-20 API', () => {
           .transaction({
             hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           })
-          .brc20({
-            deploy: {
-              inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-              tick: 'pepe',
-              max: '250000',
-              lim: '250000',
-              dec: '18',
-              address: 'bc1qp9jgp9qtlhgvwjnxclj6kav6nr2fq09c206pyl',
-              self_mint: false,
+          .brc20(
+            {
+              deploy: {
+                inscription_id:
+                  '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+                tick: 'pepe',
+                max: '250000',
+                lim: '250000',
+                dec: '18',
+                address: 'bc1qp9jgp9qtlhgvwjnxclj6kav6nr2fq09c206pyl',
+                self_mint: false,
+              },
             },
-          })
+            { inscription_number: 0 }
+          )
           .build()
       );
       const response = await fastify.inject({
