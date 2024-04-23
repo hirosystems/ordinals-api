@@ -2,7 +2,6 @@ import {
   BasePgStore,
   PgConnectionVars,
   PgSqlClient,
-  PgSqlQuery,
   batchIterate,
   connectPostgres,
   logger,
@@ -28,14 +27,8 @@ import {
   DbInscriptionIndexPaging,
   DbInscriptionLocationChange,
   DbLocation,
-  DbLocationPointer,
-  DbLocationPointerInsert,
   DbPaginatedResult,
-  InscriptionEventData,
   LOCATIONS_COLUMNS,
-  InscriptionInsert,
-  LocationInsert,
-  LocationData,
 } from './types';
 import { normalizedHexString } from '../api/util/helpers';
 
@@ -88,15 +81,15 @@ export class PgStore extends BasePgStore {
     await this.sqlWriteTransaction(async sql => {
       const streamed = payload.chainhook.is_streaming_blocks;
       for (const event of payload.rollback) {
-        logger.info(`PgStore rolling back block ${event.block_identifier.index}`);
+        logger.info(`PgStore rollback block ${event.block_identifier.index}`);
         const time = stopwatch();
         await this.updateInscriptionsEvent(sql, event, 'rollback', streamed);
         await this.brc20.updateBrc20Operations(sql, event, 'rollback');
         await this.updateChainTipBlockHeight(sql, event.block_identifier.index - 1);
         logger.info(
-          `PgStore rolled back block ${
+          `PgStore rollback block ${
             event.block_identifier.index
-          } in ${time.getElapsedSeconds()}s`
+          } finished in ${time.getElapsedSeconds()}s`
         );
       }
       for (const event of payload.apply) {
@@ -104,13 +97,15 @@ export class PgStore extends BasePgStore {
           logger.warn(`PgStore skipping previously seen block ${event.block_identifier.index}`);
           continue;
         }
-        logger.info(`PgStore applying block ${event.block_identifier.index}`);
+        logger.info(`PgStore apply block ${event.block_identifier.index}`);
         const time = stopwatch();
         await this.updateInscriptionsEvent(sql, event, 'apply', streamed);
         await this.brc20.updateBrc20Operations(sql, event, 'apply');
         await this.updateChainTipBlockHeight(sql, event.block_identifier.index);
         logger.info(
-          `PgStore applied block ${event.block_identifier.index} in ${time.getElapsedSeconds()}s`
+          `PgStore apply block ${
+            event.block_identifier.index
+          } finished in ${time.getElapsedSeconds()}s`
         );
       }
     });
@@ -131,8 +126,11 @@ export class PgStore extends BasePgStore {
       for (const operation of tx.metadata.ordinal_operations) {
         if (operation.inscription_revealed) {
           cache.reveal(operation.inscription_revealed, block_height, block_hash, tx_id, timestamp);
+          logger.info(
+            `PgStore ${direction} reveal inscription #${operation.inscription_revealed.inscription_number.jubilee} (${operation.inscription_revealed.inscription_id}) at block ${block_height}`
+          );
         }
-        if (operation.inscription_transferred)
+        if (operation.inscription_transferred) {
           cache.transfer(
             operation.inscription_transferred,
             block_height,
@@ -140,6 +138,10 @@ export class PgStore extends BasePgStore {
             tx_id,
             timestamp
           );
+          logger.info(
+            `PgStore ${direction} transfer satoshi ${operation.inscription_transferred.ordinal_number} to ${operation.inscription_transferred.destination.value} at block ${block_height}`
+          );
+        }
       }
     }
     switch (direction) {
