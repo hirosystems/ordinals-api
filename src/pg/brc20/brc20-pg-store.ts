@@ -96,7 +96,7 @@ export class Brc20PgStore extends BasePgStoreModule {
             cache.increaseTokenTxCount(operation.transfer.tick);
             cache.increaseAddressOperationCount(
               operation.transfer.address,
-              DbBrc20Operation.deploy
+              DbBrc20Operation.transfer
             );
             cache.updateAddressBalance(
               operation.transfer.tick,
@@ -119,6 +119,10 @@ export class Brc20PgStore extends BasePgStoreModule {
               trans_balance: BigNumber(operation.transfer_send.amt).negated().toString(),
               operation: DbBrc20Operation.transferSend,
             });
+            cache.transferReceivers.set(
+              operation.transfer_send.inscription_id,
+              operation.transfer_send.receiver_address
+            );
             cache.operations.push({
               block_height,
               tx_index,
@@ -136,10 +140,14 @@ export class Brc20PgStore extends BasePgStoreModule {
               operation.transfer_send.sender_address,
               DbBrc20Operation.transferSend
             );
-            cache.increaseAddressOperationCount(
-              operation.transfer_send.receiver_address,
-              DbBrc20Operation.transferReceive
-            );
+            if (
+              operation.transfer_send.sender_address != operation.transfer_send.receiver_address
+            ) {
+              cache.increaseAddressOperationCount(
+                operation.transfer_send.receiver_address,
+                DbBrc20Operation.transferSend
+              );
+            }
             cache.updateAddressBalance(
               operation.transfer_send.tick,
               operation.transfer_send.sender_address,
@@ -178,6 +186,11 @@ export class Brc20PgStore extends BasePgStoreModule {
           INSERT INTO brc20_operations ${sql(batch)}
           ON CONFLICT (genesis_id, operation) DO NOTHING
         `;
+    for (const [inscription_id, to_address] of cache.transferReceivers)
+      await sql`
+        UPDATE brc20_operations SET to_address = ${to_address}
+        WHERE genesis_id = ${inscription_id} AND operation = 'transfer_send'
+      `;
     for (const [ticker, amount] of cache.tokenMintSupplies)
       await sql`
         UPDATE brc20_tokens SET minted_supply = minted_supply + ${amount.toString()}
@@ -251,15 +264,6 @@ export class Brc20PgStore extends BasePgStoreModule {
             WHERE address = ${address} AND operation = ${operation}
           `;
     }
-    if (cache.addressOperationCounts.size) {
-      for (const [address, map] of cache.addressOperationCounts)
-        for (const [operation, count] of map)
-          await sql`
-            UPDATE brc20_counts_by_address_operation
-            SET count = count - ${count}
-            WHERE address = ${address} AND operation = ${operation}
-          `;
-    }
     if (cache.operationCounts.size) {
       for (const [operation, count] of cache.operationCounts)
         await sql`
@@ -276,6 +280,11 @@ export class Brc20PgStore extends BasePgStoreModule {
     for (const [ticker, num] of cache.tokenTxCounts)
       await sql`
         UPDATE brc20_tokens SET tx_count = tx_count - ${num} WHERE ticker = ${ticker}
+      `;
+    for (const [inscription_id, _] of cache.transferReceivers)
+      await sql`
+        UPDATE brc20_operations SET to_address = NULL
+        WHERE genesis_id = ${inscription_id} AND operation = 'transfer_send'
       `;
     if (cache.operations.length) {
       const blockHeights = cache.operations.map(o => o.block_height);
@@ -455,6 +464,7 @@ export class Brc20PgStore extends BasePgStoreModule {
         filters.address != undefined &&
         filters.address != '');
     const needsTickerCount = filterLength === 1 && filters.ticker && filters.ticker.length > 0;
+    const operationsFilter = filters.operation?.filter(i => i !== 'transfer_receive');
 
     return this.sqlTransaction(async sql => {
       const results = await sql<(DbBrc20Activity & { total: number })[]>`
@@ -463,14 +473,14 @@ export class Brc20PgStore extends BasePgStoreModule {
             ? sql`
                 SELECT COALESCE(SUM(count), 0) AS count
                 FROM brc20_counts_by_operation
-                ${filters.operation ? sql`WHERE operation IN ${sql(filters.operation)}` : sql``}
+                ${operationsFilter ? sql`WHERE operation IN ${sql(operationsFilter)}` : sql``}
               `
             : needsAddressEventCount
             ? sql`
                 SELECT SUM(count) AS count
                 FROM brc20_counts_by_address_operation
                 WHERE address = ${filters.address}
-                ${filters.operation ? sql`AND operation IN ${sql(filters.operation)}` : sql``}
+                ${operationsFilter ? sql`AND operation IN ${sql(operationsFilter)}` : sql``}
               `
             : needsTickerCount && filters.ticker !== undefined
             ? sql`
@@ -490,19 +500,13 @@ export class Brc20PgStore extends BasePgStoreModule {
           l.block_hash,
           l.tx_id,
           l.address,
+          e.to_address,
           l.timestamp,
           l.output,
           l.offset,
           d.max AS deploy_max,
           d.limit AS deploy_limit,
           d.decimals AS deploy_decimals,
-          CASE
-            WHEN e.operation = 'transfer_send' THEN (
-              SELECT address FROM brc20_operations AS o2
-              WHERE o2.genesis_id = e.genesis_id AND o2.operation = 'transfer_receive'
-            )
-            ELSE NULL
-          END AS to_address,
           ${
             needsGlobalEventCount || needsAddressEventCount || needsTickerCount
               ? sql`(SELECT count FROM event_count)`
@@ -513,17 +517,15 @@ export class Brc20PgStore extends BasePgStoreModule {
         INNER JOIN locations AS l ON e.genesis_id = l.genesis_id AND e.block_height = l.block_height AND e.tx_index = l.tx_index
         WHERE TRUE
           ${
-            filters.operation
-              ? sql`AND e.operation IN ${sql(
-                  filters.operation.filter(i => i !== 'transfer_receive')
-                )}`
+            operationsFilter
+              ? sql`AND e.operation IN ${sql(operationsFilter)}`
               : sql`AND e.operation <> 'transfer_receive'`
           }
           ${filters.ticker ? sql`AND e.ticker IN ${sql(filters.ticker)}` : sql``}
           ${filters.block_height ? sql`AND l.block_height = ${filters.block_height}` : sql``}
           ${
             filters.address
-              ? sql`AND (e.address = ${filters.address} OR to_address = ${filters.address})`
+              ? sql`AND (e.address = ${filters.address} OR e.to_address = ${filters.address})`
               : sql``
           }
         ORDER BY e.block_height DESC, e.tx_index DESC

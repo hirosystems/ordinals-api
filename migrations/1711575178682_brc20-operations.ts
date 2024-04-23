@@ -34,6 +34,12 @@ export function up(pgm: MigrationBuilder): void {
     },
     address: {
       type: 'text',
+      notNull: true,
+    },
+    // Only used when operation is `transfer_send`; used to optimize activity lookup for
+    // receiving addresses.
+    to_address: {
+      type: 'text',
     },
     avail_balance: {
       type: 'numeric',
@@ -53,4 +59,5 @@ export function up(pgm: MigrationBuilder): void {
     'FOREIGN KEY(ticker) REFERENCES brc20_tokens(ticker) ON DELETE CASCADE'
   );
   pgm.createIndex('brc20_operations', ['block_height', 'tx_index']);
+  pgm.createIndex('brc20_operations', ['address', 'to_address']);
 }

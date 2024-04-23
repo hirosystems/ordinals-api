@@ -24,6 +24,7 @@ export class Brc20BlockCache {
   operationCounts = new Map<DbBrc20Operation, number>();
   addressOperationCounts = new Map<string, Map<DbBrc20Operation, number>>();
   totalBalanceChanges = new Map<string, Map<string, AddressBalanceData>>();
+  transferReceivers = new Map<string, string>();
 
   increaseOperationCount(operation: DbBrc20Operation) {
     this.increaseOperationCountInternal(this.operationCounts, operation);
