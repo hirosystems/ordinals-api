@@ -92,6 +92,7 @@ export class PgStore extends BasePgStore {
         const time = stopwatch();
         await this.updateInscriptionsEvent(sql, event, 'rollback', streamed);
         await this.brc20.updateBrc20Operations(sql, event, 'rollback');
+        await this.updateChainTipBlockHeight(sql, event.block_identifier.index - 1);
         logger.info(
           `PgStore rolled back block ${
             event.block_identifier.index
@@ -385,7 +386,7 @@ export class PgStore extends BasePgStore {
         FROM inscriptions AS i
         INNER JOIN current_locations AS cur ON cur.ordinal_number = i.ordinal_number
         INNER JOIN locations AS cur_l ON cur_l.ordinal_number = cur.ordinal_number AND cur_l.block_height = cur.block_height AND cur_l.tx_index = cur.tx_index
-        INNER JOIN locations AS gen_l ON gen_l.ordinal_number = cur.ordinal_number AND gen_l.block_height = cur.block_height AND gen_l.tx_index = cur.tx_index
+        INNER JOIN locations AS gen_l ON gen_l.ordinal_number = i.ordinal_number AND gen_l.block_height = i.block_height AND gen_l.tx_index = i.tx_index
         INNER JOIN satoshis AS s ON s.ordinal_number = i.ordinal_number
         WHERE TRUE
           ${
@@ -513,18 +514,17 @@ export class PgStore extends BasePgStore {
     args: InscriptionIdentifier & { limit: number; offset: number }
   ): Promise<DbPaginatedResult<DbLocation>> {
     const results = await this.sql<({ total: number } & DbLocation)[]>`
-      SELECT ${this.sql(LOCATIONS_COLUMNS)}, COUNT(*) OVER() as total
-      FROM locations
-      WHERE genesis_id = (
-        SELECT genesis_id FROM inscriptions
-        WHERE ${
-          'number' in args
-            ? this.sql`number = ${args.number}`
-            : this.sql`genesis_id = ${args.genesis_id}`
-        }
-        LIMIT 1
-      )
-      ORDER BY block_height DESC, tx_index DESC
+      SELECT l.*, COUNT(*) OVER() as total
+      FROM locations AS l
+      INNER JOIN inscriptions AS i ON i.ordinal_number = l.ordinal_number
+      WHERE ${
+        'number' in args
+          ? this.sql`i.number = ${args.number}`
+          : this.sql`i.genesis_id = ${args.genesis_id}`
+      }
+        AND l.block_height >= i.block_height
+        AND l.tx_index >= i.tx_index
+      ORDER BY l.block_height DESC, l.tx_index DESC
       LIMIT ${args.limit}
       OFFSET ${args.offset}
     `;

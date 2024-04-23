@@ -157,8 +157,6 @@ export enum DbLocationTransferType {
 }
 
 export type DbLocation = {
-  id: string;
-  inscription_id: string | null;
   genesis_id: string;
   block_height: string;
   block_hash: string;

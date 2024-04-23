@@ -485,6 +485,7 @@ describe('EventServer', () => {
       const status = await db.sql<{ transfer_type: string }[]>`
         SELECT transfer_type
         FROM locations
+        INNER JOIN inscriptions USING (ordinal_number)
         WHERE genesis_id = '53957f47697096cef4ad24dae6357b3d7ffe1e3eb9216ce0bb01d6b6a2c8cf4ai0'
       `;
       expect(status[0].transfer_type).toBe('spent_in_fees');
@@ -539,6 +540,7 @@ describe('EventServer', () => {
       const status = await db.sql<{ transfer_type: string }[]>`
         SELECT transfer_type
         FROM locations
+        INNER JOIN inscriptions USING (ordinal_number)
         WHERE genesis_id = '53957f47697096cef4ad24dae6357b3d7ffe1e3eb9216ce0bb01d6b6a2c8cf4ai0'
       `;
       expect(status[0].transfer_type).toBe('burnt');
