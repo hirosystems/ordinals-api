@@ -1,10 +1,8 @@
 import { BasePgStoreModule, PgSqlClient, batchIterate, logger } from '@hirosystems/api-toolkit';
 import { DbInscriptionIndexPaging, DbPaginatedResult } from '../types';
 import {
-  BRC20_OPERATIONS,
   DbBrc20Activity,
   DbBrc20Balance,
-  DbBrc20EventOperation,
   DbBrc20Holder,
   DbBrc20Token,
   DbBrc20TokenWithSupply,
@@ -18,7 +16,7 @@ import { Brc20BlockCache, sqlOr } from './helpers';
 import { INSERT_BATCH_SIZE } from '../pg-store';
 
 export class Brc20PgStore extends BasePgStoreModule {
-  async updateBrc20Operations(event: BitcoinEvent, apply: boolean = true): Promise<void> {
+  async updateBrc20Operations(event: BitcoinEvent, direction: 'apply' | 'rollback'): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
       const block_height = event.block_identifier.index.toString();
       const cache = new Brc20BlockCache();
@@ -52,7 +50,7 @@ export class Brc20PgStore extends BasePgStoreModule {
             cache.increaseAddressOperationCount(operation.deploy.address, DbBrc20Operation.deploy);
             cache.increaseTokenTxCount(operation.deploy.tick);
             logger.info(
-              `Brc20PgStore deploy ${operation.deploy.tick} by ${operation.deploy.address} at height ${block_height}`
+              `Brc20PgStore ${direction} deploy ${operation.deploy.tick} by ${operation.deploy.address} at height ${block_height}`
             );
           } else if ('mint' in operation) {
             cache.operations.push({
@@ -78,7 +76,7 @@ export class Brc20PgStore extends BasePgStoreModule {
               amt
             );
             logger.info(
-              `Brc20PgStore mint ${operation.mint.tick} ${operation.mint.amt} by ${operation.mint.address} at height ${block_height}`
+              `Brc20PgStore ${direction} mint ${operation.mint.tick} ${operation.mint.amt} by ${operation.mint.address} at height ${block_height}`
             );
           } else if ('transfer' in operation) {
             cache.operations.push({
@@ -106,7 +104,7 @@ export class Brc20PgStore extends BasePgStoreModule {
               BigNumber(0)
             );
             logger.info(
-              `Brc20PgStore transfer ${operation.transfer.tick} ${operation.transfer.amt} by ${operation.transfer.address} at height ${block_height}`
+              `Brc20PgStore ${direction} transfer ${operation.transfer.tick} ${operation.transfer.amt} by ${operation.transfer.address} at height ${block_height}`
             );
           } else if ('transfer_send' in operation) {
             cache.operations.push({
@@ -163,12 +161,12 @@ export class Brc20PgStore extends BasePgStoreModule {
               amt
             );
             logger.info(
-              `Brc20PgStore transfer_send ${operation.transfer_send.tick} ${operation.transfer_send.amt} from ${operation.transfer_send.sender_address} to ${operation.transfer_send.receiver_address} at height ${block_height}`
+              `Brc20PgStore ${direction} transfer_send ${operation.transfer_send.tick} ${operation.transfer_send.amt} from ${operation.transfer_send.sender_address} to ${operation.transfer_send.receiver_address} at height ${block_height}`
             );
           }
         }
       }
-      if (apply) await this.applyOperations(sql, cache);
+      if (direction === 'apply') await this.applyOperations(sql, cache);
       else await this.rollBackOperations(sql, cache);
     });
   }
