@@ -26,4 +26,5 @@ export function up(pgm: MigrationBuilder): void {
       notNull: true,
     },
   });
+  pgm.createIndex('inscriptions_per_block', ['block_hash']);
 }

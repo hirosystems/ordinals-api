@@ -52,6 +52,20 @@ export function up(pgm: MigrationBuilder): void {
     curse_type: {
       type: 'text',
     },
+    recursive: {
+      type: 'boolean',
+      default: false,
+    },
+    classic_number: {
+      type: 'bigint',
+      notNull: true,
+    },
+    metadata: {
+      type: 'text',
+    },
+    parent: {
+      type: 'text',
+    },
     updated_at: {
       type: 'timestamptz',
       default: pgm.func('(NOW())'),
@@ -61,6 +75,7 @@ export function up(pgm: MigrationBuilder): void {
   pgm.createConstraint('inscriptions', 'inscriptions_number_unique', 'UNIQUE(number)');
   pgm.createIndex('inscriptions', ['genesis_id']);
   pgm.createIndex('inscriptions', ['mime_type']);
+  pgm.createIndex('inscriptions', ['recursive']);
   pgm.createIndex('inscriptions', ['sat_ordinal']);
   pgm.createIndex('inscriptions', ['sat_rarity']);
   pgm.createIndex('inscriptions', ['sat_coinbase_height']);

@@ -4,6 +4,7 @@ import { MigrationBuilder, ColumnDefinitions } from 'node-pg-migrate';
 export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export function up(pgm: MigrationBuilder): void {
+  pgm.createType('transfer_type', ['transferred', 'spent_in_fees', 'burnt']);
   pgm.createTable('locations', {
     id: {
       type: 'bigserial',
@@ -51,6 +52,13 @@ export function up(pgm: MigrationBuilder): void {
     value: {
       type: 'numeric',
     },
+    block_transfer_index: {
+      type: 'int',
+    },
+    transfer_type: {
+      type: 'transfer_type',
+      notNull: true,
+    },
     timestamp: {
       type: 'timestamptz',
       notNull: true,
@@ -61,16 +69,23 @@ export function up(pgm: MigrationBuilder): void {
     'locations_inscription_id_fk',
     'FOREIGN KEY(inscription_id) REFERENCES inscriptions(id) ON DELETE CASCADE'
   );
-  pgm.createConstraint('locations', 'locations_output_offset_unique', 'UNIQUE(output, "offset")');
-  pgm.createIndex('locations', ['inscription_id']);
+
+  pgm.createConstraint(
+    'locations',
+    'locations_unique',
+    'UNIQUE(inscription_id, block_height, tx_index)'
+  );
+  pgm.createIndex('locations', ['output', 'offset']);
+  pgm.createIndex('locations', ['timestamp']);
   pgm.createIndex('locations', [
     'genesis_id',
     { name: 'block_height', sort: 'DESC' },
     { name: 'tx_index', sort: 'DESC' },
   ]);
-  pgm.createIndex('locations', ['block_height']);
-  pgm.createIndex('locations', ['block_hash']);
-  pgm.createIndex('locations', ['address']);
-  pgm.createIndex('locations', ['timestamp']);
-  pgm.createIndex('locations', ['prev_output']);
+  pgm.createIndex('locations', [
+    { name: 'block_height', sort: 'DESC' },
+    { name: 'tx_index', sort: 'DESC' },
+  ]);
+  pgm.addIndex('locations', ['block_height', { name: 'block_transfer_index', sort: 'DESC' }]);
+  pgm.addIndex('locations', ['block_hash', { name: 'block_transfer_index', sort: 'DESC' }]);
 }

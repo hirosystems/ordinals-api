@@ -4,12 +4,14 @@ import { MigrationBuilder, ColumnDefinitions } from 'node-pg-migrate';
 export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export function up(pgm: MigrationBuilder): void {
-  pgm.addColumns('inscriptions', {
-    metadata: {
+  pgm.createTable('counts_by_type', {
+    type: {
       type: 'text',
+      primaryKey: true,
     },
-    parent: {
-      type: 'text',
+    count: {
+      type: 'int',
+      default: 0,
     },
   });
 }

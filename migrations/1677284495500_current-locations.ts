@@ -4,10 +4,10 @@ import { MigrationBuilder, ColumnDefinitions } from 'node-pg-migrate';
 export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export function up(pgm: MigrationBuilder): void {
-  pgm.createTable('genesis_locations', {
+  pgm.createTable('current_locations', {
     inscription_id: {
       type: 'bigint',
-      notNull: true,
+      primaryKey: true,
     },
     location_id: {
       type: 'bigint',
@@ -25,12 +25,16 @@ export function up(pgm: MigrationBuilder): void {
       type: 'text',
     },
   });
+  pgm.createIndex('current_locations', ['location_id']);
+  pgm.createIndex('current_locations', ['address']);
   pgm.createConstraint(
-    'genesis_locations',
-    'genesis_locations_inscription_id_unique',
-    'UNIQUE(inscription_id)'
+    'current_locations',
+    'current_locations_inscription_id_fk',
+    'FOREIGN KEY(inscription_id) REFERENCES inscriptions(id) ON DELETE CASCADE'
   );
-  pgm.createIndex('genesis_locations', ['location_id']);
-  pgm.createIndex('genesis_locations', ['block_height']);
-  pgm.createIndex('genesis_locations', ['address']);
+  pgm.createConstraint(
+    'current_locations',
+    'current_locations_location_id_fk',
+    'FOREIGN KEY(location_id) REFERENCES locations(id) ON DELETE CASCADE'
+  );
 }
