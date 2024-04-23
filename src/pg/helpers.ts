@@ -143,7 +143,7 @@ export class BlockCache {
       tx_index: reveal.tx_index,
       address: reveal.inscriber_address,
     });
-    this.recursiveRefs.set(reveal.inscription_id, recursive_refs);
+    if (recursive_refs.length > 0) this.recursiveRefs.set(reveal.inscription_id, recursive_refs);
   }
 
   transfer(

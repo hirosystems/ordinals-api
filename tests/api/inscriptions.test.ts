@@ -278,6 +278,7 @@ describe('/inscriptions', () => {
         recursion_refs: [
           '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
           'f351d86c6e6cae3c64e297e7463095732f216875bcc1f3c03f950a492bb25421i0',
+          'b4b27b9a15f928b95a8ce4b418946553b7b313a345254cd9b23d79489175fa5ai0',
         ],
       };
 

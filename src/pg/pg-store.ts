@@ -187,6 +187,14 @@ export class PgStore extends BasePgStore {
           ON CONFLICT (ordinal_number, block_height, tx_index) DO NOTHING
         `;
     }
+    if (cache.recursiveRefs.size)
+      for (const [genesis_id, refs] of cache.recursiveRefs) {
+        const entries = refs.map(r => ({ genesis_id, ref_genesis_id: r }));
+        await sql`
+          INSERT INTO inscription_recursions ${sql(entries)}
+          ON CONFLICT (genesis_id, ref_genesis_id) DO NOTHING
+        `;
+      }
     if (cache.currentLocations.size) {
       const entries = [...cache.currentLocations.values()];
       for await (const batch of batchIterate(entries, INSERT_BATCH_SIZE))
@@ -234,6 +242,7 @@ export class PgStore extends BasePgStore {
             AND tx_index = ${location.tx_index}
         `;
     if (cache.inscriptions.length)
+      // This will also delete recursive refs.
       for (const inscription of cache.inscriptions)
         await sql`
           DELETE FROM inscriptions WHERE genesis_id = ${inscription.genesis_id}

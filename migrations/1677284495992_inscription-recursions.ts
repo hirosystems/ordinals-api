@@ -7,21 +7,19 @@ export function up(pgm: MigrationBuilder): void {
   pgm.createTable('inscription_recursions', {
     genesis_id: {
       type: 'text',
-      primaryKey: true,
+      notNull: true,
     },
     ref_genesis_id: {
       type: 'text',
       notNull: true,
     },
   });
+  pgm.createConstraint('inscription_recursions', 'inscription_recursions_pkey', {
+    primaryKey: ['genesis_id', 'ref_genesis_id'],
+  });
   pgm.createConstraint(
     'inscription_recursions',
     'inscription_recursions_genesis_id_fk',
     'FOREIGN KEY(genesis_id) REFERENCES inscriptions(genesis_id) ON DELETE CASCADE'
-  );
-  pgm.createConstraint(
-    'inscription_recursions',
-    'inscription_recursions_ref_genesis_id_fk',
-    'FOREIGN KEY(ref_genesis_id) REFERENCES inscriptions(genesis_id) ON DELETE CASCADE'
   );
 }
