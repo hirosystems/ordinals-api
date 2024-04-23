@@ -1,3 +1,52 @@
+## [3.1.0-beta.1](https://github.com/hirosystems/ordinals-api/compare/v3.0.2-beta.6...v3.1.0-beta.1) (2024-03-27)
+
+
+### Features
+
+* support self minted 5-byte wide BRC-20 tokens ([#338](https://github.com/hirosystems/ordinals-api/issues/338)) ([60f46d3](https://github.com/hirosystems/ordinals-api/commit/60f46d3533e837843e8aa6094b4673a3bc84c124))
+
+## [3.0.2-beta.6](https://github.com/hirosystems/ordinals-api/compare/v3.0.2-beta.5...v3.0.2-beta.6) (2024-03-09)
+
+
+### Bug Fixes
+
+* remove gap detection ([#330](https://github.com/hirosystems/ordinals-api/issues/330)) ([040ee04](https://github.com/hirosystems/ordinals-api/commit/040ee04b0906106fdece3f00d34fb4817d7f318e))
+
+## [3.0.2-beta.5](https://github.com/hirosystems/ordinals-api/compare/v3.0.2-beta.4...v3.0.2-beta.5) (2024-03-09)
+
+
+### Bug Fixes
+
+* ignore spent as fee on gap check ([#328](https://github.com/hirosystems/ordinals-api/issues/328)) ([a1277cf](https://github.com/hirosystems/ordinals-api/commit/a1277cf39eb61e548f55bd8e524054db6a11c843))
+
+## [3.0.2-beta.4](https://github.com/hirosystems/ordinals-api/compare/v3.0.2-beta.3...v3.0.2-beta.4) (2024-03-08)
+
+
+### Bug Fixes
+
+* calculate transfer type correctly upon reveal ([#326](https://github.com/hirosystems/ordinals-api/issues/326)) ([6c4c54b](https://github.com/hirosystems/ordinals-api/commit/6c4c54b45a74744c4e61a2437632f390080a9624))
+
+## [3.0.2-beta.3](https://github.com/hirosystems/ordinals-api/compare/v3.0.2-beta.2...v3.0.2-beta.3) (2024-03-07)
+
+
+### Bug Fixes
+
+* check only the first blessed inscription in next block on gap detection ([#325](https://github.com/hirosystems/ordinals-api/issues/325)) ([9cad6c1](https://github.com/hirosystems/ordinals-api/commit/9cad6c16d34fdd11c1d9f473b2f3802a8da464d8))
+
+## [3.0.2-beta.2](https://github.com/hirosystems/ordinals-api/compare/v3.0.2-beta.1...v3.0.2-beta.2) (2024-03-07)
+
+
+### Bug Fixes
+
+* filter correct content types for brc20 ([#323](https://github.com/hirosystems/ordinals-api/issues/323)) ([4d52b48](https://github.com/hirosystems/ordinals-api/commit/4d52b4820e5f1a36264977dc4a6c4ca324864108))
+
+## [3.0.2-beta.1](https://github.com/hirosystems/ordinals-api/compare/v3.0.1...v3.0.2-beta.1) (2024-03-07)
+
+
+### Bug Fixes
+
+* use brc20_total_balances table when inserting new transfer ([#321](https://github.com/hirosystems/ordinals-api/issues/321)) ([925fb0e](https://github.com/hirosystems/ordinals-api/commit/925fb0e05a982eeec802bee6f53a957bc5ea3acf))
+
 ## [3.0.1](https://github.com/hirosystems/ordinals-api/compare/v3.0.0...v3.0.1) (2024-03-04)
 
 

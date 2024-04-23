@@ -488,6 +488,7 @@ export const Brc20TokenResponseSchema = Type.Object(
     deploy_timestamp: Type.Integer({ examples: [1677733170000] }),
     minted_supply: Type.String({ examples: ['1000000'] }),
     tx_count: Type.Integer({ examples: [300000] }),
+    self_mint: Type.Boolean(),
   },
   { title: 'BRC-20 Token Response' }
 );

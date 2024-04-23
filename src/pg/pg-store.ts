@@ -17,7 +17,7 @@ import { ENV } from '../env';
 import { Brc20PgStore } from './brc20/brc20-pg-store';
 import { CountsPgStore } from './counts/counts-pg-store';
 import { getIndexResultCountType } from './counts/helpers';
-import { assertNoBlockInscriptionGap, revealInsertsFromOrdhookEvent } from './helpers';
+import { revealInsertsFromOrdhookEvent } from './helpers';
 import {
   DbFullyLocatedInscriptionResult,
   DbInscriptionContent,
@@ -33,7 +33,6 @@ import {
   DbPaginatedResult,
   InscriptionEventData,
   LOCATIONS_COLUMNS,
-  InscriptionRevealData,
   InscriptionInsert,
   LocationInsert,
   LocationData,
@@ -109,11 +108,9 @@ export class PgStore extends BasePgStore {
         // Check where we're at in terms of ingestion, e.g. block height and max blessed inscription
         // number. This will let us determine if we should skip ingesting this block or throw an
         // error if a gap is detected.
-        const currentBlessedNumber = (await this.getMaxInscriptionNumber()) ?? -1;
         const currentBlockHeight = await this.getChainTipBlockHeight();
         const event = applyEvent as BitcoinEvent;
         if (
-          ENV.INSCRIPTION_GAP_DETECTION_ENABLED &&
           event.block_identifier.index <= currentBlockHeight &&
           event.block_identifier.index !== ORDINALS_GENESIS_BLOCK
         ) {
@@ -125,15 +122,6 @@ export class PgStore extends BasePgStore {
         logger.info(`PgStore ingesting block ${event.block_identifier.index}`);
         const time = stopwatch();
         const writes = revealInsertsFromOrdhookEvent(event);
-        const newBlessedNumbers = writes
-          .filter(w => 'inscription' in w && w.inscription.number >= 0)
-          .map(w => (w as InscriptionRevealData).inscription.number ?? 0);
-        assertNoBlockInscriptionGap({
-          currentNumber: currentBlessedNumber,
-          newNumbers: newBlessedNumbers,
-          currentBlockHeight: currentBlockHeight,
-          newBlockHeight: event.block_identifier.index,
-        });
         for (const writeChunk of batchIterate(writes, INSERT_BATCH_SIZE))
           await this.insertInscriptions(writeChunk, payload.chainhook.is_streaming_blocks);
         updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);

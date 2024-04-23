@@ -115,6 +115,7 @@ export function brc20Reveal(args: {
   address: string;
   tx_id: string;
   ordinal_number: number;
+  parent?: string;
 }): BitcoinInscriptionRevealed {
   const content = Buffer.from(JSON.stringify(args.json), 'utf-8');
   const reveal: BitcoinInscriptionRevealed = {
@@ -141,7 +142,7 @@ export function brc20Reveal(args: {
     delegate: null,
     metaprotocol: null,
     metadata: undefined,
-    parent: null,
+    parent: args.parent ?? null,
   };
   return reveal;
 }

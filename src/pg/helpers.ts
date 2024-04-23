@@ -1,12 +1,10 @@
-import { PgBytea, toEnumValue } from '@hirosystems/api-toolkit';
+import { PgBytea, logger, toEnumValue } from '@hirosystems/api-toolkit';
 import { hexToBuffer, normalizedHexString, parseSatPoint } from '../api/util/helpers';
 import {
-  BadPayloadRequestError,
   BitcoinEvent,
   BitcoinInscriptionRevealed,
   BitcoinInscriptionTransferred,
 } from '@hirosystems/chainhook-client';
-import { ENV } from '../env';
 import {
   DbLocationTransferType,
   InscriptionEventData,
@@ -14,29 +12,6 @@ import {
   InscriptionRevealData,
 } from './types';
 import { OrdinalSatoshi } from '../api/util/ordinal-satoshi';
-
-/**
- * Check if writing a block would create an inscription number gap
- * @param currentNumber - Current max blessed number
- * @param newNumbers - New blessed numbers to be inserted
- */
-export function assertNoBlockInscriptionGap(args: {
-  currentNumber: number;
-  newNumbers: number[];
-  currentBlockHeight: number;
-  newBlockHeight: number;
-}) {
-  if (!ENV.INSCRIPTION_GAP_DETECTION_ENABLED) return;
-  args.newNumbers.sort((a, b) => a - b);
-  for (let n = 0; n < args.newNumbers.length; n++) {
-    const curr = args.currentNumber + n;
-    const next = args.newNumbers[n];
-    if (next !== curr + 1)
-      throw new BadPayloadRequestError(
-        `Block inscription gap detected: Attempting to insert #${next} (${args.newBlockHeight}) but current max is #${curr}. Chain tip is at ${args.currentBlockHeight}.`
-      );
-  }
-}
 
 /**
  * Returns a list of referenced inscription ids from inscription content.
@@ -98,12 +73,25 @@ function updateFromOrdhookInscriptionRevealed(args: {
   const satoshi = new OrdinalSatoshi(args.reveal.ordinal_number);
   const satpoint = parseSatPoint(args.reveal.satpoint_post_inscription);
   const recursive_refs = getInscriptionRecursion(args.reveal.content_bytes);
-  const contentType = removeNullBytes(args.reveal.content_type);
+  const content_type = removeNullBytes(args.reveal.content_type);
+  let transfer_type = DbLocationTransferType.transferred;
+  if (args.reveal.inscriber_address == null || args.reveal.inscriber_address == '') {
+    if (args.reveal.inscription_output_value == 0) {
+      if (args.reveal.inscription_pointer !== 0 && args.reveal.inscription_pointer !== null) {
+        logger.warn(
+          `Detected inscription reveal with no address and no output value but a valid pointer ${args.reveal.inscription_id}`
+        );
+      }
+      transfer_type = DbLocationTransferType.spentInFees;
+    } else {
+      transfer_type = DbLocationTransferType.burnt;
+    }
+  }
   return {
     inscription: {
       genesis_id: args.reveal.inscription_id,
-      mime_type: contentType.split(';')[0],
-      content_type: contentType,
+      mime_type: content_type.split(';')[0],
+      content_type,
       content_length: args.reveal.content_length,
       number: args.reveal.inscription_number.jubilee,
       classic_number: args.reveal.inscription_number.classic,
@@ -131,7 +119,7 @@ function updateFromOrdhookInscriptionRevealed(args: {
       prev_offset: null,
       value: args.reveal.inscription_output_value.toString(),
       timestamp: args.timestamp,
-      transfer_type: DbLocationTransferType.transferred,
+      transfer_type,
     },
     recursive_refs,
   };
