@@ -28,19 +28,31 @@ const schema = Type.Object({
   EXTERNAL_HOSTNAME: Type.String({ default: '127.0.0.1' }),
 
   /** Hostname of the ordhook node we'll use to register predicates */
-  CHAINHOOK_NODE_RPC_HOST: Type.String({ default: '127.0.0.1' }),
+  ORDHOOK_NODE_RPC_HOST: Type.String({ default: '127.0.0.1' }),
   /** Control port of the ordhook node */
-  CHAINHOOK_NODE_RPC_PORT: Type.Number({ default: 20456, minimum: 0, maximum: 65535 }),
+  ORDHOOK_NODE_RPC_PORT: Type.Number({ default: 20456, minimum: 0, maximum: 65535 }),
   /**
    * Authorization token that the ordhook node must send with every event to make sure it's
    * coming from the valid instance
    */
-  CHAINHOOK_NODE_AUTH_TOKEN: Type.String(),
+  ORDHOOK_NODE_AUTH_TOKEN: Type.String(),
   /**
    * Register ordhook predicates automatically when the API is first launched. Set this to `false`
    * if you're configuring your predicates manually for any reason.
    */
-  CHAINHOOK_AUTO_PREDICATE_REGISTRATION: Type.Boolean({ default: true }),
+  ORDHOOK_AUTO_PREDICATE_REGISTRATION: Type.Boolean({ default: true }),
+  /**
+   * Ordhook ingestion mode. Controls the API's Ordhook payload ingestion behavior:
+   * * `default`: The API will stay running and will listen for payloads indefinitely
+   * * `replay`: The API will stay running and listening only for payloads marked as "not streaming"
+   *   by Ordhook (historical replays). Once Ordhook starts streaming recent blocks from its chain
+   *   tip, the API will shut down. Recommended for deployments meant to sync the ordinals chain
+   *   from genesis.
+   */
+  ORDHOOK_INGESTION_MODE: Type.Enum(
+    { default: 'default', replay: 'replay' },
+    { default: 'default' }
+  ),
 
   PGHOST: Type.String(),
   PGPORT: Type.Number({ default: 5432, minimum: 0, maximum: 65535 }),
@@ -55,8 +67,6 @@ const schema = Type.Object({
 
   /** Enables BRC-20 processing in write mode APIs */
   BRC20_BLOCK_SCAN_ENABLED: Type.Boolean({ default: true }),
-  /** Enables inscription gap detection to prevent ingesting unordered blocks */
-  INSCRIPTION_GAP_DETECTION_ENABLED: Type.Boolean({ default: true }),
 });
 type Env = Static<typeof schema>;
 

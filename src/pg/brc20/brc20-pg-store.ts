@@ -1,6 +1,5 @@
 import { BasePgStoreModule, logger } from '@hirosystems/api-toolkit';
 import * as postgres from 'postgres';
-import { hexToBuffer } from '../../api/util/helpers';
 import {
   DbInscriptionIndexPaging,
   InscriptionData,
@@ -27,7 +26,7 @@ import {
   DbBrc20TokenWithSupply,
   DbBrc20TransferEvent,
 } from './types';
-import { Brc20Deploy, Brc20Mint, Brc20Transfer, brc20FromInscriptionContent } from './helpers';
+import { Brc20Deploy, Brc20Mint, Brc20Transfer, UINT64_MAX, brc20FromInscription } from './helpers';
 import { Brc20TokenOrderBy } from '../../api/schemas';
 import { objRemoveUndefinedValues } from '../helpers';
 
@@ -47,15 +46,7 @@ export class Brc20PgStore extends BasePgStoreModule {
       const pointer = args.pointers[i];
       if (parseInt(pointer.block_height) < BRC20_GENESIS_BLOCK) continue;
       if ('inscription' in reveal) {
-        if (
-          reveal.inscription.classic_number < 0 ||
-          reveal.inscription.number < 0 ||
-          reveal.location.transfer_type != DbLocationTransferType.transferred
-        )
-          continue;
-        const brc20 = brc20FromInscriptionContent(
-          hexToBuffer(reveal.inscription.content as string).toString('utf-8')
-        );
+        const brc20 = brc20FromInscription(reveal);
         if (brc20) {
           switch (brc20.op) {
             case 'deploy':
@@ -208,7 +199,7 @@ export class Brc20PgStore extends BasePgStoreModule {
 
   private async insertDeploy(deploy: {
     brc20: Brc20Deploy;
-    reveal: InscriptionEventData;
+    reveal: InscriptionRevealData;
     pointer: DbLocationPointerInsert;
   }): Promise<void> {
     if (deploy.reveal.location.transfer_type != DbLocationTransferType.transferred) return;
@@ -218,10 +209,11 @@ export class Brc20PgStore extends BasePgStoreModule {
       tx_id: deploy.reveal.location.tx_id,
       address: deploy.pointer.address as string,
       ticker: deploy.brc20.tick,
-      max: deploy.brc20.max,
+      max: deploy.brc20.max === '0' ? UINT64_MAX.toString() : deploy.brc20.max,
       limit: deploy.brc20.lim ?? null,
       decimals: deploy.brc20.dec ?? '18',
       tx_count: 1,
+      self_mint: deploy.brc20.self_mint === 'true',
     };
     const deployRes = await this.sql`
       WITH deploy_insert AS (
@@ -258,19 +250,21 @@ export class Brc20PgStore extends BasePgStoreModule {
 
   private async insertMint(mint: {
     brc20: Brc20Mint;
-    reveal: InscriptionEventData;
+    reveal: InscriptionRevealData;
     pointer: DbLocationPointerInsert;
   }): Promise<void> {
     if (mint.reveal.location.transfer_type != DbLocationTransferType.transferred) return;
     // Check the following conditions:
     // * Is the mint amount within the allowed token limits?
+    // * Is this a self_mint with the correct parent inscription?
     // * Is the number of decimals correct?
     // * Does the mint amount exceed remaining supply?
     const mintRes = await this.sql`
       WITH mint_data AS (
-        SELECT id, decimals, "limit", max, minted_supply
-        FROM brc20_deploys
-        WHERE ticker_lower = LOWER(${mint.brc20.tick}) AND minted_supply < max
+        SELECT d.id, d.decimals, d."limit", d.max, d.minted_supply, d.self_mint, i.genesis_id
+        FROM brc20_deploys d
+        INNER JOIN inscriptions i ON i.id = d.inscription_id
+        WHERE d.ticker_lower = LOWER(${mint.brc20.tick}) AND d.minted_supply < d.max
       ),
       validated_mint AS (
         SELECT
@@ -279,6 +273,10 @@ export class Brc20PgStore extends BasePgStoreModule {
         FROM mint_data
         WHERE ("limit" IS NULL OR ${mint.brc20.amt}::numeric <= "limit")
           AND (SCALE(${mint.brc20.amt}::numeric) <= decimals)
+          AND (
+            self_mint = FALSE OR
+            (self_mint = TRUE AND genesis_id = ${mint.reveal.inscription.parent})
+          )
       ),
       mint_insert AS (
         INSERT INTO brc20_mints (inscription_id, brc20_deploy_id, block_height, tx_id, address, amount) (
@@ -340,20 +338,13 @@ export class Brc20PgStore extends BasePgStoreModule {
     pointer: DbLocationPointerInsert;
   }): Promise<void> {
     if (transfer.reveal.location.transfer_type != DbLocationTransferType.transferred) return;
-    // Check the following conditions:
-    // * Do we have enough available balance to do this transfer?
     const transferRes = await this.sql`
-      WITH balance_data AS (
-        SELECT b.brc20_deploy_id, COALESCE(SUM(b.avail_balance), 0) AS avail_balance
-        FROM brc20_balances AS b
-        INNER JOIN brc20_deploys AS d ON b.brc20_deploy_id = d.id
-        WHERE d.ticker_lower = LOWER(${transfer.brc20.tick})
-          AND b.address = ${transfer.pointer.address}
-        GROUP BY b.brc20_deploy_id
-      ),
-      validated_transfer AS (
-        SELECT * FROM balance_data
-        WHERE avail_balance >= ${transfer.brc20.amt}::numeric
+      WITH validated_transfer AS (
+        SELECT brc20_deploy_id, avail_balance
+        FROM brc20_total_balances
+        WHERE brc20_deploy_id = (SELECT id FROM brc20_deploys WHERE ticker_lower = LOWER(${transfer.brc20.tick}))
+          AND address = ${transfer.pointer.address}
+          AND avail_balance >= ${transfer.brc20.amt}::numeric
       ),
       transfer_insert AS (
         INSERT INTO brc20_transfers (inscription_id, brc20_deploy_id, block_height, tx_id, from_address, to_address, amount) (

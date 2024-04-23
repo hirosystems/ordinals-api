@@ -17,7 +17,7 @@ import { ENV } from '../env';
 import { Brc20PgStore } from './brc20/brc20-pg-store';
 import { CountsPgStore } from './counts/counts-pg-store';
 import { getIndexResultCountType } from './counts/helpers';
-import { assertNoBlockInscriptionGap, revealInsertsFromOrdhookEvent } from './helpers';
+import { revealInsertsFromOrdhookEvent } from './helpers';
 import {
   DbFullyLocatedInscriptionResult,
   DbInscriptionContent,
@@ -33,7 +33,6 @@ import {
   DbPaginatedResult,
   InscriptionEventData,
   LOCATIONS_COLUMNS,
-  InscriptionRevealData,
   InscriptionInsert,
   LocationInsert,
   LocationData,
@@ -41,6 +40,7 @@ import {
 
 export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 export const ORDINALS_GENESIS_BLOCK = 767430;
+const INSERT_BATCH_SIZE = 4000;
 
 type InscriptionIdentifier = { genesis_id: string } | { number: number };
 
@@ -108,11 +108,9 @@ export class PgStore extends BasePgStore {
         // Check where we're at in terms of ingestion, e.g. block height and max blessed inscription
         // number. This will let us determine if we should skip ingesting this block or throw an
         // error if a gap is detected.
-        const currentBlessedNumber = (await this.getMaxInscriptionNumber()) ?? -1;
         const currentBlockHeight = await this.getChainTipBlockHeight();
         const event = applyEvent as BitcoinEvent;
         if (
-          ENV.INSCRIPTION_GAP_DETECTION_ENABLED &&
           event.block_identifier.index <= currentBlockHeight &&
           event.block_identifier.index !== ORDINALS_GENESIS_BLOCK
         ) {
@@ -124,17 +122,8 @@ export class PgStore extends BasePgStore {
         logger.info(`PgStore ingesting block ${event.block_identifier.index}`);
         const time = stopwatch();
         const writes = revealInsertsFromOrdhookEvent(event);
-        const newBlessedNumbers = writes
-          .filter(w => 'inscription' in w && w.inscription.number >= 0)
-          .map(w => (w as InscriptionRevealData).inscription.number ?? 0);
-        assertNoBlockInscriptionGap({
-          currentNumber: currentBlessedNumber,
-          newNumbers: newBlessedNumbers,
-          currentBlockHeight: currentBlockHeight,
-          newBlockHeight: event.block_identifier.index,
-        });
-        for (const writeChunk of batchIterate(writes, 4000))
-          await this.insertInscriptions(writeChunk);
+        for (const writeChunk of batchIterate(writes, INSERT_BATCH_SIZE))
+          await this.insertInscriptions(writeChunk, payload.chainhook.is_streaming_blocks);
         updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
         logger.info(
           `PgStore ingested block ${event.block_identifier.index} in ${time.getElapsedSeconds()}s`
@@ -486,17 +475,38 @@ export class PgStore extends BasePgStore {
     `; // roughly 35 days of blocks, assuming 10 minute block times on a full database
   }
 
-  private async insertInscriptions(reveals: InscriptionEventData[]): Promise<void> {
+  private async insertInscriptions(
+    reveals: InscriptionEventData[],
+    streamed: boolean
+  ): Promise<void> {
     if (reveals.length === 0) return;
     await this.sqlWriteTransaction(async sql => {
+      // 1. Write inscription reveals
       const inscriptionInserts: InscriptionInsert[] = [];
+      for (const r of reveals) if ('inscription' in r) inscriptionInserts.push(r.inscription);
+      if (inscriptionInserts.length)
+        await sql`
+          INSERT INTO inscriptions ${sql(inscriptionInserts)}
+          ON CONFLICT ON CONSTRAINT inscriptions_number_unique DO UPDATE SET
+            genesis_id = EXCLUDED.genesis_id,
+            mime_type = EXCLUDED.mime_type,
+            content_type = EXCLUDED.content_type,
+            content_length = EXCLUDED.content_length,
+            content = EXCLUDED.content,
+            fee = EXCLUDED.fee,
+            sat_ordinal = EXCLUDED.sat_ordinal,
+            sat_rarity = EXCLUDED.sat_rarity,
+            sat_coinbase_height = EXCLUDED.sat_coinbase_height,
+            updated_at = NOW()
+        `;
+
+      // 2. Write locations and transfers
       const locationInserts: LocationInsert[] = [];
       const revealOutputs: InscriptionEventData[] = [];
       const transferredOrdinalNumbersSet = new Set<string>();
       for (const r of reveals)
         if ('inscription' in r) {
           revealOutputs.push(r);
-          inscriptionInserts.push(r.inscription);
           locationInserts.push({
             ...r.location,
             inscription_id: sql`(SELECT id FROM inscriptions WHERE genesis_id = ${r.location.genesis_id})`,
@@ -531,43 +541,31 @@ export class PgStore extends BasePgStore {
             });
           }
         }
-      const transferredOrdinalNumbers = [...transferredOrdinalNumbersSet];
-      if (inscriptionInserts.length)
-        await sql`
-          INSERT INTO inscriptions ${sql(inscriptionInserts)}
-          ON CONFLICT ON CONSTRAINT inscriptions_number_unique DO UPDATE SET
+      const pointers: DbLocationPointerInsert[] = [];
+      for (const batch of batchIterate(locationInserts, INSERT_BATCH_SIZE)) {
+        const pointerBatch = await sql<DbLocationPointerInsert[]>`
+          INSERT INTO locations ${sql(batch)}
+          ON CONFLICT ON CONSTRAINT locations_inscription_id_block_height_tx_index_unique DO UPDATE SET
             genesis_id = EXCLUDED.genesis_id,
-            mime_type = EXCLUDED.mime_type,
-            content_type = EXCLUDED.content_type,
-            content_length = EXCLUDED.content_length,
-            content = EXCLUDED.content,
-            fee = EXCLUDED.fee,
-            sat_ordinal = EXCLUDED.sat_ordinal,
-            sat_rarity = EXCLUDED.sat_rarity,
-            sat_coinbase_height = EXCLUDED.sat_coinbase_height,
-            updated_at = NOW()
+            block_hash = EXCLUDED.block_hash,
+            tx_id = EXCLUDED.tx_id,
+            address = EXCLUDED.address,
+            value = EXCLUDED.value,
+            output = EXCLUDED.output,
+            "offset" = EXCLUDED.offset,
+            timestamp = EXCLUDED.timestamp
+          RETURNING inscription_id, id AS location_id, block_height, tx_index, address
         `;
-      const pointers = await sql<DbLocationPointerInsert[]>`
-        INSERT INTO locations ${sql(locationInserts)}
-        ON CONFLICT ON CONSTRAINT locations_inscription_id_block_height_tx_index_unique DO UPDATE SET
-          genesis_id = EXCLUDED.genesis_id,
-          block_hash = EXCLUDED.block_hash,
-          tx_id = EXCLUDED.tx_id,
-          address = EXCLUDED.address,
-          value = EXCLUDED.value,
-          output = EXCLUDED.output,
-          "offset" = EXCLUDED.offset,
-          timestamp = EXCLUDED.timestamp
-        RETURNING inscription_id, id AS location_id, block_height, tx_index, address
-      `;
-      await this.updateInscriptionRecursions(reveals);
-      if (transferredOrdinalNumbers.length)
+        await this.updateInscriptionLocationPointers(pointerBatch);
+        pointers.push(...pointerBatch);
+      }
+      if (streamed && transferredOrdinalNumbersSet.size)
         await sql`
           UPDATE inscriptions
           SET updated_at = NOW()
-          WHERE sat_ordinal IN ${sql(transferredOrdinalNumbers)}
+          WHERE sat_ordinal IN ${sql([...transferredOrdinalNumbersSet])}
         `;
-      await this.updateInscriptionLocationPointers(pointers);
+
       for (const reveal of reveals) {
         const action =
           'inscription' in reveal
@@ -575,6 +573,9 @@ export class PgStore extends BasePgStore {
             : `transfer sat ${reveal.location.ordinal_number}`;
         logger.info(`PgStore ${action} at block ${reveal.location.block_height}`);
       }
+
+      // 3. Recursions, Counts and BRC-20
+      await this.updateInscriptionRecursions(reveals);
       await this.counts.applyInscriptions(inscriptionInserts);
       if (ENV.BRC20_BLOCK_SCAN_ENABLED)
         await this.brc20.insertOperations({ reveals: revealOutputs, pointers });

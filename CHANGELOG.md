@@ -1,3 +1,160 @@
+## [3.1.0](https://github.com/hirosystems/ordinals-api/compare/v3.0.1...v3.1.0) (2024-04-23)
+
+
+### Features
+
+* support self minted 5-byte wide BRC-20 tokens ([#338](https://github.com/hirosystems/ordinals-api/issues/338)) ([60f46d3](https://github.com/hirosystems/ordinals-api/commit/60f46d3533e837843e8aa6094b4673a3bc84c124))
+
+
+### Bug Fixes
+
+* calculate transfer type correctly upon reveal ([#326](https://github.com/hirosystems/ordinals-api/issues/326)) ([6c4c54b](https://github.com/hirosystems/ordinals-api/commit/6c4c54b45a74744c4e61a2437632f390080a9624))
+* check only the first blessed inscription in next block on gap detection ([#325](https://github.com/hirosystems/ordinals-api/issues/325)) ([9cad6c1](https://github.com/hirosystems/ordinals-api/commit/9cad6c16d34fdd11c1d9f473b2f3802a8da464d8))
+* filter correct content types for brc20 ([#323](https://github.com/hirosystems/ordinals-api/issues/323)) ([4d52b48](https://github.com/hirosystems/ordinals-api/commit/4d52b4820e5f1a36264977dc4a6c4ca324864108))
+* ignore spent as fee on gap check ([#328](https://github.com/hirosystems/ordinals-api/issues/328)) ([a1277cf](https://github.com/hirosystems/ordinals-api/commit/a1277cf39eb61e548f55bd8e524054db6a11c843))
+* remove gap detection ([#330](https://github.com/hirosystems/ordinals-api/issues/330)) ([040ee04](https://github.com/hirosystems/ordinals-api/commit/040ee04b0906106fdece3f00d34fb4817d7f318e))
+* use brc20_total_balances table when inserting new transfer ([#321](https://github.com/hirosystems/ordinals-api/issues/321)) ([925fb0e](https://github.com/hirosystems/ordinals-api/commit/925fb0e05a982eeec802bee6f53a957bc5ea3acf))
+
+## [3.1.0-beta.1](https://github.com/hirosystems/ordinals-api/compare/v3.0.2-beta.6...v3.1.0-beta.1) (2024-03-27)
+
+
+### Features
+
+* support self minted 5-byte wide BRC-20 tokens ([#338](https://github.com/hirosystems/ordinals-api/issues/338)) ([60f46d3](https://github.com/hirosystems/ordinals-api/commit/60f46d3533e837843e8aa6094b4673a3bc84c124))
+
+## [3.0.2-beta.6](https://github.com/hirosystems/ordinals-api/compare/v3.0.2-beta.5...v3.0.2-beta.6) (2024-03-09)
+
+
+### Bug Fixes
+
+* remove gap detection ([#330](https://github.com/hirosystems/ordinals-api/issues/330)) ([040ee04](https://github.com/hirosystems/ordinals-api/commit/040ee04b0906106fdece3f00d34fb4817d7f318e))
+
+## [3.0.2-beta.5](https://github.com/hirosystems/ordinals-api/compare/v3.0.2-beta.4...v3.0.2-beta.5) (2024-03-09)
+
+
+### Bug Fixes
+
+* ignore spent as fee on gap check ([#328](https://github.com/hirosystems/ordinals-api/issues/328)) ([a1277cf](https://github.com/hirosystems/ordinals-api/commit/a1277cf39eb61e548f55bd8e524054db6a11c843))
+
+## [3.0.2-beta.4](https://github.com/hirosystems/ordinals-api/compare/v3.0.2-beta.3...v3.0.2-beta.4) (2024-03-08)
+
+
+### Bug Fixes
+
+* calculate transfer type correctly upon reveal ([#326](https://github.com/hirosystems/ordinals-api/issues/326)) ([6c4c54b](https://github.com/hirosystems/ordinals-api/commit/6c4c54b45a74744c4e61a2437632f390080a9624))
+
+## [3.0.2-beta.3](https://github.com/hirosystems/ordinals-api/compare/v3.0.2-beta.2...v3.0.2-beta.3) (2024-03-07)
+
+
+### Bug Fixes
+
+* check only the first blessed inscription in next block on gap detection ([#325](https://github.com/hirosystems/ordinals-api/issues/325)) ([9cad6c1](https://github.com/hirosystems/ordinals-api/commit/9cad6c16d34fdd11c1d9f473b2f3802a8da464d8))
+
+## [3.0.2-beta.2](https://github.com/hirosystems/ordinals-api/compare/v3.0.2-beta.1...v3.0.2-beta.2) (2024-03-07)
+
+
+### Bug Fixes
+
+* filter correct content types for brc20 ([#323](https://github.com/hirosystems/ordinals-api/issues/323)) ([4d52b48](https://github.com/hirosystems/ordinals-api/commit/4d52b4820e5f1a36264977dc4a6c4ca324864108))
+
+## [3.0.2-beta.1](https://github.com/hirosystems/ordinals-api/compare/v3.0.1...v3.0.2-beta.1) (2024-03-07)
+
+
+### Bug Fixes
+
+* use brc20_total_balances table when inserting new transfer ([#321](https://github.com/hirosystems/ordinals-api/issues/321)) ([925fb0e](https://github.com/hirosystems/ordinals-api/commit/925fb0e05a982eeec802bee6f53a957bc5ea3acf))
+
+## [3.0.1](https://github.com/hirosystems/ordinals-api/compare/v3.0.0...v3.0.1) (2024-03-04)
+
+
+### Bug Fixes
+
+* transfers for inscriptions created immediately before ([#320](https://github.com/hirosystems/ordinals-api/issues/320)) ([66ba744](https://github.com/hirosystems/ordinals-api/commit/66ba744f96a101c6d0e23122ae7aa41fb1933ba4))
+
+## [3.0.0](https://github.com/hirosystems/ordinals-api/compare/v2.2.0...v3.0.0) (2024-02-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* rename chainhook env vars to ordhook (#314)
+
+### Features
+
+* add `metadata` and `parent` columns to inscriptions table ([#305](https://github.com/hirosystems/ordinals-api/issues/305)) ([d71e93a](https://github.com/hirosystems/ordinals-api/commit/d71e93a54ec8018c15bbfc2f88d18bab6606949e))
+* add ordhook debug server ([#306](https://github.com/hirosystems/ordinals-api/issues/306)) ([88ad130](https://github.com/hirosystems/ordinals-api/commit/88ad1302924b8da27b8d98caf3d3351149a45f91))
+* shutdown gracefully after finishing replaying blocks ([#315](https://github.com/hirosystems/ordinals-api/issues/315)) ([72fd3fd](https://github.com/hirosystems/ordinals-api/commit/72fd3fda24919f14218cbbf02a552dfcf4d8ea52))
+
+
+### Bug Fixes
+
+* batch inscription location updates ([47525c9](https://github.com/hirosystems/ordinals-api/commit/47525c93a0e71bd9a7df2ea1596d7c90f59ccaac))
+* batch location pointer inserts ([#308](https://github.com/hirosystems/ordinals-api/issues/308)) ([33f8cb2](https://github.com/hirosystems/ordinals-api/commit/33f8cb2576115695d8e54fcc989086afef42ddc7))
+* only update timestamp when streaming blocks ([#309](https://github.com/hirosystems/ordinals-api/issues/309)) ([2c9ff17](https://github.com/hirosystems/ordinals-api/commit/2c9ff17ebe8805f3de59046b25387b871debee49))
+* remove unused pg indexes ([#311](https://github.com/hirosystems/ordinals-api/issues/311)) ([94d98d4](https://github.com/hirosystems/ordinals-api/commit/94d98d4e945aef28be7ec19fdb07d121c0ba2ea2))
+* rename chainhook env vars to ordhook ([#314](https://github.com/hirosystems/ordinals-api/issues/314)) ([ae4ec01](https://github.com/hirosystems/ordinals-api/commit/ae4ec01326779af00b89907751a6946effe60536))
+* standardize insert batch size ([b9b2448](https://github.com/hirosystems/ordinals-api/commit/b9b2448a1fa1bef16f0a1eed80158ca9b8ca9133))
+
+## [3.0.0-beta.2](https://github.com/hirosystems/ordinals-api/compare/v3.0.0-beta.1...v3.0.0-beta.2) (2024-02-21)
+
+
+### Features
+
+* shutdown gracefully after finishing replaying blocks ([#315](https://github.com/hirosystems/ordinals-api/issues/315)) ([72fd3fd](https://github.com/hirosystems/ordinals-api/commit/72fd3fda24919f14218cbbf02a552dfcf4d8ea52))
+
+## [3.0.0-beta.1](https://github.com/hirosystems/ordinals-api/compare/v2.3.0-beta.6...v3.0.0-beta.1) (2024-02-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* rename chainhook env vars to ordhook (#314)
+
+### Bug Fixes
+
+* rename chainhook env vars to ordhook ([#314](https://github.com/hirosystems/ordinals-api/issues/314)) ([ae4ec01](https://github.com/hirosystems/ordinals-api/commit/ae4ec01326779af00b89907751a6946effe60536))
+
+## [2.3.0-beta.6](https://github.com/hirosystems/ordinals-api/compare/v2.3.0-beta.5...v2.3.0-beta.6) (2024-02-20)
+
+
+### Bug Fixes
+
+* remove unused pg indexes ([#311](https://github.com/hirosystems/ordinals-api/issues/311)) ([94d98d4](https://github.com/hirosystems/ordinals-api/commit/94d98d4e945aef28be7ec19fdb07d121c0ba2ea2))
+
+## [2.3.0-beta.5](https://github.com/hirosystems/ordinals-api/compare/v2.3.0-beta.4...v2.3.0-beta.5) (2024-02-19)
+
+
+### Bug Fixes
+
+* only update timestamp when streaming blocks ([#309](https://github.com/hirosystems/ordinals-api/issues/309)) ([2c9ff17](https://github.com/hirosystems/ordinals-api/commit/2c9ff17ebe8805f3de59046b25387b871debee49))
+
+## [2.3.0-beta.4](https://github.com/hirosystems/ordinals-api/compare/v2.3.0-beta.3...v2.3.0-beta.4) (2024-02-17)
+
+
+### Bug Fixes
+
+* standardize insert batch size ([b9b2448](https://github.com/hirosystems/ordinals-api/commit/b9b2448a1fa1bef16f0a1eed80158ca9b8ca9133))
+
+## [2.3.0-beta.3](https://github.com/hirosystems/ordinals-api/compare/v2.3.0-beta.2...v2.3.0-beta.3) (2024-02-17)
+
+
+### Bug Fixes
+
+* batch inscription location updates ([47525c9](https://github.com/hirosystems/ordinals-api/commit/47525c93a0e71bd9a7df2ea1596d7c90f59ccaac))
+
+## [2.3.0-beta.2](https://github.com/hirosystems/ordinals-api/compare/v2.3.0-beta.1...v2.3.0-beta.2) (2024-02-17)
+
+
+### Bug Fixes
+
+* batch location pointer inserts ([#308](https://github.com/hirosystems/ordinals-api/issues/308)) ([33f8cb2](https://github.com/hirosystems/ordinals-api/commit/33f8cb2576115695d8e54fcc989086afef42ddc7))
+
+## [2.3.0-beta.1](https://github.com/hirosystems/ordinals-api/compare/v2.2.0...v2.3.0-beta.1) (2024-02-12)
+
+
+### Features
+
+* add `metadata` and `parent` columns to inscriptions table ([#305](https://github.com/hirosystems/ordinals-api/issues/305)) ([d71e93a](https://github.com/hirosystems/ordinals-api/commit/d71e93a54ec8018c15bbfc2f88d18bab6606949e))
+* add ordhook debug server ([#306](https://github.com/hirosystems/ordinals-api/issues/306)) ([88ad130](https://github.com/hirosystems/ordinals-api/commit/88ad1302924b8da27b8d98caf3d3351149a45f91))
+
 ## [2.2.0](https://github.com/hirosystems/ordinals-api/compare/v2.1.1...v2.2.0) (2024-02-02)
 
 
