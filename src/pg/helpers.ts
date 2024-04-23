@@ -10,6 +10,8 @@ import {
   InscriptionEventData,
   InscriptionTransferData,
   InscriptionRevealData,
+  InscriptionInsert,
+  LocationInsert,
 } from './types';
 import { OrdinalSatoshi } from '../api/util/ordinal-satoshi';
 
@@ -61,6 +63,105 @@ export function objRemoveUndefinedValues(obj: object) {
  */
 export function removeNullBytes(input: string): string {
   return input.replace(/\x00/g, '');
+}
+
+export class BlockCache {
+  inscriptions: InscriptionInsert[] = [];
+  locations: LocationInsert[] = [];
+  recursiveRefs = new Map<string, string[]>();
+  blockTransferIndex = 0;
+
+  reveal(
+    reveal: BitcoinInscriptionRevealed,
+    block_height: number,
+    block_hash: string,
+    tx_id: string,
+    timestamp: number
+  ) {
+    const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
+    const satpoint = parseSatPoint(reveal.satpoint_post_inscription);
+    const recursive_refs = getInscriptionRecursion(reveal.content_bytes);
+    const content_type = removeNullBytes(reveal.content_type);
+    let transfer_type = DbLocationTransferType.transferred;
+    if (reveal.inscriber_address == null || reveal.inscriber_address == '') {
+      if (reveal.inscription_output_value == 0) {
+        if (reveal.inscription_pointer !== 0 && reveal.inscription_pointer !== null) {
+          logger.warn(
+            `Detected inscription reveal with no address and no output value but a valid pointer ${reveal.inscription_id}`
+          );
+        }
+        transfer_type = DbLocationTransferType.spentInFees;
+      } else {
+        transfer_type = DbLocationTransferType.burnt;
+      }
+    }
+    this.inscriptions.push({
+      genesis_id: reveal.inscription_id,
+      mime_type: content_type.split(';')[0],
+      content_type,
+      content_length: reveal.content_length,
+      number: reveal.inscription_number.jubilee,
+      classic_number: reveal.inscription_number.classic,
+      content: removeNullBytes(reveal.content_bytes),
+      fee: reveal.inscription_fee.toString(),
+      curse_type: reveal.curse_type ? JSON.stringify(reveal.curse_type) : null,
+      sat_ordinal: reveal.ordinal_number.toString(),
+      sat_rarity: satoshi.rarity,
+      sat_coinbase_height: satoshi.blockHeight,
+      recursive: recursive_refs.length > 0,
+      metadata: reveal.metadata ? JSON.stringify(reveal.metadata) : null,
+      parent: reveal.parent,
+    });
+    this.locations.push({
+      block_hash,
+      block_height,
+      tx_id,
+      tx_index: reveal.tx_index,
+      block_transfer_index: null,
+      genesis_id: reveal.inscription_id,
+      address: reveal.inscriber_address,
+      output: `${satpoint.tx_id}:${satpoint.vout}`,
+      offset: satpoint.offset ?? null,
+      prev_output: null,
+      prev_offset: null,
+      value: reveal.inscription_output_value.toString(),
+      timestamp,
+      transfer_type,
+    });
+    this.recursiveRefs.set(reveal.inscription_id, recursive_refs);
+  }
+
+  transfer(
+    transfer: BitcoinInscriptionTransferred,
+    block_height: number,
+    block_hash: string,
+    tx_id: string,
+    timestamp: number,
+    blockTransferIndex: number
+  ) {
+    const satpoint = parseSatPoint(transfer.satpoint_post_transfer);
+    const prevSatpoint = parseSatPoint(transfer.satpoint_pre_transfer);
+    this.locations.push({
+      block_hash,
+      block_height,
+      tx_id,
+      tx_index: transfer.tx_index,
+      block_transfer_index: blockTransferIndex++,
+      ordinal_number: transfer.ordinal_number.toString(),
+      address: transfer.destination.value ?? null,
+      output: `${satpoint.tx_id}:${satpoint.vout}`,
+      offset: satpoint.offset ?? null,
+      prev_output: `${prevSatpoint.tx_id}:${prevSatpoint.vout}`,
+      prev_offset: prevSatpoint.offset ?? null,
+      value: args.transfer.post_transfer_output_value
+        ? args.transfer.post_transfer_output_value.toString()
+        : null,
+      timestamp: args.timestamp,
+      transfer_type:
+        toEnumValue(DbLocationTransferType, args.transfer.destination.type) ??
+        DbLocationTransferType.transferred,
+    });
+  }
 }
 
 function updateFromOrdhookInscriptionRevealed(args: {

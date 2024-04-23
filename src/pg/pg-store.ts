@@ -17,7 +17,7 @@ import { ENV } from '../env';
 import { Brc20PgStore } from './brc20/brc20-pg-store';
 import { CountsPgStore } from './counts/counts-pg-store';
 import { getIndexResultCountType } from './counts/helpers';
-import { revealInsertsFromOrdhookEvent } from './helpers';
+import { BlockCache, revealInsertsFromOrdhookEvent } from './helpers';
 import {
   DbFullyLocatedInscriptionResult,
   DbInscriptionContent,
@@ -37,6 +37,7 @@ import {
   LocationInsert,
   LocationData,
 } from './types';
+import { normalizedHexString } from '../api/util/helpers';
 
 export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 export const ORDINALS_GENESIS_BLOCK = 767430;
@@ -76,6 +77,29 @@ export class PgStore extends BasePgStore {
     super(sql);
     this.brc20 = new Brc20PgStore(this);
     this.counts = new CountsPgStore(this);
+  }
+
+  async updateInscriptionsEvent(event: BitcoinEvent, apply: boolean = false) {
+    await this.sqlWriteTransaction(sql => {
+      const block_height = event.block_identifier.index;
+      const block_hash = normalizedHexString(event.block_identifier.hash);
+      const timestamp = event.timestamp;
+      const cache = new BlockCache();
+      for (const tx of event.transactions) {
+        const tx_id = normalizedHexString(tx.transaction_identifier.hash);
+        for (const operation of tx.metadata.ordinal_operations) {
+          if (operation.inscription_revealed) {
+            cache.reveal(
+              operation.inscription_revealed,
+              block_height,
+              block_hash,
+              tx_id,
+              timestamp
+            );
+          }
+        }
+      }
+    });
   }
 
   /**
