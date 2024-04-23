@@ -9,7 +9,7 @@ import {
   runMigrations,
   stopwatch,
 } from '@hirosystems/api-toolkit';
-import { BitcoinEvent, Payload } from '@hirosystems/chainhook-client';
+import { BitcoinEvent, BitcoinPayload, Payload } from '@hirosystems/chainhook-client';
 import * as path from 'path';
 import * as postgres from 'postgres';
 import { Order, OrderBy } from '../api/schemas';
@@ -17,7 +17,7 @@ import { ENV } from '../env';
 import { Brc20PgStore } from './brc20/brc20-pg-store';
 import { CountsPgStore } from './counts/counts-pg-store';
 import { getIndexResultCountType } from './counts/helpers';
-import { BlockCache, revealInsertsFromOrdhookEvent } from './helpers';
+import { BlockCache } from './helpers';
 import {
   DbFullyLocatedInscriptionResult,
   DbInscriptionContent,
@@ -79,8 +79,8 @@ export class PgStore extends BasePgStore {
     this.counts = new CountsPgStore(this);
   }
 
-  async updateInscriptionsEvent(event: BitcoinEvent, apply: boolean = false) {
-    await this.sqlWriteTransaction(sql => {
+  async updateInscriptionsEvent(event: BitcoinEvent, direction: 'apply' | 'rollback') {
+    await this.sqlWriteTransaction(async sql => {
       const block_height = event.block_identifier.index;
       const block_hash = normalizedHexString(event.block_identifier.hash);
       const timestamp = event.timestamp;
@@ -97,9 +97,59 @@ export class PgStore extends BasePgStore {
               timestamp
             );
           }
+          if (operation.inscription_transferred)
+            cache.transfer(
+              operation.inscription_transferred,
+              block_height,
+              block_hash,
+              tx_id,
+              timestamp
+            );
         }
       }
+      if (direction === 'apply') await this.applyInscriptions(sql, cache);
     });
+  }
+
+  async applyInscriptions(sql: PgSqlClient, cache: BlockCache) {
+    if (cache.satoshis.length)
+      for await (const batch of batchIterate(cache.satoshis, INSERT_BATCH_SIZE))
+        await sql`
+          INSERT INTO satoshis ${sql(batch)}
+          ON CONFLICT (ordinal_number) DO NOTHING
+        `;
+    if (cache.inscriptions.length)
+      for await (const batch of batchIterate(cache.inscriptions, INSERT_BATCH_SIZE))
+        await sql`
+          INSERT INTO inscriptions ${sql(batch)}
+          ON CONFLICT (genesis_id) DO NOTHING
+        `;
+    if (cache.locations.length) {
+      const entries = cache.locations.map(l => ({
+        ...l,
+        timestamp: sql`TO_TIMESTAMP(${l.timestamp})`,
+      }));
+      for await (const batch of batchIterate(entries, INSERT_BATCH_SIZE))
+        await sql`
+          INSERT INTO locations ${sql(batch)}
+          ON CONFLICT (ordinal_number, block_height, tx_index) DO NOTHING
+        `;
+    }
+    if (cache.currentLocations.size) {
+      const entries = [...cache.currentLocations.values()];
+      for await (const batch of batchIterate(entries, INSERT_BATCH_SIZE))
+        await sql`
+          INSERT INTO current_locations ${sql(batch)}
+          ON CONFLICT (ordinal_number) DO UPDATE SET
+            block_height = EXCLUDED.block_height,
+            tx_index = EXCLUDED.tx_index,
+            address = EXCLUDED.address
+          WHERE
+            EXCLUDED.block_height > current_locations.block_height OR
+            (EXCLUDED.block_height = current_locations.block_height AND
+              EXCLUDED.tx_index > current_locations.tx_index)
+        `;
+    }
   }
 
   /**
@@ -107,58 +157,63 @@ export class PgStore extends BasePgStore {
    * chain re-orgs.
    * @param args - Apply/Rollback Ordhook events
    */
-  async updateInscriptions(payload: Payload): Promise<void> {
-    let updatedBlockHeightMin = Infinity;
+  async updateInscriptions(payload: BitcoinPayload): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
-      // ROLLBACK
-      for (const rollbackEvent of payload.rollback) {
-        const event = rollbackEvent as BitcoinEvent;
-        logger.info(`PgStore rolling back block ${event.block_identifier.index}`);
-        const time = stopwatch();
-        const rollbacks = revealInsertsFromOrdhookEvent(event);
-        await this.brc20.updateBrc20Operations(event, 'rollback');
-        for (const writeChunk of batchIterate(rollbacks, 1000))
-          await this.rollBackInscriptions(writeChunk);
-        updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
-        logger.info(
-          `PgStore rolled back block ${
-            event.block_identifier.index
-          } in ${time.getElapsedSeconds()}s`
-        );
-        await this.updateChainTipBlockHeight(event.block_identifier.index - 1);
-      }
-
-      // APPLY
-      for (const applyEvent of payload.apply) {
-        // Check where we're at in terms of ingestion, e.g. block height and max blessed inscription
-        // number. This will let us determine if we should skip ingesting this block or throw an
-        // error if a gap is detected.
-        const currentBlockHeight = await this.getChainTipBlockHeight();
-        const event = applyEvent as BitcoinEvent;
-        if (
-          event.block_identifier.index <= currentBlockHeight &&
-          event.block_identifier.index !== ORDINALS_GENESIS_BLOCK
-        ) {
-          logger.info(
-            `PgStore skipping ingestion for previously seen block ${event.block_identifier.index}, current chain tip is at ${currentBlockHeight}`
-          );
-          continue;
-        }
-        logger.info(`PgStore ingesting block ${event.block_identifier.index}`);
-        const time = stopwatch();
-        const writes = revealInsertsFromOrdhookEvent(event);
-        for (const writeChunk of batchIterate(writes, INSERT_BATCH_SIZE))
-          await this.insertInscriptions(writeChunk, payload.chainhook.is_streaming_blocks);
-        updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
-        await this.brc20.updateBrc20Operations(event, 'apply');
-        logger.info(
-          `PgStore ingested block ${event.block_identifier.index} in ${time.getElapsedSeconds()}s`
-        );
+      for (const event of payload.apply) {
+        await this.updateInscriptionsEvent(event, 'apply');
         await this.updateChainTipBlockHeight(event.block_identifier.index);
       }
     });
-    if (updatedBlockHeightMin !== Infinity)
-      await this.normalizeInscriptionCount({ min_block_height: updatedBlockHeightMin });
+    // let updatedBlockHeightMin = Infinity;
+    // await this.sqlWriteTransaction(async sql => {
+    //   // ROLLBACK
+    //   for (const rollbackEvent of payload.rollback) {
+    //     const event = rollbackEvent as BitcoinEvent;
+    //     logger.info(`PgStore rolling back block ${event.block_identifier.index}`);
+    //     const time = stopwatch();
+    //     const rollbacks = revealInsertsFromOrdhookEvent(event);
+    //     await this.brc20.updateBrc20Operations(event, 'rollback');
+    //     for (const writeChunk of batchIterate(rollbacks, 1000))
+    //       await this.rollBackInscriptions(writeChunk);
+    //     updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
+    //     logger.info(
+    //       `PgStore rolled back block ${
+    //         event.block_identifier.index
+    //       } in ${time.getElapsedSeconds()}s`
+    //     );
+    //     await this.updateChainTipBlockHeight(event.block_identifier.index - 1);
+    //   }
+    //   // APPLY
+    //   for (const applyEvent of payload.apply) {
+    //     // Check where we're at in terms of ingestion, e.g. block height and max blessed inscription
+    //     // number. This will let us determine if we should skip ingesting this block or throw an
+    //     // error if a gap is detected.
+    //     const currentBlockHeight = await this.getChainTipBlockHeight();
+    //     const event = applyEvent as BitcoinEvent;
+    //     if (
+    //       event.block_identifier.index <= currentBlockHeight &&
+    //       event.block_identifier.index !== ORDINALS_GENESIS_BLOCK
+    //     ) {
+    //       logger.info(
+    //         `PgStore skipping ingestion for previously seen block ${event.block_identifier.index}, current chain tip is at ${currentBlockHeight}`
+    //       );
+    //       continue;
+    //     }
+    //     logger.info(`PgStore ingesting block ${event.block_identifier.index}`);
+    //     const time = stopwatch();
+    //     const writes = revealInsertsFromOrdhookEvent(event);
+    //     for (const writeChunk of batchIterate(writes, INSERT_BATCH_SIZE))
+    //       await this.insertInscriptions(writeChunk, payload.chainhook.is_streaming_blocks);
+    //     updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
+    //     await this.brc20.updateBrc20Operations(event, 'apply');
+    //     logger.info(
+    //       `PgStore ingested block ${event.block_identifier.index} in ${time.getElapsedSeconds()}s`
+    //     );
+    //     await this.updateChainTipBlockHeight(event.block_identifier.index);
+    //   }
+    // });
+    // if (updatedBlockHeightMin !== Infinity)
+    //   await this.normalizeInscriptionCount({ min_block_height: updatedBlockHeightMin });
   }
 
   private async updateChainTipBlockHeight(block_height: number): Promise<void> {

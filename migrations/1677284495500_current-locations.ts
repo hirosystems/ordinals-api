@@ -5,12 +5,8 @@ export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export function up(pgm: MigrationBuilder): void {
   pgm.createTable('current_locations', {
-    inscription_id: {
-      type: 'bigint',
-      primaryKey: true,
-    },
-    location_id: {
-      type: 'bigint',
+    ordinal_number: {
+      type: 'numeric',
       notNull: true,
     },
     block_height: {
@@ -25,16 +21,16 @@ export function up(pgm: MigrationBuilder): void {
       type: 'text',
     },
   });
-  pgm.createIndex('current_locations', ['location_id']);
+  pgm.createConstraint(
+    'current_locations',
+    'current_locations_locations_fk',
+    'FOREIGN KEY(ordinal_number, block_height, tx_index) REFERENCES locations(ordinal_number, block_height, tx_index) ON DELETE CASCADE'
+  );
+  pgm.createConstraint(
+    'locations',
+    'locations_satoshis_fk',
+    'FOREIGN KEY(ordinal_number) REFERENCES satoshis(ordinal_number) ON DELETE CASCADE'
+  );
+  pgm.createIndex('current_locations', ['ordinal_number'], { unique: true });
   pgm.createIndex('current_locations', ['address']);
-  pgm.createConstraint(
-    'current_locations',
-    'current_locations_inscription_id_fk',
-    'FOREIGN KEY(inscription_id) REFERENCES inscriptions(id) ON DELETE CASCADE'
-  );
-  pgm.createConstraint(
-    'current_locations',
-    'current_locations_location_id_fk',
-    'FOREIGN KEY(location_id) REFERENCES locations(id) ON DELETE CASCADE'
-  );
 }
