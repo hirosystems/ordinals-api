@@ -58,6 +58,11 @@ export function up(pgm: MigrationBuilder): void {
     'brc20_operations_ticker_fk',
     'FOREIGN KEY(ticker) REFERENCES brc20_tokens(ticker) ON DELETE CASCADE'
   );
-  pgm.createIndex('brc20_operations', ['block_height', 'tx_index']);
+  pgm.createIndex('brc20_operations', ['operation']);
+  pgm.createIndex('brc20_operations', ['ticker', 'address']);
+  pgm.createIndex('brc20_operations', [
+    { name: 'block_height', sort: 'DESC' },
+    { name: 'tx_index', sort: 'DESC' },
+  ]);
   pgm.createIndex('brc20_operations', ['address', 'to_address']);
 }
