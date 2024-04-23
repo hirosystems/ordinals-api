@@ -16,159 +16,159 @@ import { Brc20BlockCache, sqlOr } from './helpers';
 import { INSERT_BATCH_SIZE } from '../pg-store';
 
 export class Brc20PgStore extends BasePgStoreModule {
-  async updateBrc20Operations(event: BitcoinEvent, direction: 'apply' | 'rollback'): Promise<void> {
-    await this.sqlWriteTransaction(async sql => {
-      const block_height = event.block_identifier.index.toString();
-      const cache = new Brc20BlockCache();
-      for (const tx of event.transactions) {
-        const tx_index = tx.metadata.index.toString();
-        if (tx.metadata.brc20_operation) {
-          const operation = tx.metadata.brc20_operation;
-          if ('deploy' in operation) {
-            cache.tokens.push({
-              block_height,
-              genesis_id: operation.deploy.inscription_id,
-              tx_id: tx.transaction_identifier.hash,
-              address: operation.deploy.address,
-              ticker: operation.deploy.tick,
-              max: operation.deploy.max,
-              limit: operation.deploy.lim,
-              decimals: operation.deploy.dec,
-              self_mint: operation.deploy.self_mint,
-            });
-            cache.operations.push({
-              block_height,
-              tx_index,
-              genesis_id: operation.deploy.inscription_id,
-              ticker: operation.deploy.tick,
-              address: operation.deploy.address,
-              avail_balance: '0',
-              trans_balance: '0',
-              operation: DbBrc20Operation.deploy,
-            });
-            cache.increaseOperationCount(DbBrc20Operation.deploy);
-            cache.increaseAddressOperationCount(operation.deploy.address, DbBrc20Operation.deploy);
-            cache.increaseTokenTxCount(operation.deploy.tick);
-            logger.info(
-              `Brc20PgStore ${direction} deploy ${operation.deploy.tick} by ${operation.deploy.address} at height ${block_height}`
-            );
-          } else if ('mint' in operation) {
-            cache.operations.push({
-              block_height,
-              tx_index,
-              genesis_id: operation.mint.inscription_id,
-              ticker: operation.mint.tick,
-              address: operation.mint.address,
-              avail_balance: operation.mint.amt,
-              trans_balance: '0',
-              operation: DbBrc20Operation.mint,
-            });
-            const amt = BigNumber(operation.mint.amt);
-            cache.increaseTokenMintedSupply(operation.mint.tick, amt);
-            cache.increaseTokenTxCount(operation.mint.tick);
-            cache.increaseOperationCount(DbBrc20Operation.mint);
-            cache.increaseAddressOperationCount(operation.mint.address, DbBrc20Operation.mint);
-            cache.updateAddressBalance(
-              operation.mint.tick,
-              operation.mint.address,
-              amt,
-              BigNumber(0),
-              amt
-            );
-            logger.info(
-              `Brc20PgStore ${direction} mint ${operation.mint.tick} ${operation.mint.amt} by ${operation.mint.address} at height ${block_height}`
-            );
-          } else if ('transfer' in operation) {
-            cache.operations.push({
-              block_height,
-              tx_index,
-              genesis_id: operation.transfer.inscription_id,
-              ticker: operation.transfer.tick,
-              address: operation.transfer.address,
-              avail_balance: BigNumber(operation.transfer.amt).negated().toString(),
-              trans_balance: operation.transfer.amt,
-              operation: DbBrc20Operation.transfer,
-            });
-            const amt = BigNumber(operation.transfer.amt);
-            cache.increaseOperationCount(DbBrc20Operation.transfer);
-            cache.increaseTokenTxCount(operation.transfer.tick);
+  async updateBrc20Operations(
+    sql: PgSqlClient,
+    event: BitcoinEvent,
+    direction: 'apply' | 'rollback'
+  ): Promise<void> {
+    const block_height = event.block_identifier.index.toString();
+    const cache = new Brc20BlockCache();
+    for (const tx of event.transactions) {
+      const tx_index = tx.metadata.index.toString();
+      if (tx.metadata.brc20_operation) {
+        const operation = tx.metadata.brc20_operation;
+        if ('deploy' in operation) {
+          cache.tokens.push({
+            block_height,
+            genesis_id: operation.deploy.inscription_id,
+            tx_id: tx.transaction_identifier.hash,
+            address: operation.deploy.address,
+            ticker: operation.deploy.tick,
+            max: operation.deploy.max,
+            limit: operation.deploy.lim,
+            decimals: operation.deploy.dec,
+            self_mint: operation.deploy.self_mint,
+          });
+          cache.operations.push({
+            block_height,
+            tx_index,
+            genesis_id: operation.deploy.inscription_id,
+            ticker: operation.deploy.tick,
+            address: operation.deploy.address,
+            avail_balance: '0',
+            trans_balance: '0',
+            operation: DbBrc20Operation.deploy,
+          });
+          cache.increaseOperationCount(DbBrc20Operation.deploy);
+          cache.increaseAddressOperationCount(operation.deploy.address, DbBrc20Operation.deploy);
+          cache.increaseTokenTxCount(operation.deploy.tick);
+          logger.info(
+            `Brc20PgStore ${direction} deploy ${operation.deploy.tick} by ${operation.deploy.address} at height ${block_height}`
+          );
+        } else if ('mint' in operation) {
+          cache.operations.push({
+            block_height,
+            tx_index,
+            genesis_id: operation.mint.inscription_id,
+            ticker: operation.mint.tick,
+            address: operation.mint.address,
+            avail_balance: operation.mint.amt,
+            trans_balance: '0',
+            operation: DbBrc20Operation.mint,
+          });
+          const amt = BigNumber(operation.mint.amt);
+          cache.increaseTokenMintedSupply(operation.mint.tick, amt);
+          cache.increaseTokenTxCount(operation.mint.tick);
+          cache.increaseOperationCount(DbBrc20Operation.mint);
+          cache.increaseAddressOperationCount(operation.mint.address, DbBrc20Operation.mint);
+          cache.updateAddressBalance(
+            operation.mint.tick,
+            operation.mint.address,
+            amt,
+            BigNumber(0),
+            amt
+          );
+          logger.info(
+            `Brc20PgStore ${direction} mint ${operation.mint.tick} ${operation.mint.amt} by ${operation.mint.address} at height ${block_height}`
+          );
+        } else if ('transfer' in operation) {
+          cache.operations.push({
+            block_height,
+            tx_index,
+            genesis_id: operation.transfer.inscription_id,
+            ticker: operation.transfer.tick,
+            address: operation.transfer.address,
+            avail_balance: BigNumber(operation.transfer.amt).negated().toString(),
+            trans_balance: operation.transfer.amt,
+            operation: DbBrc20Operation.transfer,
+          });
+          const amt = BigNumber(operation.transfer.amt);
+          cache.increaseOperationCount(DbBrc20Operation.transfer);
+          cache.increaseTokenTxCount(operation.transfer.tick);
+          cache.increaseAddressOperationCount(
+            operation.transfer.address,
+            DbBrc20Operation.transfer
+          );
+          cache.updateAddressBalance(
+            operation.transfer.tick,
+            operation.transfer.address,
+            amt.negated(),
+            amt,
+            BigNumber(0)
+          );
+          logger.info(
+            `Brc20PgStore ${direction} transfer ${operation.transfer.tick} ${operation.transfer.amt} by ${operation.transfer.address} at height ${block_height}`
+          );
+        } else if ('transfer_send' in operation) {
+          cache.operations.push({
+            block_height,
+            tx_index,
+            genesis_id: operation.transfer_send.inscription_id,
+            ticker: operation.transfer_send.tick,
+            address: operation.transfer_send.sender_address,
+            avail_balance: '0',
+            trans_balance: BigNumber(operation.transfer_send.amt).negated().toString(),
+            operation: DbBrc20Operation.transferSend,
+          });
+          cache.transferReceivers.set(
+            operation.transfer_send.inscription_id,
+            operation.transfer_send.receiver_address
+          );
+          cache.operations.push({
+            block_height,
+            tx_index,
+            genesis_id: operation.transfer_send.inscription_id,
+            ticker: operation.transfer_send.tick,
+            address: operation.transfer_send.receiver_address,
+            avail_balance: operation.transfer_send.amt,
+            trans_balance: '0',
+            operation: DbBrc20Operation.transferReceive,
+          });
+          const amt = BigNumber(operation.transfer_send.amt);
+          cache.increaseOperationCount(DbBrc20Operation.transferSend);
+          cache.increaseTokenTxCount(operation.transfer_send.tick);
+          cache.increaseAddressOperationCount(
+            operation.transfer_send.sender_address,
+            DbBrc20Operation.transferSend
+          );
+          if (operation.transfer_send.sender_address != operation.transfer_send.receiver_address) {
             cache.increaseAddressOperationCount(
-              operation.transfer.address,
-              DbBrc20Operation.transfer
-            );
-            cache.updateAddressBalance(
-              operation.transfer.tick,
-              operation.transfer.address,
-              amt.negated(),
-              amt,
-              BigNumber(0)
-            );
-            logger.info(
-              `Brc20PgStore ${direction} transfer ${operation.transfer.tick} ${operation.transfer.amt} by ${operation.transfer.address} at height ${block_height}`
-            );
-          } else if ('transfer_send' in operation) {
-            cache.operations.push({
-              block_height,
-              tx_index,
-              genesis_id: operation.transfer_send.inscription_id,
-              ticker: operation.transfer_send.tick,
-              address: operation.transfer_send.sender_address,
-              avail_balance: '0',
-              trans_balance: BigNumber(operation.transfer_send.amt).negated().toString(),
-              operation: DbBrc20Operation.transferSend,
-            });
-            cache.transferReceivers.set(
-              operation.transfer_send.inscription_id,
-              operation.transfer_send.receiver_address
-            );
-            cache.operations.push({
-              block_height,
-              tx_index,
-              genesis_id: operation.transfer_send.inscription_id,
-              ticker: operation.transfer_send.tick,
-              address: operation.transfer_send.receiver_address,
-              avail_balance: operation.transfer_send.amt,
-              trans_balance: '0',
-              operation: DbBrc20Operation.transferReceive,
-            });
-            const amt = BigNumber(operation.transfer_send.amt);
-            cache.increaseOperationCount(DbBrc20Operation.transferSend);
-            cache.increaseTokenTxCount(operation.transfer_send.tick);
-            cache.increaseAddressOperationCount(
-              operation.transfer_send.sender_address,
+              operation.transfer_send.receiver_address,
               DbBrc20Operation.transferSend
             );
-            if (
-              operation.transfer_send.sender_address != operation.transfer_send.receiver_address
-            ) {
-              cache.increaseAddressOperationCount(
-                operation.transfer_send.receiver_address,
-                DbBrc20Operation.transferSend
-              );
-            }
-            cache.updateAddressBalance(
-              operation.transfer_send.tick,
-              operation.transfer_send.sender_address,
-              BigNumber('0'),
-              amt.negated(),
-              amt.negated()
-            );
-            cache.updateAddressBalance(
-              operation.transfer_send.tick,
-              operation.transfer_send.receiver_address,
-              amt,
-              BigNumber(0),
-              amt
-            );
-            logger.info(
-              `Brc20PgStore ${direction} transfer_send ${operation.transfer_send.tick} ${operation.transfer_send.amt} from ${operation.transfer_send.sender_address} to ${operation.transfer_send.receiver_address} at height ${block_height}`
-            );
           }
+          cache.updateAddressBalance(
+            operation.transfer_send.tick,
+            operation.transfer_send.sender_address,
+            BigNumber('0'),
+            amt.negated(),
+            amt.negated()
+          );
+          cache.updateAddressBalance(
+            operation.transfer_send.tick,
+            operation.transfer_send.receiver_address,
+            amt,
+            BigNumber(0),
+            amt
+          );
+          logger.info(
+            `Brc20PgStore ${direction} transfer_send ${operation.transfer_send.tick} ${operation.transfer_send.amt} from ${operation.transfer_send.sender_address} to ${operation.transfer_send.receiver_address} at height ${block_height}`
+          );
         }
       }
-      if (direction === 'apply') await this.applyOperations(sql, cache);
-      else await this.rollBackOperations(sql, cache);
-    });
+    }
+    if (direction === 'apply') await this.applyOperations(sql, cache);
+    else await this.rollBackOperations(sql, cache);
   }
 
   private async applyOperations(sql: PgSqlClient, cache: Brc20BlockCache) {

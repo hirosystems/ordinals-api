@@ -20,3 +20,7 @@ export function up(pgm: MigrationBuilder): void {
   pgm.addConstraint('chain_tip', 'chain_tip_one_row', 'CHECK(id)');
   pgm.sql(`INSERT INTO chain_tip DEFAULT VALUES`);
 }
+
+export function down(pgm: MigrationBuilder): void {
+  pgm.dropTable('chain_tip');
+}
