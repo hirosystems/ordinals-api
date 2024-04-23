@@ -631,15 +631,6 @@ describe('BRC-20 API', () => {
           .apply()
           .block({ height: blockHeights.next().value })
           .transaction({ hash: randomHash() })
-          .inscriptionTransferred({
-            destination: { type: 'transferred', value: addressB },
-            tx_index: 0,
-            ordinal_number: number,
-            post_transfer_output_value: null,
-            satpoint_pre_transfer: `${transferHash}:0:0`,
-            satpoint_post_transfer:
-              '7edaa48337a94da327b6262830505f116775a32db5ad4ad46e87ecea33f21bac:0:0',
-          })
           .brc20(
             {
               transfer_send: {

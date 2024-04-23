@@ -717,10 +717,10 @@ describe('BRC-20', () => {
       expect(json.total).toBe(1);
       expect(json.results).toStrictEqual([
         {
-          available_balance: '1000.000000000000000000',
+          available_balance: '0.000000000000000000',
           overall_balance: '10000.000000000000000000',
           ticker: 'pepe',
-          transferrable_balance: '9000.000000000000000000',
+          transferrable_balance: '10000.000000000000000000',
         },
       ]);
     });

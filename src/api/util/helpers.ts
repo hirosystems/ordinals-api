@@ -146,7 +146,7 @@ export function parseBrc20Activities(items: DbBrc20Activity[]): Brc20ActivityRes
     const activity = {
       operation: i.operation,
       ticker: i.ticker,
-      address: i.address,
+      address: i.to_address ?? i.address,
       tx_id: i.tx_id,
       inscription_id: i.inscription_id,
       location: `${i.output}:${i.offset}`,
