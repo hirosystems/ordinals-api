@@ -728,7 +728,7 @@ describe('BRC-20 API', () => {
                 self_mint: false,
               },
             },
-            { inscription_number: 0 }
+            { inscription_number: number }
           )
           .build()
       );
@@ -770,7 +770,7 @@ describe('BRC-20 API', () => {
                 amt: '1000',
               },
             },
-            { inscription_number: 1 }
+            { inscription_number: number }
           )
           .build()
       );
@@ -839,7 +839,7 @@ describe('BRC-20 API', () => {
                 amt: '2000',
               },
             },
-            { inscription_number: 2 }
+            { inscription_number: number }
           )
           .build()
       );
@@ -882,7 +882,7 @@ describe('BRC-20 API', () => {
                 amt: '1000',
               },
             },
-            { inscription_number: 3 }
+            { inscription_number: numberAB }
           )
           .build()
       );
@@ -948,7 +948,7 @@ describe('BRC-20 API', () => {
                 amt: '2000',
               },
             },
-            { inscription_number: 4 }
+            { inscription_number: numberBC }
           )
           .build()
       );
@@ -993,7 +993,7 @@ describe('BRC-20 API', () => {
                 receiver_address: addressB,
               },
             },
-            { inscription_number: 3 }
+            { inscription_number: numberAB }
           )
           .build()
       );
@@ -1075,25 +1075,17 @@ describe('BRC-20 API', () => {
           .apply()
           .block({ height: blockHeights.next().value })
           .transaction({ hash: transferHashBCSend })
-          .inscriptionTransferred({
-            destination: { type: 'transferred', value: addressC },
-            tx_index: 0,
-            ordinal_number: numberBC,
-            post_transfer_output_value: null,
-            satpoint_pre_transfer: `${transferHashBC}:0:0`,
-            satpoint_post_transfer: `${transferHashBCSend}:0:0`,
-          })
           .brc20(
             {
               transfer_send: {
                 tick: 'pepe',
                 inscription_id: `${transferHashBC}i0`,
-                amt: '1000',
+                amt: '2000',
                 sender_address: addressB,
                 receiver_address: addressC,
               },
             },
-            { inscription_number: 4 }
+            { inscription_number: numberBC }
           )
           .build()
       );
