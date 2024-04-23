@@ -9,7 +9,7 @@ import {
   runMigrations,
   stopwatch,
 } from '@hirosystems/api-toolkit';
-import { BitcoinEvent, BitcoinPayload, Payload } from '@hirosystems/chainhook-client';
+import { BitcoinEvent, BitcoinPayload } from '@hirosystems/chainhook-client';
 import * as path from 'path';
 import * as postgres from 'postgres';
 import { Order, OrderBy } from '../api/schemas';
@@ -118,12 +118,17 @@ export class PgStore extends BasePgStore {
           INSERT INTO satoshis ${sql(batch)}
           ON CONFLICT (ordinal_number) DO NOTHING
         `;
-    if (cache.inscriptions.length)
-      for await (const batch of batchIterate(cache.inscriptions, INSERT_BATCH_SIZE))
+    if (cache.inscriptions.length) {
+      const entries = cache.inscriptions.map(i => ({
+        ...i,
+        timestamp: sql`TO_TIMESTAMP(${i.timestamp})`,
+      }));
+      for await (const batch of batchIterate(entries, INSERT_BATCH_SIZE))
         await sql`
           INSERT INTO inscriptions ${sql(batch)}
           ON CONFLICT (genesis_id) DO NOTHING
         `;
+    }
     if (cache.locations.length) {
       const entries = cache.locations.map(l => ({
         ...l,
@@ -302,13 +307,13 @@ export class PgStore extends BasePgStore {
       let orderBy = sql`i.number ${order}`;
       switch (sort?.order_by) {
         case OrderBy.genesis_block_height:
-          orderBy = sql`gen.block_height ${order}, gen.tx_index ${order}`;
+          orderBy = sql`i.block_height ${order}, i.tx_index ${order}`;
           break;
         case OrderBy.ordinal:
-          orderBy = sql`i.sat_ordinal ${order}`;
+          orderBy = sql`i.ordinal_number ${order}`;
           break;
         case OrderBy.rarity:
-          orderBy = sql`ARRAY_POSITION(ARRAY['common','uncommon','rare','epic','legendary','mythic'], i.sat_rarity) ${order}, i.number DESC`;
+          orderBy = sql`ARRAY_POSITION(ARRAY['common','uncommon','rare','epic','legendary','mythic'], s.rarity) ${order}, i.number DESC`;
           break;
       }
       // This function will generate a query to be used for getting results or total counts.
@@ -318,10 +323,10 @@ export class PgStore extends BasePgStore {
       ) => sql`
         SELECT ${columns}
         FROM inscriptions AS i
-        INNER JOIN current_locations AS cur ON cur.inscription_id = i.id
-        INNER JOIN locations AS cur_l ON cur_l.id = cur.location_id
-        INNER JOIN genesis_locations AS gen ON gen.inscription_id = i.id
-        INNER JOIN locations AS gen_l ON gen_l.id = gen.location_id
+        INNER JOIN current_locations AS cur ON cur.ordinal_number = i.ordinal_number
+        INNER JOIN locations AS cur_l ON cur_l.ordinal_number = cur.ordinal_number AND cur_l.block_height = cur.block_height AND cur_l.tx_index = cur.tx_index
+        INNER JOIN locations AS gen_l ON gen_l.ordinal_number = cur.ordinal_number AND gen_l.block_height = cur.block_height AND gen_l.tx_index = cur.tx_index
+        INNER JOIN satoshis AS s ON s.ordinal_number = i.ordinal_number
         WHERE TRUE
           ${
             filters?.genesis_id?.length
@@ -330,7 +335,7 @@ export class PgStore extends BasePgStore {
           }
           ${
             filters?.genesis_block_height
-              ? sql`AND gen.block_height = ${filters.genesis_block_height}`
+              ? sql`AND i.block_height = ${filters.genesis_block_height}`
               : sql``
           }
           ${
@@ -340,40 +345,42 @@ export class PgStore extends BasePgStore {
           }
           ${
             filters?.from_genesis_block_height
-              ? sql`AND gen.block_height >= ${filters.from_genesis_block_height}`
+              ? sql`AND i.block_height >= ${filters.from_genesis_block_height}`
               : sql``
           }
           ${
             filters?.to_genesis_block_height
-              ? sql`AND gen.block_height <= ${filters.to_genesis_block_height}`
+              ? sql`AND i.block_height <= ${filters.to_genesis_block_height}`
               : sql``
           }
           ${
             filters?.from_sat_coinbase_height
-              ? sql`AND i.sat_coinbase_height >= ${filters.from_sat_coinbase_height}`
+              ? sql`AND s.coinbase_height >= ${filters.from_sat_coinbase_height}`
               : sql``
           }
           ${
             filters?.to_sat_coinbase_height
-              ? sql`AND i.sat_coinbase_height <= ${filters.to_sat_coinbase_height}`
+              ? sql`AND s.coinbase_height <= ${filters.to_sat_coinbase_height}`
               : sql``
           }
           ${
             filters?.from_genesis_timestamp
-              ? sql`AND gen_l.timestamp >= to_timestamp(${filters.from_genesis_timestamp})`
+              ? sql`AND i.timestamp >= to_timestamp(${filters.from_genesis_timestamp})`
               : sql``
           }
           ${
             filters?.to_genesis_timestamp
-              ? sql`AND gen_l.timestamp <= to_timestamp(${filters.to_genesis_timestamp})`
+              ? sql`AND i.timestamp <= to_timestamp(${filters.to_genesis_timestamp})`
               : sql``
           }
           ${
             filters?.from_sat_ordinal
-              ? sql`AND i.sat_ordinal >= ${filters.from_sat_ordinal}`
+              ? sql`AND i.ordinal_number >= ${filters.from_sat_ordinal}`
               : sql``
           }
-          ${filters?.to_sat_ordinal ? sql`AND i.sat_ordinal <= ${filters.to_sat_ordinal}` : sql``}
+          ${
+            filters?.to_sat_ordinal ? sql`AND i.ordinal_number <= ${filters.to_sat_ordinal}` : sql``
+          }
           ${filters?.number?.length ? sql`AND i.number IN ${sql(filters.number)}` : sql``}
           ${
             filters?.from_number !== undefined ? sql`AND i.number >= ${filters.from_number}` : sql``
@@ -382,18 +389,14 @@ export class PgStore extends BasePgStore {
           ${filters?.address?.length ? sql`AND cur.address IN ${sql(filters.address)}` : sql``}
           ${filters?.mime_type?.length ? sql`AND i.mime_type IN ${sql(filters.mime_type)}` : sql``}
           ${filters?.output ? sql`AND cur_l.output = ${filters.output}` : sql``}
-          ${
-            filters?.sat_rarity?.length
-              ? sql`AND i.sat_rarity IN ${sql(filters.sat_rarity)}`
-              : sql``
-          }
-          ${filters?.sat_ordinal ? sql`AND i.sat_ordinal = ${filters.sat_ordinal}` : sql``}
+          ${filters?.sat_rarity?.length ? sql`AND s.rarity IN ${sql(filters.sat_rarity)}` : sql``}
+          ${filters?.sat_ordinal ? sql`AND i.ordinal_number = ${filters.sat_ordinal}` : sql``}
           ${filters?.recursive !== undefined ? sql`AND i.recursive = ${filters.recursive}` : sql``}
           ${filters?.cursed === true ? sql`AND i.number < 0` : sql``}
           ${filters?.cursed === false ? sql`AND i.number >= 0` : sql``}
           ${
             filters?.genesis_address?.length
-              ? sql`AND gen.address IN ${sql(filters.genesis_address)}`
+              ? sql`AND i.address IN ${sql(filters.genesis_address)}`
               : sql``
           }
         ${sorting}
@@ -407,21 +410,20 @@ export class PgStore extends BasePgStore {
           i.content_length,
           i.fee AS genesis_fee,
           i.curse_type,
-          i.sat_ordinal,
-          i.sat_rarity,
-          i.sat_coinbase_height,
+          i.ordinal_number AS sat_ordinal,
+          s.rarity AS sat_rarity,
+          s.coinbase_height AS sat_coinbase_height,
           i.recursive,
           (
-            SELECT STRING_AGG(ii.genesis_id, ',')
+            SELECT STRING_AGG(ir.ref_genesis_id, ',')
             FROM inscription_recursions AS ir
-            INNER JOIN inscriptions AS ii ON ii.id = ir.ref_inscription_id
-            WHERE ir.inscription_id = i.id
+            WHERE ir.genesis_id = i.genesis_id
           ) AS recursion_refs,
-          gen.block_height AS genesis_block_height,
+          i.block_height AS genesis_block_height,
           gen_l.block_hash AS genesis_block_hash,
           gen_l.tx_id AS genesis_tx_id,
-          gen_l.timestamp AS genesis_timestamp,
-          gen.address AS genesis_address,
+          i.timestamp AS genesis_timestamp,
+          i.address AS genesis_address,
           cur_l.tx_id,
           cur.address,
           cur_l.output,
