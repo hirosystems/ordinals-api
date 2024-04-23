@@ -34,6 +34,7 @@ export async function startOrdhookServer(args: { db: PgStore }): Promise<Chainho
           if_this: {
             scope: 'ordinals_protocol',
             operation: 'inscription_feed',
+            meta_protocols: ['brc-20'],
           },
         },
       },

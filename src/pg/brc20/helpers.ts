@@ -1,96 +1,98 @@
-import { Static, Type } from '@fastify/type-provider-typebox';
-import { TypeCompiler } from '@sinclair/typebox/compiler';
 import BigNumber from 'bignumber.js';
-import { hexToBuffer } from '../../api/util/helpers';
-import { DbLocationTransferType, InscriptionRevealData } from '../types';
+import { DbBrc20Operation, DbBrc20OperationInsert, DbBrc20TokenInsert } from './types';
+import * as postgres from 'postgres';
+import { PgSqlClient } from '@hirosystems/api-toolkit';
 
-const Brc20TickerSchema = Type.String({ minLength: 1 });
-const Brc20NumberSchema = Type.RegEx(/^((\d+)|(\d*\.?\d+))$/);
+export function sqlOr(
+  sql: PgSqlClient,
+  partials: postgres.PendingQuery<postgres.Row[]>[] | undefined
+) {
+  return partials?.reduce((acc, curr) => sql`${acc} OR ${curr}`);
+}
 
-const Brc20DeploySchema = Type.Object(
-  {
-    p: Type.Literal('brc-20'),
-    op: Type.Literal('deploy'),
-    tick: Brc20TickerSchema,
-    max: Brc20NumberSchema,
-    lim: Type.Optional(Brc20NumberSchema),
-    dec: Type.Optional(Type.RegEx(/^\d+$/)),
-    self_mint: Type.Optional(Type.Literal('true')),
-  },
-  { additionalProperties: true }
-);
-export type Brc20Deploy = Static<typeof Brc20DeploySchema>;
+export interface AddressBalanceData {
+  avail: BigNumber;
+  trans: BigNumber;
+  total: BigNumber;
+}
 
-const Brc20MintSchema = Type.Object(
-  {
-    p: Type.Literal('brc-20'),
-    op: Type.Literal('mint'),
-    tick: Brc20TickerSchema,
-    amt: Brc20NumberSchema,
-  },
-  { additionalProperties: true }
-);
-export type Brc20Mint = Static<typeof Brc20MintSchema>;
+export class Brc20BlockCache {
+  tokens: DbBrc20TokenInsert[] = [];
+  operations: DbBrc20OperationInsert[] = [];
+  tokenMintSupplies = new Map<string, BigNumber>();
+  tokenTxCounts = new Map<string, number>();
+  operationCounts = new Map<DbBrc20Operation, number>();
+  addressOperationCounts = new Map<string, Map<DbBrc20Operation, number>>();
+  totalBalanceChanges = new Map<string, Map<string, AddressBalanceData>>();
+  transferReceivers = new Map<string, string>();
 
-const Brc20TransferSchema = Type.Object(
-  {
-    p: Type.Literal('brc-20'),
-    op: Type.Literal('transfer'),
-    tick: Brc20TickerSchema,
-    amt: Brc20NumberSchema,
-  },
-  { additionalProperties: true }
-);
-export type Brc20Transfer = Static<typeof Brc20TransferSchema>;
-
-const Brc20Schema = Type.Union([Brc20DeploySchema, Brc20MintSchema, Brc20TransferSchema]);
-const Brc20C = TypeCompiler.Compile(Brc20Schema);
-export type Brc20 = Static<typeof Brc20Schema>;
-
-export const UINT64_MAX = BigNumber('18446744073709551615'); // 20 digits
-// Only compare against `UINT64_MAX` if the number is at least the same number of digits.
-const numExceedsMax = (num: string) => num.length >= 20 && UINT64_MAX.isLessThan(num);
-
-/**
- * Activation block height for
- * https://l1f.discourse.group/t/brc-20-proposal-for-issuance-and-burn-enhancements-brc20-ip-1/621/1
- */
-export const BRC20_SELF_MINT_ACTIVATION_BLOCK = 837090;
-
-export function brc20FromInscription(reveal: InscriptionRevealData): Brc20 | undefined {
-  if (
-    reveal.inscription.classic_number < 0 ||
-    reveal.inscription.number < 0 ||
-    reveal.location.transfer_type != DbLocationTransferType.transferred ||
-    !['text/plain', 'application/json'].includes(reveal.inscription.mime_type)
-  )
-    return;
-  try {
-    const json = JSON.parse(hexToBuffer(reveal.inscription.content as string).toString('utf-8'));
-    if (Brc20C.Check(json)) {
-      // Check ticker byte length
-      const tick = Buffer.from(json.tick);
-      if (json.op === 'deploy') {
-        if (
-          tick.length === 5 &&
-          (reveal.location.block_height < BRC20_SELF_MINT_ACTIVATION_BLOCK ||
-            json.self_mint !== 'true')
-        )
-          return;
-      }
-      if (tick.length < 4 || tick.length > 5) return;
-      // Check numeric values.
-      if (json.op === 'deploy') {
-        if ((parseFloat(json.max) == 0 && json.self_mint !== 'true') || numExceedsMax(json.max))
-          return;
-        if (json.lim && (parseFloat(json.lim) == 0 || numExceedsMax(json.lim))) return;
-        if (json.dec && parseFloat(json.dec) > 18) return;
-      } else {
-        if (parseFloat(json.amt) == 0 || numExceedsMax(json.amt)) return;
-      }
-      return json;
+  increaseOperationCount(operation: DbBrc20Operation) {
+    this.increaseOperationCountInternal(this.operationCounts, operation);
+  }
+  private increaseOperationCountInternal(
+    map: Map<DbBrc20Operation, number>,
+    operation: DbBrc20Operation
+  ) {
+    const current = map.get(operation);
+    if (current == undefined) {
+      map.set(operation, 1);
+    } else {
+      map.set(operation, current + 1);
     }
-  } catch (error) {
-    // Not a BRC-20 inscription.
+  }
+
+  increaseTokenMintedSupply(ticker: string, amount: BigNumber) {
+    const current = this.tokenMintSupplies.get(ticker);
+    if (current == undefined) {
+      this.tokenMintSupplies.set(ticker, amount);
+    } else {
+      this.tokenMintSupplies.set(ticker, current.plus(amount));
+    }
+  }
+
+  increaseTokenTxCount(ticker: string) {
+    const current = this.tokenTxCounts.get(ticker);
+    if (current == undefined) {
+      this.tokenTxCounts.set(ticker, 1);
+    } else {
+      this.tokenTxCounts.set(ticker, current + 1);
+    }
+  }
+
+  increaseAddressOperationCount(address: string, operation: DbBrc20Operation) {
+    const current = this.addressOperationCounts.get(address);
+    if (current == undefined) {
+      const opMap = new Map<DbBrc20Operation, number>();
+      this.increaseOperationCountInternal(opMap, operation);
+      this.addressOperationCounts.set(address, opMap);
+    } else {
+      this.increaseOperationCountInternal(current, operation);
+    }
+  }
+
+  updateAddressBalance(
+    ticker: string,
+    address: string,
+    availBalance: BigNumber,
+    transBalance: BigNumber,
+    totalBalance: BigNumber
+  ) {
+    const current = this.totalBalanceChanges.get(address);
+    if (current === undefined) {
+      const opMap = new Map<string, AddressBalanceData>();
+      opMap.set(ticker, { avail: availBalance, trans: transBalance, total: totalBalance });
+      this.totalBalanceChanges.set(address, opMap);
+    } else {
+      const currentTick = current.get(ticker);
+      if (currentTick === undefined) {
+        current.set(ticker, { avail: availBalance, trans: transBalance, total: totalBalance });
+      } else {
+        current.set(ticker, {
+          avail: availBalance.plus(currentTick.avail),
+          trans: transBalance.plus(currentTick.trans),
+          total: totalBalance.plus(currentTick.total),
+        });
+      }
+    }
   }
 }

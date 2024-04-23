@@ -1,14 +1,15 @@
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import {
+  BitcoinBrc20Operation,
   BitcoinEvent,
   BitcoinInscriptionRevealed,
   BitcoinInscriptionTransferred,
+  BitcoinPayload,
   BitcoinTransaction,
-  Payload,
 } from '@hirosystems/chainhook-client';
 import { FastifyBaseLogger, FastifyInstance } from 'fastify';
 import { IncomingMessage, Server, ServerResponse } from 'http';
-import { Brc20 } from '../src/pg/brc20/helpers';
+import { PgStore } from '../src/pg/pg-store';
 
 export type TestFastifyServer = FastifyInstance<
   Server,
@@ -19,7 +20,7 @@ export type TestFastifyServer = FastifyInstance<
 >;
 
 export class TestChainhookPayloadBuilder {
-  private payload: Payload = {
+  private payload: BitcoinPayload = {
     apply: [],
     rollback: [],
     chainhook: {
@@ -27,6 +28,7 @@ export class TestChainhookPayloadBuilder {
       predicate: {
         scope: 'ordinals_protocol',
         operation: 'inscription_feed',
+        meta_protocols: ['brc-20'],
       },
       is_streaming_blocks: true,
     },
@@ -38,6 +40,7 @@ export class TestChainhookPayloadBuilder {
   private get lastBlockTx(): BitcoinTransaction {
     return this.lastBlock.transactions[this.lastBlock.transactions.length - 1];
   }
+  private txIndex = 0;
 
   streamingBlocks(streaming: boolean): this {
     this.payload.chainhook.is_streaming_blocks = streaming;
@@ -80,6 +83,7 @@ export class TestChainhookPayloadBuilder {
       metadata: {
         ordinal_operations: [],
         proof: null,
+        index: this.txIndex++,
       },
     });
     return this;
@@ -95,56 +99,81 @@ export class TestChainhookPayloadBuilder {
     return this;
   }
 
-  build(): Payload {
+  brc20(
+    args: BitcoinBrc20Operation,
+    opts: { inscription_number: number; ordinal_number?: number }
+  ): this {
+    this.lastBlockTx.metadata.brc20_operation = args;
+    if ('transfer_send' in args) {
+      this.lastBlockTx.metadata.ordinal_operations.push({
+        inscription_transferred: {
+          ordinal_number: opts.ordinal_number ?? opts.inscription_number,
+          destination: {
+            type: 'transferred',
+            value: args.transfer_send.receiver_address,
+          },
+          satpoint_pre_transfer: `${args.transfer_send.inscription_id.split('i')[0]}:0:0`,
+          satpoint_post_transfer: `${this.lastBlockTx.transaction_identifier.hash}:0:0`,
+          post_transfer_output_value: null,
+          tx_index: 0,
+        },
+      });
+    } else {
+      let inscription_id = '';
+      let inscriber_address = '';
+      if ('deploy' in args) {
+        inscription_id = args.deploy.inscription_id;
+        inscriber_address = args.deploy.address;
+      } else if ('mint' in args) {
+        inscription_id = args.mint.inscription_id;
+        inscriber_address = args.mint.address;
+      } else {
+        inscription_id = args.transfer.inscription_id;
+        inscriber_address = args.transfer.address;
+      }
+      this.lastBlockTx.metadata.ordinal_operations.push({
+        inscription_revealed: {
+          content_bytes: `0x101010`,
+          content_type: 'text/plain;charset=utf-8',
+          content_length: 3,
+          inscription_number: {
+            jubilee: opts.inscription_number,
+            classic: opts.inscription_number,
+          },
+          inscription_fee: 2000,
+          inscription_id,
+          inscription_output_value: 10000,
+          inscriber_address,
+          ordinal_number: opts.ordinal_number ?? opts.inscription_number,
+          ordinal_block_height: 0,
+          ordinal_offset: 0,
+          satpoint_post_inscription: `${inscription_id.split('i')[0]}:0:0`,
+          inscription_input_index: 0,
+          transfers_pre_inscription: 0,
+          tx_index: 0,
+          curse_type: null,
+          inscription_pointer: null,
+          delegate: null,
+          metaprotocol: null,
+          metadata: undefined,
+          parent: null,
+        },
+      });
+    }
+    return this;
+  }
+
+  build(): BitcoinPayload {
     return this.payload;
   }
 }
 
-export function rollBack(payload: Payload) {
+export function rollBack(payload: BitcoinPayload) {
   return {
     ...payload,
     apply: [],
     rollback: payload.apply,
   };
-}
-
-export function brc20Reveal(args: {
-  json: Brc20;
-  number: number;
-  classic_number?: number;
-  address: string;
-  tx_id: string;
-  ordinal_number: number;
-  parent?: string;
-}): BitcoinInscriptionRevealed {
-  const content = Buffer.from(JSON.stringify(args.json), 'utf-8');
-  const reveal: BitcoinInscriptionRevealed = {
-    content_bytes: `0x${content.toString('hex')}`,
-    content_type: 'text/plain;charset=utf-8',
-    content_length: content.length,
-    inscription_number: {
-      jubilee: args.number,
-      classic: args.classic_number ?? args.number,
-    },
-    inscription_fee: 2000,
-    inscription_id: `${args.tx_id}i0`,
-    inscription_output_value: 10000,
-    inscriber_address: args.address,
-    ordinal_number: args.ordinal_number,
-    ordinal_block_height: 0,
-    ordinal_offset: 0,
-    satpoint_post_inscription: `${args.tx_id}:0:0`,
-    inscription_input_index: 0,
-    transfers_pre_inscription: 0,
-    tx_index: 0,
-    curse_type: null,
-    inscription_pointer: null,
-    delegate: null,
-    metaprotocol: null,
-    metadata: undefined,
-    parent: args.parent ?? null,
-  };
-  return reveal;
 }
 
 /** Generate a random hash like string for testing */
@@ -162,4 +191,59 @@ export function* incrementing(
     yield current;
     current += step;
   }
+}
+
+export const BRC20_GENESIS_BLOCK = 779832;
+export const BRC20_SELF_MINT_ACTIVATION_BLOCK = 837090;
+
+export async function deployAndMintPEPE(db: PgStore, address: string) {
+  await db.updateInscriptions(
+    new TestChainhookPayloadBuilder()
+      .apply()
+      .block({
+        height: BRC20_GENESIS_BLOCK,
+        hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+      })
+      .transaction({
+        hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+      })
+      .brc20(
+        {
+          deploy: {
+            tick: 'pepe',
+            max: '250000',
+            dec: '18',
+            lim: '250000',
+            inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+            address,
+            self_mint: false,
+          },
+        },
+        { inscription_number: 0 }
+      )
+      .build()
+  );
+  await db.updateInscriptions(
+    new TestChainhookPayloadBuilder()
+      .apply()
+      .block({
+        height: BRC20_GENESIS_BLOCK + 1,
+        hash: '0000000000000000000098d8f2663891d439f6bb7de230d4e9f6bcc2e85452bf',
+      })
+      .transaction({
+        hash: '3b55f624eaa4f8de6c42e0c490176b67123a83094384f658611faf7bfb85dd0f',
+      })
+      .brc20(
+        {
+          mint: {
+            tick: 'pepe',
+            amt: '10000',
+            inscription_id: '3b55f624eaa4f8de6c42e0c490176b67123a83094384f658611faf7bfb85dd0fi0',
+            address,
+          },
+        },
+        { inscription_number: 1 }
+      )
+      .build()
+  );
 }

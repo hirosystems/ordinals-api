@@ -40,7 +40,7 @@ import {
 
 export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 export const ORDINALS_GENESIS_BLOCK = 767430;
-const INSERT_BATCH_SIZE = 4000;
+export const INSERT_BATCH_SIZE = 4000;
 
 type InscriptionIdentifier = { genesis_id: string } | { number: number };
 
@@ -92,6 +92,7 @@ export class PgStore extends BasePgStore {
         logger.info(`PgStore rolling back block ${event.block_identifier.index}`);
         const time = stopwatch();
         const rollbacks = revealInsertsFromOrdhookEvent(event);
+        await this.brc20.updateBrc20Operations(event, 'rollback');
         for (const writeChunk of batchIterate(rollbacks, 1000))
           await this.rollBackInscriptions(writeChunk);
         updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
@@ -125,6 +126,7 @@ export class PgStore extends BasePgStore {
         for (const writeChunk of batchIterate(writes, INSERT_BATCH_SIZE))
           await this.insertInscriptions(writeChunk, payload.chainhook.is_streaming_blocks);
         updatedBlockHeightMin = Math.min(updatedBlockHeightMin, event.block_identifier.index);
+        await this.brc20.updateBrc20Operations(event, 'apply');
         logger.info(
           `PgStore ingested block ${event.block_identifier.index} in ${time.getElapsedSeconds()}s`
         );
@@ -574,11 +576,9 @@ export class PgStore extends BasePgStore {
         logger.info(`PgStore ${action} at block ${reveal.location.block_height}`);
       }
 
-      // 3. Recursions, Counts and BRC-20
+      // 3. Recursions and counts
       await this.updateInscriptionRecursions(reveals);
       await this.counts.applyInscriptions(inscriptionInserts);
-      if (ENV.BRC20_BLOCK_SCAN_ENABLED)
-        await this.brc20.insertOperations({ reveals: revealOutputs, pointers });
     });
   }
 
@@ -628,7 +628,6 @@ export class PgStore extends BasePgStore {
       // Roll back events in reverse so BRC-20 keeps a sane order.
       for (const rollback of rollbacks.reverse()) {
         if ('inscription' in rollback) {
-          await this.brc20.rollBackInscription({ inscription: rollback.inscription });
           await this.counts.rollBackInscription({
             inscription: rollback.inscription,
             location: rollback.location,
@@ -638,7 +637,6 @@ export class PgStore extends BasePgStore {
             `PgStore rollback reveal #${rollback.inscription.number} (${rollback.inscription.genesis_id}) at block ${rollback.location.block_height}`
           );
         } else {
-          await this.brc20.rollBackLocation({ location: rollback.location });
           await this.recalculateCurrentLocationPointerFromLocationRollBack({
             location: rollback.location,
           });

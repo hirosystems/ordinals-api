@@ -146,7 +146,7 @@ export function parseBrc20Activities(items: DbBrc20Activity[]): Brc20ActivityRes
     const activity = {
       operation: i.operation,
       ticker: i.ticker,
-      address: i.address,
+      address: i.to_address ?? i.address,
       tx_id: i.tx_id,
       inscription_id: i.inscription_id,
       location: `${i.output}:${i.offset}`,
@@ -169,22 +169,27 @@ export function parseBrc20Activities(items: DbBrc20Activity[]): Brc20ActivityRes
         return {
           ...activity,
           mint: {
-            amount: decimals(i.mint_amount, i.deploy_decimals),
+            amount: decimals(i.avail_balance, i.deploy_decimals),
           },
         };
       }
       case DbBrc20EventOperation.transfer: {
-        const [amount, from_address] = i.transfer_data.split(';');
         return {
           ...activity,
-          transfer: { amount: decimals(amount, i.deploy_decimals), from_address },
+          transfer: {
+            amount: decimals(i.trans_balance, i.deploy_decimals),
+            from_address: i.address,
+          },
         };
       }
       case DbBrc20EventOperation.transferSend: {
-        const [amount, from_address, to_address] = i.transfer_data.split(';');
         return {
           ...activity,
-          transfer_send: { amount: decimals(amount, i.deploy_decimals), from_address, to_address },
+          transfer_send: {
+            amount: decimals(BigNumber(i.trans_balance).abs().toString(), i.deploy_decimals),
+            from_address: i.address,
+            to_address: i.to_address ?? i.address,
+          },
         };
       }
     }

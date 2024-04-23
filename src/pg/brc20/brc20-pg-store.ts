@@ -1,634 +1,334 @@
-import { BasePgStoreModule, logger } from '@hirosystems/api-toolkit';
-import * as postgres from 'postgres';
+import { BasePgStoreModule, PgSqlClient, batchIterate, logger } from '@hirosystems/api-toolkit';
+import { DbInscriptionIndexPaging, DbPaginatedResult } from '../types';
 import {
-  DbInscriptionIndexPaging,
-  InscriptionData,
-  DbLocationPointerInsert,
-  DbLocationTransferType,
-  DbPaginatedResult,
-  InscriptionEventData,
-  LocationData,
-  InscriptionRevealData,
-} from '../types';
-import {
-  BRC20_DEPLOYS_COLUMNS,
-  BRC20_OPERATIONS,
   DbBrc20Activity,
   DbBrc20Balance,
-  DbBrc20BalanceTypeId,
-  DbBrc20DeployEvent,
-  DbBrc20DeployInsert,
-  DbBrc20Event,
-  DbBrc20EventOperation,
   DbBrc20Holder,
-  DbBrc20MintEvent,
   DbBrc20Token,
   DbBrc20TokenWithSupply,
-  DbBrc20TransferEvent,
+  DbBrc20Operation,
 } from './types';
-import { Brc20Deploy, Brc20Mint, Brc20Transfer, UINT64_MAX, brc20FromInscription } from './helpers';
 import { Brc20TokenOrderBy } from '../../api/schemas';
 import { objRemoveUndefinedValues } from '../helpers';
-
-/** The block at which BRC-20 activity began */
-export const BRC20_GENESIS_BLOCK = 779832;
+import { BitcoinEvent } from '@hirosystems/chainhook-client';
+import BigNumber from 'bignumber.js';
+import { Brc20BlockCache, sqlOr } from './helpers';
+import { INSERT_BATCH_SIZE } from '../pg-store';
 
 export class Brc20PgStore extends BasePgStoreModule {
-  sqlOr(partials: postgres.PendingQuery<postgres.Row[]>[] | undefined) {
-    return partials?.reduce((acc, curr) => this.sql`${acc} OR ${curr}`);
-  }
-
-  async insertOperations(args: {
-    reveals: InscriptionEventData[];
-    pointers: DbLocationPointerInsert[];
-  }): Promise<void> {
-    for (const [i, reveal] of args.reveals.entries()) {
-      const pointer = args.pointers[i];
-      if (parseInt(pointer.block_height) < BRC20_GENESIS_BLOCK) continue;
-      if ('inscription' in reveal) {
-        const brc20 = brc20FromInscription(reveal);
-        if (brc20) {
-          switch (brc20.op) {
-            case 'deploy':
-              await this.insertDeploy({ brc20, reveal, pointer });
-              break;
-            case 'mint':
-              await this.insertMint({ brc20, reveal, pointer });
-              break;
-            case 'transfer':
-              await this.insertTransfer({ brc20, reveal, pointer });
-              break;
+  async updateBrc20Operations(event: BitcoinEvent, direction: 'apply' | 'rollback'): Promise<void> {
+    await this.sqlWriteTransaction(async sql => {
+      const block_height = event.block_identifier.index.toString();
+      const cache = new Brc20BlockCache();
+      for (const tx of event.transactions) {
+        const tx_index = tx.metadata.index.toString();
+        if (tx.metadata.brc20_operation) {
+          const operation = tx.metadata.brc20_operation;
+          if ('deploy' in operation) {
+            cache.tokens.push({
+              block_height,
+              genesis_id: operation.deploy.inscription_id,
+              tx_id: tx.transaction_identifier.hash,
+              address: operation.deploy.address,
+              ticker: operation.deploy.tick,
+              max: operation.deploy.max,
+              limit: operation.deploy.lim,
+              decimals: operation.deploy.dec,
+              self_mint: operation.deploy.self_mint,
+            });
+            cache.operations.push({
+              block_height,
+              tx_index,
+              genesis_id: operation.deploy.inscription_id,
+              ticker: operation.deploy.tick,
+              address: operation.deploy.address,
+              avail_balance: '0',
+              trans_balance: '0',
+              operation: DbBrc20Operation.deploy,
+            });
+            cache.increaseOperationCount(DbBrc20Operation.deploy);
+            cache.increaseAddressOperationCount(operation.deploy.address, DbBrc20Operation.deploy);
+            cache.increaseTokenTxCount(operation.deploy.tick);
+            logger.info(
+              `Brc20PgStore ${direction} deploy ${operation.deploy.tick} by ${operation.deploy.address} at height ${block_height}`
+            );
+          } else if ('mint' in operation) {
+            cache.operations.push({
+              block_height,
+              tx_index,
+              genesis_id: operation.mint.inscription_id,
+              ticker: operation.mint.tick,
+              address: operation.mint.address,
+              avail_balance: operation.mint.amt,
+              trans_balance: '0',
+              operation: DbBrc20Operation.mint,
+            });
+            const amt = BigNumber(operation.mint.amt);
+            cache.increaseTokenMintedSupply(operation.mint.tick, amt);
+            cache.increaseTokenTxCount(operation.mint.tick);
+            cache.increaseOperationCount(DbBrc20Operation.mint);
+            cache.increaseAddressOperationCount(operation.mint.address, DbBrc20Operation.mint);
+            cache.updateAddressBalance(
+              operation.mint.tick,
+              operation.mint.address,
+              amt,
+              BigNumber(0),
+              amt
+            );
+            logger.info(
+              `Brc20PgStore ${direction} mint ${operation.mint.tick} ${operation.mint.amt} by ${operation.mint.address} at height ${block_height}`
+            );
+          } else if ('transfer' in operation) {
+            cache.operations.push({
+              block_height,
+              tx_index,
+              genesis_id: operation.transfer.inscription_id,
+              ticker: operation.transfer.tick,
+              address: operation.transfer.address,
+              avail_balance: BigNumber(operation.transfer.amt).negated().toString(),
+              trans_balance: operation.transfer.amt,
+              operation: DbBrc20Operation.transfer,
+            });
+            const amt = BigNumber(operation.transfer.amt);
+            cache.increaseOperationCount(DbBrc20Operation.transfer);
+            cache.increaseTokenTxCount(operation.transfer.tick);
+            cache.increaseAddressOperationCount(
+              operation.transfer.address,
+              DbBrc20Operation.transfer
+            );
+            cache.updateAddressBalance(
+              operation.transfer.tick,
+              operation.transfer.address,
+              amt.negated(),
+              amt,
+              BigNumber(0)
+            );
+            logger.info(
+              `Brc20PgStore ${direction} transfer ${operation.transfer.tick} ${operation.transfer.amt} by ${operation.transfer.address} at height ${block_height}`
+            );
+          } else if ('transfer_send' in operation) {
+            cache.operations.push({
+              block_height,
+              tx_index,
+              genesis_id: operation.transfer_send.inscription_id,
+              ticker: operation.transfer_send.tick,
+              address: operation.transfer_send.sender_address,
+              avail_balance: '0',
+              trans_balance: BigNumber(operation.transfer_send.amt).negated().toString(),
+              operation: DbBrc20Operation.transferSend,
+            });
+            cache.transferReceivers.set(
+              operation.transfer_send.inscription_id,
+              operation.transfer_send.receiver_address
+            );
+            cache.operations.push({
+              block_height,
+              tx_index,
+              genesis_id: operation.transfer_send.inscription_id,
+              ticker: operation.transfer_send.tick,
+              address: operation.transfer_send.receiver_address,
+              avail_balance: operation.transfer_send.amt,
+              trans_balance: '0',
+              operation: DbBrc20Operation.transferReceive,
+            });
+            const amt = BigNumber(operation.transfer_send.amt);
+            cache.increaseOperationCount(DbBrc20Operation.transferSend);
+            cache.increaseTokenTxCount(operation.transfer_send.tick);
+            cache.increaseAddressOperationCount(
+              operation.transfer_send.sender_address,
+              DbBrc20Operation.transferSend
+            );
+            if (
+              operation.transfer_send.sender_address != operation.transfer_send.receiver_address
+            ) {
+              cache.increaseAddressOperationCount(
+                operation.transfer_send.receiver_address,
+                DbBrc20Operation.transferSend
+              );
+            }
+            cache.updateAddressBalance(
+              operation.transfer_send.tick,
+              operation.transfer_send.sender_address,
+              BigNumber('0'),
+              amt.negated(),
+              amt.negated()
+            );
+            cache.updateAddressBalance(
+              operation.transfer_send.tick,
+              operation.transfer_send.receiver_address,
+              amt,
+              BigNumber(0),
+              amt
+            );
+            logger.info(
+              `Brc20PgStore ${direction} transfer_send ${operation.transfer_send.tick} ${operation.transfer_send.amt} from ${operation.transfer_send.sender_address} to ${operation.transfer_send.receiver_address} at height ${block_height}`
+            );
           }
         }
-      } else {
-        await this.applyTransfer({ reveal, pointer });
       }
-    }
-  }
-
-  async applyTransfer(args: {
-    reveal: InscriptionEventData;
-    pointer: DbLocationPointerInsert;
-  }): Promise<void> {
-    await this.sqlWriteTransaction(async sql => {
-      // Get the sender address for this transfer. We need to get this in a separate query to know
-      // if we should alter the write query to accomodate a "return to sender" scenario.
-      const fromAddressRes = await sql<{ from_address: string }[]>`
-        SELECT from_address FROM brc20_transfers WHERE inscription_id = ${args.pointer.inscription_id}
-      `;
-      if (fromAddressRes.count === 0) return;
-      const fromAddress = fromAddressRes[0].from_address;
-      // Is this transfer sent as fee or from the same sender? If so, we'll return the balance.
-      // Is it burnt? Mark as empty owner.
-      const returnToSender =
-        args.reveal.location.transfer_type == DbLocationTransferType.spentInFees ||
-        fromAddress == args.pointer.address;
-      const toAddress = returnToSender
-        ? fromAddress
-        : args.reveal.location.transfer_type == DbLocationTransferType.burnt
-        ? ''
-        : args.pointer.address;
-      // Check if we have a valid transfer inscription emitted by this address that hasn't been sent
-      // to another address before. Use `LIMIT 3` as a quick way of checking if we have just inserted
-      // the first transfer for this inscription (genesis + transfer).
-      const sendRes = await sql`
-        WITH transfer_data AS (
-          SELECT t.id, t.amount, t.brc20_deploy_id, t.from_address, ROW_NUMBER() OVER()
-          FROM locations AS l
-          INNER JOIN brc20_transfers AS t ON t.inscription_id = l.inscription_id
-          WHERE l.inscription_id = ${args.pointer.inscription_id}
-            AND (
-              l.block_height < ${args.pointer.block_height}
-              OR (l.block_height = ${args.pointer.block_height}
-                AND l.tx_index <= ${args.pointer.tx_index})
-            )
-          LIMIT 3
-        ),
-        validated_transfer AS (
-          SELECT * FROM transfer_data
-          WHERE NOT EXISTS(SELECT id FROM transfer_data WHERE row_number = 3)
-          LIMIT 1
-        ),
-        updated_transfer AS (
-          UPDATE brc20_transfers
-          SET to_address = ${toAddress}
-          WHERE id = (SELECT id FROM validated_transfer)
-        ),
-        balance_insert_from AS (
-          INSERT INTO brc20_balances (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type) (
-            SELECT ${args.pointer.inscription_id}, ${args.pointer.location_id}, brc20_deploy_id,
-              from_address, 0, -1 * amount, ${DbBrc20BalanceTypeId.transferFrom}
-            FROM validated_transfer
-          )
-          ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
-        ),
-        balance_insert_to AS (
-          INSERT INTO brc20_balances (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type) (
-            SELECT ${args.pointer.inscription_id}, ${args.pointer.location_id}, brc20_deploy_id,
-              ${toAddress}, amount, 0, ${DbBrc20BalanceTypeId.transferTo}
-            FROM validated_transfer
-          )
-          ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
-        ),
-        ${
-          returnToSender
-            ? sql`
-                total_balance_revert AS (
-                  UPDATE brc20_total_balances SET
-                    avail_balance = avail_balance + (SELECT amount FROM validated_transfer),
-                    trans_balance = trans_balance - (SELECT amount FROM validated_transfer)
-                  WHERE brc20_deploy_id = (SELECT brc20_deploy_id FROM validated_transfer)
-                    AND address = (SELECT from_address FROM validated_transfer)
-                ),
-                address_event_type_count_increase AS (
-                  INSERT INTO brc20_counts_by_address_event_type (address, transfer_send)
-                  (SELECT from_address, 1 FROM validated_transfer)
-                  ON CONFLICT (address) DO UPDATE SET transfer_send = brc20_counts_by_address_event_type.transfer_send + EXCLUDED.transfer_send
-                )
-              `
-            : sql`
-                total_balance_insert_from AS (
-                  UPDATE brc20_total_balances SET
-                    trans_balance = trans_balance - (SELECT amount FROM validated_transfer),
-                    total_balance = total_balance - (SELECT amount FROM validated_transfer)
-                  WHERE brc20_deploy_id = (SELECT brc20_deploy_id FROM validated_transfer)
-                    AND address = (SELECT from_address FROM validated_transfer)
-                ),
-                total_balance_insert_to AS (
-                  INSERT INTO brc20_total_balances (brc20_deploy_id, address, avail_balance, trans_balance, total_balance) (
-                    SELECT brc20_deploy_id, ${toAddress}, amount, 0, amount
-                    FROM validated_transfer
-                  )
-                  ON CONFLICT ON CONSTRAINT brc20_total_balances_unique DO UPDATE SET
-                    avail_balance = brc20_total_balances.avail_balance + EXCLUDED.avail_balance,
-                    total_balance = brc20_total_balances.total_balance + EXCLUDED.total_balance
-                ),
-                address_event_type_count_increase_from AS (
-                  INSERT INTO brc20_counts_by_address_event_type (address, transfer_send)
-                  (SELECT from_address, 1 FROM validated_transfer)
-                  ON CONFLICT (address) DO UPDATE SET transfer_send = brc20_counts_by_address_event_type.transfer_send + EXCLUDED.transfer_send
-                ),
-                address_event_type_count_increase_to AS (
-                  INSERT INTO brc20_counts_by_address_event_type (address, transfer_send)
-                  (SELECT ${toAddress}, 1 FROM validated_transfer)
-                  ON CONFLICT (address) DO UPDATE SET transfer_send = brc20_counts_by_address_event_type.transfer_send + EXCLUDED.transfer_send
-                )
-              `
-        }, deploy_update AS (
-          UPDATE brc20_deploys
-          SET tx_count = tx_count + 1
-          WHERE id = (SELECT brc20_deploy_id FROM validated_transfer)
-        ),
-        event_type_count_increase AS (
-          INSERT INTO brc20_counts_by_event_type (event_type, count)
-          (SELECT 'transfer_send', COALESCE(COUNT(*), 0) FROM validated_transfer)
-          ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + EXCLUDED.count
-        )
-        INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id, address, from_address) (
-          SELECT 'transfer_send', ${args.pointer.inscription_id}, ${args.pointer.location_id},
-            brc20_deploy_id, id, ${toAddress}, from_address
-          FROM validated_transfer
-        )
-      `;
-      if (sendRes.count)
-        logger.info(
-          `Brc20PgStore send transfer to ${toAddress} at block ${args.pointer.block_height}`
-        );
+      if (direction === 'apply') await this.applyOperations(sql, cache);
+      else await this.rollBackOperations(sql, cache);
     });
   }
 
-  private async insertDeploy(deploy: {
-    brc20: Brc20Deploy;
-    reveal: InscriptionRevealData;
-    pointer: DbLocationPointerInsert;
-  }): Promise<void> {
-    if (deploy.reveal.location.transfer_type != DbLocationTransferType.transferred) return;
-    const insert: DbBrc20DeployInsert = {
-      inscription_id: deploy.pointer.inscription_id,
-      block_height: deploy.pointer.block_height,
-      tx_id: deploy.reveal.location.tx_id,
-      address: deploy.pointer.address as string,
-      ticker: deploy.brc20.tick,
-      max: deploy.brc20.max === '0' ? UINT64_MAX.toString() : deploy.brc20.max,
-      limit: deploy.brc20.lim ?? null,
-      decimals: deploy.brc20.dec ?? '18',
-      tx_count: 1,
-      self_mint: deploy.brc20.self_mint === 'true',
-    };
-    const deployRes = await this.sql`
-      WITH deploy_insert AS (
-        INSERT INTO brc20_deploys ${this.sql(insert)}
-        ON CONFLICT (LOWER(ticker)) DO NOTHING
-        RETURNING id
-      ),
-      event_type_count_increase AS (
-        INSERT INTO brc20_counts_by_event_type (event_type, count)
-        (SELECT 'deploy', COALESCE(COUNT(*), 0) FROM deploy_insert)
-        ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + EXCLUDED.count
-      ),
-      address_event_type_count_increase AS (
-        INSERT INTO brc20_counts_by_address_event_type (address, deploy)
-        (SELECT ${deploy.pointer.address}, COALESCE(COUNT(*), 0) FROM deploy_insert)
-        ON CONFLICT (address) DO UPDATE SET deploy = brc20_counts_by_address_event_type.deploy + EXCLUDED.deploy
-      ),
-      token_count_increase AS (
-        INSERT INTO brc20_counts_by_tokens (token_type, count)
-        (SELECT 'token', COALESCE(COUNT(*), 0) FROM deploy_insert)
-        ON CONFLICT (token_type) DO UPDATE SET count = brc20_counts_by_tokens.count + EXCLUDED.count
-      )
-      INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, deploy_id, address) (
-        SELECT 'deploy', ${deploy.pointer.inscription_id}, ${deploy.pointer.location_id}, id, id,
-          ${deploy.pointer.address}
-        FROM deploy_insert
-      )
-    `;
-    if (deployRes.count)
-      logger.info(
-        `Brc20PgStore deploy ${deploy.brc20.tick} by ${deploy.pointer.address} at block ${deploy.pointer.block_height}`
-      );
-  }
-
-  private async insertMint(mint: {
-    brc20: Brc20Mint;
-    reveal: InscriptionRevealData;
-    pointer: DbLocationPointerInsert;
-  }): Promise<void> {
-    if (mint.reveal.location.transfer_type != DbLocationTransferType.transferred) return;
-    // Check the following conditions:
-    // * Is the mint amount within the allowed token limits?
-    // * Is this a self_mint with the correct parent inscription?
-    // * Is the number of decimals correct?
-    // * Does the mint amount exceed remaining supply?
-    const mintRes = await this.sql`
-      WITH mint_data AS (
-        SELECT d.id, d.decimals, d."limit", d.max, d.minted_supply, d.self_mint, i.genesis_id
-        FROM brc20_deploys d
-        INNER JOIN inscriptions i ON i.id = d.inscription_id
-        WHERE d.ticker_lower = LOWER(${mint.brc20.tick}) AND d.minted_supply < d.max
-      ),
-      validated_mint AS (
-        SELECT
-          id AS brc20_deploy_id,
-          LEAST(${mint.brc20.amt}::numeric, max - minted_supply) AS real_mint_amount
-        FROM mint_data
-        WHERE ("limit" IS NULL OR ${mint.brc20.amt}::numeric <= "limit")
-          AND (SCALE(${mint.brc20.amt}::numeric) <= decimals)
-          AND (
-            self_mint = FALSE OR
-            (self_mint = TRUE AND genesis_id = ${mint.reveal.inscription.parent})
-          )
-      ),
-      mint_insert AS (
-        INSERT INTO brc20_mints (inscription_id, brc20_deploy_id, block_height, tx_id, address, amount) (
-          SELECT ${mint.pointer.inscription_id}, brc20_deploy_id, ${mint.pointer.block_height},
-            ${mint.reveal.location.tx_id}, ${mint.pointer.address}, ${mint.brc20.amt}::numeric
-          FROM validated_mint
-        )
-        ON CONFLICT (inscription_id) DO NOTHING
-        RETURNING id, brc20_deploy_id
-      ),
-      deploy_update AS (
-        UPDATE brc20_deploys
-        SET
-          minted_supply = minted_supply + (SELECT real_mint_amount FROM validated_mint),
-          tx_count = tx_count + 1
-        WHERE id = (SELECT brc20_deploy_id FROM validated_mint)
-      ),
-      balance_insert AS (
-        INSERT INTO brc20_balances (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type) (
-          SELECT ${mint.pointer.inscription_id}, ${mint.pointer.location_id}, brc20_deploy_id,
-            ${mint.pointer.address}, real_mint_amount, 0, ${DbBrc20BalanceTypeId.mint}
-          FROM validated_mint
-        )
-        ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
-      ),
-      total_balance_insert AS (
-        INSERT INTO brc20_total_balances (brc20_deploy_id, address, avail_balance, trans_balance, total_balance) (
-          SELECT brc20_deploy_id, ${mint.pointer.address}, real_mint_amount, 0, real_mint_amount
-          FROM validated_mint
-        )
-        ON CONFLICT ON CONSTRAINT brc20_total_balances_unique DO UPDATE SET
-          avail_balance = brc20_total_balances.avail_balance + EXCLUDED.avail_balance,
-          total_balance = brc20_total_balances.total_balance + EXCLUDED.total_balance
-      ),
-      event_type_count_increase AS (
-        INSERT INTO brc20_counts_by_event_type (event_type, count)
-        (SELECT 'mint', COALESCE(COUNT(*), 0) FROM validated_mint)
-        ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + EXCLUDED.count
-      ),
-      address_event_type_count_increase AS (
-        INSERT INTO brc20_counts_by_address_event_type (address, mint)
-        (SELECT ${mint.pointer.address}, COALESCE(COUNT(*), 0) FROM validated_mint)
-        ON CONFLICT (address) DO UPDATE SET mint = brc20_counts_by_address_event_type.mint + EXCLUDED.mint
-      )
-      INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, mint_id, address) (
-        SELECT 'mint', ${mint.pointer.inscription_id}, ${mint.pointer.location_id}, brc20_deploy_id, id, ${mint.pointer.address}
-        FROM mint_insert
-      )
-    `;
-    if (mintRes.count)
-      logger.info(
-        `Brc20PgStore mint ${mint.brc20.tick} (${mint.brc20.amt}) by ${mint.pointer.address} at block ${mint.pointer.block_height}`
-      );
-  }
-
-  private async insertTransfer(transfer: {
-    brc20: Brc20Transfer;
-    reveal: InscriptionEventData;
-    pointer: DbLocationPointerInsert;
-  }): Promise<void> {
-    if (transfer.reveal.location.transfer_type != DbLocationTransferType.transferred) return;
-    const transferRes = await this.sql`
-      WITH validated_transfer AS (
-        SELECT brc20_deploy_id, avail_balance
-        FROM brc20_total_balances
-        WHERE brc20_deploy_id = (SELECT id FROM brc20_deploys WHERE ticker_lower = LOWER(${transfer.brc20.tick}))
-          AND address = ${transfer.pointer.address}
-          AND avail_balance >= ${transfer.brc20.amt}::numeric
-      ),
-      transfer_insert AS (
-        INSERT INTO brc20_transfers (inscription_id, brc20_deploy_id, block_height, tx_id, from_address, to_address, amount) (
-          SELECT ${transfer.pointer.inscription_id}, brc20_deploy_id,
-            ${transfer.pointer.block_height}, ${transfer.reveal.location.tx_id},
-            ${transfer.pointer.address}, NULL, ${transfer.brc20.amt}::numeric
-          FROM validated_transfer
-        )
-        ON CONFLICT (inscription_id) DO NOTHING
-        RETURNING id, brc20_deploy_id
-      ),
-      balance_insert AS (
-        INSERT INTO brc20_balances (inscription_id, location_id, brc20_deploy_id, address, avail_balance, trans_balance, type) (
-          SELECT ${transfer.pointer.inscription_id}, ${transfer.pointer.location_id}, brc20_deploy_id,
-            ${transfer.pointer.address}, -1 * ${transfer.brc20.amt}::numeric,
-            ${transfer.brc20.amt}::numeric, ${DbBrc20BalanceTypeId.transferIntent}
-          FROM validated_transfer
-        )
-        ON CONFLICT ON CONSTRAINT brc20_balances_inscription_id_type_unique DO NOTHING
-      ),
-      total_balance_update AS (
-        UPDATE brc20_total_balances SET
-          avail_balance = avail_balance - ${transfer.brc20.amt}::numeric,
-          trans_balance = trans_balance + ${transfer.brc20.amt}::numeric
-        WHERE brc20_deploy_id = (SELECT brc20_deploy_id FROM validated_transfer)
-          AND address = ${transfer.pointer.address}
-      ),
-      deploy_update AS (
-        UPDATE brc20_deploys
-        SET tx_count = tx_count + 1
-        WHERE id = (SELECT brc20_deploy_id FROM validated_transfer)
-      ),
-      event_type_count_increase AS (
-        INSERT INTO brc20_counts_by_event_type (event_type, count)
-        (SELECT 'transfer', COALESCE(COUNT(*), 0) FROM validated_transfer)
-        ON CONFLICT (event_type) DO UPDATE SET count = brc20_counts_by_event_type.count + EXCLUDED.count
-      ),
-      address_event_type_count_increase AS (
-        INSERT INTO brc20_counts_by_address_event_type (address, transfer)
-        (SELECT ${transfer.pointer.address}, COALESCE(COUNT(*), 0) FROM validated_transfer)
-        ON CONFLICT (address) DO UPDATE SET transfer = brc20_counts_by_address_event_type.transfer + EXCLUDED.transfer
-      )
-      INSERT INTO brc20_events (operation, inscription_id, genesis_location_id, brc20_deploy_id, transfer_id, address) (
-        SELECT 'transfer', ${transfer.pointer.inscription_id}, ${transfer.pointer.location_id}, brc20_deploy_id, id, ${transfer.pointer.address}
-        FROM transfer_insert
-      )
-    `;
-    if (transferRes.count)
-      logger.info(
-        `Brc20PgStore transfer ${transfer.brc20.tick} (${transfer.brc20.amt}) by ${transfer.pointer.address} at block ${transfer.pointer.block_height}`
-      );
-  }
-
-  async rollBackInscription(args: { inscription: InscriptionData }): Promise<void> {
-    const events = await this.sql<DbBrc20Event[]>`
-      SELECT e.* FROM brc20_events AS e
-      INNER JOIN inscriptions AS i ON i.id = e.inscription_id
-      WHERE i.genesis_id = ${args.inscription.genesis_id}
-    `;
-    if (events.count === 0) return;
-    // Traverse all activities generated by this inscription and roll back actions that are NOT
-    // otherwise handled by the ON DELETE CASCADE postgres constraint.
-    for (const event of events) {
-      switch (event.operation) {
-        case 'deploy':
-          await this.rollBackDeploy(event);
-          break;
-        case 'mint':
-          await this.rollBackMint(event);
-          break;
-        case 'transfer':
-          await this.rollBackTransfer(event);
-          break;
-      }
-    }
-  }
-
-  async rollBackLocation(args: { location: LocationData }): Promise<void> {
-    const events = await this.sql<DbBrc20Event[]>`
-      SELECT e.* FROM brc20_events AS e
-      INNER JOIN locations AS l ON l.id = e.genesis_location_id
-      WHERE output = ${args.location.output} AND "offset" = ${args.location.offset}
-    `;
-    if (events.count === 0) return;
-    // Traverse all activities generated by this location and roll back actions that are NOT
-    // otherwise handled by the ON DELETE CASCADE postgres constraint.
-    for (const event of events) {
-      switch (event.operation) {
-        case 'transfer_send':
-          await this.rollBackTransferSend(event);
-          break;
-      }
-    }
-  }
-
-  private async rollBackDeploy(activity: DbBrc20DeployEvent): Promise<void> {
-    // - tx_count is lost successfully, since the deploy will be deleted.
-    await this.sql`
-      WITH decrease_event_count AS (
-        UPDATE brc20_counts_by_event_type
-        SET count = count - 1
-        WHERE event_type = 'deploy'
-      ),
-      decrease_address_event_count AS (
-        UPDATE brc20_counts_by_address_event_type
-        SET deploy = deploy - 1
-        WHERE address = (SELECT address FROM locations WHERE id = ${activity.genesis_location_id})
-      )
-      UPDATE brc20_counts_by_tokens
-      SET count = count - 1
-    `;
-  }
-
-  private async rollBackMint(activity: DbBrc20MintEvent): Promise<void> {
-    // Get real minted amount and substract from places.
-    await this.sql`
-      WITH minted_balance AS (
-        SELECT address, avail_balance
-        FROM brc20_balances
-        WHERE inscription_id = ${activity.inscription_id} AND type = ${DbBrc20BalanceTypeId.mint}
-      ),
-      deploy_update AS (
-        UPDATE brc20_deploys
-        SET
-          minted_supply = minted_supply - (SELECT avail_balance FROM minted_balance),
-          tx_count = tx_count - 1
-        WHERE id = ${activity.brc20_deploy_id}
-      ),
-      decrease_event_count AS (
-        UPDATE brc20_counts_by_event_type
-        SET count = count - 1
-        WHERE event_type = 'mint'
-      ),
-      decrease_address_event_count AS (
-        UPDATE brc20_counts_by_address_event_type
-        SET mint = mint - 1
-        WHERE address = (SELECT address FROM locations WHERE id = ${activity.genesis_location_id})
-      )
-      UPDATE brc20_total_balances SET
-        avail_balance = avail_balance - (SELECT avail_balance FROM minted_balance),
-        total_balance = total_balance - (SELECT avail_balance FROM minted_balance)
-      WHERE address = (SELECT address FROM minted_balance)
-        AND brc20_deploy_id = ${activity.brc20_deploy_id}
-    `;
-  }
-
-  private async rollBackTransfer(activity: DbBrc20TransferEvent): Promise<void> {
-    // Subtract tx_count per transfer event (transfer and transfer_send are
-    // separate events, so they will both be counted).
-    await this.sql`
-      WITH transferrable_balance AS (
-        SELECT address, trans_balance
-        FROM brc20_balances
-        WHERE inscription_id = ${activity.inscription_id} AND type = ${DbBrc20BalanceTypeId.transferIntent}
-      ),
-      decrease_event_count AS (
-        UPDATE brc20_counts_by_event_type
-        SET count = count - 1
-        WHERE event_type = 'transfer'
-      ),
-      decrease_address_event_count AS (
-        UPDATE brc20_counts_by_address_event_type
-        SET transfer = transfer - 1
-        WHERE address = (SELECT address FROM locations WHERE id = ${activity.genesis_location_id})
-      ),
-      decrease_tx_count AS (
-        UPDATE brc20_deploys
-        SET tx_count = tx_count - 1
-        WHERE id = ${activity.brc20_deploy_id}
-      )
-      UPDATE brc20_total_balances SET
-        trans_balance = trans_balance - (SELECT trans_balance FROM transferrable_balance),
-        avail_balance = avail_balance + (SELECT trans_balance FROM transferrable_balance)
-      WHERE address = (SELECT address FROM transferrable_balance)
-        AND brc20_deploy_id = ${activity.brc20_deploy_id}
-    `;
-  }
-
-  private async rollBackTransferSend(activity: DbBrc20TransferEvent): Promise<void> {
-    await this.sqlWriteTransaction(async sql => {
-      // Get the sender/receiver address for this transfer. We need to get this in a separate query
-      // to know if we should alter the write query to accomodate a "return to sender" scenario.
-      const addressRes = await sql<{ returned_to_sender: boolean }[]>`
-        SELECT from_address = to_address AS returned_to_sender
-        FROM brc20_transfers
-        WHERE inscription_id = ${activity.inscription_id}
-      `;
-      if (addressRes.count === 0) return;
-      const returnedToSender = addressRes[0].returned_to_sender;
+  private async applyOperations(sql: PgSqlClient, cache: Brc20BlockCache) {
+    if (cache.tokens.length)
+      for await (const batch of batchIterate(cache.tokens, INSERT_BATCH_SIZE))
+        await sql`
+          INSERT INTO brc20_tokens ${sql(batch)}
+          ON CONFLICT (ticker) DO NOTHING
+        `;
+    if (cache.operations.length)
+      for await (const batch of batchIterate(cache.operations, INSERT_BATCH_SIZE))
+        await sql`
+          INSERT INTO brc20_operations ${sql(batch)}
+          ON CONFLICT (genesis_id, operation) DO NOTHING
+        `;
+    for (const [inscription_id, to_address] of cache.transferReceivers)
       await sql`
-        WITH sent_balance_from AS (
-          SELECT address, trans_balance
-          FROM brc20_balances
-          WHERE inscription_id = ${activity.inscription_id}
-          AND type = ${DbBrc20BalanceTypeId.transferFrom}
-        ),
-        sent_balance_to AS (
-          SELECT address, avail_balance
-          FROM brc20_balances
-          WHERE inscription_id = ${activity.inscription_id}
-          AND type = ${DbBrc20BalanceTypeId.transferTo}
-        ),
-        decrease_event_count AS (
-          UPDATE brc20_counts_by_event_type
-          SET count = count - 1
-          WHERE event_type = 'transfer_send'
-        ),
-        ${
-          returnedToSender
-            ? sql`
-                decrease_address_event_count AS (
-                  UPDATE brc20_counts_by_address_event_type
-                  SET transfer_send = transfer_send - 1
-                  WHERE address = (SELECT address FROM sent_balance_from)
-                ),
-                undo_sent_balance AS (
-                  UPDATE brc20_total_balances SET
-                    trans_balance = trans_balance - (SELECT trans_balance FROM sent_balance_from),
-                    avail_balance = avail_balance + (SELECT trans_balance FROM sent_balance_from)
-                  WHERE address = (SELECT address FROM sent_balance_from)
-                    AND brc20_deploy_id = ${activity.brc20_deploy_id}
-                )
-              `
-            : sql`
-                decrease_address_event_count_from AS (
-                  UPDATE brc20_counts_by_address_event_type
-                  SET transfer_send = transfer_send - 1
-                  WHERE address = (SELECT address FROM sent_balance_from)
-                ),
-                decrease_address_event_count_to AS (
-                  UPDATE brc20_counts_by_address_event_type
-                  SET transfer_send = transfer_send - 1
-                  WHERE address = (SELECT address FROM sent_balance_to)
-                ),
-                undo_sent_balance_from AS (
-                  UPDATE brc20_total_balances SET
-                    trans_balance = trans_balance - (SELECT trans_balance FROM sent_balance_from),
-                    total_balance = total_balance - (SELECT trans_balance FROM sent_balance_from)
-                  WHERE address = (SELECT address FROM sent_balance_from)
-                    AND brc20_deploy_id = ${activity.brc20_deploy_id}
-                ),
-                undo_sent_balance_to AS (
-                  UPDATE brc20_total_balances SET
-                    avail_balance = avail_balance - (SELECT avail_balance FROM sent_balance_to),
-                    total_balance = total_balance - (SELECT avail_balance FROM sent_balance_to)
-                  WHERE address = (SELECT address FROM sent_balance_to)
-                    AND brc20_deploy_id = ${activity.brc20_deploy_id}
-                )
-              `
-        }
-        UPDATE brc20_deploys
-        SET tx_count = tx_count - 1
-        WHERE id = ${activity.brc20_deploy_id}
+        UPDATE brc20_operations SET to_address = ${to_address}
+        WHERE genesis_id = ${inscription_id} AND operation = 'transfer_send'
       `;
-    });
+    for (const [ticker, amount] of cache.tokenMintSupplies)
+      await sql`
+        UPDATE brc20_tokens SET minted_supply = minted_supply + ${amount.toString()}
+        WHERE ticker = ${ticker}
+      `;
+    for (const [ticker, num] of cache.tokenTxCounts)
+      await sql`
+        UPDATE brc20_tokens SET tx_count = tx_count + ${num} WHERE ticker = ${ticker}
+      `;
+    if (cache.operationCounts.size) {
+      const entries = [];
+      for (const [operation, count] of cache.operationCounts) entries.push({ operation, count });
+      for await (const batch of batchIterate(entries, INSERT_BATCH_SIZE))
+        await sql`
+          INSERT INTO brc20_counts_by_operation ${sql(batch)}
+          ON CONFLICT (operation) DO UPDATE SET
+            count = brc20_counts_by_operation.count + EXCLUDED.count
+        `;
+    }
+    if (cache.addressOperationCounts.size) {
+      const entries = [];
+      for (const [address, map] of cache.addressOperationCounts)
+        for (const [operation, count] of map) entries.push({ address, operation, count });
+      for await (const batch of batchIterate(entries, INSERT_BATCH_SIZE))
+        await sql`
+          INSERT INTO brc20_counts_by_address_operation ${sql(batch)}
+          ON CONFLICT (address, operation) DO UPDATE SET
+            count = brc20_counts_by_address_operation.count + EXCLUDED.count
+        `;
+    }
+    if (cache.totalBalanceChanges.size) {
+      const entries = [];
+      for (const [address, map] of cache.totalBalanceChanges)
+        for (const [ticker, values] of map)
+          entries.push({
+            ticker,
+            address,
+            avail_balance: values.avail.toString(),
+            trans_balance: values.trans.toString(),
+            total_balance: values.total.toString(),
+          });
+      for await (const batch of batchIterate(entries, INSERT_BATCH_SIZE))
+        await sql`
+          INSERT INTO brc20_total_balances ${sql(batch)}
+          ON CONFLICT (ticker, address) DO UPDATE SET
+            avail_balance = brc20_total_balances.avail_balance + EXCLUDED.avail_balance,
+            trans_balance = brc20_total_balances.trans_balance + EXCLUDED.trans_balance,
+            total_balance = brc20_total_balances.total_balance + EXCLUDED.total_balance
+        `;
+    }
+  }
+
+  private async rollBackOperations(sql: PgSqlClient, cache: Brc20BlockCache) {
+    if (cache.totalBalanceChanges.size) {
+      for (const [address, map] of cache.totalBalanceChanges)
+        for (const [ticker, values] of map)
+          await sql`
+            UPDATE brc20_total_balances SET
+              avail_balance = avail_balance - ${values.avail},
+              trans_balance = trans_balance - ${values.trans},
+              total_balance = total_balance - ${values.total}
+            WHERE address = ${address} AND ticker = ${ticker}
+          `;
+    }
+    if (cache.addressOperationCounts.size) {
+      for (const [address, map] of cache.addressOperationCounts)
+        for (const [operation, count] of map)
+          await sql`
+            UPDATE brc20_counts_by_address_operation
+            SET count = count - ${count}
+            WHERE address = ${address} AND operation = ${operation}
+          `;
+    }
+    if (cache.operationCounts.size) {
+      for (const [operation, count] of cache.operationCounts)
+        await sql`
+          UPDATE brc20_counts_by_operation
+          SET count = count - ${count}
+          WHERE operation = ${operation}
+        `;
+    }
+    for (const [ticker, amount] of cache.tokenMintSupplies)
+      await sql`
+        UPDATE brc20_tokens SET minted_supply = minted_supply - ${amount.toString()}
+        WHERE ticker = ${ticker}
+      `;
+    for (const [ticker, num] of cache.tokenTxCounts)
+      await sql`
+        UPDATE brc20_tokens SET tx_count = tx_count - ${num} WHERE ticker = ${ticker}
+      `;
+    for (const [inscription_id, _] of cache.transferReceivers)
+      await sql`
+        UPDATE brc20_operations SET to_address = NULL
+        WHERE genesis_id = ${inscription_id} AND operation = 'transfer_send'
+      `;
+    if (cache.operations.length) {
+      const blockHeights = cache.operations.map(o => o.block_height);
+      for await (const batch of batchIterate(blockHeights, INSERT_BATCH_SIZE))
+        await sql`
+          DELETE FROM brc20_operations WHERE block_height IN ${sql(batch)}
+        `;
+    }
+    if (cache.tokens.length) {
+      const tickers = cache.tokens.map(t => t.ticker);
+      for await (const batch of batchIterate(tickers, INSERT_BATCH_SIZE))
+        await sql`
+          DELETE FROM brc20_tokens WHERE ticker IN ${sql(batch)}
+        `;
+    }
   }
 
   async getTokens(
     args: { ticker?: string[]; order_by?: Brc20TokenOrderBy } & DbInscriptionIndexPaging
   ): Promise<DbPaginatedResult<DbBrc20Token>> {
-    const tickerPrefixCondition = this.sqlOr(
-      args.ticker?.map(t => this.sql`d.ticker_lower LIKE LOWER(${t}) || '%'`)
+    const tickerPrefixCondition = sqlOr(
+      this.sql,
+      args.ticker?.map(t => this.sql`d.ticker LIKE LOWER(${t}) || '%'`)
     );
     const orderBy =
       args.order_by === Brc20TokenOrderBy.tx_count
-        ? this.sql`tx_count DESC` // tx_count
+        ? this.sql`d.tx_count DESC` // tx_count
         : this.sql`l.block_height DESC, l.tx_index DESC`; // default: `index`
     const results = await this.sql<(DbBrc20Token & { total: number })[]>`
       ${
         args.ticker === undefined
           ? this.sql`WITH global_count AS (
-              SELECT COALESCE(count, 0) AS count FROM brc20_counts_by_tokens
+              SELECT COALESCE(count, 0) AS count
+              FROM brc20_counts_by_operation
+              WHERE operation = 'deploy'
             )`
           : this.sql``
       }
       SELECT
-        ${this.sql(BRC20_DEPLOYS_COLUMNS.map(c => `d.${c}`))},
-        i.number, i.genesis_id, l.timestamp,
+        d.*, i.number, l.timestamp,
         ${
           args.ticker ? this.sql`COUNT(*) OVER()` : this.sql`(SELECT count FROM global_count)`
         } AS total
-      FROM brc20_deploys AS d
-      INNER JOIN inscriptions AS i ON i.id = d.inscription_id
-      INNER JOIN genesis_locations AS g ON g.inscription_id = d.inscription_id
+      FROM brc20_tokens AS d
+      INNER JOIN inscriptions AS i ON i.genesis_id = d.genesis_id
+      INNER JOIN genesis_locations AS g ON g.inscription_id = i.id
       INNER JOIN locations AS l ON l.id = g.location_id
       ${tickerPrefixCondition ? this.sql`WHERE ${tickerPrefixCondition}` : this.sql``}
       ORDER BY ${orderBy}
@@ -648,15 +348,12 @@ export class Brc20PgStore extends BasePgStoreModule {
       block_height?: number;
     } & DbInscriptionIndexPaging
   ): Promise<DbPaginatedResult<DbBrc20Balance>> {
-    const ticker = this.sqlOr(
-      args.ticker?.map(t => this.sql`d.ticker_lower LIKE LOWER(${t}) || '%'`)
+    const ticker = sqlOr(
+      this.sql,
+      args.ticker?.map(t => this.sql`d.ticker LIKE LOWER(${t}) || '%'`)
     );
     // Change selection table depending if we're filtering by block height or not.
     const results = await this.sql<(DbBrc20Balance & { total: number })[]>`
-      WITH token_ids AS (
-        SELECT id FROM brc20_deploys AS d
-        WHERE ${ticker ? ticker : this.sql`FALSE`}
-      )
       ${
         args.block_height
           ? this.sql`
@@ -666,24 +363,23 @@ export class Brc20PgStore extends BasePgStoreModule {
                 SUM(b.trans_balance) AS trans_balance,
                 SUM(b.avail_balance + b.trans_balance) AS total_balance,
                 COUNT(*) OVER() as total
-              FROM brc20_balances AS b
-              INNER JOIN brc20_deploys AS d ON d.id = b.brc20_deploy_id
-              INNER JOIN locations AS l ON l.id = b.location_id
+              FROM brc20_operations AS b
+              INNER JOIN brc20_tokens AS d ON d.ticker = b.ticker
               WHERE
                 b.address = ${args.address}
-                AND l.block_height <= ${args.block_height}
-                ${ticker ? this.sql`AND brc20_deploy_id IN (SELECT id FROM token_ids)` : this.sql``}
+                AND b.block_height <= ${args.block_height}
+                ${ticker ? this.sql`AND ${ticker}` : this.sql``}
               GROUP BY d.ticker, d.decimals
               HAVING SUM(b.avail_balance + b.trans_balance) > 0
             `
           : this.sql`
               SELECT d.ticker, d.decimals, b.avail_balance, b.trans_balance, b.total_balance, COUNT(*) OVER() as total
               FROM brc20_total_balances AS b
-              INNER JOIN brc20_deploys AS d ON d.id = b.brc20_deploy_id
+              INNER JOIN brc20_tokens AS d ON d.ticker = b.ticker
               WHERE
                 b.total_balance > 0
                 AND b.address = ${args.address}
-                ${ticker ? this.sql`AND brc20_deploy_id IN (SELECT id FROM token_ids)` : this.sql``}
+                ${ticker ? this.sql`AND ${ticker}` : this.sql``}
             `
       }
       LIMIT ${args.limit}
@@ -699,18 +395,17 @@ export class Brc20PgStore extends BasePgStoreModule {
     const result = await this.sql<DbBrc20TokenWithSupply[]>`
       WITH token AS (
         SELECT
-          ${this.sql(BRC20_DEPLOYS_COLUMNS.map(c => `d.${c}`))},
-          i.number, i.genesis_id, l.timestamp
-        FROM brc20_deploys AS d
-        INNER JOIN inscriptions AS i ON i.id = d.inscription_id
-        INNER JOIN genesis_locations AS g ON g.inscription_id = d.inscription_id
+          d.*, i.number, i.genesis_id, l.timestamp
+        FROM brc20_tokens AS d
+        INNER JOIN inscriptions AS i ON i.genesis_id = d.genesis_id
+        INNER JOIN genesis_locations AS g ON g.inscription_id = i.id
         INNER JOIN locations AS l ON l.id = g.location_id
-        WHERE ticker_lower = LOWER(${args.ticker})
+        WHERE d.ticker = LOWER(${args.ticker})
       ),
       holders AS (
         SELECT COUNT(*) AS count
         FROM brc20_total_balances
-        WHERE brc20_deploy_id = (SELECT id FROM token) AND total_balance > 0
+        WHERE ticker = (SELECT ticker FROM token) AND total_balance > 0
       )
       SELECT *, COALESCE((SELECT count FROM holders), 0) AS holders
       FROM token
@@ -725,15 +420,16 @@ export class Brc20PgStore extends BasePgStoreModule {
   ): Promise<DbPaginatedResult<DbBrc20Holder> | undefined> {
     return await this.sqlTransaction(async sql => {
       const token = await sql<{ id: string; decimals: number }[]>`
-        SELECT id, decimals FROM brc20_deploys WHERE ticker_lower = LOWER(${args.ticker})
+        SELECT ticker FROM brc20_tokens WHERE ticker = LOWER(${args.ticker})
       `;
       if (token.count === 0) return;
       const results = await sql<(DbBrc20Holder & { total: number })[]>`
         SELECT
-          address, ${token[0].decimals}::int AS decimals, total_balance, COUNT(*) OVER() AS total
-        FROM brc20_total_balances
-        WHERE brc20_deploy_id = ${token[0].id}
-        ORDER BY total_balance DESC
+          b.address, d.decimals, b.total_balance, COUNT(*) OVER() AS total
+        FROM brc20_total_balances AS b
+        INNER JOIN brc20_tokens AS d USING (ticker)
+        WHERE b.ticker = LOWER(${args.ticker})
+        ORDER BY b.total_balance DESC
         LIMIT ${args.limit}
         OFFSET ${args.offset}
       `;
@@ -767,84 +463,71 @@ export class Brc20PgStore extends BasePgStoreModule {
         filters.address != undefined &&
         filters.address != '');
     const needsTickerCount = filterLength === 1 && filters.ticker && filters.ticker.length > 0;
-
-    // Which operations do we need if we're filtering by address?
-    const sanitizedOperations: DbBrc20EventOperation[] = [];
-    for (const i of filters.operation ?? BRC20_OPERATIONS)
-      if (BRC20_OPERATIONS.includes(i)) sanitizedOperations?.push(i as DbBrc20EventOperation);
-
-    // Which tickers are we filtering for?
-    const tickerConditions = this.sqlOr(
-      filters.ticker?.map(t => this.sql`ticker_lower = LOWER(${t})`)
-    );
+    const operationsFilter = filters.operation?.filter(i => i !== 'transfer_receive');
 
     return this.sqlTransaction(async sql => {
-      // The postgres query planner has trouble selecting an optimal plan when the WHERE condition
-      // checks any column from the `brc20_deploys` table. If the user is filtering by ticker, we
-      // should get the token IDs first and use those to filter directly in the `brc20_events`
-      // table.
-      const tickerIds = tickerConditions
-        ? (await sql<{ id: string }[]>`SELECT id FROM brc20_deploys WHERE ${tickerConditions}`).map(
-            i => i.id
-          )
-        : undefined;
       const results = await sql<(DbBrc20Activity & { total: number })[]>`
         WITH event_count AS (${
-          // Select count from the correct count cache table.
           needsGlobalEventCount
             ? sql`
                 SELECT COALESCE(SUM(count), 0) AS count
-                FROM brc20_counts_by_event_type
-                ${filters.operation ? sql`WHERE event_type IN ${sql(filters.operation)}` : sql``}
+                FROM brc20_counts_by_operation
+                ${operationsFilter ? sql`WHERE operation IN ${sql(operationsFilter)}` : sql``}
               `
             : needsAddressEventCount
             ? sql`
-                SELECT COALESCE(${sql.unsafe(sanitizedOperations.join('+'))}, 0) AS count
-                FROM brc20_counts_by_address_event_type
+                SELECT SUM(count) AS count
+                FROM brc20_counts_by_address_operation
                 WHERE address = ${filters.address}
+                ${operationsFilter ? sql`AND operation IN ${sql(operationsFilter)}` : sql``}
               `
-            : needsTickerCount && tickerIds !== undefined
+            : needsTickerCount && filters.ticker !== undefined
             ? sql`
                 SELECT COALESCE(SUM(tx_count), 0) AS count
-                FROM brc20_deploys AS d
-                WHERE id IN ${sql(tickerIds)}
+                FROM brc20_tokens AS d
+                WHERE ticker IN ${sql(filters.ticker)}
               `
             : sql`SELECT NULL AS count`
         })
         SELECT
           e.operation,
+          e.avail_balance,
+          e.trans_balance,
+          e.address,
+          e.to_address,
           d.ticker,
           l.genesis_id AS inscription_id,
           l.block_height,
           l.block_hash,
           l.tx_id,
-          l.address,
           l.timestamp,
           l.output,
           l.offset,
           d.max AS deploy_max,
           d.limit AS deploy_limit,
           d.decimals AS deploy_decimals,
-          (SELECT amount FROM brc20_mints WHERE id = e.mint_id) AS mint_amount,
-          (SELECT amount || ';' || from_address || ';' || COALESCE(to_address, '') FROM brc20_transfers WHERE id = e.transfer_id) AS transfer_data,
           ${
             needsGlobalEventCount || needsAddressEventCount || needsTickerCount
               ? sql`(SELECT count FROM event_count)`
               : sql`COUNT(*) OVER()`
           } AS total
-        FROM brc20_events AS e
-        INNER JOIN brc20_deploys AS d ON e.brc20_deploy_id = d.id
-        INNER JOIN locations AS l ON e.genesis_location_id = l.id
+        FROM brc20_operations AS e
+        INNER JOIN brc20_tokens AS d ON d.ticker = e.ticker
+        INNER JOIN locations AS l ON e.genesis_id = l.genesis_id AND e.block_height = l.block_height AND e.tx_index = l.tx_index
         WHERE TRUE
-          ${filters.operation ? sql`AND e.operation IN ${sql(filters.operation)}` : sql``}
-          ${tickerIds ? sql`AND e.brc20_deploy_id IN ${sql(tickerIds)}` : sql``}
+          ${
+            operationsFilter
+              ? sql`AND e.operation IN ${sql(operationsFilter)}`
+              : sql`AND e.operation <> 'transfer_receive'`
+          }
+          ${filters.ticker ? sql`AND e.ticker IN ${sql(filters.ticker)}` : sql``}
           ${filters.block_height ? sql`AND l.block_height = ${filters.block_height}` : sql``}
           ${
             filters.address
-              ? sql`AND (e.address = ${filters.address} OR e.from_address = ${filters.address})`
+              ? sql`AND (e.address = ${filters.address} OR e.to_address = ${filters.address})`
               : sql``
           }
-        ORDER BY l.block_height DESC, l.tx_index DESC
+        ORDER BY e.block_height DESC, e.tx_index DESC
         LIMIT ${page.limit}
         OFFSET ${page.offset}
       `;
