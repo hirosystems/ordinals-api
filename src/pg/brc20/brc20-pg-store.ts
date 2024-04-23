@@ -422,15 +422,16 @@ export class Brc20PgStore extends BasePgStoreModule {
   ): Promise<DbPaginatedResult<DbBrc20Holder> | undefined> {
     return await this.sqlTransaction(async sql => {
       const token = await sql<{ id: string; decimals: number }[]>`
-        SELECT id, decimals FROM brc20_deploys WHERE ticker_lower = LOWER(${args.ticker})
+        SELECT ticker FROM brc20_tokens WHERE ticker = LOWER(${args.ticker})
       `;
       if (token.count === 0) return;
       const results = await sql<(DbBrc20Holder & { total: number })[]>`
         SELECT
-          address, ${token[0].decimals}::int AS decimals, total_balance, COUNT(*) OVER() AS total
-        FROM brc20_total_balances
-        WHERE brc20_deploy_id = ${token[0].id}
-        ORDER BY total_balance DESC
+          b.address, d.decimals, b.total_balance, COUNT(*) OVER() AS total
+        FROM brc20_total_balances AS b
+        INNER JOIN brc20_tokens AS d USING (ticker)
+        WHERE b.ticker = LOWER(${args.ticker})
+        ORDER BY b.total_balance DESC
         LIMIT ${args.limit}
         OFFSET ${args.offset}
       `;
