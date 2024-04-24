@@ -69,7 +69,6 @@ export class BlockCache {
   locations: DbLocationInsert[] = [];
   currentLocations = new Map<string, DbCurrentLocationInsert>();
   recursiveRefs = new Map<string, string[]>();
-  blockTransferIndex = 0;
 
   mimeTypeCounts = new Map<string, number>();
   satRarityCounts = new Map<string, number>();
@@ -126,7 +125,6 @@ export class BlockCache {
       block_height,
       tx_id,
       tx_index: reveal.tx_index,
-      block_transfer_index: null,
       ordinal_number,
       address: reveal.inscriber_address,
       output: `${satpoint.tx_id}:${satpoint.vout}`,
@@ -162,7 +160,6 @@ export class BlockCache {
       block_height,
       tx_id,
       tx_index: transfer.tx_index,
-      block_transfer_index: this.blockTransferIndex++,
       ordinal_number,
       address,
       output: `${satpoint.tx_id}:${satpoint.vout}`,

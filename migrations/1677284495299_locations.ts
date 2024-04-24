@@ -45,9 +45,6 @@ export function up(pgm: MigrationBuilder): void {
     value: {
       type: 'numeric',
     },
-    block_transfer_index: {
-      type: 'int',
-    },
     transfer_type: {
       type: 'transfer_type',
       notNull: true,
@@ -67,15 +64,8 @@ export function up(pgm: MigrationBuilder): void {
   );
   pgm.createIndex('locations', ['output', 'offset']);
   pgm.createIndex('locations', ['timestamp']);
-  // pgm.createIndex('locations', [
-  //   'ordinal_number',
-  //   { name: 'block_height', sort: 'DESC' },
-  //   { name: 'tx_index', sort: 'DESC' },
-  // ]);
   pgm.createIndex('locations', [
     { name: 'block_height', sort: 'DESC' },
     { name: 'tx_index', sort: 'DESC' },
   ]);
-  pgm.addIndex('locations', ['block_height', { name: 'block_transfer_index', sort: 'DESC' }]);
-  pgm.addIndex('locations', ['block_hash', { name: 'block_transfer_index', sort: 'DESC' }]);
 }

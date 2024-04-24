@@ -186,6 +186,33 @@ export class PgStore extends BasePgStore {
           INSERT INTO locations ${sql(batch)}
           ON CONFLICT (ordinal_number, block_height, tx_index) DO NOTHING
         `;
+      // Insert block transfers.
+      let block_transfer_index = 0;
+      const transferEntries = [];
+      for (const transfer of cache.locations) {
+        const transferred = await sql<{ genesis_id: string; number: string }[]>`
+          SELECT genesis_id, number FROM inscriptions
+          WHERE ordinal_number = ${transfer.ordinal_number} AND (
+            block_height < ${transfer.block_height}
+            OR (block_height = ${transfer.block_height} AND tx_index < ${transfer.tx_index})
+          )
+        `;
+        for (const inscription of transferred)
+          transferEntries.push({
+            genesis_id: inscription.genesis_id,
+            number: inscription.number,
+            ordinal_number: transfer.ordinal_number,
+            block_height: transfer.block_height,
+            block_hash: transfer.block_hash,
+            tx_index: transfer.tx_index,
+            block_transfer_index: block_transfer_index++,
+          });
+      }
+      for await (const batch of batchIterate(transferEntries, INSERT_BATCH_SIZE))
+        await sql`
+          INSERT INTO inscription_transfers ${sql(batch)}
+          ON CONFLICT (block_height, block_transfer_index) DO NOTHING
+        `;
     }
     if (cache.recursiveRefs.size)
       for (const [genesis_id, refs] of cache.recursiveRefs) {
@@ -533,8 +560,10 @@ export class PgStore extends BasePgStore {
           ? this.sql`i.number = ${args.number}`
           : this.sql`i.genesis_id = ${args.genesis_id}`
       }
-        AND l.block_height >= i.block_height
-        AND l.tx_index >= i.tx_index
+        AND (
+          (l.block_height > i.block_height)
+          OR (l.block_height = i.block_height AND l.tx_index >= i.tx_index)
+        )
       ORDER BY l.block_height DESC, l.tx_index DESC
       LIMIT ${args.limit}
       OFFSET ${args.offset}
@@ -549,54 +578,66 @@ export class PgStore extends BasePgStore {
     args: { block_height?: number; block_hash?: string } & DbInscriptionIndexPaging
   ): Promise<DbPaginatedResult<DbInscriptionLocationChange>> {
     const results = await this.sql<({ total: number } & DbInscriptionLocationChange)[]>`
-      WITH max_transfer_index AS (
-        SELECT MAX(block_transfer_index) FROM locations WHERE ${
+      WITH transfer_total AS (
+        SELECT MAX(block_transfer_index) AS total FROM inscription_transfers WHERE ${
           'block_height' in args
             ? this.sql`block_height = ${args.block_height}`
             : this.sql`block_hash = ${args.block_hash}`
-        } AND block_transfer_index IS NOT NULL
+        }
       ),
-      transfers AS (
+      transfer_data AS (
         SELECT
-          i.id AS inscription_id,
-          i.genesis_id,
-          i.number,
-          l.id AS to_id,
+          t.number,
+          t.genesis_id,
+          t.ordinal_number,
+          t.block_height,
+          t.tx_index,
+          t.block_transfer_index,
           (
-            SELECT id
-            FROM locations AS ll
-            WHERE
-              ll.inscription_id = i.id
-              AND (
-                ll.block_height < l.block_height OR
-                (ll.block_height = l.block_height AND ll.tx_index < l.tx_index)
-              )
-            ORDER BY ll.block_height DESC
+            SELECT l.block_height || ',' || l.tx_index
+            FROM locations AS l
+            WHERE l.ordinal_number = t.ordinal_number AND (
+              l.block_height < t.block_height OR
+              (l.block_height = t.block_height AND l.tx_index < t.tx_index)
+            )
+            ORDER BY l.block_height DESC, l.tx_index DESC
             LIMIT 1
-          ) AS from_id
-        FROM locations AS l
-        INNER JOIN inscriptions AS i ON l.inscription_id = i.id
+          ) AS from_data
+        FROM inscription_transfers AS t
         WHERE
           ${
             'block_height' in args
-              ? this.sql`l.block_height = ${args.block_height}`
-              : this.sql`l.block_hash = ${args.block_hash}`
+              ? this.sql`t.block_height = ${args.block_height}`
+              : this.sql`t.block_hash = ${args.block_hash}`
           }
-          AND l.block_transfer_index IS NOT NULL
-          AND l.block_transfer_index <= ((SELECT max FROM max_transfer_index) - ${args.offset}::int)
-          AND l.block_transfer_index >
-            ((SELECT max FROM max_transfer_index) - (${args.offset}::int + ${args.limit}::int))
+          AND t.block_transfer_index <= ((SELECT total FROM transfer_total) - ${args.offset}::int)
+          AND t.block_transfer_index >
+            ((SELECT total FROM transfer_total) - (${args.offset}::int + ${args.limit}::int))
       )
       SELECT
-        t.genesis_id,
-        t.number,
-        (SELECT max FROM max_transfer_index) + 1 AS total,
-        ${this.sql.unsafe(LOCATIONS_COLUMNS.map(c => `lf.${c} AS from_${c}`).join(','))},
-        ${this.sql.unsafe(LOCATIONS_COLUMNS.map(c => `lt.${c} AS to_${c}`).join(','))}
-      FROM transfers AS t
-      INNER JOIN locations AS lf ON t.from_id = lf.id
-      INNER JOIN locations AS lt ON t.to_id = lt.id
-      ORDER BY lt.block_transfer_index DESC
+        td.genesis_id,
+        td.number,
+        lf.block_height AS from_block_height,
+        lf.block_hash AS from_block_hash,
+        lf.tx_id AS from_tx_id,
+        lf.address AS from_address,
+        lf.output AS from_output,
+        lf.offset AS from_offset,
+        lf.value AS from_value,
+        lf.timestamp AS from_timestamp,
+        lt.block_height AS to_block_height,
+        lt.block_hash AS to_block_hash,
+        lt.tx_id AS to_tx_id,
+        lt.address AS to_address,
+        lt.output AS to_output,
+        lt.offset AS to_offset,
+        lt.value AS to_value,
+        lt.timestamp AS to_timestamp,
+        (SELECT total FROM transfer_total) + 1 AS total
+      FROM transfer_data AS td
+      INNER JOIN locations AS lf ON td.ordinal_number = lf.ordinal_number AND lf.block_height = SPLIT_PART(td.from_data, ',', 1)::int AND lf.tx_index = SPLIT_PART(td.from_data, ',', 2)::int
+      INNER JOIN locations AS lt ON td.ordinal_number = lt.ordinal_number AND td.block_height = lt.block_height AND td.tx_index = lt.tx_index
+      ORDER BY td.block_height DESC, td.block_transfer_index DESC
     `;
     return {
       total: results[0]?.total ?? 0,

@@ -40,7 +40,6 @@ export type DbLocationInsert = {
   prev_output: string | null;
   prev_offset: PgNumeric | null;
   value: PgNumeric | null;
-  block_transfer_index: number | null;
   transfer_type: DbLocationTransferType;
   timestamp: number;
 };
@@ -190,8 +189,6 @@ export type DbLocationPointerInsert = {
 export type DbInscriptionLocationChange = {
   genesis_id: string;
   number: string;
-  from_id: string;
-  from_inscription_id: string;
   from_block_height: string;
   from_block_hash: string;
   from_tx_id: string;
@@ -200,10 +197,6 @@ export type DbInscriptionLocationChange = {
   from_offset: string | null;
   from_value: string | null;
   from_timestamp: Date;
-  from_genesis: boolean;
-  from_current: boolean;
-  to_id: string;
-  to_inscription_id: string;
   to_block_height: string;
   to_block_hash: string;
   to_tx_id: string;
@@ -212,22 +205,21 @@ export type DbInscriptionLocationChange = {
   to_offset: string | null;
   to_value: string | null;
   to_timestamp: Date;
-  to_genesis: boolean;
-  to_current: boolean;
 };
 
 export const LOCATIONS_COLUMNS = [
-  'id',
-  'inscription_id',
-  'genesis_id',
+  'ordinal_number',
   'block_height',
-  'block_hash',
-  'tx_id',
   'tx_index',
+  'tx_id',
+  'block_hash',
   'address',
   'output',
   'offset',
+  'prev_output',
+  'prev_offset',
   'value',
+  'transfer_type',
   'timestamp',
 ];
 
