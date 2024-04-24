@@ -137,7 +137,7 @@ export class BlockCache {
       timestamp,
       transfer_type: getTransferType(reveal),
     });
-    this.currentLocations.set(ordinal_number, {
+    this.updateCurrentLocation(ordinal_number, {
       ordinal_number,
       block_height,
       tx_index: reveal.tx_index,
@@ -178,12 +178,24 @@ export class BlockCache {
         DbLocationTransferType.transferred,
     });
     this.increaseAddressCount(address ?? '');
-    this.currentLocations.set(ordinal_number, {
+    this.updateCurrentLocation(ordinal_number, {
       ordinal_number,
       block_height,
       tx_index: transfer.tx_index,
       address,
     });
+  }
+
+  private updateCurrentLocation(ordinal_number: string, data: DbCurrentLocationInsert) {
+    const current = this.currentLocations.get(ordinal_number);
+    if (
+      current === undefined ||
+      (current &&
+        (data.block_height > current.block_height ||
+          (data.block_height === current.block_height && data.tx_index > current.tx_index)))
+    ) {
+      this.currentLocations.set(ordinal_number, data);
+    }
   }
 
   private increaseMimeTypeCount(mime_type: string) {
