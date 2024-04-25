@@ -376,7 +376,7 @@ export class PgStore extends BasePgStore {
   async getInscriptionsPerBlockETag(): Promise<string> {
     const result = await this.sql<{ block_hash: string; inscription_count: string }[]>`
       SELECT block_hash, inscription_count
-      FROM inscriptions_per_block
+      FROM counts_by_block
       ORDER BY block_height DESC
       LIMIT 1
     `;

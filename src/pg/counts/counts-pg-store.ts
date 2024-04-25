@@ -148,7 +148,7 @@ export class CountsPgStore extends BasePgStoreModule {
     if (from === undefined && to === undefined) return 0;
     const result = await this.sql<{ count: number }[]>`
       SELECT COALESCE(SUM(inscription_count), 0) AS count
-      FROM inscriptions_per_block
+      FROM counts_by_block
       WHERE TRUE
         ${from !== undefined ? this.sql`AND block_height >= ${from}` : this.sql``}
         ${to !== undefined ? this.sql`AND block_height <= ${to}` : this.sql``}
@@ -160,7 +160,7 @@ export class CountsPgStore extends BasePgStoreModule {
     if (!hash) return 0;
     const result = await this.sql<{ count: number }[]>`
       SELECT COALESCE(SUM(inscription_count), 0) AS count
-      FROM inscriptions_per_block
+      FROM counts_by_block
       WHERE block_hash = ${hash}
     `;
     return result[0].count;
