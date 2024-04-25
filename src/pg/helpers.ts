@@ -64,6 +64,10 @@ export function removeNullBytes(input: string): string {
 }
 
 export class BlockCache {
+  blockHeight: number;
+  blockHash: string;
+  timestamp: number;
+
   satoshis: DbSatoshiInsert[] = [];
   inscriptions: DbInscriptionInsert[] = [];
   locations: DbLocationInsert[] = [];
@@ -75,15 +79,14 @@ export class BlockCache {
   inscriptionTypeCounts = new Map<string, number>();
   genesisAddressCounts = new Map<string, number>();
   recursiveCounts = new Map<boolean, number>();
-  addressCounts = new Map<string, number>();
 
-  reveal(
-    reveal: BitcoinInscriptionRevealed,
-    block_height: number,
-    block_hash: string,
-    tx_id: string,
-    timestamp: number
-  ) {
+  constructor(blockHeight: number, blockHash: string, timestamp: number) {
+    this.blockHeight = blockHeight;
+    this.blockHash = blockHash;
+    this.timestamp = timestamp;
+  }
+
+  reveal(reveal: BitcoinInscriptionRevealed, tx_id: string) {
     const satoshi = new OrdinalSatoshi(reveal.ordinal_number);
     const ordinal_number = reveal.ordinal_number.toString();
     this.satoshis.push({
@@ -100,7 +103,7 @@ export class BlockCache {
       mime_type,
       content_type,
       content_length: reveal.content_length,
-      block_height,
+      block_height: this.blockHeight,
       tx_index: reveal.tx_index,
       address: reveal.inscriber_address,
       number: reveal.inscription_number.jubilee,
@@ -112,17 +115,16 @@ export class BlockCache {
       recursive: recursive_refs.length > 0,
       metadata: reveal.metadata ? JSON.stringify(reveal.metadata) : null,
       parent: reveal.parent,
-      timestamp,
+      timestamp: this.timestamp,
     });
     this.increaseMimeTypeCount(mime_type);
     this.increaseSatRarityCount(satoshi.rarity);
     this.increaseInscriptionTypeCount(reveal.inscription_number.classic < 0 ? 'cursed' : 'blessed');
     this.increaseGenesisAddressCount(reveal.inscriber_address);
-    this.increaseAddressCount(reveal.inscriber_address ?? '');
     this.increaseRecursiveCount(recursive_refs.length > 0);
     this.locations.push({
-      block_hash,
-      block_height,
+      block_hash: this.blockHash,
+      block_height: this.blockHeight,
       tx_id,
       tx_index: reveal.tx_index,
       ordinal_number,
@@ -132,32 +134,26 @@ export class BlockCache {
       prev_output: null,
       prev_offset: null,
       value: reveal.inscription_output_value.toString(),
-      timestamp,
+      timestamp: this.timestamp,
       transfer_type: getTransferType(reveal),
     });
     this.updateCurrentLocation(ordinal_number, {
       ordinal_number,
-      block_height,
+      block_height: this.blockHeight,
       tx_index: reveal.tx_index,
       address: reveal.inscriber_address,
     });
     if (recursive_refs.length > 0) this.recursiveRefs.set(reveal.inscription_id, recursive_refs);
   }
 
-  transfer(
-    transfer: BitcoinInscriptionTransferred,
-    block_height: number,
-    block_hash: string,
-    tx_id: string,
-    timestamp: number
-  ) {
+  transfer(transfer: BitcoinInscriptionTransferred, tx_id: string) {
     const satpoint = parseSatPoint(transfer.satpoint_post_transfer);
     const prevSatpoint = parseSatPoint(transfer.satpoint_pre_transfer);
     const ordinal_number = transfer.ordinal_number.toString();
     const address = transfer.destination.value ?? null;
     this.locations.push({
-      block_hash,
-      block_height,
+      block_hash: this.blockHash,
+      block_height: this.blockHeight,
       tx_id,
       tx_index: transfer.tx_index,
       ordinal_number,
@@ -169,15 +165,14 @@ export class BlockCache {
       value: transfer.post_transfer_output_value
         ? transfer.post_transfer_output_value.toString()
         : null,
-      timestamp,
+      timestamp: this.timestamp,
       transfer_type:
         toEnumValue(DbLocationTransferType, transfer.destination.type) ??
         DbLocationTransferType.transferred,
     });
-    this.increaseAddressCount(address ?? '');
     this.updateCurrentLocation(ordinal_number, {
       ordinal_number,
-      block_height,
+      block_height: this.blockHeight,
       tx_index: transfer.tx_index,
       address,
     });
@@ -238,15 +233,6 @@ export class BlockCache {
       this.recursiveCounts.set(recursive, 1);
     } else {
       this.recursiveCounts.set(recursive, current + 1);
-    }
-  }
-
-  private increaseAddressCount(address: string) {
-    const current = this.addressCounts.get(address);
-    if (current == undefined) {
-      this.addressCounts.set(address, 1);
-    } else {
-      this.addressCounts.set(address, current + 1);
     }
   }
 }

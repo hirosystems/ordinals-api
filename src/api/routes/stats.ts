@@ -31,7 +31,7 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
       },
     },
     async (request, reply) => {
-      const inscriptions = await fastify.db.getInscriptionCountPerBlock({
+      const inscriptions = await fastify.db.counts.getInscriptionCountPerBlock({
         ...blockParam(request.query.from_block_height, 'from_block'),
         ...blockParam(request.query.to_block_height, 'to_block'),
       });

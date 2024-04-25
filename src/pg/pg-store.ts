@@ -20,15 +20,12 @@ import { BlockCache } from './helpers';
 import {
   DbFullyLocatedInscriptionResult,
   DbInscriptionContent,
-  DbInscriptionCountPerBlock,
-  DbInscriptionCountPerBlockFilters,
   DbInscriptionIndexFilters,
   DbInscriptionIndexOrder,
   DbInscriptionIndexPaging,
   DbInscriptionLocationChange,
   DbLocation,
   DbPaginatedResult,
-  LOCATIONS_COLUMNS,
 } from './types';
 import { normalizedHexString } from '../api/util/helpers';
 
@@ -117,29 +114,24 @@ export class PgStore extends BasePgStore {
     direction: 'apply' | 'rollback',
     streamed: boolean = false
   ) {
-    const block_height = event.block_identifier.index;
-    const block_hash = normalizedHexString(event.block_identifier.hash);
-    const timestamp = event.timestamp;
-    const cache = new BlockCache();
+    const cache = new BlockCache(
+      event.block_identifier.index,
+      normalizedHexString(event.block_identifier.hash),
+      event.timestamp
+    );
     for (const tx of event.transactions) {
       const tx_id = normalizedHexString(tx.transaction_identifier.hash);
       for (const operation of tx.metadata.ordinal_operations) {
         if (operation.inscription_revealed) {
-          cache.reveal(operation.inscription_revealed, block_height, block_hash, tx_id, timestamp);
+          cache.reveal(operation.inscription_revealed, tx_id);
           logger.info(
-            `PgStore ${direction} reveal inscription #${operation.inscription_revealed.inscription_number.jubilee} (${operation.inscription_revealed.inscription_id}) at block ${block_height}`
+            `PgStore ${direction} reveal inscription #${operation.inscription_revealed.inscription_number.jubilee} (${operation.inscription_revealed.inscription_id}) at block ${cache.blockHeight}`
           );
         }
         if (operation.inscription_transferred) {
-          cache.transfer(
-            operation.inscription_transferred,
-            block_height,
-            block_hash,
-            tx_id,
-            timestamp
-          );
+          cache.transfer(operation.inscription_transferred, tx_id);
           logger.info(
-            `PgStore ${direction} transfer satoshi ${operation.inscription_transferred.ordinal_number} to ${operation.inscription_transferred.destination.value} at block ${block_height}`
+            `PgStore ${direction} transfer satoshi ${operation.inscription_transferred.ordinal_number} to ${operation.inscription_transferred.destination.value} at block ${cache.blockHeight}`
           );
         }
       }
@@ -223,6 +215,21 @@ export class PgStore extends BasePgStore {
         `;
       }
     if (cache.currentLocations.size) {
+      // Deduct counts from previous owners
+      const moved_sats = [...cache.currentLocations.keys()];
+      await sql`
+        WITH prev_owners AS (
+          SELECT address, COUNT(*) AS prev_count
+          FROM current_locations
+          WHERE ordinal_number IN ${sql(moved_sats)}
+          GROUP BY address
+        )
+        UPDATE counts_by_address AS c
+        SET count = c.count - (
+          SELECT prev_count FROM prev_owners AS p WHERE p.address = c.address
+        )
+      `;
+      // Insert locations
       const entries = [...cache.currentLocations.values()];
       for await (const batch of batchIterate(entries, INSERT_BATCH_SIZE))
         await sql`
@@ -236,17 +243,28 @@ export class PgStore extends BasePgStore {
             (EXCLUDED.block_height = current_locations.block_height AND
               EXCLUDED.tx_index > current_locations.tx_index)
         `;
+      // Update owner counts
+      await sql`
+        WITH new_owners AS (
+          SELECT address, COUNT(*) AS new_count
+          FROM current_locations
+          WHERE ordinal_number IN ${sql(moved_sats)}
+          GROUP BY address
+        )
+        UPDATE counts_by_address AS c
+        SET count = c.count + (
+          SELECT new_count FROM new_owners AS p WHERE p.address = c.address
+        )
+      `;
       if (streamed)
-        for await (const batch of batchIterate(
-          [...cache.currentLocations.keys()],
-          INSERT_BATCH_SIZE
-        ))
+        for await (const batch of batchIterate(moved_sats, INSERT_BATCH_SIZE))
           await sql`
             UPDATE inscriptions
             SET updated_at = NOW()
             WHERE ordinal_number IN ${sql(batch)}
           `;
     }
+    await this.counts.applyCounts(sql, cache);
   }
 
   private async rollBackInscriptions(
@@ -254,6 +272,7 @@ export class PgStore extends BasePgStore {
     cache: BlockCache,
     streamed: boolean
   ): Promise<void> {
+    await this.counts.rollBackCounts(sql, cache);
     if (cache.currentLocations.size)
       // We will recalculate in a bit.
       for (const ordinal_number of cache.currentLocations.keys())
@@ -643,70 +662,5 @@ export class PgStore extends BasePgStore {
       total: results[0]?.total ?? 0,
       results: results ?? [],
     };
-  }
-
-  async getInscriptionCountPerBlock(
-    filters: DbInscriptionCountPerBlockFilters
-  ): Promise<DbInscriptionCountPerBlock[]> {
-    const fromCondition = filters.from_block_height
-      ? this.sql`block_height >= ${filters.from_block_height}`
-      : this.sql``;
-
-    const toCondition = filters.to_block_height
-      ? this.sql`block_height <= ${filters.to_block_height}`
-      : this.sql``;
-
-    const where =
-      filters.from_block_height && filters.to_block_height
-        ? this.sql`WHERE ${fromCondition} AND ${toCondition}`
-        : this.sql`WHERE ${fromCondition}${toCondition}`;
-
-    return await this.sql<DbInscriptionCountPerBlock[]>`
-      SELECT *
-      FROM inscriptions_per_block
-      ${filters.from_block_height || filters.to_block_height ? where : this.sql``}
-      ORDER BY block_height DESC
-      LIMIT 5000
-    `; // roughly 35 days of blocks, assuming 10 minute block times on a full database
-  }
-
-  private async normalizeInscriptionCount(args: { min_block_height: number }): Promise<void> {
-    await this.sqlWriteTransaction(async sql => {
-      await sql`
-        DELETE FROM inscriptions_per_block
-        WHERE block_height >= ${args.min_block_height}
-      `;
-      // - gets highest total for a block < min_block_height
-      // - calculates new totals for all blocks >= min_block_height
-      // - inserts new totals
-      await sql`
-        WITH previous AS (
-          SELECT *
-          FROM inscriptions_per_block
-          WHERE block_height < ${args.min_block_height}
-          ORDER BY block_height DESC
-          LIMIT 1
-        ), updated_blocks AS (
-          SELECT
-            l.block_height,
-            MIN(l.block_hash),
-            COUNT(*) AS inscription_count,
-            COALESCE((SELECT previous.inscription_count_accum FROM previous), 0) + (SUM(COUNT(*)) OVER (ORDER BY l.block_height ASC)) AS inscription_count_accum,
-            MIN(l.timestamp)
-          FROM locations AS l
-          INNER JOIN genesis_locations AS g ON g.location_id = l.id
-          WHERE l.block_height >= ${args.min_block_height}
-          GROUP BY l.block_height
-          ORDER BY l.block_height ASC
-        )
-        INSERT INTO inscriptions_per_block
-        SELECT * FROM updated_blocks
-        ON CONFLICT (block_height) DO UPDATE SET
-          block_hash = EXCLUDED.block_hash,
-          inscription_count = EXCLUDED.inscription_count,
-          inscription_count_accum = EXCLUDED.inscription_count_accum,
-          timestamp = EXCLUDED.timestamp;
-      `;
-    });
   }
 }
