@@ -299,7 +299,7 @@ describe('/inscriptions', () => {
       expect(response2.json()).toStrictEqual(expected);
     });
 
-    test('shows inscription with null genesis address', async () => {
+    test('shows inscription with empty genesis address', async () => {
       await db.updateInscriptions(
         new TestChainhookPayloadBuilder()
           .apply()
@@ -319,7 +319,7 @@ describe('/inscriptions', () => {
             inscription_fee: 2805,
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
             inscription_output_value: 10000,
-            inscriber_address: null,
+            inscriber_address: '',
             ordinal_number: 257418248345364,
             ordinal_block_height: 51483,
             ordinal_offset: 0,
@@ -338,8 +338,8 @@ describe('/inscriptions', () => {
           .build()
       );
       const expected = {
-        address: null,
-        genesis_address: null,
+        address: '',
+        genesis_address: '',
         genesis_block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
         genesis_block_height: 775617,
         content_length: 5,

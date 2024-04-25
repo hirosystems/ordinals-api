@@ -217,18 +217,18 @@ export class PgStore extends BasePgStore {
     if (cache.currentLocations.size) {
       // Deduct counts from previous owners
       const moved_sats = [...cache.currentLocations.keys()];
-      await sql`
-        WITH prev_owners AS (
-          SELECT address, COUNT(*) AS prev_count
-          FROM current_locations
-          WHERE ordinal_number IN ${sql(moved_sats)}
-          GROUP BY address
-        )
-        UPDATE counts_by_address AS c
-        SET count = c.count - (
-          SELECT prev_count FROM prev_owners AS p WHERE p.address = c.address
-        )
+      const prevOwners = await sql<{ address: string; count: number }[]>`
+        SELECT address, COUNT(*) AS count
+        FROM current_locations
+        WHERE ordinal_number IN ${sql(moved_sats)}
+        GROUP BY address
       `;
+      for (const owner of prevOwners)
+        await sql`
+          UPDATE counts_by_address
+          SET count = count - ${owner.count}
+          WHERE address = ${owner.address}
+        `;
       // Insert locations
       const entries = [...cache.currentLocations.values()];
       for await (const batch of batchIterate(entries, INSERT_BATCH_SIZE))
@@ -246,15 +246,14 @@ export class PgStore extends BasePgStore {
       // Update owner counts
       await sql`
         WITH new_owners AS (
-          SELECT address, COUNT(*) AS new_count
+          SELECT address, COUNT(*) AS count
           FROM current_locations
           WHERE ordinal_number IN ${sql(moved_sats)}
           GROUP BY address
         )
-        UPDATE counts_by_address AS c
-        SET count = c.count + (
-          SELECT new_count FROM new_owners AS p WHERE p.address = c.address
-        )
+        INSERT INTO counts_by_address (address, count)
+        (SELECT address, count FROM new_owners)
+        ON CONFLICT (address) DO UPDATE SET count = counts_by_address.count + EXCLUDED.count
       `;
       if (streamed)
         for await (const batch of batchIterate(moved_sats, INSERT_BATCH_SIZE))
@@ -273,12 +272,25 @@ export class PgStore extends BasePgStore {
     streamed: boolean
   ): Promise<void> {
     await this.counts.rollBackCounts(sql, cache);
-    if (cache.currentLocations.size)
-      // We will recalculate in a bit.
-      for (const ordinal_number of cache.currentLocations.keys())
+    const moved_sats = [...cache.currentLocations.keys()];
+    // Delete old current owners first.
+    if (cache.currentLocations.size) {
+      const prevOwners = await sql<{ address: string; count: number }[]>`
+        SELECT address, COUNT(*) AS count
+        FROM current_locations
+        WHERE ordinal_number IN ${sql(moved_sats)}
+        GROUP BY address
+      `;
+      for (const owner of prevOwners)
         await sql`
-          DELETE FROM current_locations WHERE ordinal_number = ${ordinal_number}
+          UPDATE counts_by_address
+          SET count = count - ${owner.count}
+          WHERE address = ${owner.address}
         `;
+      await sql`
+        DELETE FROM current_locations WHERE ordinal_number IN ${sql(moved_sats)}
+      `;
+    }
     if (cache.locations.length)
       for (const location of cache.locations)
         await sql`
@@ -303,7 +315,7 @@ export class PgStore extends BasePgStore {
         `;
     // Recalculate current locations for affected inscriptions.
     if (cache.currentLocations.size) {
-      for (const ordinal_number of cache.currentLocations.keys()) {
+      for (const ordinal_number of moved_sats) {
         await sql`
           INSERT INTO current_locations (ordinal_number, block_height, tx_index, address)
           (
@@ -315,11 +327,19 @@ export class PgStore extends BasePgStore {
           )
         `;
       }
+      await sql`
+        WITH new_owners AS (
+          SELECT address, COUNT(*) AS count
+          FROM current_locations
+          WHERE ordinal_number IN ${sql(moved_sats)}
+          GROUP BY address
+        )
+        INSERT INTO counts_by_address (address, count)
+        (SELECT address, count FROM new_owners)
+        ON CONFLICT (address) DO UPDATE SET count = counts_by_address.count + EXCLUDED.count
+      `;
       if (streamed)
-        for await (const batch of batchIterate(
-          [...cache.currentLocations.keys()],
-          INSERT_BATCH_SIZE
-        ))
+        for await (const batch of batchIterate(moved_sats, INSERT_BATCH_SIZE))
           await sql`
             UPDATE inscriptions
             SET updated_at = NOW()

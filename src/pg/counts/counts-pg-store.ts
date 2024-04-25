@@ -109,14 +109,41 @@ export class CountsPgStore extends BasePgStoreModule {
         VALUES (
           ${cache.blockHeight}, ${cache.blockHash}, ${cache.inscriptions.length},
           COALESCE((SELECT inscription_count_accum FROM prev_entry), 0) + ${cache.inscriptions.length},
-          NOW()
+          TO_TIMESTAMP(${cache.timestamp})
         )
       `;
     // Address ownership count is handled in `PgStore`.
   }
 
   async rollBackCounts(sql: PgSqlClient, cache: BlockCache) {
-    //
+    if (cache.inscriptions.length)
+      await sql`DELETE FROM counts_by_block WHERE block_height = ${cache.blockHeight}`;
+    if (cache.genesisAddressCounts.size)
+      for (const [address, count] of cache.genesisAddressCounts)
+        await sql`
+          UPDATE counts_by_genesis_address SET count = count - ${count} WHERE address = ${address}
+        `;
+    if (cache.recursiveCounts.size)
+      for (const [recursive, count] of cache.recursiveCounts)
+        await sql`
+          UPDATE counts_by_recursive SET count = count - ${count} WHERE recursive = ${recursive}
+        `;
+    if (cache.inscriptionTypeCounts.size)
+      for (const [type, count] of cache.inscriptionTypeCounts)
+        await sql`
+          UPDATE counts_by_type SET count = count - ${count} WHERE type = ${type}
+        `;
+    if (cache.satRarityCounts.size)
+      for (const [sat_rarity, count] of cache.satRarityCounts)
+        await sql`
+          UPDATE counts_by_sat_rarity SET count = count - ${count} WHERE sat_rarity = ${sat_rarity}
+        `;
+    if (cache.mimeTypeCounts.size)
+      for (const [mime_type, count] of cache.mimeTypeCounts)
+        await sql`
+          UPDATE counts_by_mime_type SET count = count - ${count} WHERE mime_type = ${mime_type}
+        `;
+    // Address ownership count is handled in `PgStore`.
   }
 
   async getInscriptionCountPerBlock(

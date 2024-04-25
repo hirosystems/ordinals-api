@@ -11,6 +11,7 @@ export function up(pgm: MigrationBuilder): void {
     },
     count: {
       type: 'int',
+      notNull: true,
       default: 0,
     },
   });
