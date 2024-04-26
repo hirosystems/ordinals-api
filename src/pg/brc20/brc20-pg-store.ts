@@ -310,7 +310,7 @@ export class Brc20PgStore extends BasePgStoreModule {
     const orderBy =
       args.order_by === Brc20TokenOrderBy.tx_count
         ? this.sql`d.tx_count DESC` // tx_count
-        : this.sql`l.block_height DESC, l.tx_index DESC`; // default: `index`
+        : this.sql`i.block_height DESC, i.tx_index DESC`; // default: `index`
     const results = await this.sql<(DbBrc20Token & { total: number })[]>`
       ${
         args.ticker === undefined
@@ -322,14 +322,12 @@ export class Brc20PgStore extends BasePgStoreModule {
           : this.sql``
       }
       SELECT
-        d.*, i.number, l.timestamp,
+        d.*, i.number, i.timestamp,
         ${
           args.ticker ? this.sql`COUNT(*) OVER()` : this.sql`(SELECT count FROM global_count)`
         } AS total
       FROM brc20_tokens AS d
       INNER JOIN inscriptions AS i ON i.genesis_id = d.genesis_id
-      INNER JOIN genesis_locations AS g ON g.inscription_id = i.id
-      INNER JOIN locations AS l ON l.id = g.location_id
       ${tickerPrefixCondition ? this.sql`WHERE ${tickerPrefixCondition}` : this.sql``}
       ORDER BY ${orderBy}
       OFFSET ${args.offset}
@@ -395,11 +393,9 @@ export class Brc20PgStore extends BasePgStoreModule {
     const result = await this.sql<DbBrc20TokenWithSupply[]>`
       WITH token AS (
         SELECT
-          d.*, i.number, i.genesis_id, l.timestamp
+          d.*, i.number, i.genesis_id, i.timestamp
         FROM brc20_tokens AS d
         INNER JOIN inscriptions AS i ON i.genesis_id = d.genesis_id
-        INNER JOIN genesis_locations AS g ON g.inscription_id = i.id
-        INNER JOIN locations AS l ON l.id = g.location_id
         WHERE d.ticker = LOWER(${args.ticker})
       ),
       holders AS (
@@ -496,8 +492,8 @@ export class Brc20PgStore extends BasePgStoreModule {
           e.address,
           e.to_address,
           d.ticker,
-          l.genesis_id AS inscription_id,
-          l.block_height,
+          e.genesis_id AS inscription_id,
+          i.block_height,
           l.block_hash,
           l.tx_id,
           l.timestamp,
@@ -513,7 +509,8 @@ export class Brc20PgStore extends BasePgStoreModule {
           } AS total
         FROM brc20_operations AS e
         INNER JOIN brc20_tokens AS d ON d.ticker = e.ticker
-        INNER JOIN locations AS l ON e.genesis_id = l.genesis_id AND e.block_height = l.block_height AND e.tx_index = l.tx_index
+        INNER JOIN inscriptions AS i ON i.genesis_id = e.genesis_id
+        INNER JOIN locations AS l ON i.ordinal_number = l.ordinal_number AND e.block_height = l.block_height AND e.tx_index = l.tx_index
         WHERE TRUE
           ${
             operationsFilter
@@ -521,7 +518,7 @@ export class Brc20PgStore extends BasePgStoreModule {
               : sql`AND e.operation <> 'transfer_receive'`
           }
           ${filters.ticker ? sql`AND e.ticker IN ${sql(filters.ticker)}` : sql``}
-          ${filters.block_height ? sql`AND l.block_height = ${filters.block_height}` : sql``}
+          ${filters.block_height ? sql`AND e.block_height = ${filters.block_height}` : sql``}
           ${
             filters.address
               ? sql`AND (e.address = ${filters.address} OR e.to_address = ${filters.address})`
