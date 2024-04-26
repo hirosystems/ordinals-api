@@ -4,32 +4,26 @@ import { MigrationBuilder, ColumnDefinitions } from 'node-pg-migrate';
 export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export function up(pgm: MigrationBuilder): void {
+  pgm.createType('transfer_type', ['transferred', 'spent_in_fees', 'burnt']);
   pgm.createTable('locations', {
-    id: {
-      type: 'bigserial',
-      primaryKey: true,
-    },
-    inscription_id: {
-      type: 'bigint',
-    },
-    genesis_id: {
-      type: 'text',
+    ordinal_number: {
+      type: 'numeric',
       notNull: true,
     },
     block_height: {
       type: 'bigint',
       notNull: true,
     },
-    block_hash: {
-      type: 'text',
+    tx_index: {
+      type: 'bigint',
       notNull: true,
     },
     tx_id: {
       type: 'text',
       notNull: true,
     },
-    tx_index: {
-      type: 'bigint',
+    block_hash: {
+      type: 'text',
       notNull: true,
     },
     address: {
@@ -51,26 +45,27 @@ export function up(pgm: MigrationBuilder): void {
     value: {
       type: 'numeric',
     },
+    transfer_type: {
+      type: 'transfer_type',
+      notNull: true,
+    },
     timestamp: {
       type: 'timestamptz',
       notNull: true,
     },
   });
+  pgm.createConstraint('locations', 'locations_pkey', {
+    primaryKey: ['ordinal_number', 'block_height', 'tx_index'],
+  });
   pgm.createConstraint(
     'locations',
-    'locations_inscription_id_fk',
-    'FOREIGN KEY(inscription_id) REFERENCES inscriptions(id) ON DELETE CASCADE'
+    'locations_ordinal_number_fk',
+    'FOREIGN KEY(ordinal_number) REFERENCES satoshis(ordinal_number) ON DELETE CASCADE'
   );
-  pgm.createConstraint('locations', 'locations_output_offset_unique', 'UNIQUE(output, "offset")');
-  pgm.createIndex('locations', ['inscription_id']);
+  pgm.createIndex('locations', ['output', 'offset']);
+  pgm.createIndex('locations', ['timestamp']);
   pgm.createIndex('locations', [
-    'genesis_id',
     { name: 'block_height', sort: 'DESC' },
     { name: 'tx_index', sort: 'DESC' },
   ]);
-  pgm.createIndex('locations', ['block_height']);
-  pgm.createIndex('locations', ['block_hash']);
-  pgm.createIndex('locations', ['address']);
-  pgm.createIndex('locations', ['timestamp']);
-  pgm.createIndex('locations', ['prev_output']);
 }

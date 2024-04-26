@@ -4,13 +4,13 @@ import { MigrationBuilder, ColumnDefinitions } from 'node-pg-migrate';
 export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export function up(pgm: MigrationBuilder): void {
-  pgm.createTable('brc20_deploys', {
-    id: {
-      type: 'bigserial',
+  pgm.createTable('brc20_tokens', {
+    ticker: {
+      type: 'text',
       primaryKey: true,
     },
-    inscription_id: {
-      type: 'bigint',
+    genesis_id: {
+      type: 'string',
       notNull: true,
     },
     block_height: {
@@ -25,10 +25,6 @@ export function up(pgm: MigrationBuilder): void {
       type: 'text',
       notNull: true,
     },
-    ticker: {
-      type: 'text',
-      notNull: true,
-    },
     max: {
       type: 'numeric',
       notNull: true,
@@ -40,14 +36,24 @@ export function up(pgm: MigrationBuilder): void {
       type: 'int',
       notNull: true,
     },
+    self_mint: {
+      type: 'boolean',
+      default: 'false',
+      notNull: true,
+    },
+    minted_supply: {
+      type: 'numeric',
+      default: 0,
+    },
+    burned_supply: {
+      type: 'numeric',
+      default: 0,
+    },
+    tx_count: {
+      type: 'bigint',
+      default: 0,
+    },
   });
-  pgm.createConstraint(
-    'brc20_deploys',
-    'brc20_deploys_inscription_id_fk',
-    'FOREIGN KEY(inscription_id) REFERENCES inscriptions(id) ON DELETE CASCADE'
-  );
-  pgm.createIndex('brc20_deploys', ['inscription_id']);
-  pgm.createIndex('brc20_deploys', 'LOWER(ticker)', { unique: true });
-  pgm.createIndex('brc20_deploys', ['block_height']);
-  pgm.createIndex('brc20_deploys', ['address']);
+  pgm.createIndex('brc20_tokens', ['genesis_id']);
+  pgm.createIndex('brc20_tokens', ['block_height']);
 }

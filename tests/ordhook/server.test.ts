@@ -117,6 +117,10 @@ describe('EventServer', () => {
       expect(inscr.sat_rarity).toBe('common');
       expect(inscr.timestamp.toISOString()).toBe('2023-02-20T17:13:27.000Z');
       expect(inscr.value).toBe('10000');
+      let count = await db.counts.getAddressCount([
+        'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+      ]);
+      expect(count).toBe(1);
 
       // Rollback
       const payload2 = new TestChainhookPayloadBuilder()
@@ -142,6 +146,10 @@ describe('EventServer', () => {
       expect(c1[0].count).toBe(0);
       const c2 = await db.sql<{ count: number }[]>`SELECT COUNT(*)::int FROM locations`;
       expect(c2[0].count).toBe(0);
+      count = await db.counts.getAddressCount([
+        'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+      ]);
+      expect(count).toBe(0);
     });
 
     test('parses inscription_transferred apply and rollback', async () => {
@@ -257,6 +265,14 @@ describe('EventServer', () => {
       expect(inscr.sat_rarity).toBe('common');
       expect(inscr.timestamp.toISOString()).toBe('2023-02-20T17:13:27.000Z');
       expect(inscr.value).toBe('10000');
+      let count = await db.counts.getAddressCount([
+        'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+      ]);
+      expect(count).toBe(0);
+      count = await db.counts.getAddressCount([
+        'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf00000',
+      ]);
+      expect(count).toBe(1);
 
       // Rollback
       const payload2 = new TestChainhookPayloadBuilder()
@@ -283,6 +299,14 @@ describe('EventServer', () => {
       const c2 = await db.sql<{ count: number }[]>`SELECT COUNT(*)::int FROM locations`;
       expect(c2[0].count).toBe(1);
       await expect(db.getChainTipBlockHeight()).resolves.toBe(775617);
+      count = await db.counts.getAddressCount([
+        'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+      ]);
+      expect(count).toBe(1);
+      count = await db.counts.getAddressCount([
+        'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf00000',
+      ]);
+      expect(count).toBe(0);
     });
 
     test('multiple inscription pointers on the same block are compared correctly', async () => {
@@ -485,6 +509,7 @@ describe('EventServer', () => {
       const status = await db.sql<{ transfer_type: string }[]>`
         SELECT transfer_type
         FROM locations
+        INNER JOIN inscriptions USING (ordinal_number)
         WHERE genesis_id = '53957f47697096cef4ad24dae6357b3d7ffe1e3eb9216ce0bb01d6b6a2c8cf4ai0'
       `;
       expect(status[0].transfer_type).toBe('spent_in_fees');
@@ -539,6 +564,7 @@ describe('EventServer', () => {
       const status = await db.sql<{ transfer_type: string }[]>`
         SELECT transfer_type
         FROM locations
+        INNER JOIN inscriptions USING (ordinal_number)
         WHERE genesis_id = '53957f47697096cef4ad24dae6357b3d7ffe1e3eb9216ce0bb01d6b6a2c8cf4ai0'
       `;
       expect(status[0].transfer_type).toBe('burnt');
@@ -546,6 +572,132 @@ describe('EventServer', () => {
   });
 
   describe('gap detection', () => {
+    test('server rejects payload with first inscription gap when streaming', async () => {
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .streamingBlocks(false)
+          .apply()
+          .block({
+            height: 778575,
+            hash: '0x00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+            timestamp: 1676913207,
+          })
+          .transaction({
+            hash: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
+          })
+          .inscriptionRevealed({
+            content_bytes: '0x48656C6C6F',
+            content_type: 'text/plain;charset=utf-8',
+            content_length: 5,
+            inscription_number: { classic: 0, jubilee: 0 },
+            inscription_fee: 705,
+            inscription_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
+            inscription_output_value: 10000,
+            inscriber_address: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+            ordinal_number: 257418248345364,
+            ordinal_block_height: 650000,
+            ordinal_offset: 0,
+            satpoint_post_inscription:
+              '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+            inscription_input_index: 0,
+            transfers_pre_inscription: 0,
+            tx_index: 0,
+            curse_type: null,
+            inscription_pointer: null,
+            delegate: null,
+            metaprotocol: null,
+            metadata: null,
+            parent: null,
+          })
+          .build()
+      );
+      const errorPayload1 = new TestChainhookPayloadBuilder()
+        .streamingBlocks(false)
+        .apply()
+        .block({
+          height: 778576,
+          hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+          timestamp: 1676913207,
+        })
+        .transaction({
+          hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+        })
+        .inscriptionRevealed({
+          content_bytes: '0x48656C6C6F',
+          content_type: 'text/plain;charset=utf-8',
+          content_length: 5,
+          inscription_number: { classic: 5, jubilee: 5 }, // Gap at 5 but block is not streamed
+          inscription_fee: 705,
+          inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+          inscription_output_value: 10000,
+          inscriber_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+          ordinal_number: 1050000000000000,
+          ordinal_block_height: 650000,
+          ordinal_offset: 0,
+          satpoint_post_inscription:
+            '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+          inscription_input_index: 0,
+          transfers_pre_inscription: 0,
+          tx_index: 0,
+          curse_type: null,
+          inscription_pointer: null,
+          delegate: null,
+          metaprotocol: null,
+          metadata: null,
+          parent: null,
+        })
+        .build();
+      // Not streamed, accepts block.
+      await expect(db.updateInscriptions(errorPayload1)).resolves.not.toThrow(
+        BadPayloadRequestError
+      );
+
+      const errorPayload2 = new TestChainhookPayloadBuilder()
+        .streamingBlocks(true)
+        .apply()
+        .block({
+          height: 778579,
+          hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+          timestamp: 1676913207,
+        })
+        .transaction({
+          hash: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+        })
+        .inscriptionRevealed({
+          content_bytes: '0x48656C6C6F',
+          content_type: 'text/plain;charset=utf-8',
+          content_length: 5,
+          inscription_number: { classic: 10, jubilee: 10 }, // Gap at 10
+          inscription_fee: 705,
+          inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
+          inscription_output_value: 10000,
+          inscriber_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+          ordinal_number: 1050000000000000,
+          ordinal_block_height: 650000,
+          ordinal_offset: 0,
+          satpoint_post_inscription:
+            '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+          inscription_input_index: 0,
+          transfers_pre_inscription: 0,
+          tx_index: 0,
+          curse_type: null,
+          inscription_pointer: null,
+          delegate: null,
+          metaprotocol: null,
+          metadata: null,
+          parent: null,
+        })
+        .build();
+      await expect(db.updateInscriptions(errorPayload2)).rejects.toThrow(BadPayloadRequestError);
+      const response = await server['fastify'].inject({
+        method: 'POST',
+        url: `/payload`,
+        headers: { authorization: `Bearer ${ENV.ORDHOOK_NODE_AUTH_TOKEN}` },
+        payload: errorPayload2,
+      });
+      expect(response.statusCode).toBe(400);
+    });
+
     test('server ignores past blocks', async () => {
       const payload = new TestChainhookPayloadBuilder()
         .apply()

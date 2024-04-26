@@ -64,9 +64,6 @@ const schema = Type.Object({
   PG_IDLE_TIMEOUT: Type.Number({ default: 30 }),
   PG_MAX_LIFETIME: Type.Number({ default: 60 }),
   PG_STATEMENT_TIMEOUT: Type.Number({ default: 60_000 }),
-
-  /** Enables BRC-20 processing in write mode APIs */
-  BRC20_BLOCK_SCAN_ENABLED: Type.Boolean({ default: true }),
 });
 type Env = Static<typeof schema>;
 

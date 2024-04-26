@@ -4,16 +4,15 @@ import { MigrationBuilder, ColumnDefinitions } from 'node-pg-migrate';
 export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export function up(pgm: MigrationBuilder): void {
-  pgm.createTable('brc20_counts_by_event_type', {
-    event_type: {
-      type: 'brc20_operation',
-      notNull: true,
+  pgm.createTable('counts_by_genesis_address', {
+    address: {
+      type: 'text',
       primaryKey: true,
     },
     count: {
-      type: 'bigint',
+      type: 'int',
       notNull: true,
-      default: 1,
+      default: 0,
     },
   });
 }
