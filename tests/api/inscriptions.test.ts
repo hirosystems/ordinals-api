@@ -374,6 +374,52 @@ describe('/inscriptions', () => {
       );
     });
 
+    test('shows inscription with metadata', async () => {
+      await db.updateInscriptions(
+        new TestChainhookPayloadBuilder()
+          .apply()
+          .block({
+            height: 778575,
+            hash: '0x00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
+            timestamp: 1676913207,
+          })
+          .transaction({
+            hash: '0x9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201',
+          })
+          .inscriptionRevealed({
+            content_bytes: `0x010101`,
+            content_type: 'text/plain;charset=utf-8',
+            content_length: 5,
+            inscription_number: { classic: 0, jubilee: 0 },
+            inscription_fee: 705,
+            inscription_id: '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
+            inscription_output_value: 10000,
+            inscriber_address: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
+            ordinal_number: 257418248345364,
+            ordinal_block_height: 650000,
+            ordinal_offset: 0,
+            satpoint_post_inscription:
+              '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201:0:0',
+            tx_index: 0,
+            inscription_input_index: 0,
+            transfers_pre_inscription: 0,
+            curse_type: null,
+            inscription_pointer: null,
+            delegate: null,
+            metaprotocol: null,
+            metadata: { foo: 'bar', test: 1337 },
+            parent: null,
+          })
+          .build()
+      );
+      const response = await fastify.inject({
+        method: 'GET',
+        url: '/ordinals/v1/inscriptions/9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.json().metadata).toStrictEqual({ foo: 'bar', test: 1337 });
+    });
+
     test('shows inscription with empty genesis address', async () => {
       await db.updateInscriptions(
         new TestChainhookPayloadBuilder()

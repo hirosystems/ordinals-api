@@ -590,6 +590,7 @@ export class PgStore extends BasePgStore {
           i.curse_type,
           i.ordinal_number AS sat_ordinal,
           i.parent,
+          i.metadata,
           s.rarity AS sat_rarity,
           s.coinbase_height AS sat_coinbase_height,
           i.recursive,

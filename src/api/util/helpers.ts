@@ -56,6 +56,7 @@ export function parseDbInscriptions(
     recursive: i.recursive,
     recursion_refs: i.recursion_refs?.split(',') ?? null,
     parent: i.parent,
+    metadata: i.metadata ? JSON.parse(i.metadata) : null,
   }));
 }
 export function parseDbInscription(item: DbFullyLocatedInscriptionResult): InscriptionResponseType {
