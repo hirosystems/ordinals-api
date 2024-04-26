@@ -174,7 +174,7 @@ export class CountsPgStore extends BasePgStoreModule {
   private async getBlockCount(from?: number, to?: number): Promise<number> {
     if (from === undefined && to === undefined) return 0;
     const result = await this.sql<{ count: number }[]>`
-      SELECT COALESCE(SUM(inscription_count), 0) AS count
+      SELECT COALESCE(SUM(inscription_count), 0)::int AS count
       FROM counts_by_block
       WHERE TRUE
         ${from !== undefined ? this.sql`AND block_height >= ${from}` : this.sql``}
@@ -186,7 +186,7 @@ export class CountsPgStore extends BasePgStoreModule {
   private async getBlockHashCount(hash?: string): Promise<number> {
     if (!hash) return 0;
     const result = await this.sql<{ count: number }[]>`
-      SELECT COALESCE(SUM(inscription_count), 0) AS count
+      SELECT COALESCE(SUM(inscription_count), 0)::int AS count
       FROM counts_by_block
       WHERE block_hash = ${hash}
     `;
@@ -197,7 +197,7 @@ export class CountsPgStore extends BasePgStoreModule {
     const types =
       type !== undefined ? [type] : [DbInscriptionType.blessed, DbInscriptionType.cursed];
     const result = await this.sql<{ count: number }[]>`
-      SELECT COALESCE(SUM(count), 0) AS count
+      SELECT COALESCE(SUM(count), 0)::int AS count
       FROM counts_by_type
       WHERE type IN ${this.sql(types)}
     `;
@@ -207,7 +207,7 @@ export class CountsPgStore extends BasePgStoreModule {
   private async getMimeTypeCount(mimeType?: string[]): Promise<number> {
     if (!mimeType) return 0;
     const result = await this.sql<{ count: number }[]>`
-      SELECT COALESCE(SUM(count), 0) AS count
+      SELECT COALESCE(SUM(count), 0)::int AS count
       FROM counts_by_mime_type
       WHERE mime_type IN ${this.sql(mimeType)}
     `;
@@ -217,7 +217,7 @@ export class CountsPgStore extends BasePgStoreModule {
   private async getSatRarityCount(satRarity?: SatoshiRarity[]): Promise<number> {
     if (!satRarity) return 0;
     const result = await this.sql<{ count: number }[]>`
-      SELECT COALESCE(SUM(count), 0) AS count
+      SELECT COALESCE(SUM(count), 0)::int AS count
       FROM counts_by_sat_rarity
       WHERE sat_rarity IN ${this.sql(satRarity)}
     `;
@@ -227,17 +227,17 @@ export class CountsPgStore extends BasePgStoreModule {
   private async getRecursiveCount(recursive?: boolean): Promise<number> {
     const rec = recursive !== undefined ? [recursive] : [true, false];
     const result = await this.sql<{ count: number }[]>`
-      SELECT COALESCE(SUM(count), 0) AS count
+      SELECT COALESCE(SUM(count), 0)::int AS count
       FROM counts_by_recursive
       WHERE recursive IN ${this.sql(rec)}
     `;
     return result[0].count;
   }
 
-  private async getAddressCount(address?: string[]): Promise<number> {
+  async getAddressCount(address?: string[]): Promise<number> {
     if (!address) return 0;
     const result = await this.sql<{ count: number }[]>`
-      SELECT COALESCE(SUM(count), 0) AS count
+      SELECT COALESCE(SUM(count), 0)::int AS count
       FROM counts_by_address
       WHERE address IN ${this.sql(address)}
     `;
@@ -247,7 +247,7 @@ export class CountsPgStore extends BasePgStoreModule {
   private async getGenesisAddressCount(genesisAddress?: string[]): Promise<number> {
     if (!genesisAddress) return 0;
     const result = await this.sql<{ count: number }[]>`
-      SELECT COALESCE(SUM(count), 0) AS count
+      SELECT COALESCE(SUM(count), 0)::int AS count
       FROM counts_by_genesis_address
       WHERE address IN ${this.sql(genesisAddress)}
     `;

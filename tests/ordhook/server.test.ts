@@ -117,6 +117,10 @@ describe('EventServer', () => {
       expect(inscr.sat_rarity).toBe('common');
       expect(inscr.timestamp.toISOString()).toBe('2023-02-20T17:13:27.000Z');
       expect(inscr.value).toBe('10000');
+      let count = await db.counts.getAddressCount([
+        'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+      ]);
+      expect(count).toBe(1);
 
       // Rollback
       const payload2 = new TestChainhookPayloadBuilder()
@@ -142,6 +146,10 @@ describe('EventServer', () => {
       expect(c1[0].count).toBe(0);
       const c2 = await db.sql<{ count: number }[]>`SELECT COUNT(*)::int FROM locations`;
       expect(c2[0].count).toBe(0);
+      count = await db.counts.getAddressCount([
+        'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+      ]);
+      expect(count).toBe(0);
     });
 
     test('parses inscription_transferred apply and rollback', async () => {
@@ -257,6 +265,14 @@ describe('EventServer', () => {
       expect(inscr.sat_rarity).toBe('common');
       expect(inscr.timestamp.toISOString()).toBe('2023-02-20T17:13:27.000Z');
       expect(inscr.value).toBe('10000');
+      let count = await db.counts.getAddressCount([
+        'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+      ]);
+      expect(count).toBe(0);
+      count = await db.counts.getAddressCount([
+        'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf00000',
+      ]);
+      expect(count).toBe(1);
 
       // Rollback
       const payload2 = new TestChainhookPayloadBuilder()
@@ -283,6 +299,14 @@ describe('EventServer', () => {
       const c2 = await db.sql<{ count: number }[]>`SELECT COUNT(*)::int FROM locations`;
       expect(c2[0].count).toBe(1);
       await expect(db.getChainTipBlockHeight()).resolves.toBe(775617);
+      count = await db.counts.getAddressCount([
+        'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+      ]);
+      expect(count).toBe(1);
+      count = await db.counts.getAddressCount([
+        'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf00000',
+      ]);
+      expect(count).toBe(0);
     });
 
     test('multiple inscription pointers on the same block are compared correctly', async () => {
