@@ -8,7 +8,11 @@ import {
   runMigrations,
   stopwatch,
 } from '@hirosystems/api-toolkit';
-import { BitcoinEvent, BitcoinPayload } from '@hirosystems/chainhook-client';
+import {
+  BadPayloadRequestError,
+  BitcoinEvent,
+  BitcoinPayload,
+} from '@hirosystems/chainhook-client';
 import * as path from 'path';
 import * as postgres from 'postgres';
 import { Order, OrderBy } from '../api/schemas';
@@ -34,6 +38,8 @@ const ORDINALS_GENESIS_BLOCK = 767430;
 export const INSERT_BATCH_SIZE = 4000;
 
 type InscriptionIdentifier = { genesis_id: string } | { number: number };
+
+class BlockAlreadyIngestedError extends Error {}
 
 export class PgStore extends BasePgStore {
   readonly brc20: Brc20PgStore;
@@ -90,14 +96,17 @@ export class PgStore extends BasePgStore {
         );
       }
       for (const event of payload.apply) {
-        if (await this.isBlockIngested(event)) {
-          logger.warn(`PgStore skipping previously seen block ${event.block_identifier.index}`);
-          continue;
-        }
         logger.info(`PgStore apply block ${event.block_identifier.index}`);
         const time = stopwatch();
-        await this.updateInscriptionsEvent(sql, event, 'apply', streamed);
-        await this.brc20.updateBrc20Operations(sql, event, 'apply');
+        try {
+          await this.updateInscriptionsEvent(sql, event, 'apply', streamed);
+          await this.brc20.updateBrc20Operations(sql, event, 'apply');
+        } catch (error) {
+          if (error instanceof BlockAlreadyIngestedError) {
+            logger.warn(error);
+            continue;
+          } else throw error;
+        }
         await this.updateChainTipBlockHeight(sql, event.block_identifier.index);
         logger.info(
           `PgStore apply block ${
@@ -119,6 +128,7 @@ export class PgStore extends BasePgStore {
       normalizedHexString(event.block_identifier.hash),
       event.timestamp
     );
+    if (direction === 'apply') await this.assertNextBlockIsNotIngested(sql, event);
     for (const tx of event.transactions) {
       const tx_id = normalizedHexString(tx.transaction_identifier.hash);
       for (const operation of tx.metadata.ordinal_operations) {
@@ -138,6 +148,7 @@ export class PgStore extends BasePgStore {
     }
     switch (direction) {
       case 'apply':
+        if (streamed) await this.assertNextBlockIsContiguous(sql, event, cache);
         await this.applyInscriptions(sql, cache, streamed);
         break;
       case 'rollback':
@@ -348,15 +359,44 @@ export class PgStore extends BasePgStore {
     }
   }
 
-  private async isBlockIngested(event: BitcoinEvent): Promise<boolean> {
-    const currentBlockHeight = await this.getChainTipBlockHeight();
+  private async assertNextBlockIsNotIngested(sql: PgSqlClient, event: BitcoinEvent) {
+    const result = await sql<{ block_height: number }[]>`
+      SELECT block_height::int FROM chain_tip
+    `;
+    if (!result.count) return false;
+    const currentHeight = result[0].block_height;
     if (
-      event.block_identifier.index <= currentBlockHeight &&
+      event.block_identifier.index <= currentHeight &&
       event.block_identifier.index !== ORDINALS_GENESIS_BLOCK
     ) {
-      return true;
+      throw new BlockAlreadyIngestedError(
+        `Block ${event.block_identifier.index} is already ingested, chain tip is at ${currentHeight}`
+      );
     }
-    return false;
+  }
+
+  private async assertNextBlockIsContiguous(
+    sql: PgSqlClient,
+    event: BitcoinEvent,
+    cache: BlockCache
+  ) {
+    if (!cache.revealedNumbers.length) {
+      // TODO: How do we check blocks with only transfers?
+      return;
+    }
+    const result = await sql<{ max: number | null; block_height: number }[]>`
+      WITH tip AS (SELECT block_height::int FROM chain_tip)
+      SELECT MAX(number)::int AS max, (SELECT block_height FROM tip)
+      FROM inscriptions WHERE number >= 0
+    `;
+    if (!result.count) return;
+    const data = result[0];
+    const firstReveal = cache.revealedNumbers.sort()[0];
+    if (data.max === null && firstReveal === 0) return;
+    if ((data.max ?? 0) + 1 != firstReveal)
+      throw new BadPayloadRequestError(
+        `Streamed block ${event.block_identifier.index} is non-contiguous, attempting to reveal #${firstReveal} when current max is #${data.max} at block height ${data.block_height}`
+      );
   }
 
   private async updateChainTipBlockHeight(sql: PgSqlClient, block_height: number): Promise<void> {

@@ -30,7 +30,7 @@ export class TestChainhookPayloadBuilder {
         operation: 'inscription_feed',
         meta_protocols: ['brc-20'],
       },
-      is_streaming_blocks: true,
+      is_streaming_blocks: false,
     },
   };
   private action: 'apply' | 'rollback' = 'apply';

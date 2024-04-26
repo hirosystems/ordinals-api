@@ -21,6 +21,7 @@ describe('ETag cache', () => {
 
   test('inscription cache control', async () => {
     const block = new TestChainhookPayloadBuilder()
+      .streamingBlocks(true)
       .apply()
       .block({ height: 775617 })
       .transaction({ hash: '0x38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc' })
@@ -88,6 +89,7 @@ describe('ETag cache', () => {
     // Perform transfer and check cache
     await db.updateInscriptions(
       new TestChainhookPayloadBuilder()
+        .streamingBlocks(true)
         .apply()
         .block({ height: 775618, timestamp: 1678122360 })
         .transaction({
@@ -125,6 +127,7 @@ describe('ETag cache', () => {
     // Perform transfer GAP FILL and check cache
     await db.updateInscriptions(
       new TestChainhookPayloadBuilder()
+        .streamingBlocks(true)
         .apply()
         .block({ height: 775619, timestamp: 1678122360 })
         .transaction({
@@ -161,6 +164,7 @@ describe('ETag cache', () => {
 
   test('inscriptions index cache control', async () => {
     const block1 = new TestChainhookPayloadBuilder()
+      .streamingBlocks(true)
       .apply()
       .block({ height: 778575 })
       .transaction({ hash: '0x9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201' })
@@ -194,6 +198,7 @@ describe('ETag cache', () => {
       .build();
     await db.updateInscriptions(block1);
     const block2 = new TestChainhookPayloadBuilder()
+      .streamingBlocks(true)
       .apply()
       .block({ height: 778576 })
       .transaction({ hash: '0x00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d' })
@@ -246,6 +251,7 @@ describe('ETag cache', () => {
 
     // New location
     const block3 = new TestChainhookPayloadBuilder()
+      .streamingBlocks(true)
       .apply()
       .block({ height: 778577 })
       .transaction({ hash: 'ae9d273a10e899f0d2cad47ee2b0e77ab8a9addd9dd5bb5e4b03d6971c060d52' })
@@ -274,6 +280,7 @@ describe('ETag cache', () => {
 
   test('inscriptions stats per block cache control', async () => {
     const block1 = new TestChainhookPayloadBuilder()
+      .streamingBlocks(true)
       .apply()
       .block({ height: 778575, hash: randomHash() })
       .transaction({ hash: '0x9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201' })
@@ -326,6 +333,7 @@ describe('ETag cache', () => {
 
     // New block
     const block2 = new TestChainhookPayloadBuilder()
+      .streamingBlocks(true)
       .apply()
       .block({ height: 778576, hash: randomHash() })
       .transaction({ hash: '0x00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d' })
@@ -370,6 +378,7 @@ describe('ETag cache', () => {
 
   test('status etag changes with new block', async () => {
     const block1 = new TestChainhookPayloadBuilder()
+      .streamingBlocks(true)
       .apply()
       .block({ height: 778575, hash: randomHash() })
       .transaction({ hash: '0x9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201' })
@@ -422,6 +431,7 @@ describe('ETag cache', () => {
 
     // New block
     const block2 = new TestChainhookPayloadBuilder()
+      .streamingBlocks(true)
       .apply()
       .block({ height: 778576, hash: randomHash() })
       .transaction({ hash: '0x00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d' })

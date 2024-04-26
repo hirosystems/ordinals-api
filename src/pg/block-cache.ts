@@ -28,6 +28,7 @@ export class BlockCache {
   locations: DbLocationInsert[] = [];
   currentLocations = new Map<string, DbCurrentLocationInsert>();
   recursiveRefs = new Map<string, string[]>();
+  revealedNumbers: number[] = [];
 
   mimeTypeCounts = new Map<string, number>();
   satRarityCounts = new Map<string, number>();
@@ -72,6 +73,7 @@ export class BlockCache {
       parent: reveal.parent,
       timestamp: this.timestamp,
     });
+    this.revealedNumbers.push(reveal.inscription_number.jubilee);
     this.increaseMimeTypeCount(mime_type);
     this.increaseSatRarityCount(satoshi.rarity);
     this.increaseInscriptionTypeCount(reveal.inscription_number.classic < 0 ? 'cursed' : 'blessed');
