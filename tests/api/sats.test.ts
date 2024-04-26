@@ -133,6 +133,7 @@ describe('/sats', () => {
           inscription_id: 'b9cd9489fe30b81d007f753663d12766f1368721a87f4c69056c8215caa57993i0',
           inscription_output_value: 10000,
           inscriber_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+          // Same sat. This will also create a transfer for the previous inscription.
           ordinal_number: 257418248345364,
           ordinal_block_height: 650000,
           ordinal_offset: 0,
@@ -240,6 +241,26 @@ describe('/sats', () => {
     expect(transferJson.results[0].location).toBe(
       'b9cd9489fe30b81d007f753663d12766f1368721a87f4c69056c8215caa57993:0:0'
     );
+
+    // Block transfer activity should reflect all true transfers.
+    transfersResponse = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions/transfers?block=775617',
+    });
+    expect(transfersResponse.statusCode).toBe(200);
+    transferJson = transfersResponse.json();
+    expect(transferJson.total).toBe(0);
+    expect(transferJson.results).toHaveLength(0);
+
+    transfersResponse = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions/transfers?block=775618',
+    });
+    expect(transfersResponse.statusCode).toBe(200);
+    transferJson = transfersResponse.json();
+    expect(transferJson.total).toBe(1);
+    expect(transferJson.results).toHaveLength(1);
+    expect(transferJson.results[0].number).toBe(-7);
   });
 
   test('returns not found on invalid sats', async () => {
