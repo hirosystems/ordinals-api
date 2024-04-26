@@ -384,7 +384,7 @@ export class PgStore extends BasePgStore {
       // TODO: How do we check blocks with only transfers?
       return;
     }
-    const result = await sql<{ max: number; block_height: number }[]>`
+    const result = await sql<{ max: number | null; block_height: number }[]>`
       WITH tip AS (SELECT block_height::int FROM chain_tip)
       SELECT MAX(number)::int AS max, (SELECT block_height FROM tip)
       FROM inscriptions WHERE number >= 0
@@ -392,7 +392,8 @@ export class PgStore extends BasePgStore {
     if (!result.count) return;
     const data = result[0];
     const firstReveal = cache.revealedNumbers.sort()[0];
-    if (data.max + 1 != firstReveal)
+    if (data.max === null && firstReveal === 0) return;
+    if ((data.max ?? 0) + 1 != firstReveal)
       throw new BadPayloadRequestError(
         `Streamed block ${event.block_identifier.index} is non-contiguous, attempting to reveal #${firstReveal} when current max is #${data.max} at block height ${data.block_height}`
       );
