@@ -124,6 +124,8 @@ describe('/inscriptions', () => {
         curse_type: null,
         recursive: false,
         recursion_refs: null,
+        parent: null,
+        metadata: null,
       };
 
       // By inscription id
@@ -280,6 +282,8 @@ describe('/inscriptions', () => {
           'f351d86c6e6cae3c64e297e7463095732f216875bcc1f3c03f950a492bb25421i0',
           'b4b27b9a15f928b95a8ce4b418946553b7b313a345254cd9b23d79489175fa5ai0',
         ],
+        parent: null,
+        metadata: null,
       };
 
       // By inscription id
@@ -483,6 +487,8 @@ describe('/inscriptions', () => {
         curse_type: null,
         recursive: false,
         recursion_refs: null,
+        parent: null,
+        metadata: null,
       };
 
       // By inscription id
@@ -565,6 +571,8 @@ describe('/inscriptions', () => {
         curse_type: '88',
         recursive: false,
         recursion_refs: null,
+        parent: null,
+        metadata: null,
       };
 
       // By inscription id
@@ -676,6 +684,8 @@ describe('/inscriptions', () => {
         curse_type: null,
         recursive: false,
         recursion_refs: null,
+        parent: null,
+        metadata: null,
       });
 
       // Transfer 2
@@ -731,6 +741,8 @@ describe('/inscriptions', () => {
         curse_type: null,
         recursive: false,
         recursion_refs: null,
+        parent: null,
+        metadata: null,
       });
     });
 
@@ -841,6 +853,8 @@ describe('/inscriptions', () => {
         curse_type: null,
         recursive: false,
         recursion_refs: null,
+        parent: null,
+        metadata: null,
       });
     });
 
@@ -936,6 +950,8 @@ describe('/inscriptions', () => {
         curse_type: '{"tag":66}',
         recursive: false,
         recursion_refs: null,
+        parent: null,
+        metadata: null,
       });
 
       // Transfer 2
@@ -991,6 +1007,8 @@ describe('/inscriptions', () => {
         curse_type: '{"tag":66}',
         recursive: false,
         recursion_refs: null,
+        parent: null,
+        metadata: null,
       });
     });
   });
@@ -1636,6 +1654,8 @@ describe('/inscriptions', () => {
           curse_type: null,
           recursive: false,
           recursion_refs: null,
+          parent: null,
+          metadata: null,
         },
         {
           address: 'bc1pscktlmn99gyzlvymvrezh6vwd0l4kg06tg5rvssw0czg8873gz5sdkteqj',
@@ -1662,6 +1682,8 @@ describe('/inscriptions', () => {
           curse_type: null,
           recursive: false,
           recursion_refs: null,
+          parent: null,
+          metadata: null,
         },
       ]);
     });
@@ -1775,6 +1797,8 @@ describe('/inscriptions', () => {
           curse_type: null,
           recursive: false,
           recursion_refs: null,
+          parent: null,
+          metadata: null,
         };
         expect(responseJson1.results[0]).toStrictEqual(result1);
 
@@ -1810,6 +1834,8 @@ describe('/inscriptions', () => {
           curse_type: null,
           recursive: false,
           recursion_refs: null,
+          parent: null,
+          metadata: null,
         };
         expect(responseJson2.results[0]).toStrictEqual(result2);
 
