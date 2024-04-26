@@ -100,6 +100,7 @@ export type DbFullyLocatedInscriptionResult = {
   curse_type: string | null;
   recursive: boolean;
   recursion_refs: string | null;
+  parent: string | null;
 };
 
 export enum DbLocationTransferType {
