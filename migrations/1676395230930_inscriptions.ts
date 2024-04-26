@@ -5,29 +5,32 @@ export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export function up(pgm: MigrationBuilder): void {
   pgm.createTable('inscriptions', {
-    id: {
-      type: 'bigserial',
-      primaryKey: true,
-    },
     genesis_id: {
       type: 'text',
+      primaryKey: true,
+    },
+    ordinal_number: {
+      type: 'numeric',
       notNull: true,
     },
     number: {
       type: 'bigint',
       notNull: true,
     },
-    sat_ordinal: {
-      type: 'numeric',
-      notNull: true,
-    },
-    sat_rarity: {
-      type: 'text',
-      notNull: true,
-    },
-    sat_coinbase_height: {
+    classic_number: {
       type: 'bigint',
       notNull: true,
+    },
+    block_height: {
+      type: 'bigint',
+      notNull: true,
+    },
+    tx_index: {
+      type: 'bigint',
+      notNull: true,
+    },
+    address: {
+      type: 'text',
     },
     mime_type: {
       type: 'text',
@@ -52,6 +55,20 @@ export function up(pgm: MigrationBuilder): void {
     curse_type: {
       type: 'text',
     },
+    recursive: {
+      type: 'boolean',
+      default: false,
+    },
+    metadata: {
+      type: 'text',
+    },
+    parent: {
+      type: 'text',
+    },
+    timestamp: {
+      type: 'timestamptz',
+      notNull: true,
+    },
     updated_at: {
       type: 'timestamptz',
       default: pgm.func('(NOW())'),
@@ -59,10 +76,17 @@ export function up(pgm: MigrationBuilder): void {
     },
   });
   pgm.createConstraint('inscriptions', 'inscriptions_number_unique', 'UNIQUE(number)');
-  pgm.createIndex('inscriptions', ['genesis_id']);
+  pgm.createConstraint(
+    'inscriptions',
+    'inscriptions_ordinal_number_fk',
+    'FOREIGN KEY(ordinal_number) REFERENCES satoshis(ordinal_number) ON DELETE CASCADE'
+  );
   pgm.createIndex('inscriptions', ['mime_type']);
-  pgm.createIndex('inscriptions', ['sat_ordinal']);
-  pgm.createIndex('inscriptions', ['sat_rarity']);
-  pgm.createIndex('inscriptions', ['sat_coinbase_height']);
+  pgm.createIndex('inscriptions', ['recursive']);
+  pgm.createIndex('inscriptions', [
+    { name: 'block_height', sort: 'DESC' },
+    { name: 'tx_index', sort: 'DESC' },
+  ]);
+  pgm.createIndex('inscriptions', ['address']);
   pgm.createIndex('inscriptions', [{ name: 'updated_at', sort: 'DESC' }]);
 }

@@ -4,13 +4,19 @@ import { MigrationBuilder, ColumnDefinitions } from 'node-pg-migrate';
 export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export function up(pgm: MigrationBuilder): void {
-  pgm.addColumn('inscriptions', {
-    classic_number: {
+  pgm.createTable('satoshis', {
+    ordinal_number: {
+      type: 'numeric',
+      primaryKey: true,
+    },
+    rarity: {
+      type: 'text',
+      notNull: true,
+    },
+    coinbase_height: {
       type: 'bigint',
+      notNull: true,
     },
   });
-}
-
-export function down(pgm: MigrationBuilder): void {
-  pgm.dropColumn('inscriptions', 'classic_number');
+  pgm.createIndex('satoshis', ['rarity']);
 }

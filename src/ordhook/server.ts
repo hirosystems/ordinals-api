@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { ENV } from '../env';
 import { PgStore } from '../pg/pg-store';
 import {
+  BitcoinPayload,
   ChainhookEventObserver,
   ChainhookNodeOptions,
   Payload,
@@ -64,7 +65,7 @@ export async function startOrdhookServer(args: { db: PgStore }): Promise<Chainho
     logger.info(
       `OrdhookServer received ${streamed ? 'streamed' : 'replay'} payload from predicate ${uuid}`
     );
-    await args.db.updateInscriptions(payload);
+    await args.db.updateInscriptions(payload as BitcoinPayload);
   });
   return server;
 }

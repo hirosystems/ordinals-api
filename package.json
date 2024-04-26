@@ -17,6 +17,7 @@
     "migrate": "ts-node node_modules/.bin/node-pg-migrate -j ts",
     "lint:eslint": "eslint . --ext .js,.jsx,.ts,.tsx -f unix",
     "lint:prettier": "prettier --check src/**/*.ts tests/**/*.ts migrations/**/*.ts",
+    "lint:unused-exports": "ts-unused-exports tsconfig.json --showLineNumber --excludePathsFromReport=migrations/* --excludePathsFromReport=util/*",
     "generate:openapi": "rimraf ./tmp && node -r ts-node/register ./util/openapi-generator.ts",
     "generate:docs": "redoc-cli build --output ./tmp/index.html ./tmp/openapi.yaml",
     "generate:git-info": "rimraf .git-info && node_modules/.bin/api-toolkit-git-info",
@@ -46,6 +47,7 @@
     "rimraf": "^3.0.2",
     "ts-jest": "^29.0.3",
     "ts-node": "^10.8.2",
+    "ts-unused-exports": "^10.0.1",
     "typescript": "^4.7.4"
   },
   "dependencies": {

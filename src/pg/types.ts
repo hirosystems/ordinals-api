@@ -2,29 +2,54 @@ import { PgNumeric, PgBytea, PgSqlQuery } from '@hirosystems/api-toolkit';
 import { Order, OrderBy } from '../api/schemas';
 import { SatoshiRarity } from '../api/util/ordinal-satoshi';
 
-/**
- * Updates and inserts
- */
+export type DbSatoshiInsert = {
+  ordinal_number: PgNumeric;
+  rarity: string;
+  coinbase_height: number;
+};
 
-export type InscriptionData = {
+export type DbInscriptionInsert = {
   genesis_id: string;
+  ordinal_number: PgNumeric;
   number: number;
   classic_number: number;
+  block_height: number;
+  tx_index: number;
+  address: string | null;
   mime_type: string;
   content_type: string;
   content_length: number;
   content: PgBytea;
   fee: PgNumeric;
   curse_type: string | null;
-  sat_ordinal: PgNumeric;
-  sat_rarity: string;
-  sat_coinbase_height: number;
   recursive: boolean;
   metadata: string | null;
   parent: string | null;
+  timestamp: number;
 };
 
-export type InscriptionInsert = InscriptionData;
+export type DbLocationInsert = {
+  ordinal_number: PgNumeric;
+  block_height: number;
+  block_hash: string;
+  tx_index: number;
+  tx_id: string;
+  address: string | null;
+  output: string;
+  offset: PgNumeric | null;
+  prev_output: string | null;
+  prev_offset: PgNumeric | null;
+  value: PgNumeric | null;
+  transfer_type: DbLocationTransferType;
+  timestamp: number;
+};
+
+export type DbCurrentLocationInsert = {
+  ordinal_number: PgNumeric;
+  block_height: number;
+  tx_index: number;
+  address: string | null;
+};
 
 type AbstractLocationData = {
   block_height: number;
@@ -40,33 +65,6 @@ type AbstractLocationData = {
   transfer_type: DbLocationTransferType;
   block_transfer_index: number | null;
 };
-
-export type RevealLocationData = AbstractLocationData & { genesis_id: string; timestamp: number };
-
-export type TransferLocationData = AbstractLocationData & {
-  ordinal_number: PgNumeric;
-  timestamp: number;
-};
-
-export type LocationData = RevealLocationData | TransferLocationData;
-
-export type LocationInsert = AbstractLocationData & {
-  timestamp: PgSqlQuery;
-  genesis_id: string;
-  inscription_id: PgSqlQuery | string;
-};
-
-export type InscriptionRevealData = {
-  inscription: InscriptionData;
-  recursive_refs: string[];
-  location: RevealLocationData;
-};
-
-export type InscriptionTransferData = {
-  location: TransferLocationData;
-};
-
-export type InscriptionEventData = InscriptionRevealData | InscriptionTransferData;
 
 /**
  * Selects
@@ -111,8 +109,6 @@ export enum DbLocationTransferType {
 }
 
 export type DbLocation = {
-  id: string;
-  inscription_id: string | null;
   genesis_id: string;
   block_height: string;
   block_hash: string;
@@ -127,27 +123,9 @@ export type DbLocation = {
   timestamp: Date;
 };
 
-export type DbLocationPointer = {
-  inscription_id: number;
-  location_id: number;
-  block_height: number;
-  tx_index: number;
-  address: string | null;
-};
-
-export type DbLocationPointerInsert = {
-  inscription_id: string;
-  location_id: string;
-  block_height: string;
-  tx_index: string;
-  address: string | null;
-};
-
 export type DbInscriptionLocationChange = {
   genesis_id: string;
   number: string;
-  from_id: string;
-  from_inscription_id: string;
   from_block_height: string;
   from_block_hash: string;
   from_tx_id: string;
@@ -156,10 +134,6 @@ export type DbInscriptionLocationChange = {
   from_offset: string | null;
   from_value: string | null;
   from_timestamp: Date;
-  from_genesis: boolean;
-  from_current: boolean;
-  to_id: string;
-  to_inscription_id: string;
   to_block_height: string;
   to_block_hash: string;
   to_tx_id: string;
@@ -168,37 +142,6 @@ export type DbInscriptionLocationChange = {
   to_offset: string | null;
   to_value: string | null;
   to_timestamp: Date;
-  to_genesis: boolean;
-  to_current: boolean;
-};
-
-export const LOCATIONS_COLUMNS = [
-  'id',
-  'inscription_id',
-  'genesis_id',
-  'block_height',
-  'block_hash',
-  'tx_id',
-  'tx_index',
-  'address',
-  'output',
-  'offset',
-  'value',
-  'timestamp',
-];
-
-export type DbInscription = {
-  id: string;
-  genesis_id: string;
-  number: string;
-  mime_type: string;
-  content_type: string;
-  content_length: string;
-  fee: string;
-  sat_ordinal: string;
-  sat_rarity: string;
-  sat_coinbase_height: string;
-  recursive: boolean;
 };
 
 export type DbInscriptionContent = {
@@ -206,21 +149,6 @@ export type DbInscriptionContent = {
   content_length: string;
   content: string;
 };
-
-export const INSCRIPTIONS_COLUMNS = [
-  'id',
-  'genesis_id',
-  'number',
-  'mime_type',
-  'content_type',
-  'content_length',
-  'fee',
-  'curse_type',
-  'sat_ordinal',
-  'sat_rarity',
-  'sat_coinbase_height',
-  'recursive',
-];
 
 export type DbInscriptionIndexPaging = {
   limit: number;

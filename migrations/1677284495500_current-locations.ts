@@ -5,12 +5,8 @@ export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export function up(pgm: MigrationBuilder): void {
   pgm.createTable('current_locations', {
-    inscription_id: {
-      type: 'bigint',
-      notNull: true,
-    },
-    location_id: {
-      type: 'bigint',
+    ordinal_number: {
+      type: 'numeric',
       notNull: true,
     },
     block_height: {
@@ -27,10 +23,14 @@ export function up(pgm: MigrationBuilder): void {
   });
   pgm.createConstraint(
     'current_locations',
-    'current_locations_inscription_id_unique',
-    'UNIQUE(inscription_id)'
+    'current_locations_locations_fk',
+    'FOREIGN KEY(ordinal_number, block_height, tx_index) REFERENCES locations(ordinal_number, block_height, tx_index) ON DELETE CASCADE'
   );
-  pgm.createIndex('current_locations', ['location_id']);
-  pgm.createIndex('current_locations', ['block_height']);
+  pgm.createConstraint(
+    'locations',
+    'locations_satoshis_fk',
+    'FOREIGN KEY(ordinal_number) REFERENCES satoshis(ordinal_number) ON DELETE CASCADE'
+  );
+  pgm.createIndex('current_locations', ['ordinal_number'], { unique: true });
   pgm.createIndex('current_locations', ['address']);
 }

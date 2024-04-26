@@ -278,6 +278,7 @@ describe('/inscriptions', () => {
         recursion_refs: [
           '9f4a9b73b0713c5da01c0a47f97c6c001af9028d6bdd9e264dfacbc4e6790201i0',
           'f351d86c6e6cae3c64e297e7463095732f216875bcc1f3c03f950a492bb25421i0',
+          'b4b27b9a15f928b95a8ce4b418946553b7b313a345254cd9b23d79489175fa5ai0',
         ],
       };
 
@@ -298,7 +299,7 @@ describe('/inscriptions', () => {
       expect(response2.json()).toStrictEqual(expected);
     });
 
-    test('shows inscription with null genesis address', async () => {
+    test('shows inscription with empty genesis address', async () => {
       await db.updateInscriptions(
         new TestChainhookPayloadBuilder()
           .apply()
@@ -318,7 +319,7 @@ describe('/inscriptions', () => {
             inscription_fee: 2805,
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
             inscription_output_value: 10000,
-            inscriber_address: null,
+            inscriber_address: '',
             ordinal_number: 257418248345364,
             ordinal_block_height: 51483,
             ordinal_offset: 0,
@@ -337,8 +338,8 @@ describe('/inscriptions', () => {
           .build()
       );
       const expected = {
-        address: null,
-        genesis_address: null,
+        address: '',
+        genesis_address: '',
         genesis_block_hash: '00000000000000000002a90330a99f67e3f01eb2ce070b45930581e82fb7a91d',
         genesis_block_height: 775617,
         content_length: 5,
@@ -1463,7 +1464,7 @@ describe('/inscriptions', () => {
             inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
             inscription_output_value: 10000,
             inscriber_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-            ordinal_number: 257418248345364,
+            ordinal_number: 257418248345365,
             ordinal_block_height: 650000,
             ordinal_offset: 0,
             satpoint_post_inscription:
@@ -1502,7 +1503,7 @@ describe('/inscriptions', () => {
           offset: '0',
           number: 1,
           value: '10000',
-          sat_ordinal: '257418248345364',
+          sat_ordinal: '257418248345365',
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           sat_coinbase_height: 51483,
           output: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0',
@@ -1603,7 +1604,7 @@ describe('/inscriptions', () => {
               inscription_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
               inscription_output_value: 10000,
               inscriber_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
-              ordinal_number: 257418248345364,
+              ordinal_number: 257418248345365,
               ordinal_block_height: 650000,
               ordinal_offset: 0,
               satpoint_post_inscription:
@@ -1676,7 +1677,7 @@ describe('/inscriptions', () => {
           offset: '0',
           number: 1,
           value: '10000',
-          sat_ordinal: '257418248345364',
+          sat_ordinal: '257418248345365',
           tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
           sat_coinbase_height: 51483,
           output: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0',

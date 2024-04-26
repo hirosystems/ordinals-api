@@ -81,7 +81,7 @@ describe('/sats', () => {
     );
   });
 
-  test('returns sat with more than 1 cursed inscription', async () => {
+  test('returns sat with more than 1 inscription', async () => {
     await db.updateInscriptions(
       new TestChainhookPayloadBuilder()
         .apply()
@@ -133,6 +133,7 @@ describe('/sats', () => {
           inscription_id: 'b9cd9489fe30b81d007f753663d12766f1368721a87f4c69056c8215caa57993i0',
           inscription_output_value: 10000,
           inscriber_address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
+          // Same sat. This will also create a transfer for the previous inscription.
           ordinal_number: 257418248345364,
           ordinal_block_height: 650000,
           ordinal_offset: 0,
@@ -195,22 +196,71 @@ describe('/sats', () => {
         genesis_timestamp: 1677803510000,
         genesis_tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
         id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0',
-        location: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0',
+        // Re-inscribed sat is moved to the latest inscription's location.
+        location: 'b9cd9489fe30b81d007f753663d12766f1368721a87f4c69056c8215caa57993:0:0',
         mime_type: 'image/png',
         number: -7,
         offset: '0',
-        output: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0',
+        output: 'b9cd9489fe30b81d007f753663d12766f1368721a87f4c69056c8215caa57993:0',
         sat_coinbase_height: 51483,
         sat_ordinal: '257418248345364',
         sat_rarity: 'common',
-        timestamp: 1677803510000,
-        tx_id: '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc',
+        timestamp: 1676913207000,
+        tx_id: 'b9cd9489fe30b81d007f753663d12766f1368721a87f4c69056c8215caa57993',
         value: '10000',
         curse_type: '"p2wsh"',
         recursive: false,
         recursion_refs: null,
       },
     ]);
+
+    // Inscription -7 should have 2 locations, -1 should only have 1.
+    let transfersResponse = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions/-7/transfers',
+    });
+    expect(transfersResponse.statusCode).toBe(200);
+    let transferJson = transfersResponse.json();
+    expect(transferJson.total).toBe(2);
+    expect(transferJson.results).toHaveLength(2);
+    expect(transferJson.results[0].location).toBe(
+      'b9cd9489fe30b81d007f753663d12766f1368721a87f4c69056c8215caa57993:0:0'
+    );
+    expect(transferJson.results[1].location).toBe(
+      '38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dc:0:0'
+    );
+
+    transfersResponse = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions/-1/transfers',
+    });
+    expect(transfersResponse.statusCode).toBe(200);
+    transferJson = transfersResponse.json();
+    expect(transferJson.total).toBe(1);
+    expect(transferJson.results).toHaveLength(1);
+    expect(transferJson.results[0].location).toBe(
+      'b9cd9489fe30b81d007f753663d12766f1368721a87f4c69056c8215caa57993:0:0'
+    );
+
+    // Block transfer activity should reflect all true transfers.
+    transfersResponse = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions/transfers?block=775617',
+    });
+    expect(transfersResponse.statusCode).toBe(200);
+    transferJson = transfersResponse.json();
+    expect(transferJson.total).toBe(0);
+    expect(transferJson.results).toHaveLength(0);
+
+    transfersResponse = await fastify.inject({
+      method: 'GET',
+      url: '/ordinals/v1/inscriptions/transfers?block=775618',
+    });
+    expect(transfersResponse.statusCode).toBe(200);
+    transferJson = transfersResponse.json();
+    expect(transferJson.total).toBe(1);
+    expect(transferJson.results).toHaveLength(1);
+    expect(transferJson.results[0].number).toBe(-7);
   });
 
   test('returns not found on invalid sats', async () => {
