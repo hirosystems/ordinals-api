@@ -184,6 +184,8 @@ describe('/sats', () => {
         curse_type: '"p2wsh"',
         recursive: false,
         recursion_refs: null,
+        parent: null,
+        metadata: null,
       },
       {
         address: 'bc1p3cyx5e2hgh53w7kpxcvm8s4kkega9gv5wfw7c4qxsvxl0u8x834qf0u2td',
@@ -211,6 +213,8 @@ describe('/sats', () => {
         curse_type: '"p2wsh"',
         recursive: false,
         recursion_refs: null,
+        parent: null,
+        metadata: null,
       },
     ]);
 
