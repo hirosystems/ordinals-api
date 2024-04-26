@@ -16,7 +16,6 @@ import { ENV } from '../env';
 import { Brc20PgStore } from './brc20/brc20-pg-store';
 import { CountsPgStore } from './counts/counts-pg-store';
 import { getIndexResultCountType } from './counts/helpers';
-import { BlockCache } from './helpers';
 import {
   DbFullyLocatedInscriptionResult,
   DbInscriptionContent,
@@ -28,6 +27,7 @@ import {
   DbPaginatedResult,
 } from './types';
 import { normalizedHexString } from '../api/util/helpers';
+import { BlockCache } from './block-cache';
 
 export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 export const ORDINALS_GENESIS_BLOCK = 767430;

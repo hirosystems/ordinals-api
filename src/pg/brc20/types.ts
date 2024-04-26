@@ -3,7 +3,7 @@ import { PgNumeric } from '@hirosystems/api-toolkit';
 export type DbBrc20TokenInsert = {
   ticker: string;
   genesis_id: string;
-  block_height: string;
+  block_height: number;
   tx_id: string;
   address: string;
   max: PgNumeric;
@@ -23,8 +23,8 @@ export enum DbBrc20Operation {
 export type DbBrc20OperationInsert = {
   genesis_id: string;
   ticker: string;
-  block_height: PgNumeric;
-  tx_index: PgNumeric;
+  block_height: number;
+  tx_index: number;
   address: string;
   avail_balance: PgNumeric;
   trans_balance: PgNumeric;

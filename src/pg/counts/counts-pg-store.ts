@@ -7,7 +7,7 @@ import {
   DbInscriptionType,
 } from '../types';
 import { DbInscriptionIndexResultCountType } from './types';
-import { BlockCache } from '../helpers';
+import { BlockCache } from '../block-cache';
 
 /**
  * This class affects all the different tables that track inscription counts according to different
