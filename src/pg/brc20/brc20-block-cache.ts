@@ -7,7 +7,7 @@ import {
   BitcoinBrc20TransferSendOperation,
 } from '@hirosystems/chainhook-client';
 
-export interface AddressBalanceData {
+interface AddressBalanceData {
   avail: BigNumber;
   trans: BigNumber;
   total: BigNumber;

@@ -82,7 +82,7 @@ export const Brc20TickerParam = Type.String();
 
 export const Brc20TickersParam = Type.Array(Brc20TickerParam);
 
-export const InscriptionIdParam = Type.RegEx(/^[a-fA-F0-9]{64}i[0-9]+$/, {
+const InscriptionIdParam = Type.RegEx(/^[a-fA-F0-9]{64}i[0-9]+$/, {
   title: 'Inscription ID',
   description: 'Inscription ID',
   examples: ['38c46a8bf7ec90bc7f6b797e7dc84baa97f4e5fd4286b92fe1b50176d03b18dci0'],
@@ -134,7 +134,7 @@ export const BlockHeightParam = Type.RegEx(/^[0-9]+$/, {
 });
 export const BlockHeightParamCType = TypeCompiler.Compile(BlockHeightParam);
 
-export const BlockHashParam = Type.RegEx(/^[0]{8}[a-fA-F0-9]{56}$/, {
+const BlockHashParam = Type.RegEx(/^[0]{8}[a-fA-F0-9]{56}$/, {
   title: 'Block Hash',
   description: 'Bitcoin block hash',
   examples: ['0000000000000000000452773967cdd62297137cdaf79950c5e8bb0c62075133'],
@@ -210,7 +210,7 @@ export const LimitParam = Type.Integer({
   description: 'Results per page',
 });
 
-export const Brc20OperationParam = Type.Union(
+const Brc20OperationParam = Type.Union(
   [
     Type.Literal('deploy'),
     Type.Literal('mint'),
@@ -494,7 +494,7 @@ export const Brc20TokenResponseSchema = Type.Object(
 );
 export type Brc20TokenResponse = Static<typeof Brc20TokenResponseSchema>;
 
-export const Brc20SupplySchema = Type.Object({
+const Brc20SupplySchema = Type.Object({
   max_supply: Type.String({ examples: ['21000000'] }),
   minted_supply: Type.String({ examples: ['1000000'] }),
   holders: Type.Integer({ examples: [240] }),
@@ -516,7 +516,7 @@ export const Brc20TokenDetailsSchema = Type.Object(
   },
   { title: 'BRC-20 Token Details Response' }
 );
-export type Brc20TokenDetails = Static<typeof Brc20TokenDetailsSchema>;
+type Brc20TokenDetails = Static<typeof Brc20TokenDetailsSchema>;
 
 export const NotFoundResponse = Type.Object(
   {
@@ -532,7 +532,7 @@ export const InvalidSatoshiNumberResponse = Type.Object(
   { title: 'Invalid Satoshi Number Response' }
 );
 
-export const InscriptionsPerBlock = Type.Object({
+const InscriptionsPerBlock = Type.Object({
   block_height: Type.String({ examples: ['778921'] }),
   block_hash: Type.String({
     examples: ['0000000000000000000452773967cdd62297137cdaf79950c5e8bb0c62075133'],

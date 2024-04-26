@@ -31,12 +31,6 @@ export type DbBrc20OperationInsert = {
   operation: DbBrc20Operation;
 };
 
-export type DbBrc20CountsByAddressInsert = {
-  address: string;
-  operation: DbBrc20Operation;
-  count: number;
-};
-
 export type DbBrc20Token = {
   id: string;
   genesis_id: string;
@@ -73,49 +67,12 @@ export type DbBrc20Balance = {
   total_balance: string;
 };
 
-export enum DbBrc20BalanceTypeId {
-  mint = 0,
-  transferIntent = 1,
-  transferFrom = 2,
-  transferTo = 3,
-}
-
 export enum DbBrc20EventOperation {
   deploy = 'deploy',
   mint = 'mint',
   transfer = 'transfer',
   transferSend = 'transfer_send',
 }
-export const BRC20_OPERATIONS = ['deploy', 'mint', 'transfer', 'transfer_send'];
-
-type BaseEvent = {
-  inscription_id: string;
-  genesis_location_id: string;
-  brc20_deploy_id: string;
-};
-
-export type DbBrc20DeployEvent = BaseEvent & {
-  operation: 'deploy';
-  deploy_id: string;
-  mint_id: null;
-  transfer_id: null;
-};
-
-export type DbBrc20MintEvent = BaseEvent & {
-  operation: 'mint';
-  deploy_id: null;
-  mint_id: string;
-  transfer_id: null;
-};
-
-export type DbBrc20TransferEvent = BaseEvent & {
-  operation: 'transfer' | 'transfer_send';
-  deploy_id: null;
-  mint_id: null;
-  transfer_id: string;
-};
-
-export type DbBrc20Event = DbBrc20DeployEvent | DbBrc20MintEvent | DbBrc20TransferEvent;
 
 export type DbBrc20Activity = {
   ticker: string;
@@ -136,18 +93,3 @@ export type DbBrc20Activity = {
   to_address: string | null;
   timestamp: number;
 };
-
-export const BRC20_DEPLOYS_COLUMNS = [
-  'id',
-  'inscription_id',
-  'block_height',
-  'tx_id',
-  'address',
-  'ticker',
-  'max',
-  'decimals',
-  'limit',
-  'minted_supply',
-  'tx_count',
-  'self_mint',
-];

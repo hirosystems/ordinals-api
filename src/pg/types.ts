@@ -51,26 +51,6 @@ export type DbCurrentLocationInsert = {
   address: string | null;
 };
 
-export type InscriptionData = {
-  genesis_id: string;
-  number: number;
-  classic_number: number;
-  mime_type: string;
-  content_type: string;
-  content_length: number;
-  content: PgBytea;
-  fee: PgNumeric;
-  curse_type: string | null;
-  sat_ordinal: PgNumeric;
-  sat_rarity: string;
-  sat_coinbase_height: number;
-  recursive: boolean;
-  metadata: string | null;
-  parent: string | null;
-};
-
-export type InscriptionInsert = InscriptionData;
-
 type AbstractLocationData = {
   block_height: number;
   block_hash: string;
@@ -85,33 +65,6 @@ type AbstractLocationData = {
   transfer_type: DbLocationTransferType;
   block_transfer_index: number | null;
 };
-
-export type RevealLocationData = AbstractLocationData & { genesis_id: string; timestamp: number };
-
-export type TransferLocationData = AbstractLocationData & {
-  ordinal_number: PgNumeric;
-  timestamp: number;
-};
-
-export type LocationData = RevealLocationData | TransferLocationData;
-
-export type LocationInsert = AbstractLocationData & {
-  timestamp: PgSqlQuery;
-  genesis_id: string;
-  inscription_id: PgSqlQuery | string;
-};
-
-export type InscriptionRevealData = {
-  inscription: InscriptionData;
-  recursive_refs: string[];
-  location: RevealLocationData;
-};
-
-export type InscriptionTransferData = {
-  location: TransferLocationData;
-};
-
-export type InscriptionEventData = InscriptionRevealData | InscriptionTransferData;
 
 /**
  * Selects
@@ -170,22 +123,6 @@ export type DbLocation = {
   timestamp: Date;
 };
 
-export type DbLocationPointer = {
-  inscription_id: number;
-  location_id: number;
-  block_height: number;
-  tx_index: number;
-  address: string | null;
-};
-
-export type DbLocationPointerInsert = {
-  inscription_id: string;
-  location_id: string;
-  block_height: string;
-  tx_index: string;
-  address: string | null;
-};
-
 export type DbInscriptionLocationChange = {
   genesis_id: string;
   number: string;
@@ -207,56 +144,11 @@ export type DbInscriptionLocationChange = {
   to_timestamp: Date;
 };
 
-export const LOCATIONS_COLUMNS = [
-  'ordinal_number',
-  'block_height',
-  'tx_index',
-  'tx_id',
-  'block_hash',
-  'address',
-  'output',
-  'offset',
-  'prev_output',
-  'prev_offset',
-  'value',
-  'transfer_type',
-  'timestamp',
-];
-
-export type DbInscription = {
-  id: string;
-  genesis_id: string;
-  number: string;
-  mime_type: string;
-  content_type: string;
-  content_length: string;
-  fee: string;
-  sat_ordinal: string;
-  sat_rarity: string;
-  sat_coinbase_height: string;
-  recursive: boolean;
-};
-
 export type DbInscriptionContent = {
   content_type: string;
   content_length: string;
   content: string;
 };
-
-export const INSCRIPTIONS_COLUMNS = [
-  'id',
-  'genesis_id',
-  'number',
-  'mime_type',
-  'content_type',
-  'content_length',
-  'fee',
-  'curse_type',
-  'sat_ordinal',
-  'sat_rarity',
-  'sat_coinbase_height',
-  'recursive',
-];
 
 export type DbInscriptionIndexPaging = {
   limit: number;
