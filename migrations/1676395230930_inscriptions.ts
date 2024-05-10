@@ -31,6 +31,7 @@ export function up(pgm: MigrationBuilder): void {
     },
     address: {
       type: 'text',
+      notNull: true,
     },
     mime_type: {
       type: 'text',
@@ -89,4 +90,5 @@ export function up(pgm: MigrationBuilder): void {
   ]);
   pgm.createIndex('inscriptions', ['address']);
   pgm.createIndex('inscriptions', [{ name: 'updated_at', sort: 'DESC' }]);
+  pgm.createIndex('inscriptions', ['ordinal_number']);
 }

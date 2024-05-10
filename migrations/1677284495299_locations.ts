@@ -28,6 +28,7 @@ export function up(pgm: MigrationBuilder): void {
     },
     address: {
       type: 'text',
+      notNull: true,
     },
     output: {
       type: 'text',
