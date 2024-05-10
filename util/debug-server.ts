@@ -27,13 +27,14 @@ const serverOpts: ServerOptions = {
   external_base_url: `http://${ENV.EXTERNAL_HOSTNAME}`,
   wait_for_chainhook_node: false,
   validate_chainhook_payloads: false,
+  validate_token_authorization: false,
   body_limit: ENV.EVENT_SERVER_BODY_LIMIT,
   node_type: 'ordhook',
 };
 const ordhookOpts: ChainhookNodeOptions = {
   base_url: ORDHOOK_BASE_PATH,
 };
-const dirPath = path.join(__dirname, '../../tmp/debug-server/');
+const dirPath = path.join(__dirname, '../tmp/debug-server/');
 fs.mkdirSync(dirPath, { recursive: true });
 logger.info(`DebugServer saving outputs to ${dirPath}`);
 
