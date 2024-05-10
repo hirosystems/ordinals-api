@@ -211,11 +211,12 @@ export class PgStore extends BasePgStore {
             block_transfer_index: block_transfer_index++,
           });
       }
-      for await (const batch of batchIterate(transferEntries, INSERT_BATCH_SIZE))
-        await sql`
-          INSERT INTO inscription_transfers ${sql(batch)}
-          ON CONFLICT (block_height, block_transfer_index) DO NOTHING
-        `;
+      if (transferEntries.length)
+        for await (const batch of batchIterate(transferEntries, INSERT_BATCH_SIZE))
+          await sql`
+            INSERT INTO inscription_transfers ${sql(batch)}
+            ON CONFLICT (block_height, block_transfer_index) DO NOTHING
+          `;
     }
     if (cache.recursiveRefs.size)
       for (const [genesis_id, refs] of cache.recursiveRefs) {

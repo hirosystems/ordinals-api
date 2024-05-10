@@ -45,10 +45,11 @@ export async function startOrdhookServer(args: { db: PgStore }): Promise<Chainho
   const serverOpts: ServerOptions = {
     hostname: ENV.API_HOST,
     port: ENV.EVENT_PORT,
-    auth_token: ENV.ORDHOOK_NODE_AUTH_TOKEN,
+    auth_token: ENV.ORDHOOK_NODE_AUTH_TOKEN ?? '',
     external_base_url: `http://${ENV.EXTERNAL_HOSTNAME}`,
     wait_for_chainhook_node: ENV.ORDHOOK_AUTO_PREDICATE_REGISTRATION,
-    validate_chainhook_payloads: true,
+    validate_chainhook_payloads: false,
+    validate_token_authorization: ENV.ORDHOOK_NODE_AUTH_TOKEN != undefined,
     body_limit: ENV.EVENT_SERVER_BODY_LIMIT,
     node_type: 'ordhook',
   };
@@ -67,5 +68,7 @@ export async function startOrdhookServer(args: { db: PgStore }): Promise<Chainho
     );
     await args.db.updateInscriptions(payload as BitcoinPayload);
   });
+  const chainTip = await args.db.getChainTipBlockHeight();
+  logger.info(`OrdhookServer chain tip is at ${chainTip}`);
   return server;
 }
