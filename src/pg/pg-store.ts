@@ -82,7 +82,8 @@ export class PgStore extends BasePgStore {
    */
   async updateInscriptions(payload: BitcoinPayload): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
-      const streamed = payload.chainhook.is_streaming_blocks;
+      const streamed =
+        ENV.ORDHOOK_INGESTION_MODE === 'default' && payload.chainhook.is_streaming_blocks;
       for (const event of payload.rollback) {
         logger.info(`PgStore rollback block ${event.block_identifier.index}`);
         const time = stopwatch();

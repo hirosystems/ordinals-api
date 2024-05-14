@@ -59,7 +59,11 @@ export async function startOrdhookServer(args: { db: PgStore }): Promise<Chainho
   const server = new ChainhookEventObserver(serverOpts, ordhookOpts);
   await server.start(predicates, async (uuid: string, payload: Payload) => {
     const streamed = payload.chainhook.is_streaming_blocks;
-    if (ENV.ORDHOOK_INGESTION_MODE === 'replay' && streamed) {
+    if (
+      ENV.ORDHOOK_INGESTION_MODE === 'replay' &&
+      ENV.ORDHOOK_REPLAY_INGESTION_MODE_AUTO_SHUTDOWN &&
+      streamed
+    ) {
       logger.info(`OrdhookServer finished replaying blocks, shutting down`);
       return shutdown();
     }
