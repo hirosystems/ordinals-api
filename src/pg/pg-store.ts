@@ -230,18 +230,20 @@ export class PgStore extends BasePgStore {
     if (cache.currentLocations.size) {
       // Deduct counts from previous owners
       const moved_sats = [...cache.currentLocations.keys()];
-      const prevOwners = await sql<{ address: string; count: number }[]>`
-        SELECT address, COUNT(*) AS count
-        FROM current_locations
-        WHERE ordinal_number IN ${sql(moved_sats)}
-        GROUP BY address
-      `;
-      for (const owner of prevOwners)
-        await sql`
-          UPDATE counts_by_address
-          SET count = count - ${owner.count}
-          WHERE address = ${owner.address}
+      for await (const batch of batchIterate(moved_sats, INSERT_BATCH_SIZE)) {
+        const prevOwners = await sql<{ address: string; count: number }[]>`
+          SELECT address, COUNT(*) AS count
+          FROM current_locations
+          WHERE ordinal_number IN ${sql(batch)}
+          GROUP BY address
         `;
+        for (const owner of prevOwners)
+          await sql`
+            UPDATE counts_by_address
+            SET count = count - ${owner.count}
+            WHERE address = ${owner.address}
+          `;
+      }
       // Insert locations
       const entries = [...cache.currentLocations.values()];
       for await (const batch of batchIterate(entries, INSERT_BATCH_SIZE))
@@ -257,24 +259,25 @@ export class PgStore extends BasePgStore {
               EXCLUDED.tx_index > current_locations.tx_index)
         `;
       // Update owner counts
-      await sql`
-        WITH new_owners AS (
-          SELECT address, COUNT(*) AS count
-          FROM current_locations
-          WHERE ordinal_number IN ${sql(moved_sats)}
-          GROUP BY address
-        )
-        INSERT INTO counts_by_address (address, count)
-        (SELECT address, count FROM new_owners)
-        ON CONFLICT (address) DO UPDATE SET count = counts_by_address.count + EXCLUDED.count
-      `;
-      if (streamed)
-        for await (const batch of batchIterate(moved_sats, INSERT_BATCH_SIZE))
+      for await (const batch of batchIterate(moved_sats, INSERT_BATCH_SIZE)) {
+        await sql`
+          WITH new_owners AS (
+            SELECT address, COUNT(*) AS count
+            FROM current_locations
+            WHERE ordinal_number IN ${sql(batch)}
+            GROUP BY address
+          )
+          INSERT INTO counts_by_address (address, count)
+          (SELECT address, count FROM new_owners)
+          ON CONFLICT (address) DO UPDATE SET count = counts_by_address.count + EXCLUDED.count
+        `;
+        if (streamed)
           await sql`
             UPDATE inscriptions
             SET updated_at = NOW()
             WHERE ordinal_number IN ${sql(batch)}
           `;
+      }
     }
     await this.counts.applyCounts(sql, cache);
   }
