@@ -42,7 +42,7 @@ const server = new ChainhookEventObserver(serverOpts, ordhookOpts);
 server
   .start([], async (uuid: string, payload: Payload) => {
     logger.info(`DebugServer received payload from predicate ${uuid}`);
-    const filePath = path.join(dirPath, `${new Date().getTime()}.txt`);
+    const filePath = path.join(dirPath, `${payload.apply[0].block_identifier.index}.txt`);
     fs.writeFileSync(filePath, JSON.stringify(payload, null, 2));
     return Promise.resolve();
   })
