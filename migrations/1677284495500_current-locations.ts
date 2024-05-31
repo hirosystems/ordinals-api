@@ -23,8 +23,8 @@ export function up(pgm: MigrationBuilder): void {
     },
   });
   pgm.createConstraint(
-    'locations',
-    'locations_satoshis_fk',
+    'current_locations',
+    'current_locations_satoshis_fk',
     'FOREIGN KEY(ordinal_number) REFERENCES satoshis(ordinal_number) ON DELETE CASCADE'
   );
   pgm.createIndex('current_locations', ['ordinal_number'], { unique: true });
