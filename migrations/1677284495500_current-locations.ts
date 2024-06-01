@@ -22,11 +22,6 @@ export function up(pgm: MigrationBuilder): void {
       notNull: true,
     },
   });
-  pgm.createConstraint(
-    'current_locations',
-    'current_locations_satoshis_fk',
-    'FOREIGN KEY(ordinal_number) REFERENCES satoshis(ordinal_number) ON DELETE CASCADE'
-  );
   pgm.createIndex('current_locations', ['ordinal_number'], { unique: true });
   pgm.createIndex('current_locations', ['address']);
   pgm.createIndex('current_locations', ['block_height', 'tx_index']);

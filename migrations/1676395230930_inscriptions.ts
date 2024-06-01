@@ -77,11 +77,6 @@ export function up(pgm: MigrationBuilder): void {
     },
   });
   pgm.createConstraint('inscriptions', 'inscriptions_number_unique', 'UNIQUE(number)');
-  pgm.createConstraint(
-    'inscriptions',
-    'inscriptions_ordinal_number_fk',
-    'FOREIGN KEY(ordinal_number) REFERENCES satoshis(ordinal_number) ON DELETE CASCADE'
-  );
   pgm.createIndex('inscriptions', ['mime_type']);
   pgm.createIndex('inscriptions', ['recursive']);
   pgm.createIndex('inscriptions', [
