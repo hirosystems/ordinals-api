@@ -185,39 +185,36 @@ export class PgStore extends BasePgStore {
         ...l,
         timestamp: sql`TO_TIMESTAMP(${l.timestamp})`,
       }));
+      // Insert locations, figure out moved inscriptions, insert inscription transfers.
       for await (const batch of batchIterate(entries, INSERT_BATCH_SIZE))
         await sql`
-          INSERT INTO locations ${sql(batch)}
-          ON CONFLICT (ordinal_number, block_height, tx_index) DO NOTHING
-        `;
-      // Insert block transfers.
-      let block_transfer_index = 0;
-      const transferEntries = [];
-      for (const transfer of cache.locations) {
-        const transferred = await sql<{ genesis_id: string; number: string }[]>`
-          SELECT genesis_id, number FROM inscriptions
-          WHERE ordinal_number = ${transfer.ordinal_number} AND (
-            block_height < ${transfer.block_height}
-            OR (block_height = ${transfer.block_height} AND tx_index < ${transfer.tx_index})
+          WITH location_inserts AS (
+            INSERT INTO locations ${sql(batch)}
+            ON CONFLICT (ordinal_number, block_height, tx_index) DO NOTHING
+            RETURNING ordinal_number, block_height, block_hash, tx_index
+          ),
+          prev_transfer_index AS (
+            SELECT MAX(block_transfer_index) AS max
+            FROM inscription_transfers
+            WHERE block_height = (SELECT block_height FROM location_inserts LIMIT 1)
+          ),
+          moved_inscriptions AS (
+            SELECT
+              i.genesis_id, i.number, i.ordinal_number, li.block_height, li.block_hash, li.tx_index,
+              (
+                ROW_NUMBER() OVER (ORDER BY li.tx_index ASC) + (SELECT COALESCE(max, -1) FROM prev_transfer_index)
+              ) AS block_transfer_index
+            FROM inscriptions AS i
+            INNER JOIN location_inserts AS li ON li.ordinal_number = i.ordinal_number
+            WHERE
+              i.block_height < li.block_height
+              OR (i.block_height = li.block_height AND i.tx_index < li.tx_index)
           )
+          INSERT INTO inscription_transfers
+          (genesis_id, number, ordinal_number, block_height, block_hash, tx_index, block_transfer_index)
+          (SELECT * FROM moved_inscriptions)
+          ON CONFLICT (block_height, block_transfer_index) DO NOTHING
         `;
-        for (const inscription of transferred)
-          transferEntries.push({
-            genesis_id: inscription.genesis_id,
-            number: inscription.number,
-            ordinal_number: transfer.ordinal_number,
-            block_height: transfer.block_height,
-            block_hash: transfer.block_hash,
-            tx_index: transfer.tx_index,
-            block_transfer_index: block_transfer_index++,
-          });
-      }
-      if (transferEntries.length)
-        for await (const batch of batchIterate(transferEntries, INSERT_BATCH_SIZE))
-          await sql`
-            INSERT INTO inscription_transfers ${sql(batch)}
-            ON CONFLICT (block_height, block_transfer_index) DO NOTHING
-          `;
     }
     if (cache.recursiveRefs.size)
       for (const [genesis_id, refs] of cache.recursiveRefs) {
