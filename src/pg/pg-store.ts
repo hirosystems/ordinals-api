@@ -202,7 +202,7 @@ export class PgStore extends BasePgStore {
             SELECT
               i.genesis_id, i.number, i.ordinal_number, li.block_height, li.block_hash, li.tx_index,
               (
-                ROW_NUMBER() OVER (ORDER BY li.tx_index ASC) + (SELECT COALESCE(max, -1) FROM prev_transfer_index)
+                ROW_NUMBER() OVER (ORDER BY li.block_height ASC, li.tx_index ASC) + (SELECT COALESCE(max, -1) FROM prev_transfer_index)
               ) AS block_transfer_index
             FROM inscriptions AS i
             INNER JOIN location_inserts AS li ON li.ordinal_number = i.ordinal_number
