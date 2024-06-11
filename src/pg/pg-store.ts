@@ -35,7 +35,7 @@ import { BlockCache } from './block-cache';
 
 export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 const ORDINALS_GENESIS_BLOCK = 767430;
-export const INSERT_BATCH_SIZE = 4000;
+export const INSERT_BATCH_SIZE = 3500;
 
 type InscriptionIdentifier = { genesis_id: string } | { number: number };
 
@@ -82,7 +82,8 @@ export class PgStore extends BasePgStore {
    */
   async updateInscriptions(payload: BitcoinPayload): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
-      const streamed = payload.chainhook.is_streaming_blocks;
+      const streamed =
+        ENV.ORDHOOK_INGESTION_MODE === 'default' && payload.chainhook.is_streaming_blocks;
       for (const event of payload.rollback) {
         logger.info(`PgStore rollback block ${event.block_identifier.index}`);
         const time = stopwatch();
@@ -184,36 +185,34 @@ export class PgStore extends BasePgStore {
         ...l,
         timestamp: sql`TO_TIMESTAMP(${l.timestamp})`,
       }));
+      // Insert locations, figure out moved inscriptions, insert inscription transfers.
       for await (const batch of batchIterate(entries, INSERT_BATCH_SIZE))
         await sql`
-          INSERT INTO locations ${sql(batch)}
-          ON CONFLICT (ordinal_number, block_height, tx_index) DO NOTHING
-        `;
-      // Insert block transfers.
-      let block_transfer_index = 0;
-      const transferEntries = [];
-      for (const transfer of cache.locations) {
-        const transferred = await sql<{ genesis_id: string; number: string }[]>`
-          SELECT genesis_id, number FROM inscriptions
-          WHERE ordinal_number = ${transfer.ordinal_number} AND (
-            block_height < ${transfer.block_height}
-            OR (block_height = ${transfer.block_height} AND tx_index < ${transfer.tx_index})
+          WITH location_inserts AS (
+            INSERT INTO locations ${sql(batch)}
+            ON CONFLICT (ordinal_number, block_height, tx_index) DO NOTHING
+            RETURNING ordinal_number, block_height, block_hash, tx_index
+          ),
+          prev_transfer_index AS (
+            SELECT MAX(block_transfer_index) AS max
+            FROM inscription_transfers
+            WHERE block_height = (SELECT block_height FROM location_inserts LIMIT 1)
+          ),
+          moved_inscriptions AS (
+            SELECT
+              i.genesis_id, i.number, i.ordinal_number, li.block_height, li.block_hash, li.tx_index,
+              (
+                ROW_NUMBER() OVER (ORDER BY li.block_height ASC, li.tx_index ASC) + (SELECT COALESCE(max, -1) FROM prev_transfer_index)
+              ) AS block_transfer_index
+            FROM inscriptions AS i
+            INNER JOIN location_inserts AS li ON li.ordinal_number = i.ordinal_number
+            WHERE
+              i.block_height < li.block_height
+              OR (i.block_height = li.block_height AND i.tx_index < li.tx_index)
           )
-        `;
-        for (const inscription of transferred)
-          transferEntries.push({
-            genesis_id: inscription.genesis_id,
-            number: inscription.number,
-            ordinal_number: transfer.ordinal_number,
-            block_height: transfer.block_height,
-            block_hash: transfer.block_hash,
-            tx_index: transfer.tx_index,
-            block_transfer_index: block_transfer_index++,
-          });
-      }
-      for await (const batch of batchIterate(transferEntries, INSERT_BATCH_SIZE))
-        await sql`
-          INSERT INTO inscription_transfers ${sql(batch)}
+          INSERT INTO inscription_transfers
+          (genesis_id, number, ordinal_number, block_height, block_hash, tx_index, block_transfer_index)
+          (SELECT * FROM moved_inscriptions)
           ON CONFLICT (block_height, block_transfer_index) DO NOTHING
         `;
     }
@@ -228,18 +227,20 @@ export class PgStore extends BasePgStore {
     if (cache.currentLocations.size) {
       // Deduct counts from previous owners
       const moved_sats = [...cache.currentLocations.keys()];
-      const prevOwners = await sql<{ address: string; count: number }[]>`
-        SELECT address, COUNT(*) AS count
-        FROM current_locations
-        WHERE ordinal_number IN ${sql(moved_sats)}
-        GROUP BY address
-      `;
-      for (const owner of prevOwners)
-        await sql`
-          UPDATE counts_by_address
-          SET count = count - ${owner.count}
-          WHERE address = ${owner.address}
+      for await (const batch of batchIterate(moved_sats, INSERT_BATCH_SIZE)) {
+        const prevOwners = await sql<{ address: string; count: number }[]>`
+          SELECT address, COUNT(*) AS count
+          FROM current_locations
+          WHERE ordinal_number IN ${sql(batch)}
+          GROUP BY address
         `;
+        for (const owner of prevOwners)
+          await sql`
+            UPDATE counts_by_address
+            SET count = count - ${owner.count}
+            WHERE address = ${owner.address}
+          `;
+      }
       // Insert locations
       const entries = [...cache.currentLocations.values()];
       for await (const batch of batchIterate(entries, INSERT_BATCH_SIZE))
@@ -255,24 +256,25 @@ export class PgStore extends BasePgStore {
               EXCLUDED.tx_index > current_locations.tx_index)
         `;
       // Update owner counts
-      await sql`
-        WITH new_owners AS (
-          SELECT address, COUNT(*) AS count
-          FROM current_locations
-          WHERE ordinal_number IN ${sql(moved_sats)}
-          GROUP BY address
-        )
-        INSERT INTO counts_by_address (address, count)
-        (SELECT address, count FROM new_owners)
-        ON CONFLICT (address) DO UPDATE SET count = counts_by_address.count + EXCLUDED.count
-      `;
-      if (streamed)
-        for await (const batch of batchIterate(moved_sats, INSERT_BATCH_SIZE))
+      for await (const batch of batchIterate(moved_sats, INSERT_BATCH_SIZE)) {
+        await sql`
+          WITH new_owners AS (
+            SELECT address, COUNT(*) AS count
+            FROM current_locations
+            WHERE ordinal_number IN ${sql(batch)}
+            GROUP BY address
+          )
+          INSERT INTO counts_by_address (address, count)
+          (SELECT address, count FROM new_owners)
+          ON CONFLICT (address) DO UPDATE SET count = counts_by_address.count + EXCLUDED.count
+        `;
+        if (streamed)
           await sql`
             UPDATE inscriptions
             SET updated_at = NOW()
             WHERE ordinal_number IN ${sql(batch)}
           `;
+      }
     }
     await this.counts.applyCounts(sql, cache);
   }

@@ -61,7 +61,7 @@ export class BlockCache {
       content_length: reveal.content_length,
       block_height: this.blockHeight,
       tx_index: reveal.tx_index,
-      address: reveal.inscriber_address,
+      address: reveal.inscriber_address ?? '',
       number: reveal.inscription_number.jubilee,
       classic_number: reveal.inscription_number.classic,
       content: removeNullBytes(reveal.content_bytes),
@@ -73,7 +73,8 @@ export class BlockCache {
       parent: reveal.parent,
       timestamp: this.timestamp,
     });
-    this.revealedNumbers.push(reveal.inscription_number.jubilee);
+    if (reveal.inscription_number.jubilee > 0)
+      this.revealedNumbers.push(reveal.inscription_number.jubilee);
     this.increaseMimeTypeCount(mime_type);
     this.increaseSatRarityCount(satoshi.rarity);
     this.increaseInscriptionTypeCount(reveal.inscription_number.classic < 0 ? 'cursed' : 'blessed');
@@ -85,7 +86,7 @@ export class BlockCache {
       tx_id,
       tx_index: reveal.tx_index,
       ordinal_number,
-      address: reveal.inscriber_address,
+      address: reveal.inscriber_address ?? '',
       output: `${satpoint.tx_id}:${satpoint.vout}`,
       offset: satpoint.offset ?? null,
       prev_output: null,
@@ -98,7 +99,7 @@ export class BlockCache {
       ordinal_number,
       block_height: this.blockHeight,
       tx_index: reveal.tx_index,
-      address: reveal.inscriber_address,
+      address: reveal.inscriber_address ?? '',
     });
     if (recursive_refs.length > 0) this.recursiveRefs.set(reveal.inscription_id, recursive_refs);
   }
@@ -107,7 +108,7 @@ export class BlockCache {
     const satpoint = parseSatPoint(transfer.satpoint_post_transfer);
     const prevSatpoint = parseSatPoint(transfer.satpoint_pre_transfer);
     const ordinal_number = transfer.ordinal_number.toString();
-    const address = transfer.destination.value ?? null;
+    const address = transfer.destination.value ?? '';
     this.locations.push({
       block_hash: this.blockHash,
       block_height: this.blockHeight,
