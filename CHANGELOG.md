@@ -1,3 +1,10 @@
+## [4.0.0-beta.2](https://github.com/hirosystems/ordinals-api/compare/v4.0.0-beta.1...v4.0.0-beta.2) (2024-06-11)
+
+
+### Bug Fixes
+
+* ordhook ingestion ([#356](https://github.com/hirosystems/ordinals-api/issues/356)) ([dfc003e](https://github.com/hirosystems/ordinals-api/commit/dfc003ee65198a35bac1e0fc723068bde90c63c4))
+
 ## [4.0.0-beta.1](https://github.com/hirosystems/ordinals-api/compare/v3.1.0...v4.0.0-beta.1) (2024-04-26)
 
 
