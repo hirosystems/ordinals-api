@@ -7,21 +7,12 @@ export function up(pgm: MigrationBuilder): void {
   pgm.createTable('counts_by_recursive', {
     recursive: {
       type: 'boolean',
-      notNull: true,
       primaryKey: true,
     },
     count: {
       type: 'bigint',
       notNull: true,
-      default: 1,
+      default: 0,
     },
   });
-  pgm.sql(`
-    INSERT INTO counts_by_recursive (recursive, count)
-    (SELECT recursive, COUNT(*) AS count FROM inscriptions GROUP BY recursive)
-  `);
-}
-
-export function down(pgm: MigrationBuilder): void {
-  pgm.dropTable('counts_by_recursive');
 }

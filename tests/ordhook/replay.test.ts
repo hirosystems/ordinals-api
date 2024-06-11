@@ -22,6 +22,7 @@ describe('Replay', () => {
 
   test('shuts down when streaming on replay mode', async () => {
     const payload1 = new TestChainhookPayloadBuilder()
+      .streamingBlocks(true)
       .apply()
       .block({
         height: 767430,

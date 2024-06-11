@@ -4,7 +4,7 @@ import { MigrationBuilder, ColumnDefinitions } from 'node-pg-migrate';
 export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export function up(pgm: MigrationBuilder): void {
-  pgm.createTable('inscriptions_per_block', {
+  pgm.createTable('counts_by_block', {
     block_height: {
       type: 'bigint',
       primaryKey: true,
@@ -26,4 +26,5 @@ export function up(pgm: MigrationBuilder): void {
       notNull: true,
     },
   });
+  pgm.createIndex('counts_by_block', ['block_hash']);
 }

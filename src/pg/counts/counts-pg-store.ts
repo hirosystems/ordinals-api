@@ -1,14 +1,13 @@
-import { BasePgStoreModule } from '@hirosystems/api-toolkit';
+import { BasePgStoreModule, PgSqlClient } from '@hirosystems/api-toolkit';
 import { SatoshiRarity } from '../../api/util/ordinal-satoshi';
 import {
-  DbInscription,
+  DbInscriptionCountPerBlock,
+  DbInscriptionCountPerBlockFilters,
   DbInscriptionIndexFilters,
-  InscriptionData,
   DbInscriptionType,
-  RevealLocationData,
-  DbLocationPointer,
 } from '../types';
 import { DbInscriptionIndexResultCountType } from './types';
+import { BlockCache } from '../block-cache';
 
 /**
  * This class affects all the different tables that track inscription counts according to different
@@ -55,142 +54,128 @@ export class CountsPgStore extends BasePgStoreModule {
     }
   }
 
-  async applyInscriptions(writes: InscriptionData[]): Promise<void> {
-    if (writes.length === 0) return;
-    const mimeType = new Map<string, number>();
-    const rarity = new Map<string, number>();
-    const recursion = new Map<boolean, number>();
-    const typeMap = new Map<string, number>();
-    for (const i of writes) {
-      mimeType.set(i.mime_type, (mimeType.get(i.mime_type) ?? 0) + 1);
-      rarity.set(i.sat_rarity, (rarity.get(i.sat_rarity) ?? 0) + 1);
-      recursion.set(i.recursive, (recursion.get(i.recursive) ?? 0) + 1);
-      const inscrType = i.number < 0 ? 'cursed' : 'blessed';
-      typeMap.set(inscrType, (typeMap.get(inscrType) ?? 0) + 1);
-    }
-    const mimeTypeInsert = Array.from(mimeType.entries()).map(k => ({
-      mime_type: k[0],
-      count: k[1],
-    }));
-    const rarityInsert = Array.from(rarity.entries()).map(k => ({
-      sat_rarity: k[0],
-      count: k[1],
-    }));
-    const recursionInsert = Array.from(recursion.entries()).map(k => ({
-      recursive: k[0],
-      count: k[1],
-    }));
-    const typeInsert = Array.from(typeMap.entries()).map(k => ({
-      type: k[0],
-      count: k[1],
-    }));
-    // `counts_by_address` and `counts_by_genesis_address` count increases are handled in
-    // `applyLocations`.
-    await this.sql`
-      WITH increase_mime_type AS (
-        INSERT INTO counts_by_mime_type ${this.sql(mimeTypeInsert)}
+  async applyCounts(sql: PgSqlClient, cache: BlockCache) {
+    if (cache.mimeTypeCounts.size) {
+      const entries = [];
+      for (const [mime_type, count] of cache.mimeTypeCounts) entries.push({ mime_type, count });
+      await sql`
+        INSERT INTO counts_by_mime_type ${sql(entries)}
         ON CONFLICT (mime_type) DO UPDATE SET count = counts_by_mime_type.count + EXCLUDED.count
-      ),
-      increase_rarity AS (
-        INSERT INTO counts_by_sat_rarity ${this.sql(rarityInsert)}
+      `;
+    }
+    if (cache.satRarityCounts.size) {
+      const entries = [];
+      for (const [sat_rarity, count] of cache.satRarityCounts) entries.push({ sat_rarity, count });
+      await sql`
+        INSERT INTO counts_by_sat_rarity ${sql(entries)}
         ON CONFLICT (sat_rarity) DO UPDATE SET count = counts_by_sat_rarity.count + EXCLUDED.count
-      ),
-      increase_recursive AS (
-        INSERT INTO counts_by_recursive ${this.sql(recursionInsert)}
+      `;
+    }
+    if (cache.inscriptionTypeCounts.size) {
+      const entries = [];
+      for (const [type, count] of cache.inscriptionTypeCounts) entries.push({ type, count });
+      await sql`
+        INSERT INTO counts_by_type ${sql(entries)}
+        ON CONFLICT (type) DO UPDATE SET count = counts_by_type.count + EXCLUDED.count
+      `;
+    }
+    if (cache.recursiveCounts.size) {
+      const entries = [];
+      for (const [recursive, count] of cache.recursiveCounts) entries.push({ recursive, count });
+      await sql`
+        INSERT INTO counts_by_recursive ${sql(entries)}
         ON CONFLICT (recursive) DO UPDATE SET count = counts_by_recursive.count + EXCLUDED.count
-      )
-      INSERT INTO counts_by_type ${this.sql(typeInsert)}
-      ON CONFLICT (type) DO UPDATE SET count = counts_by_type.count + EXCLUDED.count
-    `;
+      `;
+    }
+    if (cache.genesisAddressCounts.size) {
+      const entries = [];
+      for (const [address, count] of cache.genesisAddressCounts) entries.push({ address, count });
+      await sql`
+        INSERT INTO counts_by_genesis_address ${sql(entries)}
+        ON CONFLICT (address) DO UPDATE SET count = counts_by_genesis_address.count + EXCLUDED.count
+      `;
+    }
+    if (cache.inscriptions.length)
+      await sql`
+        WITH prev_entry AS (
+          SELECT inscription_count_accum
+          FROM counts_by_block
+          WHERE block_height < ${cache.blockHeight}
+          ORDER BY block_height DESC
+          LIMIT 1
+        )
+        INSERT INTO counts_by_block
+          (block_height, block_hash, inscription_count, inscription_count_accum, timestamp)
+        VALUES (
+          ${cache.blockHeight}, ${cache.blockHash}, ${cache.inscriptions.length},
+          COALESCE((SELECT inscription_count_accum FROM prev_entry), 0) + ${cache.inscriptions.length},
+          TO_TIMESTAMP(${cache.timestamp})
+        )
+      `;
+    // Address ownership count is handled in `PgStore`.
   }
 
-  async rollBackInscription(args: {
-    inscription: InscriptionData;
-    location: RevealLocationData;
-  }): Promise<void> {
-    await this.sql`
-      WITH decrease_mime_type AS (
-        UPDATE counts_by_mime_type SET count = count - 1
-        WHERE mime_type = ${args.inscription.mime_type}
-      ),
-      decrease_rarity AS (
-        UPDATE counts_by_sat_rarity SET count = count - 1
-        WHERE sat_rarity = ${args.inscription.sat_rarity}
-      ),
-      decrease_recursive AS (
-        UPDATE counts_by_recursive SET count = count - 1
-        WHERE recursive = ${args.inscription.recursive}
-      ),
-      decrease_type AS (
-        UPDATE counts_by_type SET count = count - 1 WHERE type = ${
-          args.inscription.number < 0 ? DbInscriptionType.cursed : DbInscriptionType.blessed
-        }
-      ),
-      decrease_genesis AS (
-        UPDATE counts_by_genesis_address SET count = count - 1
-        WHERE address = ${args.location.address}
-      )
-      UPDATE counts_by_address SET count = count - 1 WHERE address = ${args.location.address}
-    `;
+  async rollBackCounts(sql: PgSqlClient, cache: BlockCache) {
+    if (cache.inscriptions.length)
+      await sql`DELETE FROM counts_by_block WHERE block_height = ${cache.blockHeight}`;
+    if (cache.genesisAddressCounts.size)
+      for (const [address, count] of cache.genesisAddressCounts)
+        await sql`
+          UPDATE counts_by_genesis_address SET count = count - ${count} WHERE address = ${address}
+        `;
+    if (cache.recursiveCounts.size)
+      for (const [recursive, count] of cache.recursiveCounts)
+        await sql`
+          UPDATE counts_by_recursive SET count = count - ${count} WHERE recursive = ${recursive}
+        `;
+    if (cache.inscriptionTypeCounts.size)
+      for (const [type, count] of cache.inscriptionTypeCounts)
+        await sql`
+          UPDATE counts_by_type SET count = count - ${count} WHERE type = ${type}
+        `;
+    if (cache.satRarityCounts.size)
+      for (const [sat_rarity, count] of cache.satRarityCounts)
+        await sql`
+          UPDATE counts_by_sat_rarity SET count = count - ${count} WHERE sat_rarity = ${sat_rarity}
+        `;
+    if (cache.mimeTypeCounts.size)
+      for (const [mime_type, count] of cache.mimeTypeCounts)
+        await sql`
+          UPDATE counts_by_mime_type SET count = count - ${count} WHERE mime_type = ${mime_type}
+        `;
+    // Address ownership count is handled in `PgStore`.
   }
 
-  async applyLocations(
-    writes: { old_address: string | null; new_address: string | null }[],
-    genesis: boolean = true
-  ): Promise<void> {
-    if (writes.length === 0) return;
-    await this.sqlWriteTransaction(async sql => {
-      const table = genesis ? sql`counts_by_genesis_address` : sql`counts_by_address`;
-      const oldAddr = new Map<string, number>();
-      const newAddr = new Map<string, number>();
-      for (const i of writes) {
-        if (i.old_address) oldAddr.set(i.old_address, (oldAddr.get(i.old_address) ?? 0) + 1);
-        if (i.new_address) newAddr.set(i.new_address, (newAddr.get(i.new_address) ?? 0) + 1);
-      }
-      const oldAddrInsert = Array.from(oldAddr.entries()).map(k => ({
-        address: k[0],
-        count: k[1],
-      }));
-      const newAddrInsert = Array.from(newAddr.entries()).map(k => ({
-        address: k[0],
-        count: k[1],
-      }));
-      if (oldAddrInsert.length > 0)
-        await sql`
-          INSERT INTO ${table} ${sql(oldAddrInsert)}
-          ON CONFLICT (address) DO UPDATE SET count = ${table}.count - EXCLUDED.count
-        `;
-      if (newAddrInsert.length > 0)
-        await sql`
-          INSERT INTO ${table} ${sql(newAddrInsert)}
-          ON CONFLICT (address) DO UPDATE SET count = ${table}.count + EXCLUDED.count
-        `;
-    });
-  }
+  async getInscriptionCountPerBlock(
+    filters: DbInscriptionCountPerBlockFilters
+  ): Promise<DbInscriptionCountPerBlock[]> {
+    const fromCondition = filters.from_block_height
+      ? this.sql`block_height >= ${filters.from_block_height}`
+      : this.sql``;
 
-  async rollBackCurrentLocation(args: {
-    curr: DbLocationPointer;
-    prev: DbLocationPointer;
-  }): Promise<void> {
-    await this.sqlWriteTransaction(async sql => {
-      if (args.curr.address) {
-        await sql`
-          UPDATE counts_by_address SET count = count - 1 WHERE address = ${args.curr.address}
-        `;
-      }
-      if (args.prev.address) {
-        await sql`
-          UPDATE counts_by_address SET count = count + 1 WHERE address = ${args.prev.address}
-        `;
-      }
-    });
+    const toCondition = filters.to_block_height
+      ? this.sql`block_height <= ${filters.to_block_height}`
+      : this.sql``;
+
+    const where =
+      filters.from_block_height && filters.to_block_height
+        ? this.sql`WHERE ${fromCondition} AND ${toCondition}`
+        : this.sql`WHERE ${fromCondition}${toCondition}`;
+
+    return await this.sql<DbInscriptionCountPerBlock[]>`
+      SELECT *
+      FROM counts_by_block
+      ${filters.from_block_height || filters.to_block_height ? where : this.sql``}
+      ORDER BY block_height DESC
+      LIMIT 5000
+    `; // roughly 35 days of blocks, assuming 10 minute block times on a full database
   }
 
   private async getBlockCount(from?: number, to?: number): Promise<number> {
     if (from === undefined && to === undefined) return 0;
     const result = await this.sql<{ count: number }[]>`
-      SELECT COALESCE(SUM(inscription_count), 0) AS count
-      FROM inscriptions_per_block
+      SELECT COALESCE(SUM(inscription_count), 0)::int AS count
+      FROM counts_by_block
       WHERE TRUE
         ${from !== undefined ? this.sql`AND block_height >= ${from}` : this.sql``}
         ${to !== undefined ? this.sql`AND block_height <= ${to}` : this.sql``}
@@ -201,8 +186,8 @@ export class CountsPgStore extends BasePgStoreModule {
   private async getBlockHashCount(hash?: string): Promise<number> {
     if (!hash) return 0;
     const result = await this.sql<{ count: number }[]>`
-      SELECT COALESCE(SUM(inscription_count), 0) AS count
-      FROM inscriptions_per_block
+      SELECT COALESCE(SUM(inscription_count), 0)::int AS count
+      FROM counts_by_block
       WHERE block_hash = ${hash}
     `;
     return result[0].count;
@@ -212,7 +197,7 @@ export class CountsPgStore extends BasePgStoreModule {
     const types =
       type !== undefined ? [type] : [DbInscriptionType.blessed, DbInscriptionType.cursed];
     const result = await this.sql<{ count: number }[]>`
-      SELECT COALESCE(SUM(count), 0) AS count
+      SELECT COALESCE(SUM(count), 0)::int AS count
       FROM counts_by_type
       WHERE type IN ${this.sql(types)}
     `;
@@ -222,7 +207,7 @@ export class CountsPgStore extends BasePgStoreModule {
   private async getMimeTypeCount(mimeType?: string[]): Promise<number> {
     if (!mimeType) return 0;
     const result = await this.sql<{ count: number }[]>`
-      SELECT COALESCE(SUM(count), 0) AS count
+      SELECT COALESCE(SUM(count), 0)::int AS count
       FROM counts_by_mime_type
       WHERE mime_type IN ${this.sql(mimeType)}
     `;
@@ -232,7 +217,7 @@ export class CountsPgStore extends BasePgStoreModule {
   private async getSatRarityCount(satRarity?: SatoshiRarity[]): Promise<number> {
     if (!satRarity) return 0;
     const result = await this.sql<{ count: number }[]>`
-      SELECT COALESCE(SUM(count), 0) AS count
+      SELECT COALESCE(SUM(count), 0)::int AS count
       FROM counts_by_sat_rarity
       WHERE sat_rarity IN ${this.sql(satRarity)}
     `;
@@ -242,17 +227,17 @@ export class CountsPgStore extends BasePgStoreModule {
   private async getRecursiveCount(recursive?: boolean): Promise<number> {
     const rec = recursive !== undefined ? [recursive] : [true, false];
     const result = await this.sql<{ count: number }[]>`
-      SELECT COALESCE(SUM(count), 0) AS count
+      SELECT COALESCE(SUM(count), 0)::int AS count
       FROM counts_by_recursive
       WHERE recursive IN ${this.sql(rec)}
     `;
     return result[0].count;
   }
 
-  private async getAddressCount(address?: string[]): Promise<number> {
+  async getAddressCount(address?: string[]): Promise<number> {
     if (!address) return 0;
     const result = await this.sql<{ count: number }[]>`
-      SELECT COALESCE(SUM(count), 0) AS count
+      SELECT COALESCE(SUM(count), 0)::int AS count
       FROM counts_by_address
       WHERE address IN ${this.sql(address)}
     `;
@@ -262,7 +247,7 @@ export class CountsPgStore extends BasePgStoreModule {
   private async getGenesisAddressCount(genesisAddress?: string[]): Promise<number> {
     if (!genesisAddress) return 0;
     const result = await this.sql<{ count: number }[]>`
-      SELECT COALESCE(SUM(count), 0) AS count
+      SELECT COALESCE(SUM(count), 0)::int AS count
       FROM counts_by_genesis_address
       WHERE address IN ${this.sql(genesisAddress)}
     `;

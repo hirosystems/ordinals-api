@@ -2,7 +2,7 @@ import { FastifyReply, FastifyRequest } from 'fastify';
 import { InscriptionIdParamCType, InscriptionNumberParamCType } from '../schemas';
 import { logger } from '@hirosystems/api-toolkit';
 
-export enum ETagType {
+enum ETagType {
   inscriptionsIndex,
   inscription,
   inscriptionsPerBlock,
@@ -55,11 +55,6 @@ async function handleCache(type: ETagType, request: FastifyRequest, reply: Fasti
       void reply.headers({ 'Cache-Control': CACHE_CONTROL_MUST_REVALIDATE, ETag: `"${etag}"` });
     }
   }
-}
-
-export function setReplyNonCacheable(reply: FastifyReply) {
-  reply.removeHeader('Cache-Control');
-  reply.removeHeader('Etag');
 }
 
 /**

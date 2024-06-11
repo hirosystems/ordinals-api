@@ -5,12 +5,8 @@ export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export function up(pgm: MigrationBuilder): void {
   pgm.createTable('current_locations', {
-    inscription_id: {
-      type: 'bigint',
-      notNull: true,
-    },
-    location_id: {
-      type: 'bigint',
+    ordinal_number: {
+      type: 'numeric',
       notNull: true,
     },
     block_height: {
@@ -23,14 +19,10 @@ export function up(pgm: MigrationBuilder): void {
     },
     address: {
       type: 'text',
+      notNull: true,
     },
   });
-  pgm.createConstraint(
-    'current_locations',
-    'current_locations_inscription_id_unique',
-    'UNIQUE(inscription_id)'
-  );
-  pgm.createIndex('current_locations', ['location_id']);
-  pgm.createIndex('current_locations', ['block_height']);
+  pgm.createIndex('current_locations', ['ordinal_number'], { unique: true });
   pgm.createIndex('current_locations', ['address']);
+  pgm.createIndex('current_locations', ['block_height', 'tx_index']);
 }

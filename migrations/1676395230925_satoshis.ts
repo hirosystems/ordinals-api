@@ -4,12 +4,19 @@ import { MigrationBuilder, ColumnDefinitions } from 'node-pg-migrate';
 export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export function up(pgm: MigrationBuilder): void {
-  pgm.addColumns('brc20_deploys', {
-    ticker_lower: {
+  pgm.createTable('satoshis', {
+    ordinal_number: {
+      type: 'numeric',
+      primaryKey: true,
+    },
+    rarity: {
       type: 'text',
       notNull: true,
-      expressionGenerated: '(LOWER(ticker))',
+    },
+    coinbase_height: {
+      type: 'bigint',
+      notNull: true,
     },
   });
-  pgm.createIndex('brc20_deploys', ['ticker_lower']);
+  pgm.createIndex('satoshis', ['rarity']);
 }

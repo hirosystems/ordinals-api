@@ -48,6 +48,9 @@ jobs:
       - name: Lint Prettier
         run: npm run lint:prettier
 
+      - name: Lint Unused Exports
+        run: npm run lint:unused-exports
+
   test:
     strategy:
       fail-fast: false
