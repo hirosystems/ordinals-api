@@ -40,8 +40,8 @@ export class Brc20BlockCache {
       tx_id,
       address: operation.deploy.address,
       ticker: operation.deploy.tick,
-      max: operation.deploy.max,
-      limit: operation.deploy.lim,
+      max: BigNumber(operation.deploy.max).toString(),
+      limit: BigNumber(operation.deploy.lim).toString(),
       decimals: operation.deploy.dec,
       self_mint: operation.deploy.self_mint,
     });
