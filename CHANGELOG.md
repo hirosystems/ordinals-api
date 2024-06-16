@@ -1,3 +1,10 @@
+## [4.0.2](https://github.com/hirosystems/ordinals-api/compare/v4.0.1...v4.0.2) (2024-06-16)
+
+
+### Bug Fixes
+
+* optimize brc-20 activity query ([#362](https://github.com/hirosystems/ordinals-api/issues/362)) ([e8a4fea](https://github.com/hirosystems/ordinals-api/commit/e8a4fea29a49cf55bd2291c2bf8349a756130028))
+
 ## [4.0.1](https://github.com/hirosystems/ordinals-api/compare/v4.0.0...v4.0.1) (2024-06-16)
 
 
