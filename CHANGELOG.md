@@ -1,3 +1,10 @@
+## [4.0.1](https://github.com/hirosystems/ordinals-api/compare/v4.0.0...v4.0.1) (2024-06-16)
+
+
+### Bug Fixes
+
+* optimize base inscriptions query ([#364](https://github.com/hirosystems/ordinals-api/issues/364)) ([cbcc830](https://github.com/hirosystems/ordinals-api/commit/cbcc830a675e5c4dcd29650f1d5e8783ce096989))
+
 ## [4.0.0](https://github.com/hirosystems/ordinals-api/compare/v3.1.0...v4.0.0) (2024-06-11)
 
 
