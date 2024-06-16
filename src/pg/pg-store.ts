@@ -545,9 +545,9 @@ export class PgStore extends BasePgStore {
                 : sql``
             }
             ${
-              filters?.genesis_block_hash
+              /*filters?.genesis_block_hash
                 ? sql`AND gen_l.block_hash = ${filters.genesis_block_hash}`
-                : sql``
+                :*/ sql``
             }
             ${
               filters?.from_genesis_block_height
@@ -600,7 +600,7 @@ export class PgStore extends BasePgStore {
             ${
               filters?.mime_type?.length ? sql`AND i.mime_type IN ${sql(filters.mime_type)}` : sql``
             }
-            ${filters?.output ? sql`AND cur_l.output = ${filters.output}` : sql``}
+            ${/*filters?.output ? sql`AND cur_l.output = ${filters.output}` : */ sql``}
             ${filters?.sat_rarity?.length ? sql`AND s.rarity IN ${sql(filters.sat_rarity)}` : sql``}
             ${filters?.sat_ordinal ? sql`AND i.ordinal_number = ${filters.sat_ordinal}` : sql``}
             ${
@@ -630,7 +630,7 @@ export class PgStore extends BasePgStore {
         ORDER BY r.row_num ASC
       `;
       return {
-        total: total ?? results[0].total,
+        total: total ?? results[0]?.total ?? 0,
         results: results ?? [],
       };
     });
