@@ -11,8 +11,12 @@ export function up(pgm: MigrationBuilder): void {
   });
   pgm.sql(`
     UPDATE inscriptions SET block_hash = (
-      SELECT block_hash FROM locations AS l WHERE l.ordinal_number = ordinal_number LIMIT 1
-    )  
+      SELECT block_hash FROM locations AS l
+      WHERE l.ordinal_number = ordinal_number
+        AND l.block_height = block_height
+        AND l.tx_index = tx_index
+      LIMIT 1
+    )
   `);
   pgm.alterColumn('inscriptions', 'block_hash', { notNull: true });
 }
