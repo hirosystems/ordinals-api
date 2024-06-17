@@ -1,3 +1,10 @@
+## [4.0.3](https://github.com/hirosystems/ordinals-api/compare/v4.0.2...v4.0.3) (2024-06-17)
+
+
+### Bug Fixes
+
+* add output to current locations and block_hash to inscriptions ([#365](https://github.com/hirosystems/ordinals-api/issues/365)) ([3d75deb](https://github.com/hirosystems/ordinals-api/commit/3d75deb664906eb1c4392ab18d5c77332047a875))
+
 ## [4.0.2](https://github.com/hirosystems/ordinals-api/compare/v4.0.1...v4.0.2) (2024-06-16)
 
 
