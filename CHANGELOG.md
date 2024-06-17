@@ -1,3 +1,10 @@
+## [4.0.4](https://github.com/hirosystems/ordinals-api/compare/v4.0.3...v4.0.4) (2024-06-17)
+
+
+### Bug Fixes
+
+* select correct block hash upon migration ([#366](https://github.com/hirosystems/ordinals-api/issues/366)) ([aea1a19](https://github.com/hirosystems/ordinals-api/commit/aea1a19463e82e7fa1f2574df0730a2626eeacc4))
+
 ## [4.0.3](https://github.com/hirosystems/ordinals-api/compare/v4.0.2...v4.0.3) (2024-06-17)
 
 
