@@ -2318,7 +2318,7 @@ describe('/inscriptions', () => {
         expect(responseJson4.results[1].genesis_block_height).toBe(778575);
       });
 
-      test.skip('index filtered by block hash', async () => {
+      test('index filtered by block hash', async () => {
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()
@@ -2794,7 +2794,7 @@ describe('/inscriptions', () => {
         expect(responseJson3.results[0].number).toBe(0);
       });
 
-      test.skip('index filtered by output', async () => {
+      test('index filtered by output', async () => {
         await db.updateInscriptions(
           new TestChainhookPayloadBuilder()
             .apply()

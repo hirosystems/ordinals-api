@@ -330,9 +330,9 @@ export class PgStore extends BasePgStore {
     if (cache.currentLocations.size) {
       for (const ordinal_number of moved_sats) {
         await sql`
-          INSERT INTO current_locations (ordinal_number, block_height, tx_index, address)
+          INSERT INTO current_locations (ordinal_number, block_height, tx_index, output, address)
           (
-            SELECT ordinal_number, block_height, tx_index, address
+            SELECT ordinal_number, block_height, tx_index, output, address
             FROM locations
             WHERE ordinal_number = ${ordinal_number}
             ORDER BY block_height DESC, tx_index DESC
@@ -545,9 +545,9 @@ export class PgStore extends BasePgStore {
                 : sql``
             }
             ${
-              /*filters?.genesis_block_hash
-                ? sql`AND gen_l.block_hash = ${filters.genesis_block_hash}`
-                :*/ sql``
+              filters?.genesis_block_hash
+                ? sql`AND i.block_hash = ${filters.genesis_block_hash}`
+                : sql``
             }
             ${
               filters?.from_genesis_block_height
@@ -600,7 +600,7 @@ export class PgStore extends BasePgStore {
             ${
               filters?.mime_type?.length ? sql`AND i.mime_type IN ${sql(filters.mime_type)}` : sql``
             }
-            ${/*filters?.output ? sql`AND cur_l.output = ${filters.output}` : */ sql``}
+            ${filters?.output ? sql`AND cur.output = ${filters.output}` : sql``}
             ${filters?.sat_rarity?.length ? sql`AND s.rarity IN ${sql(filters.sat_rarity)}` : sql``}
             ${filters?.sat_ordinal ? sql`AND i.ordinal_number = ${filters.sat_ordinal}` : sql``}
             ${
