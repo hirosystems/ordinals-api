@@ -54,12 +54,14 @@ export class BlockCache {
     const recursive_refs = getInscriptionRecursion(reveal.content_bytes);
     const content_type = removeNullBytes(reveal.content_type);
     const mime_type = content_type.split(';')[0];
+    const output = `${satpoint.tx_id}:${satpoint.vout}`;
     this.inscriptions.push({
       genesis_id: reveal.inscription_id,
       mime_type,
       content_type,
       content_length: reveal.content_length,
       block_height: this.blockHeight,
+      block_hash: this.blockHash,
       tx_index: reveal.tx_index,
       address: reveal.inscriber_address ?? '',
       number: reveal.inscription_number.jubilee,
@@ -87,7 +89,7 @@ export class BlockCache {
       tx_index: reveal.tx_index,
       ordinal_number,
       address: reveal.inscriber_address ?? '',
-      output: `${satpoint.tx_id}:${satpoint.vout}`,
+      output,
       offset: satpoint.offset ?? null,
       prev_output: null,
       prev_offset: null,
@@ -99,6 +101,7 @@ export class BlockCache {
       ordinal_number,
       block_height: this.blockHeight,
       tx_index: reveal.tx_index,
+      output,
       address: reveal.inscriber_address ?? '',
     });
     if (recursive_refs.length > 0) this.recursiveRefs.set(reveal.inscription_id, recursive_refs);
@@ -109,6 +112,7 @@ export class BlockCache {
     const prevSatpoint = parseSatPoint(transfer.satpoint_pre_transfer);
     const ordinal_number = transfer.ordinal_number.toString();
     const address = transfer.destination.value ?? '';
+    const output = `${satpoint.tx_id}:${satpoint.vout}`;
     this.locations.push({
       block_hash: this.blockHash,
       block_height: this.blockHeight,
@@ -116,7 +120,7 @@ export class BlockCache {
       tx_index: transfer.tx_index,
       ordinal_number,
       address,
-      output: `${satpoint.tx_id}:${satpoint.vout}`,
+      output,
       offset: satpoint.offset ?? null,
       prev_output: `${prevSatpoint.tx_id}:${prevSatpoint.vout}`,
       prev_offset: prevSatpoint.offset ?? null,
@@ -132,6 +136,7 @@ export class BlockCache {
       ordinal_number,
       block_height: this.blockHeight,
       tx_index: transfer.tx_index,
+      output,
       address,
     });
   }

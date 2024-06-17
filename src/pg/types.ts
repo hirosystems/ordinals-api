@@ -14,6 +14,7 @@ export type DbInscriptionInsert = {
   number: number;
   classic_number: number;
   block_height: number;
+  block_hash: string;
   tx_index: number;
   address: string;
   mime_type: string;
@@ -48,6 +49,7 @@ export type DbCurrentLocationInsert = {
   ordinal_number: PgNumeric;
   block_height: number;
   tx_index: number;
+  output: string;
   address: string;
 };
 
