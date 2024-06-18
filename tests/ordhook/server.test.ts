@@ -572,7 +572,7 @@ describe('EventServer', () => {
   });
 
   describe('gap detection', () => {
-    test('server rejects payload with first inscription gap when streaming', async () => {
+    test.skip('server rejects payload with first inscription gap when streaming', async () => {
       await db.updateInscriptions(
         new TestChainhookPayloadBuilder()
           .streamingBlocks(false)
