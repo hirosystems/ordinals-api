@@ -149,7 +149,7 @@ export class PgStore extends BasePgStore {
     }
     switch (direction) {
       case 'apply':
-        if (streamed) await this.assertNextBlockIsContiguous(sql, event, cache);
+        // if (streamed) await this.assertNextBlockIsContiguous(sql, event, cache);
         await this.applyInscriptions(sql, cache, streamed);
         break;
       case 'rollback':
