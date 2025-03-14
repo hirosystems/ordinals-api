@@ -1,5 +1,5 @@
 > [!IMPORTANT]
-> This repository is now deprecated. For Runes indexing and Runes API, please refer to our new [Bitcoin Indexer](https://github.com/hirosystems/bitcoin-indexer) repository.
+> This repository is now deprecated. For Ordinals API, please refer to our new [Bitcoin Indexer](https://github.com/hirosystems/bitcoin-indexer) repository.
 
        /     /   ▶ Ordinals API   
       / --- /      A service that ingests Bitcoin ordinal inscriptions to expose them via REST API endpoints.
