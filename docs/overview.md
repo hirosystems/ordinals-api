@@ -8,7 +8,7 @@ The Ordinals API provides a service that indexes Bitcoin Ordinals data and offer
 
 > **_NOTE:_**
 >
-> To explore the detailed documentation for the API endpoints, request and response formats, you can refer to the [OpenAPI specification](https://docs.hiro.so/ordinals).
+> To explore the detailed documentation for the API endpoints, request and response formats, you can refer to the [OpenAPI specification](https://docs.hiro.so/ordinals-api).
 >
 > The source code for this project is available in our [GitHub repository](https://github.com/hirosystems/ordinals-api). You can explore the codebase, [contribute](https://docs.hiro.so/contributors-guide), and raise [issues](https://github.com/hirosystems/ordinals-api/issues) or [pull requests](https://github.com/hirosystems/ordinals-api/pulls).
 

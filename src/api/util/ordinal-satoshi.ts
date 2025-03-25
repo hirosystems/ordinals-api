@@ -17,7 +17,7 @@ export enum SatoshiRarity {
 
 /**
  * Ordinal Satoshi calculator. Mostly translated from the original Rust implementation at
- * https://github.com/casey/ord/blob/master/src/sat.rs
+ * https://github.com/casey/ord/blob/encode-with-minimal-opcodes/src/sat.rs
  */
 export class OrdinalSatoshi {
   public blockHeight: number;
